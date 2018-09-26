@@ -5,7 +5,6 @@ from mountainlab_pytools import mlproc as mlp
 from mountainlab_pytools import mdaio
 import os, json
 import numpy as np
-from quantities import Quantity
 
 class MdaInputExtractor(InputExtractor):
     def __init__(self, *, dataset_directory, download=True):
@@ -36,7 +35,7 @@ class MdaInputExtractor(InputExtractor):
         return self._num_timepoints
     
     def getSamplingFrequency(self):
-        return Quantity(self._samplerate,'Hz')
+        return self._samplerate
         
     def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if start_frame is None:

@@ -35,7 +35,7 @@ class MEArecInputExtractor(InputExtractor):
     def getSamplingFrequency(self):
         if self._fs is None:
             self._initialize()
-        return self._fs * pq.kHz
+        return self._fs
         
     def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if self._recordings is None:
@@ -46,7 +46,7 @@ class MEArecInputExtractor(InputExtractor):
             end_frame=self.getNumFrames()
         if channel_ids is None:
             channel_ids=range(self.getNumChannels())
-        return self._recordings[channel_ids,:]
+        return self._recordings[channel_ids,:][:,start_frame:end_frame]
     
     def getChannelInfo(self, channel_id):
         if self._positions is None:
