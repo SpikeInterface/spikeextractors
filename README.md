@@ -52,9 +52,12 @@ moe = si.MdaOutputExtractor(firings_file=firings_file_path)
                            
 print(moe.getUnitSpikeTrain(unit_id=0)
 
-## Out[3]:array([  2.71249481e+03,   1.22188979e+04,   1.83042929e+04, ...,
+## Out[2]:array([  2.71249481e+03,   1.22188979e+04,   1.83042929e+04, ...,
 ##              5.39305688e+07,   5.39829415e+07,   5.39836896e+07])
 ```
+
+## Building your own InputExtractor/OutputExtractor
+
 
 ### Uses
 
