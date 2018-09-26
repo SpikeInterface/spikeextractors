@@ -1,0 +1,1 @@
+from .biocaminputextractor import BiocamInputExtractor
