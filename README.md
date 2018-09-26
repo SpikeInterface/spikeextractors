@@ -36,6 +36,10 @@ mie = si.MdaInputExtractor(dataset_directory=dataset_directory_path, download=Tr
 print(mie.getNumChannels())
 
 ## Out[1] 4
+
+print(mie.getRawTraces(start_frame=10, end_frame=100, channel_ids=[0,2]))
+
+## Out[2] *needs to be filled with raw trace output*
 ```
 
 **OutputExtractor**
@@ -52,7 +56,7 @@ moe = si.MdaOutputExtractor(firings_file=firings_file_path)
                            
 print(moe.getUnitSpikeTrain(unit_id=0)
 
-## Out[2]:array([  2.71249481e+03,   1.22188979e+04,   1.83042929e+04, ...,
+## Out[3]:array([  2.71249481e+03,   1.22188979e+04,   1.83042929e+04, ...,
 ##              5.39305688e+07,   5.39829415e+07,   5.39836896e+07])
 ```
 
