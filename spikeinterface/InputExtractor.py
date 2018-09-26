@@ -10,8 +10,6 @@ class InputExtractor(ABC):
     '''
     def __init__(self):
         pass
-        # self.implemented_get_raw_traces = False
-        # self.implemented_get_probe_information = False
 
     @abstractmethod
     def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
@@ -25,7 +23,7 @@ class InputExtractor(ABC):
         end_frame: int
             The ending frame of the trace to be returned
         channel_ids: array_like
-            A list or array of channel ids (ints) from which each trace will be
+            A list or 1D array of channel ids (ints) from which each trace will be
             extracted.
 
         Returns
@@ -120,7 +118,7 @@ class InputExtractor(ABC):
 
         Returns
         ----------
-        raw_snippets: array_like
+        raw_snippets: numpy.ndarray
             A 3D array that contains all of the raw snippets from each channel.
             Dimensions are: (num_channels x num_snippets x snippet_len)
         '''
