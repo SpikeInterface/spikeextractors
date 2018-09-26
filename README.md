@@ -29,8 +29,8 @@ In this example, we assume the user's raw file format is MountainLab so we will 
 
 ```python
 from spikeinterface import MdaInputExtractor
-
 dataset_directory_path = 'kbucket://b5ecdf1474c5/datasets/synth_datasets/datasets/synth_tetrode_30min'
+
 mie = si.MdaInputExtractor(dataset_directory=dataset_directory_path, download=True)
                            
 print(mie.getNumChannels())
@@ -46,14 +46,14 @@ In this example, we assume the user's processed file format is also MountainLab 
 
 ```python
 from spikeinterface import MdaOutputExtractor
-
 firings_file_path = 'kbucket://b5ecdf1474c5/datasets/synth_datasets/datasets/synth_tetrode_30min/firings_true.mda'
+
 moe = si.MdaOutputExtractor(firings_file=firings_file_path)
                            
 print(moe.getUnitSpikeTrain(unit_id=0)
 
 ## Out[3]:array([  2.71249481e+03,   1.22188979e+04,   1.83042929e+04, ...,
-                5.39305688e+07,   5.39829415e+07,   5.39836896e+07])
+##              5.39305688e+07,   5.39829415e+07,   5.39836896e+07])
 ```
 
 ### Uses
