@@ -10,17 +10,15 @@ class OutputExtractor(ABC):
     '''
     def __init__(self):
         pass
-        # self.implemented_get_num_units = False
-        # self.implemented_get_unit_spike_times = False
 
     @abstractmethod
-    def getNumUnits(self):
-        '''This function returns the number of units detected in the recording
+    def getUnitIds(self):
+        '''This function returns a list of ids (ints) for each unit in the recording
 
         Returns
         ----------
-        num_units: int
-            The number of units in the recording
+        unit_ids: list
+            A list of unit ids (ints)
         '''
         pass
 
@@ -47,7 +45,7 @@ class OutputExtractor(ABC):
             The frame below which a spike frame is returned.
         Returns
         ----------
-        spike_train: array_like
+        spike_train: numpy.ndarray
             An 1D array containing all the frames for each spike in the
             specified unit given the range of start and end frames.
         '''
