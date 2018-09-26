@@ -17,8 +17,8 @@ class OutputExtractor(ABC):
 
         Returns
         ----------
-        unit_ids: list
-            A list of the unit ids in recording (ints)
+        unit_ids: array_like
+            A list or 1D array of the unit ids in recording (ints)
         '''
         pass
 
