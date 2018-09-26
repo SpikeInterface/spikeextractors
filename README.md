@@ -20,6 +20,8 @@ https://github.com/colehurwitz31/spikeinterface.git
 
 SpikeInterface allows the user to extract data from either raw or processed extracellular data with an InputExtractor and OutputExtractor, respectively.
 
+**InputExtrator**
+
 To run our standardized data retrieval functions for your raw extracellular data, import the subclass InputExtractor coinciding with your specific file format. Then you can use that subclass of InputExtractor to extract various information from your file. 
 
 In this example, we assume the user's file format is MountainLab so we will import the MdaInputExtractor.
