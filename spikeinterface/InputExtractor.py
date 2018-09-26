@@ -22,8 +22,8 @@ class InputExtractor(ABC):
             The starting frame of the trace to be returned
         end_frame: int
             The ending frame of the trace to be returned
-        channel_ids: list
-            A list of channel ids (ints) from which each trace will be
+        channel_ids: array_like
+            A list or 1D array of channel ids (ints) from which each trace will be
             extracted.
 
         Returns
