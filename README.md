@@ -18,26 +18,42 @@ To get started with SpikeInterface, clone the repo into your code base.
 https://github.com/colehurwitz31/spikeinterface.git
 ```
 
-SpikeInterface allows the user to extract data from either raw or processed extracellular data with an InputExtractor and OutputExtractor, respectively.
+SpikeInterface allows the user to extract data from either raw or processed extracellular data with an InputExtractor or OutputExtractor, respectively.
 
 
 **InputExtrator**
 
-To run our standardized data retrieval functions for your raw extracellular data, import the subclass InputExtractor coinciding with your specific file format. Then you can use that subclass of InputExtractor to extract various information from your file. 
+To run our standardized data retrieval functions for your raw extracellular data, import the subclass InputExtractor coinciding with your specific file format. Then, you can use that subclass of InputExtractor to extract data and information from your raw data file. 
 
-In this example, we assume the user's file format is MountainLab so we will import the MdaInputExtractor.
+In this example, we assume the user's raw file format is MountainLab so we will import the MdaInputExtractor.
 
 ```python
 from spikeinterface import MdaInputExtractor
 
-mie = si.MdaInputExtractor(dataset_directory='kbucket://b5ecdf1474c5/datasets/synth_datasets/datasets/synth_tetrode_30min',
-                           download=True)
+dataset_directory_path = 'kbucket://b5ecdf1474c5/datasets/synth_datasets/datasets/synth_tetrode_30min'
+mie = si.MdaInputExtractor(dataset_directory=dataset_directory_path, download=True)
                            
-num_channels = mie.getNumChannels()
+print(mie.getNumChannels())
 
-print(num_channels)
+## Out[1] 4
+```
 
-## [1] 4
+**OutputExtractor**
+
+To run our standardized data retrieval functions for your processed extracellular data, import the subclass OutputExtractor coinciding with your specific file format/spike sorter. Then, you can use that subclass of OutputExtractor to extract data and information from your processed data file. 
+
+In this example, we assume the user's processed file format is also MountainLab so we will import the MdaOutputExtractor.
+
+```python
+from spikeinterface import MdaOutputExtractor
+
+firings_file_path = 'kbucket://b5ecdf1474c5/datasets/synth_datasets/datasets/synth_tetrode_30min/firings_true.mda'
+moe = si.MdaOutputExtractor(firings_file=firings_file_path)
+                           
+print(moe.getUnitSpikeTrain(unit_id=0)
+
+## Out[3]:array([  2.71249481e+03,   1.22188979e+04,   1.83042929e+04, ...,
+                5.39305688e+07,   5.39829415e+07,   5.39836896e+07])
 ```
 
 ### Uses
