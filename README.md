@@ -10,6 +10,7 @@ Traditionally, researchers have attempted to achieve the above goals by creating
 
 To circumvent these problems, we designed SpikeInterface -- a module that attempts to standardize *data retrieval* rather than data storage. By standardizing data retrieval from extracellular datasets, we can eliminate the need for shared file formats and allow for the creation of new tools built off of our data retrieval guidelines.
 <br/>
+<br/>
 ## Getting Started with Preexisting Code
 
 To get started with SpikeInterface, clone the repo into your code base.
