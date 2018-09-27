@@ -8,7 +8,7 @@ SpikeInterface is a module that enables easy creation and deployment of tools fo
 
 Traditionally, researchers have attempted to achieve the above goals by creating standardized file formats for extracellular data. Although this approach seems promising, it can run into issues with legacy data and software, the need for wide-scale adoption of the format, steep learning curves, and an inability to adapt to new storage needs from experimental labs.
 
-To circumvent these problems, we designed SpikeInterface -- a module that attempts to **standardize data retrieval** rather than data storage. By standardizing data retrieval from extracellular datasets, we can eliminate the need for shared file formats and allow for the creation of new tools built off of our data retrieval guidelines.
+To circumvent these problems, we designed SpikeInterface -- a module that attempts to standardize *data retrieval* rather than data storage. By standardizing data retrieval from extracellular datasets, we can eliminate the need for shared file formats and allow for the creation of new tools built off of our data retrieval guidelines.
 <br/>
 <br/>
 ## Getting Started with Preexisting Code
