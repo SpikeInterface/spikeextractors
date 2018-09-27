@@ -62,6 +62,7 @@ print(moe.getUnitSpikeTrain(unit_id=0)
 ```
 <br/>
 <br/>
+
 ## Building a new InputExtractor/OutputExtractor
 
 Building a new InputExtractor or OutputExtractor for specific file format is as simple as creating a new subclass based on the predefined base classes provided in SpikeInterface.
@@ -110,6 +111,7 @@ Once all abstract methods are overwritten in your InputExtractor or OutputExtrac
 
 <br/>
 <br/>
+
 ## Widgets that use InputExtractors and OutputExtractors
 
 Coming soon...
@@ -123,6 +125,7 @@ Coming soon...
 
 <br/>
 <br/>
+
 ### Authors
 
 [Cole Hurwitz](https://www.inf.ed.ac.uk/people/students/Cole_Hurwitz.html) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland 
