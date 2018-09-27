@@ -18,7 +18,7 @@ To get started with SpikeInterface, clone the repo into your code base.
 https://github.com/colehurwitz31/spikeinterface.git
 ```
 
-SpikeInterface allows the user to extract data from either raw or processed extracellular data with an InputExtractor or OutputExtractor, respectively.
+SpikeInterface allows the user to extract data from either raw or processed extracellular datasets with an InputExtractor or OutputExtractor, respectively.
 
 
 **InputExtrator**
@@ -39,7 +39,7 @@ print(mie.getNumChannels())
 
 print(mie.getRawTraces(start_frame=10, end_frame=100, channel_ids=[0,2]))
 
-## Out[2] *needs to be filled with raw trace output*
+## Out[2] *raw traces output*
 ```
 
 **OutputExtractor**
@@ -64,7 +64,7 @@ print(moe.getUnitSpikeTrain(unit_id=0)
 
 Building a new InputExtractor or OutputExtractor for specific file format is as simple as creating a new subclass based on the predefined base classes provided in SpikeInterface.
 
-Both InputExtractor and OutputExtractor are abstract base classes which require a new subclass to implement all methods with decorated with @abstractmethod.
+To enable standardization among subclasses, InputExtractor and OutputExtractor are abstract base classes which require a new subclass to override all methods which are decorated with @abstractmethod.
 
 An example of how a new subclass for OutputExtractor can be created is provided below.
 
@@ -102,7 +102,7 @@ class ExampleOutputExtractor(OutputExtractor):
         return unit_spike_train
 ```
 
-As you can see, our extractor base classes were designed to make implementing a new subclass as simple as possible while still allowing for standardized methods and naming conventions.
+As you can see, our extractor base classes were designed to make implementing a new subclass as simple and flexible as possible while still enforcing standardized data retrieval functions.
 
 Once all abstract methods are overwritten in your InputExtractor or OutputExtractor, your subclass is ready for deployment and can be used with a variety of pre-implemented widgets (links to current widgets are contained in the **Widgets** section of the README)
 
