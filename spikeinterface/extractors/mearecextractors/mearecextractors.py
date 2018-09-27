@@ -56,9 +56,10 @@ class MEArecInputExtractor(InputExtractor):
         )
 
 class MEArecOutputExtractor(OutputExtractor):
-    def __init__(self, *, recording_folder):
+    def __init__(self, *, recording_folder=None, recording_file=None):
         OutputExtractor.__init__(self)
         self._recording_folder = recording_folder
+        self._recording_file = recording_file
         self._num_units = None
         self._spike_trains = None
 
@@ -66,7 +67,8 @@ class MEArecOutputExtractor(OutputExtractor):
         recordings, times, positions, templates, spiketrains, sources, peaks, info = \
             load_recordings(recording_folder=self._recording_folder,recording_file=self._recording_file)
         self._num_units = len(spiketrains)
-
+        self._spike_trains=spiketrains
+        
     def getUnitIds(self):
         if self._num_units is None:
             self._initialize()
@@ -79,7 +81,7 @@ class MEArecOutputExtractor(OutputExtractor):
             end_frame=np.Inf
         if self._spike_trains is None:
             self._initialize()
-        times=self._spike_trains[unit_id].times
+        times=self._spike_trains[unit_id]['times']
         inds=np.where((start_frame<=times)&(times<end_frame))
         return times[inds]
 

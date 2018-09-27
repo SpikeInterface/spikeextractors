@@ -57,6 +57,29 @@ class MdaInputExtractor(InputExtractor):
             location=self._geom[channel_id,:]
         )
 
+    @staticmethod
+    def writeDataset(input_extractor,output_dirname):
+        M=input_extractor.getNumChannels()
+        N=input_extractor.getNumFrames()
+        channel_ids=range(M)
+        raw=input_extractor.getRawTraces()
+        info0=input_extractor.getChannelInfo(channel_ids[0])
+        nd=len(info0['location'])
+        geom=np.zeros((M,nd))
+        for ii in range(len(channel_ids)):
+            info0=input_extractor.getChannelInfo(channel_ids[ii])
+            geom[ii,:]=info0['location']
+        if not os.path.exists(output_dirname):
+            os.mkdir(output_dirname)
+        mdaio.writemda32(raw,output_dirname+'/raw.mda')
+        params=dict(
+            samplerate=input_extractor.getSamplingFrequency(),
+            spike_sign=-1
+        )
+        with open(output_dirname+'/params.json','w') as f:
+            json.dump(params,f)
+        np.savetxt(output_dirname+'/geom.csv', geom, delimiter=',')
+
 class MdaOutputExtractor(OutputExtractor):
     def __init__(self, *, firings_file):
         OutputExtractor.__init__(self)
@@ -81,6 +104,28 @@ class MdaOutputExtractor(OutputExtractor):
             end_frame=np.Inf
         inds=np.where((self._labels==unit_id)&(start_frame<=self._times)&(self._times<end_frame))
         return self._times[inds]
+    
+    @staticmethod
+    def writeFirings(output_extractor,firings_out):
+        unit_ids=output_extractor.getUnitIds()
+        K=np.max(unit_ids)
+        times_list=[]
+        labels_list=[]
+        for i in range(len(unit_ids)):
+            unit=unit_ids[i]
+            times=output_extractor.getUnitSpikeTrain(unit_id=unit)
+            times_list.append(times)
+            labels_list.append(np.ones(times.shape)*unit)
+        all_times=np.concatenate(times_list)
+        all_labels=np.concatenate(labels_list)
+        sort_inds=np.argsort(all_times)
+        all_times=all_times[sort_inds]
+        all_labels=all_labels[sort_inds]
+        L=len(all_times)
+        firings=np.zeros((3,L))
+        firings[1,:]=all_times
+        firings[2,:]=all_labels
+        mdaio.writemda64(firings,firings_out)
     
 def is_url(path):
     return path.startswith('http://') or path.startswith('https://') or path.startswith('kbucket://') or path.startswith('sha1://')
