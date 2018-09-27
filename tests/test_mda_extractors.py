@@ -67,6 +67,12 @@ class TestMdaExtractors(unittest.TestCase):
         self.assertTrue(np.allclose(self.IX.getRawTraces(start_frame=0,end_frame=12,channel_ids=[0,3]),X[[0,3],0:12]))
         # getChannelInfo
         self.assertTrue(np.allclose(np.array(self.IX.getChannelInfo(channel_id=1)['location']),self.dataset['geom'][1,:]))
+        # timeToFrame / frameToTime
+        self.assertEqual(self.IX.timeToFrame(12),12*self.IX.getSamplingFrequency())
+        self.assertEqual(self.IX.frameToTime(12),12/self.IX.getSamplingFrequency())
+        # getRawSnippets
+        snippets=self.IX.getRawSnippets(snippet_len=20,center_frames=[0,30,50])
+        self.assertTrue(np.allclose(snippets[1],X[:,20:40]))
     
     def test_output_extractor(self):
         K=self.dataset['num_units']
