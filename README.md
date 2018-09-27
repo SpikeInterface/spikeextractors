@@ -79,13 +79,25 @@ class ExampleOutputExtractor(OutputExtractor):
         
     def getUnitIds(self):
         
-        #Code to get unit_ids list containing all the ids of detected units in the recording
+        #Code to get a unit_ids list containing all the ids of detected units in the recording
         
         return unit_ids
 
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
         
-        #Code to get unit_spike_train 1D array containing all the frames for each spike in the specified unit
+        '''
+        Code to get a unit_spike_train 1D array containing all frames of 
+        spikes in the specified unit.
+        
+        This method will return spike frames within three ranges,
+        
+                  [start_frame, t_start+1, ..., end_frame-1]
+                  [start_frame, start_frame+1, ..., final_unit_spike_frame]
+                  [beginning_unit_spike_frame, beginning_unit_spike_frame+1, ..., end_frame-1]
+                  
+        if both start_frame and end_frame are inputted, if only start_frame is
+        inputted, or if only end_frame is inputted, respectively.
+        '''
         
         return unit_spike_train
 ```
