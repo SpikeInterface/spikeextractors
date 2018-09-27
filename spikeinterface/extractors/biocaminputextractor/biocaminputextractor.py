@@ -91,15 +91,15 @@ def openBiocamFile(filename):
           "right method for data access.\n# If your results "
           "look strange, signal polarity is wrong.")
     if file_format == 100:
-        if signalInv is -1:
+        if signalInv == -1:
             read_function = readHDF5t_100
         else:
             read_function = readHDF5t_100_i
     else:
-        if signalInv is not -1:
-            read_function = readHDF5t_101
-        else:
+        if signalInv == -1:
             read_function = readHDF5t_101_i
+        else:
+            read_function = readHDF5t_101
 
     return (rf, nFrames, samplingRate, nRecCh, chIndices, file_format, signalInv, rawIndices, read_function)
 

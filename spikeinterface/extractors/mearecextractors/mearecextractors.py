@@ -14,29 +14,29 @@ class MEArecInputExtractor(InputExtractor):
         self._fs = None
         self._positions = None
         self._recordings = None
-        
+
     def _initialize(self):
         recordings, times, positions, templates, spiketrains, sources, peaks, info = \
             load_recordings(recording_folder=self._recording_folder,recording_file=self._recording_file)
         self._fs  =info['General']['fs']
         self._positions = positions
         self._recordings = recordings
-        
+
     def getNumChannels(self):
         if self._recordings is None:
             self._initialize()
         return self._recordings.shape[0]
-    
+
     def getNumFrames(self):
         if self._recordings is None:
             self._initialize()
         return self._recordings.shape[1]
-    
+
     def getSamplingFrequency(self):
         if self._fs is None:
             self._initialize()
         return self._fs
-        
+
     def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if self._recordings is None:
             self._initialize()
@@ -47,7 +47,7 @@ class MEArecInputExtractor(InputExtractor):
         if channel_ids is None:
             channel_ids=range(self.getNumChannels())
         return self._recordings[channel_ids,:][:,start_frame:end_frame]
-    
+
     def getChannelInfo(self, channel_id):
         if self._positions is None:
             self._initialize()
@@ -62,7 +62,7 @@ class MEArecOutputExtractor(OutputExtractor):
         self._recording_file = recording_file
         self._num_units = None
         self._spike_trains = None
-        
+
     def _initialize(self):
         recordings, times, positions, templates, spiketrains, sources, peaks, info = \
             load_recordings(recording_folder=self._recording_folder,recording_file=self._recording_file)
@@ -83,8 +83,8 @@ class MEArecOutputExtractor(OutputExtractor):
             self._initialize()
         times=self._spike_trains[unit_id]['times']
         inds=np.where((start_frame<=times)&(times<end_frame))
-        return times[inds]        
-        
+        return times[inds]
+
 def load_recordings(*,recording_folder=None,recording_file=None):
     '''
     Load generated recordings (from template_gen.py)
@@ -130,7 +130,7 @@ def load_recordings(*,recording_folder=None,recording_file=None):
             info=dict(
                 General=dict(F.attrs)
             )
-            
+
     if not isinstance(times, pq.Quantity):
         times = times * pq.ms
 
