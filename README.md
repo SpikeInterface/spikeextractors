@@ -118,12 +118,12 @@ Coming soon...
 
 ### Authors
 
-Cole Hurwitz - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland 
+[Cole Hurwitz](https://www.inf.ed.ac.uk/people/students/Cole_Hurwitz.html) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland 
 
-Jeremy Magland - Center for Computational Biology (CCB), Flatiron Institute, New York, United States
+[Jeremy Magland](https://www.simonsfoundation.org/team/jeremy-magland/) - Center for Computational Biology (CCB), Flatiron Institute, New York, United States
 
-Alessio Paolo Buccino - Department of Informatics, University of Oslo, Oslo, Norway
+[Alessio Paolo Buccino](https://www.mn.uio.no/ifi/english/people/aca/alessiob/) - Department of Informatics, University of Oslo, Oslo, Norway
 
-Matthias Hennig - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland
+[Matthias Hennig](http://homepages.inf.ed.ac.uk/mhennig/) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland
 
 For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com
