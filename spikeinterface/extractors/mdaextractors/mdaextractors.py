@@ -56,7 +56,8 @@ class MdaInputExtractor(InputExtractor):
         return dict(
             location=self._geom[channel_id,:]
         )
-    
+
+    @staticmethod
     def writeDataset(input_extractor,output_dirname):
         M=input_extractor.getNumChannels()
         N=input_extractor.getNumFrames()
@@ -104,6 +105,7 @@ class MdaOutputExtractor(OutputExtractor):
         inds=np.where((self._labels==unit_id)&(start_frame<=self._times)&(self._times<end_frame))
         return self._times[inds]
     
+    @staticmethod
     def writeFirings(output_extractor,firings_out):
         unit_ids=output_extractor.getUnitIds()
         K=np.max(unit_ids)
