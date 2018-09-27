@@ -81,14 +81,14 @@ class ExampleOutputExtractor(OutputExtractor):
         
     def getUnitIds(self):
         
-        #Code to get a unit_ids list containing all the ids of detected units in the recording
+        #Code to get a unit_ids list containing all the ids (ints) of detected units in the recording
         
         return unit_ids
 
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
         
         '''
-        Code to get a unit_spike_train 1D array containing all frames of 
+        Code to get a unit_spike_train 1D array containing all frames (ints) of 
         spikes in the specified unit.
         
         This method will return spike frames within three ranges,
