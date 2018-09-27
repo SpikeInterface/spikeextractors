@@ -62,6 +62,10 @@ print(moe.getUnitSpikeTrain(unit_id=0)
 ```
 <br/>
 
+To see our currently implemented subclasses, please check the [extractors](https://github.com/colehurwitz31/spikeinterface/tree/master/spikeinterface/extractors) folder in our repo.
+
+<br/>
+
 ## Building a new InputExtractor/OutputExtractor
 
 Building a new InputExtractor or OutputExtractor for specific file format is as simple as creating a new subclass based on the predefined base classes provided in SpikeInterface.
@@ -104,7 +108,7 @@ class ExampleOutputExtractor(OutputExtractor):
         return unit_spike_train
 ```
 
-As you can see, our extractor base classes were designed to make implementing a new subclass as straightforward and flexible as possible while still enforcing standardized data retrieval functions. To see fully implemented subclasses, please check the [extractors](https://github.com/colehurwitz31/spikeinterface/tree/master/spikeinterface/extractors) folder in our repo.
+As you can see, our extractor base classes were designed to make implementing a new subclass as straightforward and flexible as possible while still enforcing standardized data retrieval functions.
 
 Once all abstract methods are overwritten in your InputExtractor or OutputExtractor, your subclass is ready for deployment and can be used with a variety of pre-implemented widgets (links to current widgets are contained in the **Widgets** section of the README)
 <br/>
