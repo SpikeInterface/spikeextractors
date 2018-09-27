@@ -107,11 +107,23 @@ As you can see, our extractor base classes were designed to make implementing a 
 Once all abstract methods are overwritten in your InputExtractor or OutputExtractor, your subclass is ready for deployment and can be used with a variety of pre-implemented widgets (links to current widgets are contained in the **Widgets** section of the README)
 
 
-## Widgets for InputExtractors and OutputExtractors
+## Widgets that use InputExtractors and OutputExtractors
 
 Coming soon...
 
 
-### Future Work
+### Future Plans
 
 Coming soon...
+
+### Authors
+
+Cole Hurwitz - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland 
+
+Jeremy Magland - Center for Computational Biology (CCB), Flatiron Institute, New York, United States
+
+Alessio Paolo Buccino - Department of Informatics, University of Oslo, Oslo, Norway
+
+Matthias Hennig - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland
+
+For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com
