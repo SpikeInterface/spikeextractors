@@ -60,10 +60,46 @@ print(moe.getUnitSpikeTrain(unit_id=0)
 ##              5.39305688e+07,   5.39829415e+07,   5.39836896e+07])
 ```
 
-## Building your own InputExtractor/OutputExtractor
+## Building a new InputExtractor/OutputExtractor
+
+Building a new InputExtractor or OutputExtractor for specific file format is as simple as creating a new subclass based on the predefined base classes provided in SpikeInterface.
+
+Both InputExtractor and OutputExtractor are abstract base classes which require a new subclass to implement all methods with decorated with @abstractmethod.
+
+An example of how a new subclass for OutputExtractor can be created is provided below.
+
+```python
+from spikeinterface import OutputExtractor
+
+class ExampleOutputExtractor(OutputExtractor):
+    def __init__(self, ex_parameter_1, ex_parameter_2):
+        OutputExtractor.__init__(self)
+        
+        ## All file specific initialization code can go here.
+        
+    def getUnitIds(self):
+        
+        #Code to get unit_ids list containing all the ids of detected units in the recording
+        
+        return unit_ids
+
+    def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+        
+        #Code to get unit_spike_train 1D array containing all the frames for each spike in the specified unit
+        
+        return unit_spike_train
+```
+
+As you can see, our extractor base classes were designed to make implementing a new subclass as simple as possible while still allowing for standardized methods and naming conventions.
+
+Once all abstract methods are overwritten in your InputExtractor or OutputExtractor, your subclass is ready for deployment and can be used with a variety of pre-implemented widgets (links to current widgets are contained in the **Widgets** section of the README)
 
 
-### Uses
+## Widgets for InputExtractors and OutputExtractors
+
+Coming soon...
 
 
 ### Future Work
+
+Coming soon...
