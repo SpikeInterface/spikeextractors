@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import numpy as np
 
 class InputExtractor(ABC):
     '''A class that contains functions for extracting important information
@@ -81,8 +82,8 @@ class InputExtractor(ABC):
         time: float
             The corresponding time or list of times in seconds
         '''
-        raise NotImplementedError("The frameToTime function is not \
-                                  implemented for this extractor")
+        # Default implementation
+        return frame/self.getSamplingFrequency()
 
     def timeToFrame(self, time):
         '''This function converts a user-inputted time (in seconds) to a frame index
@@ -97,10 +98,10 @@ class InputExtractor(ABC):
         frame: float
             The corresponding frame or list of frames
         '''
-        raise NotImplementedError("The timeToFrame function is not \
-                                  implemented for this extractor")
+        # Default implementation
+        return time*self.getSamplingFrequency()
 
-    def getRawSnippets(self, snippet_len, center_frames, channel_ids):
+    def getRawSnippets(self, snippet_len, center_frames, channel_ids=None):
         '''This function returns raw data snippets from the given channels that
         are centered on the given frames and are the length of the given snippet
         length.
@@ -119,12 +120,32 @@ class InputExtractor(ABC):
         Returns
         ----------
         raw_snippets: numpy.ndarray
-            A 3D array that contains all of the raw snippets from each channel.
-            Dimensions are: (num_channels x num_snippets x snippet_len)
+            Returns a list of the raw snippets as numpy arrays.
+            The length of the list is len(center_frames)
+            Each array has dimensions: (num_channels x snippet_len)
+            Out-of-bounds cases should be handled by filling in zeros in the snippet.
         '''
-        raise NotImplementedError("The getRawSnippets function is not \
-                                  implemented for this extractor")
-
+        if channel_ids is None:
+            channel_ids=range(self.getNumChannels())
+        L0=len(center_frames)
+        M0=len(channel_ids)
+        N=self.getNumFrames()
+        dt=int(snippet_len/2)
+        ret=[]
+        for i in range(L0):
+            a=np.array([center_frames[i]-dt,center_frames[i]-dt+snippet_len])
+            b=np.array([0,snippet_len])
+            # The following handles the out-of-bounds cases
+            if a[0]<0:
+                b[0]-=a[0]
+                a[0]-=a[0]
+            if a[1]>=N:
+                b[1]-=a[1]+N
+                a[1]-=a[1]+N
+            chunk0=np.zeros((M0,snippet_len))
+            chunk0[:,b[0]:b[1]]=self.getRawTraces(start_frame=a[0],end_frame=a[1],channel_ids=channel_ids)
+            ret.append(chunk0)
+        return ret
 
     def getChannelInfo(self, channel_id):
         '''This function returns the a dictionary containing information about
