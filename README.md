@@ -60,7 +60,8 @@ print(moe.getUnitSpikeTrain(unit_id=0)
 ## Out[3]:array([  2.71249481e+03,   1.22188979e+04,   1.83042929e+04, ...,
 ##              5.39305688e+07,   5.39829415e+07,   5.39836896e+07])
 ```
-
+<br/>
+<br/>
 ## Building a new InputExtractor/OutputExtractor
 
 Building a new InputExtractor or OutputExtractor for specific file format is as simple as creating a new subclass based on the predefined base classes provided in SpikeInterface.
@@ -107,16 +108,21 @@ As you can see, our extractor base classes were designed to make implementing a 
 
 Once all abstract methods are overwritten in your InputExtractor or OutputExtractor, your subclass is ready for deployment and can be used with a variety of pre-implemented widgets (links to current widgets are contained in the **Widgets** section of the README)
 
-
+<br/>
+<br/>
 ## Widgets that use InputExtractors and OutputExtractors
 
 Coming soon...
 
+<br/>
+<br/>
 
 ### Future Plans
 
 Coming soon...
 
+<br/>
+<br/>
 ### Authors
 
 [Cole Hurwitz](https://www.inf.ed.ac.uk/people/students/Cole_Hurwitz.html) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland 
@@ -126,5 +132,6 @@ Coming soon...
 [Alessio Paolo Buccino](https://www.mn.uio.no/ifi/english/people/aca/alessiob/) - Department of Informatics, University of Oslo, Oslo, Norway
 
 [Matthias Hennig](http://homepages.inf.ed.ac.uk/mhennig/) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland
-
+<br/>
+<br/>
 For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com
