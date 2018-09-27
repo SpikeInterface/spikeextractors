@@ -10,8 +10,6 @@ class InputExtractor(ABC):
     '''
     def __init__(self):
         pass
-        # self.implemented_get_raw_traces = False
-        # self.implemented_get_probe_information = False
 
     @abstractmethod
     def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
@@ -25,7 +23,7 @@ class InputExtractor(ABC):
         end_frame: int
             The ending frame of the trace to be returned
         channel_ids: array_like
-            A list or array of channel ids (ints) from which each trace will be
+            A list or 1D array of channel ids (ints) from which each trace will be
             extracted.
 
         Returns
@@ -60,34 +58,44 @@ class InputExtractor(ABC):
 
     @abstractmethod
     def getSamplingFrequency(self):
-        '''This function returns the sampling frequency in the form of a
-        Quantity using the Quantity python library. Must be a unit of frequency.
+        '''This function returns the sampling frequency in units of Hz
 
         Returns
         -------
-        fs: Quantity
-            Sampling frequency of the recordings
+        fs: float
+            Sampling frequency of the recordings in Hz
         '''
         pass
 
     def frameToTime(self, frame):
-        '''This function converts a user-inputted frame to a time Quantity.
+        '''This function converts a user-inputted frame to a time with units of seconds.
+        It should handle both scalars and lists.
 
+        Parameters
+        ----------
+        frame: float
+            The frame (or list of frames) to be converted to a time
+            
         Returns
         -------
-        frame: int
-            The frame to be converted to a time quantity
+        time: float
+            The corresponding time or list of times in seconds
         '''
         raise NotImplementedError("The frameToTime function is not \
                                   implemented for this extractor")
 
     def timeToFrame(self, time):
-        '''This function converts a user-inputted time Quantity to a frame
+        '''This function converts a user-inputted time (in seconds) to a frame index
 
+        Parameters
+        -------
+        time: float
+            The time or list of times (in seconds) to be converted to frames
+            
         Returns
         -------
-        time: Quantity
-            The time Quantity to be converted to a frame
+        frame: float
+            The corresponding frame or list of frames
         '''
         raise NotImplementedError("The timeToFrame function is not \
                                   implemented for this extractor")
@@ -110,7 +118,7 @@ class InputExtractor(ABC):
 
         Returns
         ----------
-        raw_snippets: array_like
+        raw_snippets: numpy.ndarray
             A 3D array that contains all of the raw snippets from each channel.
             Dimensions are: (num_channels x num_snippets x snippet_len)
         '''
