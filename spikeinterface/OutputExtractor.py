@@ -14,13 +14,13 @@ class OutputExtractor(ABC):
         # self.implemented_get_unit_spike_times = False
 
     @abstractmethod
-    def getNumUnits(self):
-        '''This function returns the number of units detected in the recording
+    def getUnitIds(self):
+        '''This function returns the list of valid  units detected in the recording
 
         Returns
         ----------
-        num_units: int
-            The number of units in the recording
+        units: list
+            The units in the recording
         '''
         pass
 
