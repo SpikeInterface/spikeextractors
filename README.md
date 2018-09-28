@@ -110,10 +110,10 @@ class ExampleOutputExtractor(OutputExtractor):
 
 As you can see, our extractor base classes were designed to make implementing a new subclass as straightforward and flexible as possible while still enforcing standardized data retrieval functions.
 
-Once all abstract methods are overwritten in your InputExtractor or OutputExtractor, your subclass is ready for deployment and can be used with a variety of pre-implemented widgets (links to current widgets are contained in the **Widgets** section of the README).
+Once all abstract methods are overwritten in your InputExtractor or OutputExtractor, your subclass is ready for deployment and can be used with a variety of pre-implemented tools (links to current tools are contained in the **Tools that use InputExtractors and OutputExtractors** section of the README).
 <br/>
 
-## Widgets that use InputExtractors and OutputExtractors
+## Tools that use InputExtractors and OutputExtractors
 
 Coming soon...
 <br/>
