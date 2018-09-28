@@ -52,7 +52,7 @@ from spikeinterface import si
 IX=si.NumpyInputExtractor(timeseries=timeseries,geom=geom,samplerate=samplerate)
 ```
 
-Now we can use the InputExtractor to retrieve data and information from the dataset with a variety of standard functions that are predefined in the InputExtractor base class.
+Now we can use the InputExtractor to retrieve data and information from the dataset with a variety of standard functions that are predefined in the NumpyInputExtractor base class.
 
 ```python
 print('Num. channels = {}'.format(IX.getNumChannels()))
@@ -79,7 +79,9 @@ We will now convert our numpy data into the MountainSort format with a MountainS
 si.MdaInputExtractor.writeDataset(input_extractor=IX,output_dirname='sample_mountainsort_dataset')
 ```
 
-InputExtractors can also be used to extract subsets from your data and to extract data from multiple files using SubInputExtractors and MultiInputExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki). 
+InputExtractors can extract subsets of data from your file and can extract data from multiple files using SubInputExtractors and MultiInputExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
+
+Finally, InputExtractors can be used in a variety of pre-implemented tools which are contained in the **Tools that use InputExtractors and OutputExtractors** section of the README.
 
 **OutputExtractor**
 
