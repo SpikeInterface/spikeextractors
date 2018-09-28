@@ -30,16 +30,16 @@ class MdaInputExtractor(InputExtractor):
             raise Exception('Incompatible dimensions between geom.csv and timeseries file {} <> {}'.format(self._geom.shape[0],X.N1()))
         self._num_channels=X.N1()
         self._num_timepoints=X.N2()
-        
+
     def getNumChannels(self):
         return self._num_channels
-    
+
     def getNumFrames(self):
         return self._num_timepoints
-    
+
     def getSamplingFrequency(self):
         return self._samplerate
-        
+
     def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if start_frame is None:
             start_frame=0
@@ -51,7 +51,7 @@ class MdaInputExtractor(InputExtractor):
         recordings=X.readChunk(i1=0,i2=start_frame,N1=X.N1(),N2=end_frame-start_frame)
         recordings=recordings[channel_ids,:]
         return recordings
-    
+
     def getChannelInfo(self, channel_id):
         return dict(
             location=self._geom[channel_id,:]
@@ -68,7 +68,7 @@ class MdaInputExtractor(InputExtractor):
         geom=np.zeros((M,nd))
         for ii in range(len(channel_ids)):
             info0=input_extractor.getChannelInfo(channel_ids[ii])
-            geom[ii,:]=info0['location']
+            geom[ii,:]=list(info0['location'])
         if not os.path.exists(output_dirname):
             os.mkdir(output_dirname)
         mdaio.writemda32(raw,output_dirname+'/raw.mda')
@@ -93,7 +93,7 @@ class MdaOutputExtractor(OutputExtractor):
         self._times=self._firings[1,:]
         self._labels=self._firings[2,:]
         self._num_units=int(np.max(self._labels))
-        
+
     def getUnitIds(self):
         return range(1,self._num_units+1)
 
@@ -104,7 +104,7 @@ class MdaOutputExtractor(OutputExtractor):
             end_frame=np.Inf
         inds=np.where((self._labels==unit_id)&(start_frame<=self._times)&(self._times<end_frame))
         return self._times[inds]
-    
+
     @staticmethod
     def writeFirings(output_extractor,firings_out):
         unit_ids=output_extractor.getUnitIds()
@@ -126,10 +126,10 @@ class MdaOutputExtractor(OutputExtractor):
         firings[1,:]=all_times
         firings[2,:]=all_labels
         mdaio.writemda64(firings,firings_out)
-    
+
 def is_url(path):
     return path.startswith('http://') or path.startswith('https://') or path.startswith('kbucket://') or path.startswith('sha1://')
-    
+
 def read_dataset_params(dsdir):
     params_fname=mlp.realizeFile(dsdir+'/params.json')
     if not os.path.exists(params_fname):
