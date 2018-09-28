@@ -14,29 +14,29 @@ class MEArecInputExtractor(InputExtractor):
         self._fs = None
         self._positions = None
         self._recordings = None
-
+        
     def _initialize(self):
         recordings, times, positions, templates, spiketrains, sources, peaks, info = \
             load_recordings(recording_folder=self._recording_folder,recording_file=self._recording_file)
-        self._fs  =info['General']['fs']*1000
+        self._fs  = info['General']['fs']*1000 #fs is in kHz
         self._positions = positions
         self._recordings = recordings
-
+        
     def getNumChannels(self):
         if self._recordings is None:
             self._initialize()
         return self._recordings.shape[0]
-
+    
     def getNumFrames(self):
         if self._recordings is None:
             self._initialize()
         return self._recordings.shape[1]
-
+    
     def getSamplingFrequency(self):
         if self._fs is None:
             self._initialize()
         return self._fs
-
+        
     def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if self._recordings is None:
             self._initialize()
@@ -47,7 +47,7 @@ class MEArecInputExtractor(InputExtractor):
         if channel_ids is None:
             channel_ids=range(self.getNumChannels())
         return self._recordings[channel_ids,:][:,start_frame:end_frame]
-
+    
     def getChannelInfo(self, channel_id):
         if self._positions is None:
             self._initialize()
@@ -62,19 +62,27 @@ class MEArecOutputExtractor(OutputExtractor):
         self._recording_file = recording_file
         self._num_units = None
         self._spike_trains = None
+        self._unit_ids = None
         self._fs = None
-
+        
     def _initialize(self):
+        print(self._recording_file)
         recordings, times, positions, templates, spiketrains, sources, peaks, info = \
             load_recordings(recording_folder=self._recording_folder,recording_file=self._recording_file)
         self._num_units = len(spiketrains)
-        self._spike_trains=spiketrains
-        self._fs  =info['General']['fs']*1000
-        
+        self._unit_ids = range(self._num_units)
+        self._spike_trains = spiketrains
+        self._fs  = info['General']['fs'] * pq.kHz #fs is in kHz
+
     def getUnitIds(self):
+        if self._unit_ids is None:
+            self._initialize()
+        return self._unit_ids
+        
+    def getNumUnits(self):
         if self._num_units is None:
             self._initialize()
-        return range(self._num_units)
+        return self._num_units
 
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
@@ -83,11 +91,11 @@ class MEArecOutputExtractor(OutputExtractor):
             end_frame=np.Inf
         if self._spike_trains is None:
             self._initialize()
-        times=self._spike_trains[unit_id]['times']*self._fs
-        inds=np.where((start_frame<=times)&(times<end_frame))
-        return times[inds]
-
-def load_recordings(*,recording_folder=None,recording_file=None):
+        times = (self._spike_trains[unit_id].times.rescale('s') * self._fs.rescale('Hz')).magnitude
+        inds = np.where((start_frame<=times)&(times<end_frame))
+        return times[inds]        
+        
+def load_recordings(*, recording_folder=None, recording_file=None):
     '''
     Load generated recordings (from template_gen.py)
 
@@ -101,7 +109,7 @@ def load_recordings(*,recording_folder=None,recording_file=None):
     info - dict
 
     '''
-
+    import yaml
     if recording_folder:
         print("Loading recordings from folder...")
         recordings = np.load(join(recording_folder, 'recordings.npy'))
@@ -132,7 +140,7 @@ def load_recordings(*,recording_folder=None,recording_file=None):
             info=dict(
                 General=dict(F.attrs)
             )
-
+            
     if not isinstance(times, pq.Quantity):
         times = times * pq.ms
 
