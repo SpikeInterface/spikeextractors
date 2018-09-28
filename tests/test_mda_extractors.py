@@ -77,7 +77,7 @@ class TestMdaExtractors(unittest.TestCase):
     def test_output_extractor(self):
         K=self.dataset['num_units']
         # getUnitIds
-        self.assertEqual(self.OX.getUnitIds(),range(1,K+1))
+        self.assertEqual(np.array(self.OX.getUnitIds()).tolist(),list(range(1,K+1)))
         # getUnitSpikeTrain
         st=self.OX.getUnitSpikeTrain(unit_id=1)
         inds=np.where(self.dataset['labels']==1)[0]
