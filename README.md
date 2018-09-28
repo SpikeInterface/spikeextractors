@@ -24,24 +24,62 @@ SpikeInterface allows the user to extract data from either raw or spike sorted d
 
 **InputExtractor**
 
-To run our standardized data retrieval functions for your raw extracellular data, import the subclass InputExtractor coinciding with your specific file format. Then, you can use that subclass of InputExtractor to extract data and information from your raw data file. 
+To run our standardized data retrieval functions for your raw extracellular data, import the subclass InputExtractor coinciding with your specific file format. Then, you can use that subclass of InputExtractor to extract data snippets and information from your raw data file. 
 
-In this example, we assume the user's raw file format is MountainLab so we will import the MdaInputExtractor.
+In this [example](https://github.com/colehurwitz31/spikeinterface/blob/master/examples/getting_started_with_input_extractors.ipynb) from the examples repo, we show how to use an InputExtractor subclass on a generated, pure-noise timeseries dataset and a linear probe geometry.
+
+First we will generate the properties, data, and probe geometry for this pure-noise dataset. 
 
 ```python
-from spikeinterface import MdaInputExtractor
-dataset_directory_path = 'kbucket://b5ecdf1474c5/datasets/synth_datasets/datasets/synth_tetrode_30min'
+# Properties of the in-memory dataset
+num_channels=7
+samplerate=30000
+duration=20
+num_timepoints=int(samplerate*duration)
 
-mie = si.MdaInputExtractor(dataset_directory=dataset_directory_path, download=True)
-                           
-print(mie.getNumChannels())
-
-## Out[1] 4
-
-print(mie.getRawTraces(start_frame=10, end_frame=100, channel_ids=[0,2]))
-
-## Out[2] *raw traces output*
+# Generate a pure-noise timeseries dataset and a linear geometry
+timeseries=np.random.normal(0,10,(num_channels,num_timepoints))
+geom=np.zeros((num_channels,2))
+geom[:,0]=range(num_channels)
 ```
+
+Now we can import SpikeInterface and use the NumpyInputExtractor since the raw data was stored in the numpy array format.
+
+```python
+from spikeinterface import si
+
+# Define the in-memory input extractor
+IX=si.NumpyInputExtractor(timeseries=timeseries,geom=geom,samplerate=samplerate)
+```
+
+Now we can use the InputExtractor to retrieve data and information from the dataset with a variety of standard functions that are predefined in the InputExtractor base class.
+
+```python
+print('Num. channels = {}'.format(IX.getNumChannels()))
+print('Sampling frequency = {} Hz'.format(IX.getSamplingFrequency()))
+print('Num. timepoints = {}'.format(IX.getNumFrames()))
+print('Stdev. on third channel = {}'.format(np.std(IX.getRawTraces(channel_ids=2))))
+print('Location of third electrode = {}'.format(IX.getChannelInfo(channel_id=2)['location']))IX=si.NumpyInputExtractor(timeseries=timeseries,geom=geom,samplerate=samplerate)
+
+
+
+OUT[1] Num. channels = 7
+OUT[2] Sampling frequency = 30000 Hz
+OUT[3] Num. timepoints = 600000
+OUT[4] Stdev. on third channel = 9.99206377601932
+OUT[5] Location of third electrode = [ 2.  0.]
+```
+
+InputExtractor subclasses also provide functionality to save the raw data with the specific format for which the InputExtractor was implemented. 
+
+We will now convert our numpy data into the MountainSort format with a MountainSort InputExtractor and our previously defined InputExtractor.
+
+```python
+# Write this dataset in the MountainSort format
+si.MdaInputExtractor.writeDataset(input_extractor=IX,output_dirname='sample_mountainsort_dataset')
+```
+
+InputExtractors can also be used to extract subsets from your data and to extract data from multiple files using SubInputExtractors and MultiInputExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki). 
 
 **OutputExtractor**
 
