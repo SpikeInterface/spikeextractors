@@ -133,7 +133,7 @@ class InputExtractor(ABC):
         dt=int(snippet_len/2)
         ret=[]
         for i in range(L0):
-            a=np.array([center_frames[i]-dt,center_frames[i]-dt+snippet_len])
+            a=np.array([int(center_frames[i])-dt,int(center_frames[i])-dt+snippet_len])
             b=np.array([0,snippet_len])
             # The following handles the out-of-bounds cases
             if a[0]<0:
