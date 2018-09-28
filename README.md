@@ -19,10 +19,10 @@ To get started with SpikeInterface, clone the repo into your code base.
 https://github.com/colehurwitz31/spikeinterface.git
 ```
 
-SpikeInterface allows the user to extract data from either raw or processed extracellular datasets with an InputExtractor or OutputExtractor, respectively.
+SpikeInterface allows the user to extract data from either raw or spike sorted datasets with an InputExtractor or OutputExtractor, respectively.
 
 
-**InputExtrator**
+**InputExctrator**
 
 To run our standardized data retrieval functions for your raw extracellular data, import the subclass InputExtractor coinciding with your specific file format. Then, you can use that subclass of InputExtractor to extract data and information from your raw data file. 
 
