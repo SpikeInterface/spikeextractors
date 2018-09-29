@@ -108,6 +108,12 @@ print('Num. events for unit 1 = {}'.format(len(st)))
 st1=OX.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
 ```
+```output
+Unit ids = [1, 2, 3, 4]
+Num. events for unit 1 = 234
+Num. events for first second of unit 1 = 16
+```
+
 
 Finally, we can write out our output events to the MountainSort format by using the built-in writeOutput method in the MountainSort OutputExtractor subclass.
 ```python
@@ -128,7 +134,7 @@ print('Num. events for unit 1 = {}'.format(len(st)))
 st1=OX2.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
 ```
-```shell
+```output
 Unit ids = [1, 2, 3, 4]
 Num. events for unit 1 = 234
 Num. events for first second of unit 1 = 16
