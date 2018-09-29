@@ -61,7 +61,7 @@ print('Num. timepoints = {}'.format(IX.getNumFrames()))
 print('Stdev. on third channel = {}'.format(np.std(IX.getRawTraces(channel_ids=2))))
 print('Location of third electrode = {}'.format(IX.getChannelInfo(channel_id=2)['location']))
 ```
-```shell
+```output
 Num. channels = 7
 Sampling frequency = 30000 Hz
 Num. timepoints = 600000
