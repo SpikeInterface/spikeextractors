@@ -62,11 +62,11 @@ print('Stdev. on third channel = {}'.format(np.std(IX.getRawTraces(channel_ids=2
 print('Location of third electrode = {}'.format(IX.getChannelInfo(channel_id=2)['location']))
 ```
 ```shell
-OUT[1] Num. channels = 7
-OUT[2] Sampling frequency = 30000 Hz
-OUT[3] Num. timepoints = 600000
-OUT[4] Stdev. on third channel = 9.99206377601932
-OUT[5] Location of third electrode = [ 2.  0.]
+Num. channels = 7
+Sampling frequency = 30000 Hz
+Num. timepoints = 600000
+Stdev. on third channel = 9.99206377601932
+Location of third electrode = [ 2.  0.]
 ```
 
 InputExtractor subclasses also provide functionality to save the raw data with the specific format for which the InputExtractor was implemented. 
