@@ -191,9 +191,11 @@ class ExampleOutputExtractor(OutputExtractor):
     @staticmethod
     def writeOutput(self, output_extractor, save_path):
         
-        #This function is not abstract so it is optional if you want to override it. It allows other OutputExtractors
-        to use your new OutputExtractor to convert their processed data into your file format.
-
+        '''
+        This function is not abstract so it is optional if you want to override it. It allows other 
+        OutputExtractors to use your new OutputExtractor to convert their output data into your 
+        output file format.
+        '''
 ```
 
 As you can see, our extractor base classes were designed to make implementing a new subclass as straightforward and flexible as possible while still enforcing standardized data retrieval functions.
