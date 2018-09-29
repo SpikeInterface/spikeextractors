@@ -107,11 +107,6 @@ st=OX.getUnitSpikeTrain(unit_id=1)
 print('Num. events for unit 1 = {}'.format(len(st)))
 st1=OX.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
-
-
-OUT[1] Unit ids = [1, 2, 3, 4]
-OUT[2] Num. events for unit 1 = 234
-OUT[3] Num. events for first second of unit 1 = 16
 ```
 
 Finally, we can write out our output events to the MountainSort format by using the built-in writeOutput method in the MountainSort OutputExtractor subclass.
@@ -132,11 +127,11 @@ st=OX2.getUnitSpikeTrain(unit_id=1)
 print('Num. events for unit 1 = {}'.format(len(st)))
 st1=OX2.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
-
-
-OUT[1] Unit ids = [1, 2, 3, 4]
-OUT[2] Num. events for unit 1 = 234
-OUT[3] Num. events for first second of unit 1 = 16
+```
+```shell
+Unit ids = [1, 2, 3, 4]
+Num. events for unit 1 = 234
+Num. events for first second of unit 1 = 16
 ```
 OutputExtractors can also extract subsets of data from a processed data file or can extract data from multiple files with SubOutputExtractors and MultiOutputExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
 
