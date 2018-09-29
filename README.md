@@ -79,30 +79,68 @@ We will now convert our numpy data into the MountainSort format with a MountainS
 si.MdaInputExtractor.writeDataset(input_extractor=IX,output_dirname='sample_mountainsort_dataset')
 ```
 
-InputExtractors can extract subsets of data from your file and can extract data from multiple files using SubInputExtractors and MultiInputExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
+The modular design of InputExtractors allow them to be used in a variety of other tasks. For example, InputExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubInputExtractors and MultiInputExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
 
-Finally, InputExtractors can be used in a variety of pre-implemented tools which are contained in the **Tools that use InputExtractors and OutputExtractors** section of the README.
+Finally, we have implemented a variety of tools which use InputExtractors and OutputExtractors. Links to these tools are contained in the **Tools that use InputExtractors and OutputExtractors** section of the README.
 
 **OutputExtractor**
 
-To run our standardized data retrieval functions for your processed extracellular data, import the subclass OutputExtractor coinciding with your specific file format/spike sorter. Then, you can use that subclass of OutputExtractor to extract data and information from your processed data file. 
+To run our standardized data retrieval functions for your processed extracellular data, import the subclass OutputExtractor coinciding with your specific file format/spike sorter. Then, you can use that subclass of OutputExtractor to extract data and information from your spike sorted data file. We will show the functionality of the OutputExtractor by continuing our previous example. 
 
-In this example, we assume the user's processed file format is also MountainLab so we will import the MdaOutputExtractor.
+First, we will add some random events and then use the NumpyOutputExtractor to extract data about these events. Generally, OutputExtractors would be instantiated with a path to all the files containing information about the spike sorted units, but since this is a self-contained example, we will add the units manually to the extractor.
 
 ```python
-from spikeinterface import MdaOutputExtractor
-firings_file_path = 'kbucket://b5ecdf1474c5/datasets/synth_datasets/datasets/synth_tetrode_30min/firings_true.mda'
-
-moe = si.MdaOutputExtractor(firings_file=firings_file_path)
-                           
-print(moe.getUnitSpikeTrain(unit_id=0)
-
-## Out[3]:array([  2.71249481e+03,   1.22188979e+04,   1.83042929e+04, ...,
-##              5.39305688e+07,   5.39829415e+07,   5.39836896e+07])
+# Generate some random events
+times=np.sort(np.random.uniform(0,num_timepoints,num_events))
+labels=np.random.randint(1,num_units+1,size=num_events)
+    
+# Define the in-memory output extractor
+OX=si.NumpyOutputExtractor()
+for k in range(1,num_units+1):
+    times_k=times[np.where(labels==k)[0]]
+    OX.addUnit(unit_id=k,times=times_k)
 ```
 <br/>
 
-To see our currently implemented subclasses, please check the [extractors](https://github.com/colehurwitz31/spikeinterface/tree/master/spikeinterface/extractors) folder in our repo.
+Now, we will demonstrate the API for extractoring information from the processed data using standardized functions from the OutputExtractor.
+
+```python
+print('Unit ids = {}'.format(OX.getUnitIds()))
+st=OX.getUnitSpikeTrain(unit_id=1)
+print('Num. events for unit 1 = {}'.format(len(st)))
+st1=OX.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
+print('Num. events for first second of unit 1 = {}'.format(len(st1)))
+
+OUT[1] Unit ids = [1, 2, 3, 4]
+OUT[2] Num. events for unit 1 = 234
+OUT[3] Num. events for first second of unit 1 = 16
+```
+
+Finally, we can write out our output events to the MountainSort format by using the built-in writeDataset method in the MountainSort OutputExtractor subclass.
+```python
+si.MdaOutputExtractor.writeDataset(output_extractor=OX,firings_out='sample_mountainsort_dataset/firings_true.mda')
+```
+
+Now that we have written out our numpy input and output files in the the MountainSort format, we can easily use the MdaInputExtractor and MdaOutputExtractor for our new datasets and the functionality sould be the same.
+
+```python
+# Read this dataset with the Mda input extractor
+IX2=si.MdaInputExtractor(dataset_directory='sample_mountainsort_dataset')
+OX2=si.MdaOutputExtractor(firings_file='sample_mountainsort_dataset/firings_true.mda')
+
+# We should get the same information as above
+print('Unit ids = {}'.format(OX.getUnitIds()))
+st=OX2.getUnitSpikeTrain(unit_id=1)
+print('Num. events for unit 1 = {}'.format(len(st)))
+st1=OX2.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
+print('Num. events for first second of unit 1 = {}'.format(len(st1)))
+
+OUT[1] Unit ids = [1, 2, 3, 4]
+OUT[2] Num. events for unit 1 = 234
+OUT[3] Num. events for first second of unit 1 = 16
+```
+
+That concludes the basic tutorial about the Input/Output Extractors. To see currently implemented extractor subclasses, please check the [extractors](https://github.com/colehurwitz31/spikeinterface/tree/master/spikeinterface/extractors) folder in our repo.
 
 <br/>
 
@@ -150,7 +188,7 @@ class ExampleOutputExtractor(OutputExtractor):
 
 As you can see, our extractor base classes were designed to make implementing a new subclass as straightforward and flexible as possible while still enforcing standardized data retrieval functions.
 
-Once all abstract methods are overwritten in your InputExtractor or OutputExtractor, your subclass is ready for deployment and can be used with a variety of pre-implemented tools (links to current tools are contained in the **Tools that use InputExtractors and OutputExtractors** section of the README).
+Once all abstract methods are overwritten in your InputExtractor or OutputExtractor, your subclass is ready for deployment and can be used with any pre-implemented tools (see **Tools that use InputExtractors and OutputExtractors**).
 <br/>
 
 ## Tools that use InputExtractors and OutputExtractors
