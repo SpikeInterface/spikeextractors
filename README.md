@@ -52,7 +52,7 @@ from spikeinterface import si
 IX=si.NumpyInputExtractor(timeseries=timeseries,geom=geom,samplerate=samplerate)
 ```
 
-Now we can use the InputExtractor to retrieve data and information from the dataset with a variety of standard functions that are predefined in the InputExtractor base class.
+You can use the InputExtractor to retrieve data and information from the dataset with a variety of standard functions that are predefined in the InputExtractor base class.
 
 ```python
 print('Num. channels = {}'.format(IX.getNumChannels()))
