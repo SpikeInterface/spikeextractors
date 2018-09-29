@@ -59,8 +59,7 @@ print('Num. channels = {}'.format(IX.getNumChannels()))
 print('Sampling frequency = {} Hz'.format(IX.getSamplingFrequency()))
 print('Num. timepoints = {}'.format(IX.getNumFrames()))
 print('Stdev. on third channel = {}'.format(np.std(IX.getRawTraces(channel_ids=2))))
-print('Location of third electrode = {}'.format(IX.getChannelInfo(channel_id=2)['location']))IX=si.NumpyInputExtractor(timeseries=timeseries,geom=geom,samplerate=samplerate)
-
+print('Location of third electrode = {}'.format(IX.getChannelInfo(channel_id=2)['location']))
 
 
 OUT[1] Num. channels = 7
@@ -111,6 +110,7 @@ print('Num. events for unit 1 = {}'.format(len(st)))
 st1=OX.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
 
+
 OUT[1] Unit ids = [1, 2, 3, 4]
 OUT[2] Num. events for unit 1 = 234
 OUT[3] Num. events for first second of unit 1 = 16
@@ -134,6 +134,7 @@ st=OX2.getUnitSpikeTrain(unit_id=1)
 print('Num. events for unit 1 = {}'.format(len(st)))
 st1=OX2.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
+
 
 OUT[1] Unit ids = [1, 2, 3, 4]
 OUT[2] Num. events for unit 1 = 234
