@@ -80,8 +80,6 @@ si.MdaInputExtractor.writeDataset(input_extractor=IX,output_dirname='sample_moun
 
 The modular design of InputExtractors allow them to be used in a variety of other tasks. For example, InputExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubInputExtractors and MultiInputExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
 
-Finally, we have implemented a variety of tools which use InputExtractors and OutputExtractors. Links to these tools are contained in the **Tools that use InputExtractors and OutputExtractors** section of the README.
-
 **OutputExtractor**
 
 To run our standardized data retrieval functions for your processed extracellular data, import the subclass OutputExtractor coinciding with your specific file format/spike sorter. Then, you can use that subclass of OutputExtractor to extract data and information from your spike sorted data file. We will show the functionality of the OutputExtractor by continuing our previous example. 
@@ -140,8 +138,11 @@ OUT[1] Unit ids = [1, 2, 3, 4]
 OUT[2] Num. events for unit 1 = 234
 OUT[3] Num. events for first second of unit 1 = 16
 ```
+OutputExtractors can also extract subsets of data from a processed data file or can extract data from multiple files with SubOutputExtractors and MultiOutputExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
 
-That concludes the basic tutorial about the Input/Output Extractors. To see currently implemented extractor subclasses, please check the [extractors](https://github.com/colehurwitz31/spikeinterface/tree/master/spikeinterface/extractors) folder in our repo.
+This concludes the basic tutorial about the Input/Output Extractors. To see currently implemented extractor subclasses, please check the [extractors](https://github.com/colehurwitz31/spikeinterface/tree/master/spikeinterface/extractors) folder in our repo. 
+
+We have also implemented a variety of tools which use InputExtractors and OutputExtractors. Links to these tools are contained in the **Tools that use InputExtractors and OutputExtractors** section of the README.
 
 <br/>
 
