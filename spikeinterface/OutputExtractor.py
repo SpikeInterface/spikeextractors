@@ -50,3 +50,23 @@ class OutputExtractor(ABC):
             specified unit given the range of start and end frames.
         '''
         pass
+
+    @staticmethod
+    def writeOutput(self, output_extractor, save_path):
+        '''This function writes out the output file of a given output extractor
+        to the file format of this current output extractor. Allows for easy
+        conversion between output file formats. It is a static method so it
+        can be used without instantiating this output extractor.
+
+        Parameters
+        ----------
+        output_extractor: OutputExtractor
+            An OutputExtractor that can extract information from the output file
+            to be converted to the new format.
+
+        save_path: string
+            A path to where the converted output data will be saved, which may
+            either be a file or a folder, depending on the format.
+        '''
+        raise NotImplementedError("The writeOutput function is not \
+                                  implemented for this extractor")

@@ -76,7 +76,7 @@ class InputExtractor(ABC):
         ----------
         frame: float
             The frame (or list of frames) to be converted to a time
-            
+
         Returns
         -------
         time: float
@@ -92,7 +92,7 @@ class InputExtractor(ABC):
         -------
         time: float
             The time or list of times (in seconds) to be converted to frames
-            
+
         Returns
         -------
         frame: float
@@ -125,7 +125,6 @@ class InputExtractor(ABC):
             Each array has dimensions: (num_channels x snippet_len)
             Out-of-bounds cases should be handled by filling in zeros in the snippet.
         '''
-        
         # Default implementation
         if channel_ids is None:
             channel_ids=range(self.getNumChannels())
@@ -175,4 +174,24 @@ class InputExtractor(ABC):
                         recording ('rec') or reference ('ref')
         '''
         raise NotImplementedError("The getChannelInfo function is not \
+                                  implemented for this extractor")
+
+    @staticmethod
+    def writeInput(self, input_extractor, save_path):
+        '''This function writes out the input file of a given input extractor
+        to the file format of this current input extractor. Allows for easy
+        conversion between input file formats. It is a static method so it
+        can be used without instantiating this input extractor.
+
+        Parameters
+        ----------
+        input_extractor: InputExtractor
+            An InputExtractor that can extract information from the input file
+            to be converted to the new format.
+
+        save_path: string
+            A path to where the converted input data will be saved, which may
+            either be a file or a folder, depending on the format.
+        '''
+        raise NotImplementedError("The writeInput function is not \
                                   implemented for this extractor")
