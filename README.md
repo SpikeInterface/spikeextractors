@@ -99,7 +99,7 @@ for k in range(1,num_units+1):
 ```
 <br/>
 
-Now, we will demonstrate the API for extractoring information from the processed data using standardized functions from the OutputExtractor.
+Now, we will demonstrate the API for extracting information from the processed data using standardized functions from the OutputExtractor.
 
 ```python
 print('Unit ids = {}'.format(OX.getUnitIds()))
