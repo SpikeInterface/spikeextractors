@@ -60,8 +60,8 @@ print('Sampling frequency = {} Hz'.format(IX.getSamplingFrequency()))
 print('Num. timepoints = {}'.format(IX.getNumFrames()))
 print('Stdev. on third channel = {}'.format(np.std(IX.getRawTraces(channel_ids=2))))
 print('Location of third electrode = {}'.format(IX.getChannelInfo(channel_id=2)['location']))
-
-
+```
+```shell
 OUT[1] Num. channels = 7
 OUT[2] Sampling frequency = 30000 Hz
 OUT[3] Num. timepoints = 600000
@@ -75,7 +75,7 @@ We will now convert our numpy data into the MountainSort format with a MountainS
 
 ```python
 # Write this dataset in the MountainSort format
-si.MdaInputExtractor.writeDataset(input_extractor=IX,output_dirname='sample_mountainsort_dataset')
+si.MdaInputExtractor.writeInput(input_extractor=IX,output_dirname='sample_mountainsort_dataset')
 ```
 
 The modular design of InputExtractors allow them to be used in a variety of other tasks. For example, InputExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubInputExtractors and MultiInputExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
@@ -114,9 +114,9 @@ OUT[2] Num. events for unit 1 = 234
 OUT[3] Num. events for first second of unit 1 = 16
 ```
 
-Finally, we can write out our output events to the MountainSort format by using the built-in writeDataset method in the MountainSort OutputExtractor subclass.
+Finally, we can write out our output events to the MountainSort format by using the built-in writeOutput method in the MountainSort OutputExtractor subclass.
 ```python
-si.MdaOutputExtractor.writeDataset(output_extractor=OX,firings_out='sample_mountainsort_dataset/firings_true.mda')
+si.MdaOutputExtractor.writeOutput(output_extractor=OX,firings_out='sample_mountainsort_dataset/firings_true.mda')
 ```
 
 Now that we have written out our numpy input and output files in the the MountainSort format, we can easily use the MdaInputExtractor and MdaOutputExtractor for our new datasets and the functionality sould be the same.
