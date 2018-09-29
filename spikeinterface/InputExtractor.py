@@ -125,6 +125,8 @@ class InputExtractor(ABC):
             Each array has dimensions: (num_channels x snippet_len)
             Out-of-bounds cases should be handled by filling in zeros in the snippet.
         '''
+        
+        # Default implementation
         if channel_ids is None:
             channel_ids=range(self.getNumChannels())
         L0=len(center_frames)
