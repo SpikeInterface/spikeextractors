@@ -13,10 +13,18 @@ To circumvent these problems, we designed SpikeInterface -- a module that attemp
 <br/>
 ## Getting Started with Preexisting Code
 
-To get started with SpikeInterface, clone the repo into your code base.
+To get started with SpikeInterface, you can install it with pip:
 
 ```shell
-https://github.com/colehurwitz31/spikeinterface.git
+pip install spikeinterface
+```
+You can also install SpikeInterface locally by cloning the repo into your code base. If you installSpikeInterface locally, you need to run the setup.py file.
+
+```shell
+git clone https://github.com/colehurwitz31/spikeinterface.git
+
+cd spikeinterface
+python setup.py install
 ```
 
 SpikeInterface allows the user to extract data from either raw or spike sorted datasets with an InputExtractor or OutputExtractor, respectively.
