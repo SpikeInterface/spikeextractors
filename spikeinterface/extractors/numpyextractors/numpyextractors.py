@@ -11,7 +11,7 @@ class NumpyInputExtractor(InputExtractor):
         self._geom=geom
         
     def getNumChannels(self):
-        return self._timeseries.shape[0]
+        return self._timeseries.shape[0]+1
     
     def getNumFrames(self):
         return self._timeseries.shape[1]
