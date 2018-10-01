@@ -21,7 +21,9 @@ setuptools.setup(
         'numpy',
         'quantities',
         'mountainlab_pytools',
-        'neo'
+        'neo',
+        'pyyaml',
+        'h5py'
     ],
     classifiers=(
         "Programming Language :: Python :: 3",
