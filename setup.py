@@ -10,7 +10,7 @@ def my_test_suite():
 
 setuptools.setup(
     name=pkg_name,
-    version="0.1.0",
+    version="0.1.1",
     author="Cole Hurwitz, Jeremy Magland, Alessio Paolo Buccino, Matthias Hennig",
     author_email="colehurwitz@gmail.com",
     description="Python interface to spike sorting input and output file formats",
