@@ -7,9 +7,6 @@ python:
 - '3.6'
 install:
 - pip install .
-branches:
-  only:
-    - master
 script: python setup.py test
 deploy:
   provider: pypi
