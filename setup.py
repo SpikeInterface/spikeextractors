@@ -10,10 +10,10 @@ def my_test_suite():
 
 setuptools.setup(
     name=pkg_name,
-    version="0.1.2",
+    version="0.1.6",
     author="Cole Hurwitz, Jeremy Magland, Alessio Paolo Buccino, Matthias Hennig",
     author_email="colehurwitz@gmail.com",
-    description="Python interface to spike sorting input and output file formats",
+    description="Python interface for extracting spike sorting input and output data from different file types and formats",
     url="",
     packages=setuptools.find_packages(),
     package_data={},
