@@ -15,14 +15,27 @@ class InputExtractor(ABC):
     @abstractmethod
     def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         '''This function extracts and returns a trace from the raw data from the
-        given channels ids and the given start and end frame.
+        given channels ids and the given start and end frame. It will return
+        raw traces from within three ranges:
+
+            [start_frame, t_start+1, ..., end_frame-1]
+            [start_frame, start_frame+1, ..., final_recording_frame - 1]
+            [0, 1, ..., end_frame-1]
+            [0, 1, ..., final_recording_frame - 1]
+
+        if both start_frame and end_frame are given, if only start_frame is
+        given, if only end_frame is given, or if neither start_frame or end_frame
+        are given, respectively. Raw traces are returned in a 2D array that
+        contains all of the raw traces from each channel with dimensions
+        (num_channels x num_frames). In this implementation, start_frame is inclusive
+        and end_frame is exclusive conforming to numpy standards.
 
         Parameters
         ----------
         start_frame: int
-            The starting frame of the trace to be returned
+            The starting frame of the trace to be returned (inclusive).
         end_frame: int
-            The ending frame of the trace to be returned
+            The ending frame of the trace to be returned (exclusive).
         channel_ids: array_like
             A list or 1D array of channel ids (ints) from which each trace will be
             extracted.
@@ -37,34 +50,34 @@ class InputExtractor(ABC):
 
     @abstractmethod
     def getNumChannels(self):
-        '''This function returns the number of channels in the recording
+        '''This function returns the number of channels in the recording.
 
         Returns
         -------
         num_channels: int
-            Number of channels in the recording
+            Number of channels in the recording.
         '''
         pass
 
     @abstractmethod
     def getNumFrames(self):
-        '''This function returns the number of frames in the recording
+        '''This function returns the number of frames in the recording.
 
         Returns
         -------
         num_frames: int
-            Number of frames in the recording (duration of recording)
+            Number of frames in the recording (duration of recording).
         '''
         pass
 
     @abstractmethod
     def getSamplingFrequency(self):
-        '''This function returns the sampling frequency in units of Hz
+        '''This function returns the sampling frequency in units of Hz.
 
         Returns
         -------
         fs: float
-            Sampling frequency of the recordings in Hz
+            Sampling frequency of the recordings in Hz.
         '''
         pass
 
@@ -75,28 +88,28 @@ class InputExtractor(ABC):
         Parameters
         ----------
         frame: float
-            The frame (or list of frames) to be converted to a time
+            The frame (or list of frames) to be converted to a time.
 
         Returns
         -------
         time: float
-            The corresponding time or list of times in seconds
+            The corresponding time or list of times in seconds.
         '''
         # Default implementation
         return frame/self.getSamplingFrequency()
 
     def timeToFrame(self, time):
-        '''This function converts a user-inputted time (in seconds) to a frame index
+        '''This function converts a user-inputted time (in seconds) to a frame index.
 
         Parameters
         -------
         time: float
-            The time or list of times (in seconds) to be converted to frames
+            The time or list of times (in seconds) to be converted to frames.
 
         Returns
         -------
         frame: float
-            The corresponding frame or list of frames
+            The corresponding frame or list of frames.
         '''
         # Default implementation
         return time*self.getSamplingFrequency()
@@ -109,7 +122,7 @@ class InputExtractor(ABC):
         Parameters
         ----------
         snippet_len: int
-            The length of each snippet in frames
+            The length of each snippet in frames.
         center_frames: array_like
             A list or array of frames that will be used as the center frame of
             each snippet.
@@ -127,26 +140,30 @@ class InputExtractor(ABC):
         '''
         # Default implementation
         if channel_ids is None:
-            channel_ids=range(self.getNumChannels())
-        L0=len(center_frames)
-        M0=len(channel_ids)
-        N=self.getNumFrames()
-        dt=int(snippet_len/2)
-        ret=[]
-        for i in range(L0):
-            a=np.array([int(center_frames[i])-dt,int(center_frames[i])-dt+snippet_len])
-            b=np.array([0,snippet_len])
+            channel_ids = range(self.getNumChannels())
+
+        num_snippets = len(center_frames)
+        num_channels = len(channel_ids)
+        num_frames = self.getNumFrames()
+        snippet_half_len = int(snippet_len/2)
+        raw_snippets = []
+        for i in range(num_snippets):
+            snippet_range = np.array([int(center_frames[i])-snippet_half_len, int(center_frames[i])-snippet_half_len+snippet_len])
+            snippet_buffer = np.array([0,snippet_len])
             # The following handles the out-of-bounds cases
-            if a[0]<0:
-                b[0]-=a[0]
-                a[0]-=a[0]
-            if a[1]>=N:
-                b[1]-=a[1]+N
-                a[1]-=a[1]+N
-            chunk0=np.zeros((M0,snippet_len))
-            chunk0[:,b[0]:b[1]]=self.getRawTraces(start_frame=a[0],end_frame=a[1],channel_ids=channel_ids)
-            ret.append(chunk0)
-        return ret
+            if snippet_range[0] < 0:
+                snippet_buffer[0] -= snippet_range[0]
+                snippet_range[0] -= snippet_range[0]
+            if snippet_range[1] >= num_frames:
+                snippet_buffer[1] -= snippet_range[1] + num_frames
+                snippet_range[1] -= snippet_range[1] + num_frames
+            snippet_chunk = np.zeros((num_channels,snippet_len))
+            snippet_chunk[:,snippet_buffer[0]:snippet_buffer[1]] = self.getRawTraces(start_frame=snippet_range[0],
+                                                                                     end_frame=snippet_range[1],
+                                                                                     channel_ids=channel_ids)
+            raw_snippets.append(snippet_chunk)
+
+        return raw_snippets
 
     def getChannelInfo(self, channel_id):
         '''This function returns the a dictionary containing information about
