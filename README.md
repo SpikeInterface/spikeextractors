@@ -176,27 +176,26 @@ class ExampleOutputExtractor(OutputExtractor):
         
     def getUnitIds(self):
         
-        #Code to get a unit_ids list containing all the ids (ints) of detected units in the recording
+        #Fill code to get a unit_ids list containing all the ids (ints) of detected units in the recording
         
         return unit_ids
 
+    @abstractmethod
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
-        
-        '''
-        Code to get a unit_spike_train 1D array containing all frames (ints) of 
-        spikes in the specified unit.
-        
-        This method will return spike frames within three ranges,
-        
-                  [start_frame, t_start+1, ..., end_frame-1]
-                  [start_frame, start_frame+1, ..., final_unit_spike_frame]
-                  [beginning_unit_spike_frame, beginning_unit_spike_frame+1, ..., end_frame-1]
-                  
-        if both start_frame and end_frame are inputted, if only start_frame is
-        inputted, or if only end_frame is inputted, respectively.
+        '''Fill code to extract spike frames from the specified unit.
+        It will return spike frames from within three ranges:
+            [start_frame, t_start+1, ..., end_frame-1]
+            [start_frame, start_frame+1, ..., final_unit_spike_frame - 1]
+            [0, 1, ..., end_frame-1]
+            [0, 1, ..., final_unit_spike_frame - 1]
+        if both start_frame and end_frame are given, if only start_frame is
+        given, if only end_frame is given, or if neither start_frame or end_frame
+        are given, respectively. Spike frames are returned in the form of an
+        array_like of spike frames. In this implementation, start_frame is inclusive
+        and end_frame is exclusive conforming to numpy standards.
         '''
         
-        return unit_spike_train
+        return spike_train
         
     @staticmethod
     def writeOutput(self, output_extractor, save_path):
