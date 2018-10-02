@@ -182,16 +182,15 @@ class ExampleOutputExtractor(OutputExtractor):
 
     @abstractmethod
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
-        '''Fill code to extract spike frames from the specified unit.
-        It will return spike frames from within three ranges:
-            [start_frame, t_start+1, ..., end_frame-1]
-            [start_frame, start_frame+1, ..., final_unit_spike_frame - 1]
-            [0, 1, ..., end_frame-1]
-            [0, 1, ..., final_unit_spike_frame - 1]
-        if both start_frame and end_frame are given, if only start_frame is
-        given, if only end_frame is given, or if neither start_frame or end_frame
-        are given, respectively. Spike frames are returned in the form of an
-        array_like of spike frames. In this implementation, start_frame is inclusive
+        '''Fill code to extract spike frames from the specified unit. It will return spike frames from 
+        within three ranges:
+                            [start_frame, t_start+1, ..., end_frame-1]
+                            [start_frame, start_frame+1, ..., final_unit_spike_frame - 1]
+                            [0, 1, ..., end_frame-1]
+                            [0, 1, ..., final_unit_spike_frame - 1]
+        if both start_frame and end_frame are given, if only start_frame is given, if only end_frame is 
+        given, or if neither start_frame or end_frame are given, respectively. Spike frames are returned 
+        in the form of an array_like of spike frames. In this implementation, start_frame is inclusive
         and end_frame is exclusive conforming to numpy standards.
         '''
         
