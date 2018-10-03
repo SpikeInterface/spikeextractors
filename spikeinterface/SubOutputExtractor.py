@@ -27,7 +27,11 @@ class SubOutputExtractor(ABC):
         return self._new_unit_ids
 
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+        if start_frame is None:
+            start_frame=0
+        if end_frame is None:
+            end_frame=np.Inf
         u=self._original_unit_id_lookup[unit_id]
         sf=self._start_frame+start_frame
         ef=self._end_frame+end_frame
-        return np.array(getUnitSpikeTrain(unit_id=u,start_frame=sf,end_frame=ef))-self._start_frame
+        return self._parent_extractor.getUnitSpikeTrain(unit_id=u,start_frame=sf,end_frame=ef)-self._start_frame

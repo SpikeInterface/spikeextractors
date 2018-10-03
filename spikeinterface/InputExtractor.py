@@ -148,19 +148,20 @@ class InputExtractor(ABC):
         snippet_half_len = int(snippet_len/2)
         raw_snippets = []
         for i in range(num_snippets):
-            snippet_range = np.array([int(center_frames[i])-snippet_half_len, int(center_frames[i])-snippet_half_len+snippet_len])
-            snippet_buffer = np.array([0,snippet_len])
-            # The following handles the out-of-bounds cases
-            if snippet_range[0] < 0:
-                snippet_buffer[0] -= snippet_range[0]
-                snippet_range[0] -= snippet_range[0]
-            if snippet_range[1] >= num_frames:
-                snippet_buffer[1] -= snippet_range[1] + num_frames
-                snippet_range[1] -= snippet_range[1] + num_frames
             snippet_chunk = np.zeros((num_channels,snippet_len))
-            snippet_chunk[:,snippet_buffer[0]:snippet_buffer[1]] = self.getRawTraces(start_frame=snippet_range[0],
-                                                                                     end_frame=snippet_range[1],
-                                                                                     channel_ids=channel_ids)
+            if (0<=center_frames[i]) and (center_frames[i]<num_frames):
+                snippet_range = np.array([int(center_frames[i])-snippet_half_len, int(center_frames[i])-snippet_half_len+snippet_len])
+                snippet_buffer = np.array([0,snippet_len])
+                # The following handles the out-of-bounds cases
+                if snippet_range[0] < 0:
+                    snippet_buffer[0] -= snippet_range[0]
+                    snippet_range[0] -= snippet_range[0]
+                if snippet_range[1] >= num_frames:
+                    snippet_buffer[1] -= snippet_range[1] + num_frames
+                    snippet_range[1] -= snippet_range[1] + num_frames
+                snippet_chunk[:,snippet_buffer[0]:snippet_buffer[1]] = self.getRawTraces(start_frame=snippet_range[0],
+                                                                                         end_frame=snippet_range[1],
+                                                                                         channel_ids=channel_ids)
             raw_snippets.append(snippet_chunk)
 
         return raw_snippets
@@ -192,6 +193,17 @@ class InputExtractor(ABC):
         '''
         raise NotImplementedError("The getChannelInfo function is not \
                                   implemented for this extractor")
+
+    def getEpochNames(self):
+        return []
+
+    def getEpochInfo(self,epoch_name):
+        raise NotImplementedError("The getEpochInfo function is not \
+                                  implemented for this extractor")
+
+    def getEpoch(self,epoch_name):
+        from .SubInputExtractor import SubInputExtractor
+        return SubInputExtractor(parent_extractor=self,epoch_name=epoch_name)
 
     @staticmethod
     def writeInput(self, input_extractor, save_path):
