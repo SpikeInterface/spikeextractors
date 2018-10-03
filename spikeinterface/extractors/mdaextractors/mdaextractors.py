@@ -92,7 +92,7 @@ class MdaOutputExtractor(OutputExtractor):
         self._firings=mdaio.readmda(self._firings_path)
         self._times=self._firings[1,:]
         self._labels=self._firings[2,:]
-        self._unit_ids=np.unique(self._labels)
+        self._unit_ids=np.unique(self._labels).astype(int)
         
     def getUnitIds(self):
         return self._unit_ids

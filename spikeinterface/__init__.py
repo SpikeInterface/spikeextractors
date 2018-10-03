@@ -2,6 +2,8 @@ from .InputExtractor import InputExtractor
 from .OutputExtractor import OutputExtractor
 from .SubInputExtractor import SubInputExtractor
 from .SubOutputExtractor import SubOutputExtractor
+from .MultiInputExtractor import MultiInputExtractor
+from .MultiOutputExtractor import MultiOutputExtractor
 
 from .extractors.mdaextractors import MdaInputExtractor, MdaOutputExtractor
 from .extractors.mearecextractors import MEArecInputExtractor, MEArecOutputExtractor
