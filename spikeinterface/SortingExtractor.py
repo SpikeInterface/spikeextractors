@@ -55,7 +55,7 @@ class SortingExtractor(ABC):
         pass
 
     @staticmethod
-    def writeSortedData(self, sorting_extractor, save_path):
+    def writeSorting(self, sorting_extractor, save_path):
         '''This function writes out the spike sorted data file of a given sorting
         extractor to the file format of this current sorting extractor. Allows
         for easy conversion between spike sorting file formats. It is a static
@@ -71,5 +71,5 @@ class SortingExtractor(ABC):
             A path to where the converted sorted data will be saved, which may
             either be a file or a folder, depending on the format.
         '''
-        raise NotImplementedError("The writeSortedData function is not \
+        raise NotImplementedError("The writeSorting function is not \
                                   implemented for this extractor")
