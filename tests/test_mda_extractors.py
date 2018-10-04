@@ -77,9 +77,9 @@ class TestMdaExtractors(unittest.TestCase):
     def test_sorting_extractor(self):
         K=self.dataset['num_units']
         # getUnitIds
-        self.assertEqual(np.array(self.OX.getUnitIds()).tolist(),list(range(1,K+1)))
+        self.assertEqual(np.array(self.SX.getUnitIds()).tolist(),list(range(1,K+1)))
         # getUnitSpikeTrain
-        st=self.OX.getUnitSpikeTrain(unit_id=1)
+        st=self.SX.getUnitSpikeTrain(unit_id=1)
         inds=np.where(self.dataset['labels']==1)[0]
         st2=self.dataset['times'][inds]
         self.assertTrue(np.allclose(st,st2))
