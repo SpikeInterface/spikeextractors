@@ -2,9 +2,9 @@
 
 # SpikeInterface
 
-SpikeInterface is a module that enables easy creation and deployment of tools for extracting extracellular data from any file format. Its design goals are as follows:
+SpikeInterface is a module that enables easy creation and deployment of tools for extracting raw or spike sorted extracellular data from any file format. Its design goals are as follows:
 
-1. To facilitate standardized analysis and visualization for both raw and processed extracellular data.
+1. To facilitate standardized analysis and visualization for both raw and sorted extracellular data.
 2. To promote straightfoward reuse of extracellular datasets.
 3. To increase reproducibility of electrophysiological studies using spike sorting software.
 
@@ -29,14 +29,14 @@ cd spikeinterface
 python setup.py install
 ```
 
-SpikeInterface allows the user to extract data from either raw or spike sorted datasets with an InputExtractor or OutputExtractor, respectively.
+SpikeInterface allows the user to extract data from either raw or spike sorted datasets with a RecordingExtractor or SortingExtractor, respectively.
 
 
-**InputExtractor**
+**RecordingExtractor**
 
-To run our standardized data retrieval functions for your raw extracellular data, import the subclass InputExtractor coinciding with your specific file format. Then, you can use that subclass of InputExtractor to extract data snippets and information from your raw data file. 
+To run our standardized data retrieval functions for your raw extracellular data, import the subclass RecordingExtractor coinciding with your specific file format. Then, you can use that subclass of RecordingExtractor to extract data snippets and information from your raw data file. 
 
-In this [example](https://github.com/colehurwitz31/spikeinterface/blob/master/examples/getting_started_with_input_extractors.ipynb) from the examples repo, we show how to use an InputExtractor subclass on a generated, pure-noise timeseries dataset and a linear probe geometry.
+In this [example](https://github.com/colehurwitz31/spikeinterface/blob/master/examples/getting_started_with_recording_extractors.ipynb) from the examples repo, we show how to use an RecordingExtractor subclass on a generated, pure-noise timeseries dataset and a linear probe geometry.
 
 First we will generate the properties, data, and probe geometry for this pure-noise dataset. 
 
@@ -53,23 +53,23 @@ geom=np.zeros((num_channels,2))
 geom[:,0]=range(num_channels)
 ```
 
-Now we can import SpikeInterface and use the NumpyInputExtractor since the raw data was stored in the numpy array format.
+Now we can import SpikeInterface and use the NumpyRecordingExtractor since the raw data was stored in the numpy array format.
 
 ```python
 from spikeinterface import si
 
-# Define the in-memory input extractor
-IX=si.NumpyInputExtractor(timeseries=timeseries,geom=geom,samplerate=samplerate)
+# Define the in-memory recording extractor
+RX=si.NumpyRecordingExtractor(timeseries=timeseries,geom=geom,samplerate=samplerate)
 ```
 
-You can use the InputExtractor to retrieve data and information from the dataset with a variety of standard functions that are predefined in the InputExtractor base class.
+You can use the RecordingExtractor to retrieve data and information from the dataset with a variety of standard functions that are predefined in the RecordingExtractor base class.
 
 ```python
-print('Num. channels = {}'.format(IX.getNumChannels()))
-print('Sampling frequency = {} Hz'.format(IX.getSamplingFrequency()))
-print('Num. timepoints = {}'.format(IX.getNumFrames()))
-print('Stdev. on third channel = {}'.format(np.std(IX.getRawTraces(channel_ids=2))))
-print('Location of third electrode = {}'.format(IX.getChannelInfo(channel_id=2)['location']))
+print('Num. channels = {}'.format(RX.getNumChannels()))
+print('Sampling frequency = {} Hz'.format(RX.getSamplingFrequency()))
+print('Num. timepoints = {}'.format(RX.getNumFrames()))
+print('Stdev. on third channel = {}'.format(np.std(RX.getTraces(channel_ids=2))))
+print('Location of third electrode = {}'.format(RX.getChannelInfo(channel_id=2)['location']))
 ```
 ```output
 Num. channels = 7
@@ -79,22 +79,22 @@ Stdev. on third channel = 9.99206377601932
 Location of third electrode = [ 2.  0.]
 ```
 
-InputExtractor subclasses also provide functionality to save the raw data with the specific format for which the InputExtractor was implemented. 
+RecordingExtractor subclasses also provide functionality to save the raw data with the specific format for which the RecordingExtractor was implemented. 
 
-We will now convert our numpy data into the MountainSort format with a MountainSort InputExtractor and our previously defined InputExtractor.
+We will now convert our numpy data into the MountainSort format with a MountainSort RecordingExtractor and our previously defined RecordingExtractor.
 
 ```python
 # Write this dataset in the MountainSort format
-si.MdaInputExtractor.writeInput(input_extractor=IX,output_dirname='sample_mountainsort_dataset')
+si.MdaRecordingExtractor.writeRecording(recording_extractor=RX,output_dirname='sample_mountainsort_dataset')
 ```
 
-The modular design of InputExtractors allow them to be used in a variety of other tasks. For example, InputExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubInputExtractors and MultiInputExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
+The modular design of RecordingExtractor allow them to be used in a variety of other tasks. For example, RecordingExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubRecordingExtractors and MultiRecordingExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
 
-**OutputExtractor**
+**SortingExtractor**
 
-To run our standardized data retrieval functions for your processed extracellular data, import the subclass OutputExtractor coinciding with your specific file format/spike sorter. Then, you can use that subclass of OutputExtractor to extract data and information from your spike sorted data file. We will show the functionality of the OutputExtractor by continuing our previous example. 
+To run our standardized data retrieval functions for your sorted extracellular data, import the subclass SortingExtractor coinciding with your specific file format/spike sorter. Then, you can use that subclass of SortingExtractor to extract data and information from your spike sorted data file. We will show the functionality of the SortingExtractor by continuing our previous example. 
 
-First, we will add some random events and then use the NumpyOutputExtractor to extract data about these events. Generally, OutputExtractors would be instantiated with a path to all the files containing information about the spike sorted units, but since this is a self-contained example, we will add the units manually to the extractor.
+First, we will add some random events and then use the NumpySortingExtractor to extract data about these events. Generally, SortingExtractors would be instantiated with a path to all the files containing information about the spike sorted units, but since this is a self-contained example, we will add the units manually to the extractor.
 
 ```python
 # Generate some random events
@@ -102,20 +102,20 @@ times=np.sort(np.random.uniform(0,num_timepoints,num_events))
 labels=np.random.randint(1,num_units+1,size=num_events)
     
 # Define the in-memory output extractor
-OX=si.NumpyOutputExtractor()
+SX=si.NumpySortingExtractor()
 for k in range(1,num_units+1):
     times_k=times[np.where(labels==k)[0]]
-    OX.addUnit(unit_id=k,times=times_k)
+    SX.addUnit(unit_id=k,times=times_k)
 ```
 <br/>
 
-Now, we will demonstrate the API for extracting information from the processed data using standardized functions from the OutputExtractor.
+Now, we will demonstrate the API for extracting information from the sorted data using standardized functions from the SortingExtractor.
 
 ```python
-print('Unit ids = {}'.format(OX.getUnitIds()))
-st=OX.getUnitSpikeTrain(unit_id=1)
+print('Unit ids = {}'.format(SX.getUnitIds()))
+st=SX.getUnitSpikeTrain(unit_id=1)
 print('Num. events for unit 1 = {}'.format(len(st)))
-st1=OX.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
+st1=SX.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
 ```
 ```output
@@ -124,24 +124,23 @@ Num. events for unit 1 = 234
 Num. events for first second of unit 1 = 16
 ```
 
-
-Finally, we can write out our output events to the MountainSort format by using the built-in writeOutput method in the MountainSort OutputExtractor subclass.
+Finally, we can write out our sorted file to the MountainSort format by using the built-in writeSorting method in the MountainSort SortingExtractor subclass.
 ```python
-si.MdaOutputExtractor.writeOutput(output_extractor=OX,firings_out='sample_mountainsort_dataset/firings_true.mda')
+si.MdaSortingExtractor.writeSorting(sorting_extractor=SX,firings_out='sample_mountainsort_dataset/firings_true.mda')
 ```
 
-Now that we have written out our numpy input and output files in the the MountainSort format, we can easily use the MdaInputExtractor and MdaOutputExtractor for our new datasets and the functionality sould be the same.
+Now that we have written out our numpy recorded and sorted files in the the MountainSort format, we can easily use the MdaRecordingExtractor and MdaSortingExtractor for our new datasets and the functionality sould be the same.
 
 ```python
-# Read this dataset with the Mda input extractor
-IX2=si.MdaInputExtractor(dataset_directory='sample_mountainsort_dataset')
-OX2=si.MdaOutputExtractor(firings_file='sample_mountainsort_dataset/firings_true.mda')
+# Read the raw and sorted datasets with the Mda recording and sorting extractor static methods
+RX2=si.MdaRecordingExtractor(dataset_directory='sample_mountainsort_dataset')
+SX2=si.MdaSortingExtractor(firings_file='sample_mountainsort_dataset/firings_true.mda')
 
 # We should get the same information as above
-print('Unit ids = {}'.format(OX.getUnitIds()))
-st=OX2.getUnitSpikeTrain(unit_id=1)
+print('Unit ids = {}'.format(SX2.getUnitIds()))
+st=SX2.getUnitSpikeTrain(unit_id=1)
 print('Num. events for unit 1 = {}'.format(len(st)))
-st1=OX2.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
+st1=SX2.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
 ```
 ```output
@@ -149,28 +148,28 @@ Unit ids = [1, 2, 3, 4]
 Num. events for unit 1 = 234
 Num. events for first second of unit 1 = 16
 ```
-OutputExtractors can also extract subsets of data from a processed data file or can extract data from multiple files with SubOutputExtractors and MultiOutputExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
+SortingExtractors can also extract subsets of data from a sorted data file or can extract data from multiple files with SubSortingExtractor and MultiSortingExtractor, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
 
-This concludes the basic tutorial about the Input/Output Extractors. To see currently implemented extractor subclasses, please check the [extractors](https://github.com/colehurwitz31/spikeinterface/tree/master/spikeinterface/extractors) folder in our repo. 
+This concludes the basic tutorial about the Recording/Sorting Extractors. To see currently implemented extractor subclasses, please check the [extractors](https://github.com/colehurwitz31/spikeinterface/tree/master/spikeinterface/extractors) folder in our repo. 
 
-We have also implemented a variety of tools which use InputExtractors and OutputExtractors. Links to these tools are contained in the **Tools that use InputExtractors and OutputExtractors** section of the README.
+We have also implemented a variety of tools which use RecordingExtractors and SortingExtractors. Links to these tools are contained in the **Tools that use RecordingExtractors and SortingExtractors** section of the README.
 
 <br/>
 
-## Building a new InputExtractor/OutputExtractor
+## Building a new RecordingExtractors/SortingExtractors
 
-Building a new InputExtractor or OutputExtractor for specific file format is as simple as creating a new subclass based on the predefined base classes provided in SpikeInterface.
+Building a new RecordingExtractors or SortingExtractors for specific file format is as simple as creating a new subclass based on the predefined base classes provided in SpikeInterface.
 
-To enable standardization among subclasses, InputExtractor and OutputExtractor are abstract base classes which require a new subclass to override all methods which are decorated with @abstractmethod.
+To enable standardization among subclasses, RecordingExtractor and SortingExtractor are abstract base classes which require a new subclass to override all methods which are decorated with @abstractmethod.
 
-An example of how a new subclass for OutputExtractor can be created is provided below.
+An example of how a new subclass for SortingExtractor can be created is provided below.
 
 ```python
-from spikeinterface import OutputExtractor
+from spikeinterface import SortingExtractor
 
-class ExampleOutputExtractor(OutputExtractor):
+class ExampleSortingExtractor(SortingExtractor):
     def __init__(self, ex_parameter_1, ex_parameter_2):
-        OutputExtractor.__init__(self)
+        SortingExtractor.__init__(self)
         
         ## All file specific initialization code can go here.
         
@@ -197,21 +196,21 @@ class ExampleOutputExtractor(OutputExtractor):
         return spike_train
         
     @staticmethod
-    def writeOutput(self, output_extractor, save_path):
+    def writeSorting(self, sorting_extractor, save_path):
         
         '''
         This function is not abstract so it is optional if you want to override it. It allows other 
-        OutputExtractors to use your new OutputExtractor to convert their output data into your 
-        output file format.
+        SortingExtractors to use your new SortingExtractor to convert their sorted data into your 
+        sorting file format.
         '''
 ```
 
 As you can see, our extractor base classes were designed to make implementing a new subclass as straightforward and flexible as possible while still enforcing standardized data retrieval functions.
 
-Once all abstract methods are overwritten in your InputExtractor or OutputExtractor, your subclass is ready for deployment and can be used with any pre-implemented tools (see **Tools that use InputExtractors and OutputExtractors**).
+Once all abstract methods are overwritten in your RecordingExtractor or SortingExtractor, your subclass is ready for deployment and can be used with any pre-implemented tools (see **Tools that use RecordingExtractors and SortingExtractors**).
 <br/>
 
-## Tools that use InputExtractors and OutputExtractors
+## Tools that use RecordingExtractors and SortingExtractors
 
 Coming soon...
 <br/>
