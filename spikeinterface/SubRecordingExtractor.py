@@ -50,10 +50,16 @@ class SubRecordingExtractor(RecordingExtractor):
         return self._parent_extractor.getSamplingFrequency()
 
     def frameToTime(self, frame):
-        return self._parent_extractor.frameToTime(self._start_frame+frame)
+        frame2=frame+self._start_frame
+        time1=self._parent_extractor.frameToTime(frame2)
+        time2=time1-self._parent_extractor.frameToTime(self._start_frame)
+        return time2
 
     def timeToFrame(self, time):
-        return self._parent_extractor.timeToFrame(time)-self._start_frame
+        time2=time+self._parent_extractor.frameToTime(self._start_frame)
+        frame1=self._parent_extractor.timeToFrame(time2)
+        frame2=frame1-self._start_frame
+        return frame2
 
     def getSnippets(self, snippet_len, center_frames, channel_ids=None):
         if channel_ids is None:

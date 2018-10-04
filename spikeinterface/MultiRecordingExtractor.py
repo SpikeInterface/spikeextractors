@@ -24,17 +24,28 @@ class MultiRecordingExtractor(RecordingExtractor):
                 raise ValueError("Inconsistent sampling frequency between extractor 0 and extractor " + str(i + 1))
 
         self._start_frames=[]
+        self._start_times=[]
         ff=0
+        tt=0
         for RX in self._RXs:
             self._start_frames.append(ff)
             ff=ff+RX.getNumFrames()
+            tt=tt+RX.frameToTime(0)
+            self._start_times.append(tt)
+            tt=tt+RX.frameToTime(RX.getNumFrames())-RX.frameToTime(0)
         self._start_frames.append(ff)
+        self._start_times.append(tt)
         self._num_frames=ff
 
     def _find_section_for_frame(self, frame):
         inds=np.where(np.array(self._start_frames[:-1])<=frame)[0]
         ind=inds[-1]
         return self._RXs[ind], ind, frame-self._start_frames[ind]
+
+    def _find_section_for_time(self, time):
+        inds=np.where(np.array(self._start_times[:-1])<=time)[0]
+        ind=inds[-1]
+        return self._RXs[ind], ind, time-self._start_times[ind]
 
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if start_frame is None:
@@ -68,23 +79,12 @@ class MultiRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     def frameToTime(self, frame):
-        frame=np.array(frame)
-        ret=np.zeros(frame.shape)
-        min_frame=np.min(frame)
-        max_frame=np.max(frame)
-        RX1, i_sec1, i_start_frame = self._find_section_for_frame(min_frame)
-        RX2, i_sec2, i_end_frame = self._find_section_for_frame(max_frame)
-        for i_sec in range(i_sec1,i_sec2+1):
-            RX=self._RXs[i_sec]
-            inds=np.where(
-                (self._start_frames[i_sec]<=frame)&(frame<self._start_frames[i_sec+1])
-            )[0]
-            ret[inds]=RX.frameToTime(frame-self._start_frames[i_sec])
-        return ret
+        RX, i_epoch, rel_frame = self._find_section_for_frame(frame)
+        return RX.frameToTime(rel_frame)+self._start_times[i_epoch]
 
     def timeToFrame(self, time):
-        raise NotImplementedError("The timeToFrame function is not \
-                                  implemented for this extractor")
+        RX, i_epoch, rel_time = self._find_section_for_time(time)
+        return RX.timeToFrame(rel_time)+self._start_frames[i_epoch]
 
     def getChannelInfo(self, channel_id):
         return self._first_recording_extractor.getChannelInfo(channel_id)

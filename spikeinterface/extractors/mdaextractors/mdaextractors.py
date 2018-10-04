@@ -12,7 +12,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         self._dataset_directory=dataset_directory
         timeseries0=dataset_directory+'/raw.mda'
         self._dataset_params=read_dataset_params(dataset_directory)
-        self._samplerate=self._dataset_params['samplerate']
+        self._samplerate=self._dataset_params['samplerate']*1.0
         verbose=is_url(timeseries0)
         if download:
             if verbose:
