@@ -59,6 +59,13 @@ class TestExtractors(unittest.TestCase):
         self._check_recordings_equal(self.RX,RX_mda)
         self._check_sortings_equal(self.SX,SX_mda)
 
+    def test_nwb_extractor(self):
+        path1=self.test_dir+'/test.nwb'
+        si.NwbRecordingExtractor.writeRecording(self.RX,path1,acquisition_name='test')
+        RX_nwb=si.NwbRecordingExtractor(path1)
+        self._check_recording_return_types(RX_nwb)
+        self._check_recordings_equal(self.RX,RX_nwb)
+
     def _check_recording_return_types(self,RX):
         M=RX.getNumChannels()
         N=RX.getNumFrames()
@@ -97,10 +104,13 @@ class TestExtractors(unittest.TestCase):
         ))
         # getChannelInfo
         for m in range(M):
-            self.assertTrue(np.allclose(
-                np.array(RX1.getChannelInfo(channel_id=m)['location']),
-                np.array(RX2.getChannelInfo(channel_id=m)['location'])
-            ))
+            loc1=np.array(RX1.getChannelInfo(channel_id=m)['location'])
+            loc2=np.array(RX2.getChannelInfo(channel_id=m)['location'])
+            while len(loc1)<len(loc2):
+                loc1=np.append(loc1,[0])
+            while len(loc2)<len(loc1):
+                loc2=np.append(loc2,[0])
+            self.assertTrue(np.allclose(loc1,loc2))
         # timeToFrame / frameToTime
         for f in range(0,RX1.getNumFrames(),10):
             self.assertTrue(np.isclose(RX1.frameToTime(f),RX2.frameToTime(f)))
