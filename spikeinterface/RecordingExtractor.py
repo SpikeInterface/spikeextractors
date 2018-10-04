@@ -195,8 +195,7 @@ class RecordingExtractor(ABC):
                                   implemented for this extractor")
 
     def getEpochNames(self):
-        raise NotImplementedError("The getEpochNames function is not \
-                                  implemented for this extractor")
+        []
 
     def getEpochInfo(self,epoch_name):
         raise NotImplementedError("The getEpochInfo function is not \
@@ -207,7 +206,7 @@ class RecordingExtractor(ABC):
         return SubRecordingExtractor(parent_extractor=self,epoch_name=epoch_name)
 
     @staticmethod
-    def writeRecordedData(self, recording_extractor, save_path):
+    def writeRecording(self, recording_extractor, save_path):
         '''This function writes out the recorded file of a given recording
         extractor to the file format of this current recording extractor. Allows
         for easy conversion between recording file formats. It is a static
@@ -223,5 +222,5 @@ class RecordingExtractor(ABC):
             A path to where the converted recorded data will be saved, which may
             either be a file or a folder, depending on the format.
         '''
-        raise NotImplementedError("The writeRecordedData function is not \
+        raise NotImplementedError("The writeRecording function is not \
                                   implemented for this extractor")
