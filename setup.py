@@ -23,7 +23,8 @@ setuptools.setup(
         'mountainlab_pytools',
         'neo',
         'pyyaml',
-        'h5py'
+        'h5py',
+        'pynwb'
     ],
     classifiers=(
         "Programming Language :: Python :: 3",
