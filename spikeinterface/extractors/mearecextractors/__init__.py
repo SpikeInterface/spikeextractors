@@ -1,1 +1,1 @@
-from .mearecextractors import MEArecInputExtractor, MEArecOutputExtractor
+from .mearecextractors import MEArecRecordingExtractor, MEArecSortingExtractor

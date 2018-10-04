@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 
-class OutputExtractor(ABC):
+class SortingExtractor(ABC):
     '''A class that contains functions for extracting important information
-    from the output data of spike sorting software. It is an abstract class so
-    all functions with the @abstractmethod tag must be implemented for the
-    initialization to work.
+    from spiked sorted data given a spike sorting software. It is an abstract
+    class so all functions with the @abstractmethod tag must be implemented for
+    the initialization to work.
 
 
     '''
@@ -55,21 +55,21 @@ class OutputExtractor(ABC):
         pass
 
     @staticmethod
-    def writeOutput(self, output_extractor, save_path):
-        '''This function writes out the output file of a given output extractor
-        to the file format of this current output extractor. Allows for easy
-        conversion between output file formats. It is a static method so it
-        can be used without instantiating this output extractor.
+    def writeSortedData(self, sorting_extractor, save_path):
+        '''This function writes out the spike sorted data file of a given sorting
+        extractor to the file format of this current sorting extractor. Allows
+        for easy conversion between spike sorting file formats. It is a static
+        method so it can be used without instantiating this sorting extractor.
 
         Parameters
         ----------
-        output_extractor: OutputExtractor
-            An OutputExtractor that can extract information from the output file
-            to be converted to the new format.
+        sorting_extractor: SortingExtractor
+            A SortingExtractor that can extract information from the sorted data
+            file to be converted to the new format.
 
         save_path: string
-            A path to where the converted output data will be saved, which may
+            A path to where the converted sorted data will be saved, which may
             either be a file or a folder, depending on the format.
         '''
-        raise NotImplementedError("The writeOutput function is not \
+        raise NotImplementedError("The writeSortedData function is not \
                                   implemented for this extractor")

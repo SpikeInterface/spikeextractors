@@ -1,10 +1,12 @@
-from .InputExtractor import InputExtractor
-from .OutputExtractor import OutputExtractor
-from .SubInputExtractor import SubInputExtractor
-from .SubOutputExtractor import SubOutputExtractor
+from .RecordingExtractor import RecordingExtractor
+from .SortingExtractor import SortingExtractor
+from .SubSortingExtractor import SubSortingExtractor
+from .SubRecordingExtractor import SubRecordingExtractor
+from .MultiRecordingExtractor import MultiRecordingExtractor
+from .MultiSortingExtractor import MultiSortingExtractor
 
-from .extractors.mdaextractors import MdaInputExtractor, MdaOutputExtractor
-from .extractors.mearecextractors import MEArecInputExtractor, MEArecOutputExtractor
-from .extractors.biocaminputextractor import BiocamInputExtractor
-from .extractors.hs2outputextractor import HS2OutputExtractor
-from .extractors.numpyextractors import NumpyInputExtractor, NumpyOutputExtractor
+from .extractors.mdaextractors.mdaextractors import MdaRecordingExtractor, MdaSortingExtractor
+from .extractors.mearecextractors.mearecextractors import MEArecRecordingExtractor, MEArecSortingExtractor
+from .extractors.biocamrecordingextractor import BiocamRecordingExtractor
+from .extractors.hs2sortingextractor import HS2SortingExtractor
+from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor, NumpySortingExtractor

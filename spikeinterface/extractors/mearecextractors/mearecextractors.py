@@ -1,14 +1,14 @@
-from spikeinterface import InputExtractor
-from spikeinterface import OutputExtractor
+from spikeinterface import RecordingExtractor
+from spikeinterface import SortingExtractor
 
 import quantities as pq
 import numpy as np
 from os.path import join
 import h5py
 
-class MEArecInputExtractor(InputExtractor):
+class MEArecRecordingExtractor(RecordingExtractor):
     def __init__(self, *, recording_folder=None, recording_file=None):
-        InputExtractor.__init__(self)
+        RecordingExtractor.__init__(self)
         self._recording_folder = recording_folder
         self._recording_file = recording_file
         self._fs = None
@@ -37,7 +37,7 @@ class MEArecInputExtractor(InputExtractor):
             self._initialize()
         return self._fs
         
-    def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if self._recordings is None:
             self._initialize()
         if start_frame is None:
@@ -55,9 +55,9 @@ class MEArecInputExtractor(InputExtractor):
             location=self._positions[channel_id,:]
         )
 
-class MEArecOutputExtractor(OutputExtractor):
+class MEArecSortingExtractor(SortingExtractor):
     def __init__(self, *, recording_folder=None, recording_file=None):
-        OutputExtractor.__init__(self)
+        SortingExtractor.__init__(self)
         self._recording_folder = recording_folder
         self._recording_file = recording_file
         self._num_units = None

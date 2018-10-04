@@ -13,7 +13,7 @@ setuptools.setup(
     version="0.1.6",
     author="Cole Hurwitz, Jeremy Magland, Alessio Paolo Buccino, Matthias Hennig",
     author_email="colehurwitz@gmail.com",
-    description="Python interface for extracting spike sorting input and output data from different file types and formats",
+    description="Python interface for extracting recorded and spike sorted extracellular data from different file types and formats",
     url="",
     packages=setuptools.find_packages(),
     package_data={},

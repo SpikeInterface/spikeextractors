@@ -16,8 +16,8 @@ class TestMdaExtractors(unittest.TestCase):
         # Create a temporary directory
         self.test_dir = tempfile.mkdtemp()
         self._create_dataset()
-        self.IX=si.MdaInputExtractor(dataset_directory=self.test_dir+'/dataset')
-        self.OX=si.MdaOutputExtractor(firings_file=self.test_dir+'/dataset/firings_true.mda')
+        self.RX=si.MdaRecordingExtractor(dataset_directory=self.test_dir+'/dataset')
+        self.SX=si.MdaSortingExtractor(firings_file=self.test_dir+'/dataset/firings_true.mda')
         
     def tearDown(self):
         # Remove the directory after the test
@@ -54,27 +54,27 @@ class TestMdaExtractors(unittest.TestCase):
         
         np.savetxt(self.test_dir+'/dataset/geom.csv', self.dataset['geom'], delimiter=',')
      
-    def test_input_extractor(self):
+    def test_recording_extractor(self):
         X=self.dataset['raw']
         # getNumChannels
-        self.assertEqual(self.IX.getNumChannels(),self.dataset['num_channels'])
+        self.assertEqual(self.RX.getNumChannels(),self.dataset['num_channels'])
         # getNumFrames
-        self.assertEqual(self.IX.getNumFrames(),self.dataset['num_timepoints'])
+        self.assertEqual(self.RX.getNumFrames(),self.dataset['num_timepoints'])
         # getSamplingFrequency
-        self.assertEqual(self.IX.getSamplingFrequency(),30000)
-        # getRawTraces
-        self.assertTrue(np.allclose(self.IX.getRawTraces(),X))
-        self.assertTrue(np.allclose(self.IX.getRawTraces(start_frame=0,end_frame=12,channel_ids=[0,3]),X[[0,3],0:12]))
+        self.assertEqual(self.RX.getSamplingFrequency(),30000)
+        # getTraces
+        self.assertTrue(np.allclose(self.RX.getTraces(),X))
+        self.assertTrue(np.allclose(self.RX.getTraces(start_frame=0,end_frame=12,channel_ids=[0,3]),X[[0,3],0:12]))
         # getChannelInfo
-        self.assertTrue(np.allclose(np.array(self.IX.getChannelInfo(channel_id=1)['location']),self.dataset['geom'][1,:]))
+        self.assertTrue(np.allclose(np.array(self.RX.getChannelInfo(channel_id=1)['location']),self.dataset['geom'][1,:]))
         # timeToFrame / frameToTime
-        self.assertEqual(self.IX.timeToFrame(12),12*self.IX.getSamplingFrequency())
-        self.assertEqual(self.IX.frameToTime(12),12/self.IX.getSamplingFrequency())
-        # getRawSnippets
-        snippets=self.IX.getRawSnippets(snippet_len=20,center_frames=[0,30,50])
+        self.assertEqual(self.RX.timeToFrame(12),12*self.RX.getSamplingFrequency())
+        self.assertEqual(self.RX.frameToTime(12),12/self.RX.getSamplingFrequency())
+        # getSnippets
+        snippets=self.RX.getSnippets(snippet_len=20,center_frames=[0,30,50])
         self.assertTrue(np.allclose(snippets[1],X[:,20:40]))
     
-    def test_output_extractor(self):
+    def test_sorting_extractor(self):
         K=self.dataset['num_units']
         # getUnitIds
         self.assertEqual(np.array(self.OX.getUnitIds()).tolist(),list(range(1,K+1)))

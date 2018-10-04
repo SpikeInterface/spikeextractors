@@ -1,5 +1,4 @@
-from spikeinterface import InputExtractor
-from spikeinterface import OutputExtractor
+from spikeinterface import SortingExtractor
 
 import numpy as np
 from os.path import join
@@ -7,9 +6,9 @@ import h5py
 import ctypes
 
 
-class HS2OutputExtractor(OutputExtractor):
+class HS2SortingExtractor(SortingExtractor):
     def __init__(self, *, dataset_directory, recording_files):
-        OutputExtractor.__init__(self)
+        SortingExtractor.__init__(self)
         self._dataset_directory = dataset_directory
         self._recording_files = recording_files
         if type(recording_files) == list:
