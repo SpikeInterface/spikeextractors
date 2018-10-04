@@ -7,7 +7,7 @@ import os, json
 import numpy as np
 
 class MdaRecordingExtractor(RecordingExtractor):
-    def __init__(self, *, dataset_directory, download=True):
+    def __init__(self, dataset_directory, *, download=True):
         RecordingExtractor.__init__(self)
         self._dataset_directory=dataset_directory
         timeseries0=dataset_directory+'/raw.mda'
@@ -58,7 +58,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         )
 
     @staticmethod
-    def writeRecordedData(recording_extractor,output_dirname):
+    def writeRecording(recording_extractor,save_path):
         M=recording_extractor.getNumChannels()
         N=recording_extractor.getNumFrames()
         channel_ids=range(M)
@@ -69,19 +69,19 @@ class MdaRecordingExtractor(RecordingExtractor):
         for ii in range(len(channel_ids)):
             info0=recording_extractor.getChannelInfo(channel_ids[ii])
             geom[ii,:]=list(info0['location'])
-        if not os.path.exists(output_dirname):
-            os.mkdir(output_dirname)
-        mdaio.writemda32(raw,output_dirname+'/raw.mda')
+        if not os.path.exists(save_path):
+            os.mkdir(save_path)
+        mdaio.writemda32(raw,save_path+'/raw.mda')
         params=dict(
             samplerate=recording_extractor.getSamplingFrequency(),
             spike_sign=-1
         )
-        with open(output_dirname+'/params.json','w') as f:
+        with open(save_path+'/params.json','w') as f:
             json.dump(params,f)
-        np.savetxt(output_dirname+'/geom.csv', geom, delimiter=',')
+        np.savetxt(save_path+'/geom.csv', geom, delimiter=',')
 
 class MdaSortingExtractor(SortingExtractor):
-    def __init__(self, *, firings_file):
+    def __init__(self, firings_file):
         SortingExtractor.__init__(self)
         verbose=is_url(firings_file)
         if verbose:
@@ -106,7 +106,7 @@ class MdaSortingExtractor(SortingExtractor):
         return self._times[inds]
     
     @staticmethod
-    def writeSortedData(sorting_extractor,firings_out):
+    def writeSorting(sorting_extractor,save_path):
         unit_ids=sorting_extractor.getUnitIds()
         K=np.max(unit_ids)
         times_list=[]
@@ -125,7 +125,7 @@ class MdaSortingExtractor(SortingExtractor):
         firings=np.zeros((3,L))
         firings[1,:]=all_times
         firings[2,:]=all_labels
-        mdaio.writemda64(firings,firings_out)
+        mdaio.writemda64(firings,save_path)
     
 def is_url(path):
     return path.startswith('http://') or path.startswith('https://') or path.startswith('kbucket://') or path.startswith('sha1://')
