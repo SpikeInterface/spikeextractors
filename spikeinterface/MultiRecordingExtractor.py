@@ -49,14 +49,14 @@ class MultiRecordingExtractor(RecordingExtractor):
         list.append(
             self._RXs[i_sec1].getTraces(start_frame=i_start_frame,end_frame=self._RXs[i_sec1].getNumFrames(),channel_ids=channel_ids)
         )
-        if i_sec in range(i_sec1+1,i_sec2):
+        for i_sec in range(i_sec1+1,i_sec2):
             list.append(
                 self._RXs[i_sec].getTraces(channel_ids=channel_ids)
             )
         list.append(
             self._RXs[i_sec2].getTraces(start_frame=0,end_frame=i_end_frame,channel_ids=channel_ids)
         )
-        return np.concatenate(list,axes=1)
+        return np.concatenate(list,axis=1)
 
     def getNumChannels(self):
         return self._num_channels
@@ -72,8 +72,8 @@ class MultiRecordingExtractor(RecordingExtractor):
         ret=np.zeros(frame.shape)
         min_frame=np.min(frame)
         max_frame=np.max(frame)
-        RX1, i_sec1, i_start_frame = self._find_section_for_frame(start_frame)
-        RX2, i_sec2, i_end_frame = self._find_section_for_frame(end_frame)
+        RX1, i_sec1, i_start_frame = self._find_section_for_frame(min_frame)
+        RX2, i_sec2, i_end_frame = self._find_section_for_frame(max_frame)
         for i_sec in range(i_sec1,i_sec2+1):
             RX=self._RXs[i_sec]
             inds=np.where(
