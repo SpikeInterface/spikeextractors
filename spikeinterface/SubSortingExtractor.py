@@ -1,11 +1,11 @@
-from abc import ABC, abstractmethod
+from .SortingExtractor import SortingExtractor
 import numpy as np
 
-# Encapsulates a subset of a spike sorting output
+# Encapsulates a subset of a spike sorted data file
 
-class SubOutputExtractor(ABC):
+class SubSortingExtractor(SortingExtractor):
 
-    def __init__(self, parent_extractor, *, unit_ids=None, new_unit_ids=None, start_frame=None, end_frame=None):
+    def __init__(self, parent_extractor, *, total_recording_frames=None, unit_ids=None, new_unit_ids=None, start_frame=None, end_frame=None):
         self._parent_extractor=parent_extractor
         self._unit_ids=unit_ids
         self._new_unit_ids=new_unit_ids
@@ -18,7 +18,10 @@ class SubOutputExtractor(ABC):
         if self._start_frame is None:
             self._start_frame=0
         if self._end_frame is None:
-            self._end_frame=self._parent_extractor.getNumFrames()
+            if(total_recording_frames is None):
+                raise ValueError("Unknown number of frames for this subset of data. Please given either the total recording frames or the specified end_frame")
+            else:
+                self._end_frame=total_recording_frames
         self._original_unit_id_lookup={}
         for i in range(len(self._unit_ids)):
             self._original_unit_id_lookup[self._new_unit_ids[i]]=self._unit_ids[i]

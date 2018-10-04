@@ -18,8 +18,8 @@ class TestMearecExtractors(unittest.TestCase):
         # Create a temporary directory
         self.test_dir = tempfile.mkdtemp()
         self._create_dataset()
-        self.IX=si.MEArecInputExtractor(recording_folder=self.test_dir+'/recordings')
-        self.OX=si.MEArecOutputExtractor(recording_folder=self.test_dir+'/recordings')
+        self.RX=si.MEArecRecordingExtractor(recording_folder=self.test_dir+'/recordings')
+        self.SX=si.MEArecSortingExtractor(recording_folder=self.test_dir+'/recordings')
         
     def tearDown(self):
         # Remove the directory after the test
@@ -77,26 +77,26 @@ class TestMearecExtractors(unittest.TestCase):
             yaml.dump(info, f)
 
      
-    def test_input_extractor(self):
+    def test_recording_extractor(self):
         X=self.dataset['recordings']
         # getNumChannels
-        self.assertEqual(self.IX.getNumChannels(),self.dataset['num_channels'])
+        self.assertEqual(self.RX.getNumChannels(),self.dataset['num_channels'])
         # getNumFrames
-        self.assertEqual(self.IX.getNumFrames(),self.dataset['num_timepoints'])
+        self.assertEqual(self.RX.getNumFrames(),self.dataset['num_timepoints'])
         # getSamplingFrequency
-        self.assertEqual(self.IX.getSamplingFrequency(),30000)
-        # getRawTraces
-        self.assertTrue(np.allclose(self.IX.getRawTraces(),X))
-        self.assertTrue(np.allclose(self.IX.getRawTraces(start_frame=0,end_frame=12,channel_ids=[0,3]),X[[0,3],0:12]))
+        self.assertEqual(self.RX.getSamplingFrequency(),30000)
+        # getTraces
+        self.assertTrue(np.allclose(self.RX.getTraces(),X))
+        self.assertTrue(np.allclose(self.RX.getTraces(start_frame=0,end_frame=12,channel_ids=[0,3]),X[[0,3],0:12]))
         # getChannelInfo
-        self.assertTrue(np.allclose(np.array(self.IX.getChannelInfo(channel_id=1)['location']),self.dataset['positions'][1,:]))
+        self.assertTrue(np.allclose(np.array(self.RX.getChannelInfo(channel_id=1)['location']),self.dataset['positions'][1,:]))
     
-    def test_output_extractor(self):
+    def test_sorting_extractor(self):
         K=self.dataset['num_units']
         # getUnitIds
-        self.assertEqual(self.OX.getUnitIds(), range(0,K))
+        self.assertEqual(self.SX.getUnitIds(), range(0,K))
         # getUnitSpikeTrain
-        st = self.OX.getUnitSpikeTrain(unit_id=1)
+        st = self.SX.getUnitSpikeTrain(unit_id=1)
         st2 = (self.dataset['spiketrains'][1].times.rescale('s') * self.dataset['fs'].rescale('Hz')).magnitude
         self.assertTrue(np.allclose(st,st2))
     #

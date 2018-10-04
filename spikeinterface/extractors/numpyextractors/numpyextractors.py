@@ -1,11 +1,11 @@
-from spikeinterface import InputExtractor
-from spikeinterface import OutputExtractor
+from spikeinterface import RecordingExtractor
+from spikeinterface import SortingExtractor
 
 import numpy as np
 
-class NumpyInputExtractor(InputExtractor):
+class NumpyRecordingExtractor(RecordingExtractor):
     def __init__(self, *, timeseries, samplerate, geom=None):
-        InputExtractor.__init__(self)
+        RecordingExtractor.__init__(self)
         self._timeseries=timeseries
         self._samplerate=samplerate
         self._geom=geom
@@ -19,7 +19,7 @@ class NumpyInputExtractor(InputExtractor):
     def getSamplingFrequency(self):
         return self._samplerate
         
-    def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if start_frame is None:
             start_frame=0
         if end_frame is None:
@@ -34,16 +34,16 @@ class NumpyInputExtractor(InputExtractor):
             location=self._geom[channel_id,:]
         )
 
-class NumpyOutputExtractor(OutputExtractor):
+class NumpySortingExtractor(SortingExtractor):
     def __init__(self):
-        OutputExtractor.__init__(self)
+        SortingExtractor.__init__(self)
         self._unit_ids=[]
         self._units={}
 
-    def loadFromExtractor(output_extractor):
-        ids=output_extractor.getUnitIds()
+    def loadFromExtractor(sorting_extractor):
+        ids=sorting_extractor.getUnitIds()
         for id in ids:
-            self.addUnit(id,output_extractor.getUnitSpikeTrain(id))
+            self.addUnit(id,sorting_extractor.getUnitSpikeTrain(id))
 
     def setTimesLabels(self,times,labels):
         units=np.sort(np.unique(labels))

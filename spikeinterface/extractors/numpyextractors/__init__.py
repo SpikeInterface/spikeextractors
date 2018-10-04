@@ -1,1 +1,1 @@
-from .numpyextractors import NumpyInputExtractor, NumpyOutputExtractor
+from .numpyextractors import NumpyRecordingExtractor, NumpySortingExtractor

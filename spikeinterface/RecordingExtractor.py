@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-class InputExtractor(ABC):
+class RecordingExtractor(ABC):
     '''A class that contains functions for extracting important information
-    from input data to spike sorting software. It is an abstract class so all
+    from recorded extracellular data. It is an abstract class so all
     functions with the @abstractmethod tag must be implemented for the
     initialization to work.
 
@@ -13,10 +13,10 @@ class InputExtractor(ABC):
         pass
 
     @abstractmethod
-    def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
-        '''This function extracts and returns a trace from the raw data from the
+    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+        '''This function extracts and returns a trace from the recorded data from the
         given channels ids and the given start and end frame. It will return
-        raw traces from within three ranges:
+        traces from within three ranges:
 
             [start_frame, t_start+1, ..., end_frame-1]
             [start_frame, start_frame+1, ..., final_recording_frame - 1]
@@ -25,8 +25,8 @@ class InputExtractor(ABC):
 
         if both start_frame and end_frame are given, if only start_frame is
         given, if only end_frame is given, or if neither start_frame or end_frame
-        are given, respectively. Raw traces are returned in a 2D array that
-        contains all of the raw traces from each channel with dimensions
+        are given, respectively. Traces are returned in a 2D array that
+        contains all of the traces from each channel with dimensions
         (num_channels x num_frames). In this implementation, start_frame is inclusive
         and end_frame is exclusive conforming to numpy standards.
 
@@ -42,8 +42,8 @@ class InputExtractor(ABC):
 
         Returns
         ----------
-        raw_traces: numpy.ndarray
-            A 2D array that contains all of the raw traces from each channel.
+        traces: numpy.ndarray
+            A 2D array that contains all of the traces from each channel.
             Dimensions are: (num_channels x num_frames)
         '''
         pass
@@ -114,8 +114,8 @@ class InputExtractor(ABC):
         # Default implementation
         return time*self.getSamplingFrequency()
 
-    def getRawSnippets(self, snippet_len, center_frames, channel_ids=None):
-        '''This function returns raw data snippets from the given channels that
+    def getSnippets(self, snippet_len, center_frames, channel_ids=None):
+        '''This function returns data snippets from the given channels that
         are centered on the given frames and are the length of the given snippet
         length.
 
@@ -132,8 +132,8 @@ class InputExtractor(ABC):
 
         Returns
         ----------
-        raw_snippets: numpy.ndarray
-            Returns a list of the raw snippets as numpy arrays.
+        snippets: numpy.ndarray
+            Returns a list of the snippets as numpy arrays.
             The length of the list is len(center_frames)
             Each array has dimensions: (num_channels x snippet_len)
             Out-of-bounds cases should be handled by filling in zeros in the snippet.
@@ -146,7 +146,7 @@ class InputExtractor(ABC):
         num_channels = len(channel_ids)
         num_frames = self.getNumFrames()
         snippet_half_len = int(snippet_len/2)
-        raw_snippets = []
+        snippets = []
         for i in range(num_snippets):
             snippet_chunk = np.zeros((num_channels,snippet_len))
             if (0<=center_frames[i]) and (center_frames[i]<num_frames):
@@ -159,12 +159,12 @@ class InputExtractor(ABC):
                 if snippet_range[1] >= num_frames:
                     snippet_buffer[1] -= snippet_range[1] + num_frames
                     snippet_range[1] -= snippet_range[1] + num_frames
-                snippet_chunk[:,snippet_buffer[0]:snippet_buffer[1]] = self.getRawTraces(start_frame=snippet_range[0],
+                snippet_chunk[:,snippet_buffer[0]:snippet_buffer[1]] = self.getTraces(start_frame=snippet_range[0],
                                                                                          end_frame=snippet_range[1],
                                                                                          channel_ids=channel_ids)
-            raw_snippets.append(snippet_chunk)
+            snippets.append(snippet_chunk)
 
-        return raw_snippets
+        return snippets
 
     def getChannelInfo(self, channel_id):
         '''This function returns the a dictionary containing information about
@@ -195,32 +195,32 @@ class InputExtractor(ABC):
                                   implemented for this extractor")
 
     def getEpochNames(self):
-        return []
+        []
 
     def getEpochInfo(self,epoch_name):
         raise NotImplementedError("The getEpochInfo function is not \
                                   implemented for this extractor")
 
     def getEpoch(self,epoch_name):
-        from .SubInputExtractor import SubInputExtractor
-        return SubInputExtractor(parent_extractor=self,epoch_name=epoch_name)
+        from .SubRecordingExtractor import SubRecordingExtractor
+        return SubRecordingExtractor(parent_extractor=self,epoch_name=epoch_name)
 
     @staticmethod
-    def writeInput(self, input_extractor, save_path):
-        '''This function writes out the input file of a given input extractor
-        to the file format of this current input extractor. Allows for easy
-        conversion between input file formats. It is a static method so it
-        can be used without instantiating this input extractor.
+    def writeRecording(self, recording_extractor, save_path):
+        '''This function writes out the recorded file of a given recording
+        extractor to the file format of this current recording extractor. Allows
+        for easy conversion between recording file formats. It is a static
+        method so it can be used without instantiating this recording extractor.
 
         Parameters
         ----------
-        input_extractor: InputExtractor
-            An InputExtractor that can extract information from the input file
-            to be converted to the new format.
+        recording_extractor: RecordingExtractor
+            An RecordingExtractor that can extract information from the recording
+            file to be converted to the new format.
 
         save_path: string
-            A path to where the converted input data will be saved, which may
+            A path to where the converted recorded data will be saved, which may
             either be a file or a folder, depending on the format.
         '''
-        raise NotImplementedError("The writeInput function is not \
+        raise NotImplementedError("The writeRecording function is not \
                                   implemented for this extractor")

@@ -1,15 +1,13 @@
-from spikeinterface import InputExtractor
-from spikeinterface import OutputExtractor
+from spikeinterface import RecordingExtractor
 
 import numpy as np
 from os.path import join
 import h5py
 import ctypes
 
-
-class BiocamInputExtractor(InputExtractor):
+class BiocamRecordingExtractor(RecordingExtractor):
     def __init__(self, *, dataset_directory, recording_files):
-        InputExtractor.__init__(self)
+        RecordingExtractor.__init__(self)
         self._dataset_directory = dataset_directory
         self._recording_files = recording_files
         if type(recording_files) == list:
@@ -31,7 +29,7 @@ class BiocamInputExtractor(InputExtractor):
     def getSamplingFrequency(self):
         return self._samplingRate
 
-    def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

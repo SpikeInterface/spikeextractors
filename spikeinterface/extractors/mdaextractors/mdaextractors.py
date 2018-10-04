@@ -1,14 +1,14 @@
-from spikeinterface import InputExtractor
-from spikeinterface import OutputExtractor
+from spikeinterface import RecordingExtractor
+from spikeinterface import SortingExtractor
 
 from mountainlab_pytools import mlproc as mlp
 from mountainlab_pytools import mdaio
 import os, json
 import numpy as np
 
-class MdaInputExtractor(InputExtractor):
+class MdaRecordingExtractor(RecordingExtractor):
     def __init__(self, *, dataset_directory, download=True):
-        InputExtractor.__init__(self)
+        RecordingExtractor.__init__(self)
         self._dataset_directory=dataset_directory
         timeseries0=dataset_directory+'/raw.mda'
         self._dataset_params=read_dataset_params(dataset_directory)
@@ -40,7 +40,7 @@ class MdaInputExtractor(InputExtractor):
     def getSamplingFrequency(self):
         return self._samplerate
         
-    def getRawTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if start_frame is None:
             start_frame=0
         if end_frame is None:
@@ -58,31 +58,31 @@ class MdaInputExtractor(InputExtractor):
         )
 
     @staticmethod
-    def writeDataset(input_extractor,output_dirname):
-        M=input_extractor.getNumChannels()
-        N=input_extractor.getNumFrames()
+    def writeRecordedData(recording_extractor,output_dirname):
+        M=recording_extractor.getNumChannels()
+        N=recording_extractor.getNumFrames()
         channel_ids=range(M)
-        raw=input_extractor.getRawTraces()
-        info0=input_extractor.getChannelInfo(channel_ids[0])
+        raw=recording_extractor.getTraces()
+        info0=recording_extractor.getChannelInfo(channel_ids[0])
         nd=len(info0['location'])
         geom=np.zeros((M,nd))
         for ii in range(len(channel_ids)):
-            info0=input_extractor.getChannelInfo(channel_ids[ii])
+            info0=recording_extractor.getChannelInfo(channel_ids[ii])
             geom[ii,:]=list(info0['location'])
         if not os.path.exists(output_dirname):
             os.mkdir(output_dirname)
         mdaio.writemda32(raw,output_dirname+'/raw.mda')
         params=dict(
-            samplerate=input_extractor.getSamplingFrequency(),
+            samplerate=recording_extractor.getSamplingFrequency(),
             spike_sign=-1
         )
         with open(output_dirname+'/params.json','w') as f:
             json.dump(params,f)
         np.savetxt(output_dirname+'/geom.csv', geom, delimiter=',')
 
-class MdaOutputExtractor(OutputExtractor):
+class MdaSortingExtractor(SortingExtractor):
     def __init__(self, *, firings_file):
-        OutputExtractor.__init__(self)
+        SortingExtractor.__init__(self)
         verbose=is_url(firings_file)
         if verbose:
             print('Downloading file if needed: '+firings_file)
@@ -106,14 +106,14 @@ class MdaOutputExtractor(OutputExtractor):
         return self._times[inds]
     
     @staticmethod
-    def writeFirings(output_extractor,firings_out):
-        unit_ids=output_extractor.getUnitIds()
+    def writeSortedData(sorting_extractor,firings_out):
+        unit_ids=sorting_extractor.getUnitIds()
         K=np.max(unit_ids)
         times_list=[]
         labels_list=[]
         for i in range(len(unit_ids)):
             unit=unit_ids[i]
-            times=output_extractor.getUnitSpikeTrain(unit_id=unit)
+            times=sorting_extractor.getUnitSpikeTrain(unit_id=unit)
             times_list.append(times)
             labels_list.append(np.ones(times.shape)*unit)
         all_times=np.concatenate(times_list)
