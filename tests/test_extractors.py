@@ -46,6 +46,7 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(self.RX.getSamplingFrequency(),self.example_info['samplerate'])
         self.assertEqual(self.SX.getUnitIds(),self.example_info['unit_ids'])
         self.assertTrue(np.allclose(self.SX.getUnitSpikeTrain(1),self.example_info['train1']))
+        self._check_recording_return_types(self.RX)
      
     def test_mda_extractor(self):
         path1=self.test_dir+'/mda'
@@ -54,8 +55,26 @@ class TestExtractors(unittest.TestCase):
         si.MdaSortingExtractor.writeSorting(self.SX,path2)
         RX_mda=si.MdaRecordingExtractor(path1)
         SX_mda=si.MdaSortingExtractor(path2)
+        self._check_recording_return_types(RX_mda)
         self._check_recordings_equal(self.RX,RX_mda)
         self._check_sortings_equal(self.SX,SX_mda)
+
+    # don't do this test because pynwb causes a seg fault!
+    def test_nwb_extractor(self):
+        path1=self.test_dir+'/test.nwb'
+        si.NwbRecordingExtractor.writeRecording(self.RX,path1,acquisition_name='test')
+        RX_nwb=si.NwbRecordingExtractor(path1,acquisition_name='test')
+        self._check_recording_return_types(RX_nwb)
+        self._check_recordings_equal(self.RX,RX_nwb)
+
+    def _check_recording_return_types(self,RX):
+        M=RX.getNumChannels()
+        N=RX.getNumFrames()
+        self.assertTrue(type(RX.getNumChannels())==int)
+        self.assertTrue(type(RX.getNumFrames())==int)
+        self.assertTrue(type(RX.getSamplingFrequency())==float)
+        self.assertTrue(type(RX.getTraces(start_frame=0,end_frame=10))==np.ndarray)
+        self.assertTrue(type(RX.getChannelInfo(channel_id=0))==dict)
 
     def test_multi_sub_extractor(self):
         RX_multi=si.MultiRecordingExtractor(
@@ -86,15 +105,17 @@ class TestExtractors(unittest.TestCase):
         ))
         # getChannelInfo
         for m in range(M):
-            self.assertTrue(np.allclose(
-                np.array(RX1.getChannelInfo(channel_id=m)['location']),
-                np.array(RX2.getChannelInfo(channel_id=m)['location'])
-            ))
+            loc1=np.array(RX1.getChannelInfo(channel_id=m)['location'])
+            loc2=np.array(RX2.getChannelInfo(channel_id=m)['location'])
+            while len(loc1)<len(loc2):
+                loc1=np.append(loc1,[0])
+            while len(loc2)<len(loc1):
+                loc2=np.append(loc2,[0])
+            self.assertTrue(np.allclose(loc1,loc2))
         # timeToFrame / frameToTime
-        #self.assertEqual(RX1.frameToTime(12),RX2.frameToTime(12))
-        # don't test timeToFrame right now because multiExtractor does not implemented it yet
-        # also frameToTime has a problem
-        #self.assertEqual(RX1.timeToFrame(1),RX2.timeToFrame(1))
+        for f in range(0,RX1.getNumFrames(),10):
+            self.assertTrue(np.isclose(RX1.frameToTime(f),RX2.frameToTime(f)))
+            self.assertTrue(np.isclose(RX1.timeToFrame(RX1.frameToTime(f)),RX2.timeToFrame(RX2.frameToTime(f))))
         # getSnippets
         frames=[30,50,80]
         snippets1=RX1.getSnippets(snippet_len=20,center_frames=frames)
