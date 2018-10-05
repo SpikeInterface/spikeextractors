@@ -82,18 +82,17 @@ class RecordingExtractor(ABC):
         pass
 
     def frameToTime(self, frame):
-        '''This function converts a user-inputted frame to a time with units of seconds.
-        It should handle both scalars and lists.
+        '''This function converts a user-inputted frame index to a time with units of seconds.
 
         Parameters
         ----------
         frame: float
-            The frame (or list of frames) to be converted to a time.
+            The frame to be converted to a time.
 
         Returns
         -------
         time: float
-            The corresponding time or list of times in seconds.
+            The corresponding time in seconds.
         '''
         # Default implementation
         return frame/self.getSamplingFrequency()
@@ -104,12 +103,12 @@ class RecordingExtractor(ABC):
         Parameters
         -------
         time: float
-            The time or list of times (in seconds) to be converted to frames.
+            The time (in seconds) to be converted to frame index.
 
         Returns
         -------
         frame: float
-            The corresponding frame or list of frames.
+            The corresponding frame index.
         '''
         # Default implementation
         return time*self.getSamplingFrequency()

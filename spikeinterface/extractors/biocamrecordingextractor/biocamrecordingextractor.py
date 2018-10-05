@@ -44,6 +44,8 @@ class BiocamRecordingExtractor(RecordingExtractor):
         N=recording_extractor.getNumFrames()
         channel_ids=range(M)
         raw=recording_extractor.getTraces()
+        if raw.dtype!=int:
+            raise Exception('Cannot write dataset in the format with non-int datatype:',raw.dtype)
         rf = h5py.File(save_path, 'w')
         # writing out in 100 format: Time x Channels
         g = rf.create_group('3BData')

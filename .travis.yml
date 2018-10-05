@@ -7,7 +7,8 @@ python:
 - '3.6'
 install:
 - pip install .
-script: python setup.py test
+- pip install pytest
+script: pytest
 deploy:
   provider: pypi
   user: colehurwitz

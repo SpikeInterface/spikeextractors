@@ -7,7 +7,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
     def __init__(self, *, timeseries, samplerate, geom=None):
         RecordingExtractor.__init__(self)
         self._timeseries=timeseries
-        self._samplerate=samplerate
+        self._samplerate=float(samplerate)
         self._geom=geom
         
     def getNumChannels(self):
