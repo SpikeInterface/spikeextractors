@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/colehurwitz31/spikeinterface.svg?branch=master)](https://travis-ci.org/colehurwitz31/spikeinterface)
 
+Version 0.1.6, Alpha
+
 # SpikeInterface
 
 SpikeInterface is a module that enables easy creation and deployment of tools for extracting raw or spike sorted extracellular data from any file format. Its design goals are as follows:
