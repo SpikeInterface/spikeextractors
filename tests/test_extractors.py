@@ -60,10 +60,10 @@ class TestExtractors(unittest.TestCase):
         self._check_sortings_equal(self.SX,SX_mda)
 
     # don't do this test because pynwb causes a seg fault!
-    def disable_test_nwb_extractor(self):
+    def test_nwb_extractor(self):
         path1=self.test_dir+'/test.nwb'
         si.NwbRecordingExtractor.writeRecording(self.RX,path1,acquisition_name='test')
-        RX_nwb=si.NwbRecordingExtractor(path1)
+        RX_nwb=si.NwbRecordingExtractor(path1,acquisition_name='test')
         self._check_recording_return_types(RX_nwb)
         self._check_recordings_equal(self.RX,RX_nwb)
 
