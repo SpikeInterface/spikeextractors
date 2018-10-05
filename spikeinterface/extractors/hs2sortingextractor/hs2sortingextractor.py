@@ -7,22 +7,14 @@ import ctypes
 
 
 class HS2SortingExtractor(SortingExtractor):
-    def __init__(self, *, dataset_directory, recording_files):
+    def __init__(self, recording_file):
         SortingExtractor.__init__(self)
-        self._dataset_directory = dataset_directory
-        self._recording_files = recording_files
-        if type(recording_files) == list:
-            if len(recording_files) != 1:
-                raise NotImplementedError(
-                    "Reading multiple files not yet implemented.")
-            ifile = join(dataset_directory, recording_files[0])
-        else:
-            ifile = join(dataset_directory, recording_files)
-        self._rf = h5py.File(ifile, mode='r')
+        self._recording_file = recording_file
+        self._rf = h5py.File(self._recording_file, mode='r')
         self._unit_ids = set(self._rf['cluster_id'].value)
 
     def getUnitIds(self):
-        return self._unit_ids
+        return list(self._unit_ids)
 
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
@@ -36,3 +28,21 @@ class HS2SortingExtractor(SortingExtractor):
 
     def getUnitChannels(self, unit_id):
         return self._rf['ch'].value[np.where(self._rf['cluster_id'].value == unit_id)[0]]
+
+    @staticmethod
+    def writeSorting(sorting_extractor,save_path):
+        unit_ids=sorting_extractor.getUnitIds()
+        times_list=[]
+        labels_list=[]
+        for i in range(len(unit_ids)):
+            unit=unit_ids[i]
+            times=sorting_extractor.getUnitSpikeTrain(unit_id=unit)
+            times_list.append(times)
+            labels_list.append(np.ones(times.shape, dtype=int)*unit)
+        all_times=np.concatenate(times_list)
+        all_labels=np.concatenate(labels_list)
+        rf = h5py.File(save_path, mode='w')
+        # for now only create the entries required by any RecordingExtractor
+        rf.create_dataset("times", data=all_times)
+        rf.create_dataset("cluster_id", data=all_labels)
+        rf.close()

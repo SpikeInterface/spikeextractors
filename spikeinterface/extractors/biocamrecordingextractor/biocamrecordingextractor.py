@@ -6,19 +6,11 @@ import h5py
 import ctypes
 
 class BiocamRecordingExtractor(RecordingExtractor):
-    def __init__(self, *, dataset_directory, recording_files):
+    def __init__(self, recording_file):
         RecordingExtractor.__init__(self)
-        self._dataset_directory = dataset_directory
-        self._recording_files = recording_files
-        if type(recording_files) == list:
-            if len(recording_files) != 1:
-                raise NotImplementedError(
-                    "Reading multiple files not yet implemented.")
-            ifile = join(dataset_directory, recording_files[0])
-        else:
-            ifile = join(dataset_directory, recording_files)
+        self._recording_file = recording_file
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, self._chIndices, self._file_format, self._signalInv, self._positions, self._read_function = openBiocamFile(
-            ifile)
+            self._recording_file)
 
     def getNumChannels(self):
         return self._nRecCh
@@ -46,6 +38,27 @@ class BiocamRecordingExtractor(RecordingExtractor):
             location=self._positions[channel_id]
         )
 
+    @staticmethod
+    def writeRecording(recording_extractor,save_path):
+        M=recording_extractor.getNumChannels()
+        N=recording_extractor.getNumFrames()
+        channel_ids=range(M)
+        raw=recording_extractor.getTraces()
+        if raw.dtype!=int:
+            raise Exception('Cannot write dataset in the format with non-int datatype:',raw.dtype)
+        rf = h5py.File(save_path, 'w')
+        # writing out in 100 format: Time x Channels
+        g = rf.create_group('3BData')
+        d = rf.create_dataset('3BData/Raw', data=raw.T+2048, dtype=int)
+        g.attrs['Version'] = 100
+        rf.create_dataset('3BRecInfo/3BRecVars/MinVolt', data=[0])
+        rf.create_dataset('3BRecInfo/3BRecVars/MaxVolt', data=[1])
+        rf.create_dataset('3BRecInfo/3BRecVars/NRecFrames', data=[N])
+        rf.create_dataset('3BRecInfo/3BRecVars/SamplingRate', data=[recording_extractor.getSamplingFrequency()])
+        rf.create_dataset('3BRecInfo/3BRecVars/SignalInversion', data=[1])
+        rf.create_dataset('3BRecInfo/3BMeaChip/NCols', data=[M])
+        rf.create_dataset('3BRecInfo/3BMeaStreams/Raw/Chs', data=np.vstack((np.arange(M), np.zeros(M))).T, dtype=int)
+        rf.close()
 
 def openBiocamFile(filename):
     """Open a Biocam hdf5 file, read and return the recording info, pick te correct method to access raw data, and return this to the caller."""
@@ -101,11 +114,9 @@ def openBiocamFile(filename):
 
     return (rf, nFrames, samplingRate, nRecCh, chIndices, file_format, signalInv, rawIndices, read_function)
 
-
 def readHDF5(rf, t0, t1):
     """In order to use the algorithms designed for the old format, the input data must be inverted."""
     return 4095 - rf['3BData/Raw'][t0:t1].flatten().astype(ctypes.c_short)
-
 
 def readHDF5t_100(rf, t0, t1, nch):
     """Transposed version for the interpolation method."""
@@ -118,7 +129,6 @@ def readHDF5t_100(rf, t0, t1, nch):
         return 2048 - rf['3BData/Raw'][t1:t0].flatten(
             'F').astype(ctypes.c_short)
 
-
 def readHDF5t_100_i(rf, t0, t1, nch):
     ''' Transposed version for the interpolation method. '''
     if t0 <= t1:
@@ -129,7 +139,6 @@ def readHDF5t_100_i(rf, t0, t1, nch):
         raise Exception('Reading backwards? Not sure about this.')
         return rf['3BData/Raw'][t1:t0].flatten(
             'F').astype(ctypes.c_short) - 2048
-
 
 def readHDF5t_101(rf, t0, t1, nch):
     ''' Transposed version for the interpolation method. '''
@@ -144,7 +153,6 @@ def readHDF5t_101(rf, t0, t1, nch):
             (-1, nch), order='C').flatten('C').astype(ctypes.c_short) - 2048
         d[np.where(np.abs(d) > 1500)[0]] = 0
         return d
-
 
 def readHDF5t_101_i(rf, t0, t1, nch):
     ''' Transposed version for the interpolation method. '''
