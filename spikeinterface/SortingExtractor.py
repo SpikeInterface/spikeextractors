@@ -54,6 +54,25 @@ class SortingExtractor(ABC):
         '''
         pass
 
+    def getUnitProperty(self, unit_id, property):
+        '''This function returns a property of a specified unit. It is a static
+        method so it can be used without instantiating this sorting extractor.
+
+        Parameters
+        ----------
+        unit_id: int
+            The id that specifies a unit in the recording.
+        property: string
+            The property requested from the extractor. Note individual extractors provide different properties.
+        Returns
+        ----------
+        data: numpy.ndarray
+            A numpy array containing the requested property.
+        '''
+        raise NotImplementedError("The getUnitProperty function is not \
+                                  implemented for this extractor")
+
+
     @staticmethod
     def writeSorting(self, sorting_extractor, save_path):
         '''This function writes out the spike sorted data file of a given sorting

@@ -12,6 +12,10 @@ class HS2SortingExtractor(SortingExtractor):
         self._recording_file = recording_file
         self._rf = h5py.File(self._recording_file, mode='r')
         self._unit_ids = set(self._rf['cluster_id'].value)
+        self._unit_locs = self._rf['centres'] # cache for faster access
+
+    def get_unit_indices(self, x):
+        return np.where(self._rf['cluster_id'].value == x)[0]
 
     def getUnitIds(self):
         return list(self._unit_ids)
@@ -21,13 +25,23 @@ class HS2SortingExtractor(SortingExtractor):
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        times = self._rf['times'].value[np.where(
-            self._rf['cluster_id'].value == unit_id)[0]]
+        times = self._rf['times'].value[self.get_unit_indices(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
 
     def getUnitChannels(self, unit_id):
-        return self._rf['ch'].value[np.where(self._rf['cluster_id'].value == unit_id)[0]]
+        return self._rf['ch'].value[self.get_unit_indices(unit_id)]
+
+    def getUnitProperty(self, unit_id, property):
+        props = {
+            'spike_locations': self._rf['data'][:2,self.get_unit_indices(unit_id)].T,
+            'unit_location': self._unit_locs[unit_id],
+        }
+        try:
+            data = props[property]
+        except:
+            raise Exception("Wrong property key. Valid keys are:\n"+"\n".join("{} ".format(k) for k in props.keys()))
+        return data
 
     @staticmethod
     def writeSorting(sorting_extractor,save_path):
