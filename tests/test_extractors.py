@@ -88,7 +88,7 @@ class TestExtractors(unittest.TestCase):
             recording_extractors=[self.RX,self.RX,self.RX],
             epoch_names=['A','B','C']
         )
-        RX_sub=si.SubRecordingExtractor(parent_extractor=RX_multi,epoch_name='C')
+        RX_sub = RX_multi.getEpoch('C')
         self._check_recordings_equal(self.RX,RX_sub)
 
     def _check_recording_return_types(self,RX):
@@ -133,8 +133,8 @@ class TestExtractors(unittest.TestCase):
             self.assertTrue(np.isclose(RX1.timeToFrame(RX1.frameToTime(f)),RX2.timeToFrame(RX2.frameToTime(f))))
         # getSnippets
         frames=[30,50,80]
-        snippets1=RX1.getSnippets(snippet_len=20,center_frames=frames)
-        snippets2=RX2.getSnippets(snippet_len=20,center_frames=frames)
+        snippets1=RX1.getSnippets(snippet_len_before=10,snippet_len_after=10,start_frames=frames)
+        snippets2=RX2.getSnippets(snippet_len_before=10,snippet_len_after=10,start_frames=frames)
         for ii in range(len(frames)):
             self.assertTrue(np.allclose(snippets1[ii],snippets2[ii]))
 
