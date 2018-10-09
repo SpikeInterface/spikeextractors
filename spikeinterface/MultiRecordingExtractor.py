@@ -6,8 +6,15 @@ class MultiRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         if epoch_names is None:
             epoch_names=[str(i) for i in range(len(recording_extractors))]
+
+        #Add all epochs to the epochs data structure
+        start_frames = 0
+        for i, epoch_name in enumerate(epoch_names):
+            num_frames = recording_extractors[i].getNumFrames()
+            self.addEpoch(self, epoch_name, start_frames, start_frames + num_frames)
+            start_frames += num_frames
+
         self._RXs=recording_extractors
-        self._epoch_names=epoch_names
 
         #Num channels and sampling frequency based off the initial extractor
         self._first_recording_extractor = recording_extractors[0]
@@ -89,13 +96,3 @@ class MultiRecordingExtractor(RecordingExtractor):
 
     def getChannelInfo(self, channel_id):
         return self._first_recording_extractor.getChannelInfo(channel_id)
-
-    def getEpochNames(self):
-        return self._epoch_names
-
-    def getEpochInfo(self,epoch_name):
-        ind=self._epoch_names.index(epoch_name)
-        return dict(
-            start_frame=self._start_frames[ind],
-            end_frame=self._start_frames[ind+1]
-        )
