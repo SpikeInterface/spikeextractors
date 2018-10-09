@@ -9,7 +9,7 @@ class SortingExtractor(ABC):
 
     '''
     def __init__(self):
-        pass
+        self._unit_properties = {}
 
     @abstractmethod
     def getUnitIds(self):
@@ -53,6 +53,61 @@ class SortingExtractor(ABC):
             specified unit given the range of start and end frames.
         '''
         pass
+
+    def addUnitProperty(self, unit_id, property_name, property_data):
+        '''This function adds a unit property data set under the given property
+        name
+
+        Parameters
+        ----------
+        unit_id: int
+            The unit id for which the property will be added
+        property_name: str
+            A property stored by the sorting extractor (pca_features, etc.)
+        property_data
+            The data associated with the given property name. Could be many
+            formats as specified by the user.
+        '''
+        if(isinstance(unit_id, int)):
+            if(unit_id in self.getUnitIds()):
+                if(isinstance(property_name, str)):
+                    self._unit_properties[unit_id][property_name] = property_data
+                else:
+                    raise ValueError("property_name must be a string")
+            else:
+                raise ValueError("Non-valid unit_id")
+        else:
+            raise ValueError("unit_id must be an int")
+
+    def getUnitProperty(self, property_name):
+        '''This function rerturns the data stored under the property name given
+
+        Parameters
+        ----------
+        unit_id: int
+            The unit id for which the property will be returned
+        property_name: str
+            A property stored by the sorting extractor (pca_features, etc.)
+
+        Returns
+        ----------
+        property_data
+            The data associated with the given property name. Could be many
+            formats as specified by the user.
+        '''
+        if(isinstance(unit_id, int)):
+            if(unit_id in list(self._unit_properties.keys())):
+                if(isinstance(property_name, str)):
+                    if(property_name in list(self._unit_properties[unit_id].keys())):
+                        return self._unit_properties[unit_id][property_name]
+                    else:
+                        raise ValueError("This property has not been added to this unit")
+                else:
+                    raise ValueError("property_name must be a string")
+            else:
+                raise ValueError("Non-valid unit_id")
+        else:
+            raise ValueError("unit_id must be an int")
 
     @staticmethod
     def writeSorting(self, sorting_extractor, save_path):

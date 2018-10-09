@@ -4,21 +4,10 @@ import numpy as np
 # Encapsulates a sub-dataset
 
 class SubRecordingExtractor(RecordingExtractor):
-    def __init__(self, parent_extractor, *, channel_ids=None, start_frame=None, end_frame=None, epoch_name=None):
+    def __init__(self, parent_extractor, *, channel_ids=None, start_frame=None, end_frame=None):
+        RecordingExtractor.__init__(self)
         self._parent_extractor=parent_extractor
         self._channel_ids=channel_ids
-        if epoch_name is not None:
-            e_info=parent_extractor.getEpochInfo(epoch_name)
-            e_start=e_info['start_frame']
-            e_end=e_info['end_frame']
-            if start_frame is None:
-                start_frame=e_start
-            else:
-                start_frame=e_start+start_frame
-            if end_frame is None:
-                end_frame=e_end
-            else:
-                end_frame=e_start+end_frame
         self._start_frame=start_frame
         self._end_frame=end_frame
         if self._channel_ids is None:

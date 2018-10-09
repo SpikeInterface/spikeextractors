@@ -3,6 +3,7 @@ import numpy as np
 
 class MultiRecordingExtractor(RecordingExtractor):
     def __init__(self,recording_extractors,epoch_names=None):
+        RecordingExtractor.__init__(self)
         if epoch_names is None:
             epoch_names=[str(i) for i in range(len(recording_extractors))]
         self._RXs=recording_extractors
