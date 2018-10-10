@@ -134,8 +134,8 @@ class TestExtractors(unittest.TestCase):
             self.assertTrue(np.isclose(RX1.timeToFrame(RX1.frameToTime(f)),RX2.timeToFrame(RX2.frameToTime(f))))
         # getSnippets
         frames=[30,50,80]
-        snippets1=RX1.getSnippets(snippet_len_before=10,snippet_len_after=10,start_frames=frames)
-        snippets2=RX2.getSnippets(snippet_len_before=10,snippet_len_after=10,start_frames=frames)
+        snippets1=RX1.getSnippets(snippet_len_before=10,snippet_len_after=10,reference_frames=frames)
+        snippets2=RX2.getSnippets(snippet_len_before=10,snippet_len_after=10,reference_frames=frames)
         for ii in range(len(frames)):
             self.assertTrue(np.allclose(snippets1[ii],snippets2[ii]))
 

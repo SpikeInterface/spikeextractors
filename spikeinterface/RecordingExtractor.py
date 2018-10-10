@@ -113,7 +113,7 @@ class RecordingExtractor(ABC):
         # Default implementation
         return time*self.getSamplingFrequency()
 
-    def getSnippets(self, snippet_len_before, snippet_len_after, start_frames, channel_ids=None):
+    def getSnippets(self, snippet_len_before, snippet_len_after, reference_frames, channel_ids=None):
         '''This function returns data snippets from the given channels that
         are starting on the given frames and are the length of the given snippet
         lengths before and after.
@@ -121,12 +121,12 @@ class RecordingExtractor(ABC):
         Parameters
         ----------
         snippet_len_before: int
-            The number of frames before the start frame (inclusive)
+            The number of frames before the reference frame (inclusive)
         snippet_len_after: int
-            The number of frames after the start frame (exclusive)
-        start_frames: array_like
-            A list or array of frames that will be used as the start frame of
-            each snippet.
+            The number of frames after the reference frame (exclusive)
+        reference_frames: array_like
+            A list or array of frames that will be used as the reference frame of
+            each snippet (center frame if snippet_len_before = snippet_len_after)
         channel_ids: array_like
             A list or array of channel ids (ints) from which each trace will be
             extracted.
@@ -135,7 +135,7 @@ class RecordingExtractor(ABC):
         ----------
         snippets: numpy.ndarray
             Returns a list of the snippets as numpy arrays.
-            The length of the list is len(start_frames)
+            The length of the list is len(reference_frames)
             Each array has dimensions: (num_channels x snippet_len)
             Out-of-bounds cases should be handled by filling in zeros in the snippet.
         '''
@@ -143,15 +143,15 @@ class RecordingExtractor(ABC):
         if channel_ids is None:
             channel_ids = range(self.getNumChannels())
 
-        num_snippets = len(start_frames)
+        num_snippets = len(reference_frames)
         num_channels = len(channel_ids)
         num_frames = self.getNumFrames()
         snippets = []
         snippet_len = snippet_len_before + snippet_len_after
         for i in range(num_snippets):
             snippet_chunk = np.zeros((num_channels,snippet_len))
-            if (0<=start_frames[i]) and (start_frames[i]<num_frames):
-                snippet_range = np.array([int(start_frames[i])-snippet_len_before, int(start_frames[i])+snippet_len_after])
+            if (0<=reference_frames[i]) and (reference_frames[i]<num_frames):
+                snippet_range = np.array([int(reference_frames[i])-snippet_len_before, int(reference_frames[i])+snippet_len_after])
                 snippet_buffer = np.array([0,snippet_len])
                 # The following handles the out-of-bounds cases
                 if snippet_range[0] < 0:

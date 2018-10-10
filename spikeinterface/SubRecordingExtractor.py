@@ -50,12 +50,12 @@ class SubRecordingExtractor(RecordingExtractor):
         frame2=frame1-self._start_frame
         return frame2
 
-    def getSnippets(self, snippet_len_before, snippet_len_after, start_frames, channel_ids=None):
+    def getSnippets(self, snippet_len_before, snippet_len_after, reference_frames, channel_ids=None):
         if channel_ids is None:
             channel_ids=range(self.getNumChannels())
-        cf=self._start_frame+np.array(start_frames)
+        cf=self._start_frame+np.array(reference_frames)
         ch_ids=np.array(self._channel_ids)[channel_ids].tolist()
-        return self._parent_extractor.getSnippets(snippet_len_before=snippet_len_before,snippet_len_after=snippet_len_after,start_frames=start_frames,channel_ids=ch_ids)
+        return self._parent_extractor.getSnippets(snippet_len_before=snippet_len_before,snippet_len_after=snippet_len_after,reference_frames=reference_frames,channel_ids=ch_ids)
 
     def getChannelInfo(self, channel_id):
         ch_id=self._channel_ids[channel_id]

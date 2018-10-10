@@ -44,7 +44,7 @@ class TestNumpyExtractors(unittest.TestCase):
         self.assertEqual(self.RX.timeToFrame(12),12*self.RX.getSamplingFrequency())
         self.assertEqual(self.RX.frameToTime(12),12/self.RX.getSamplingFrequency())
         # getSnippets
-        snippets=self.RX.getSnippets(snippet_len_before=10,snippet_len_after=10,start_frames=[0,30,50])
+        snippets=self.RX.getSnippets(snippet_len_before=10,snippet_len_after=10,reference_frames=[0,30,50])
         self.assertTrue(np.allclose(snippets[1],self._X[:,20:40]))
     
     def test_sorting_extractor(self):
