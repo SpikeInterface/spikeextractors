@@ -9,16 +9,16 @@ class NumpyRecordingExtractor(RecordingExtractor):
         self._timeseries=timeseries
         self._samplerate=float(samplerate)
         self._geom=geom
-        
+
     def getNumChannels(self):
         return self._timeseries.shape[0]
-    
+
     def getNumFrames(self):
         return self._timeseries.shape[1]
-    
+
     def getSamplingFrequency(self):
         return self._samplerate
-        
+
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if start_frame is None:
             start_frame=0
@@ -28,7 +28,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
             channel_ids=range(self.getNumChannels())
         recordings=self._timeseries[:,start_frame:end_frame][channel_ids,:]
         return recordings
-    
+
     def getChannelInfo(self, channel_id):
         return dict(
             location=self._geom[channel_id,:]
@@ -39,6 +39,7 @@ class NumpySortingExtractor(SortingExtractor):
         SortingExtractor.__init__(self)
         self._unit_ids=[]
         self._units={}
+        # self._properties = {}
 
     def loadFromExtractor(sorting_extractor):
         ids=sorting_extractor.getUnitIds()
@@ -54,7 +55,7 @@ class NumpySortingExtractor(SortingExtractor):
     def addUnit(self,unit_id,times):
         self._unit_ids.append(unit_id)
         self._units[unit_id]=dict(times=times)
-        
+
     def getUnitIds(self):
         return self._unit_ids
 
@@ -66,3 +67,16 @@ class NumpySortingExtractor(SortingExtractor):
         times=self._units[unit_id]['times']
         inds=np.where((start_frame<=times)&(times<end_frame))[0]
         return times[inds]
+
+    def setUnitProperty(self, key, data):
+        assert data.shape[0] == len(self.getUnitIds()), "Data size does not match unit size"
+        for i,d in enumerate(data):
+            self._units[self.getUnitIds()[i]][key] = d
+
+    def getUnitProperty(self, unit_id, property):
+        # assert len(self._properties)>0, "No properties defined"
+        try:
+            data = self._units[unit_id][property]
+        except:
+            raise Exception("Wrong property key. Valid keys are:\n"+"\n".join("{} ".format(k) for k in self._units[self.getUnitIds()[0]].keys()))
+        return data

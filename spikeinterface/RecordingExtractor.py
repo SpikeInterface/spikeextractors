@@ -10,7 +10,7 @@ class RecordingExtractor(ABC):
 
     '''
     def __init__(self):
-        pass
+        self._epochs = {}
 
     @abstractmethod
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
@@ -113,18 +113,20 @@ class RecordingExtractor(ABC):
         # Default implementation
         return time*self.getSamplingFrequency()
 
-    def getSnippets(self, snippet_len, center_frames, channel_ids=None):
+    def getSnippets(self, snippet_len_before, snippet_len_after, reference_frames, channel_ids=None):
         '''This function returns data snippets from the given channels that
-        are centered on the given frames and are the length of the given snippet
-        length.
+        are starting on the given frames and are the length of the given snippet
+        lengths before and after.
 
         Parameters
         ----------
-        snippet_len: int
-            The length of each snippet in frames.
-        center_frames: array_like
-            A list or array of frames that will be used as the center frame of
-            each snippet.
+        snippet_len_before: int
+            The number of frames before the reference frame (inclusive)
+        snippet_len_after: int
+            The number of frames after the reference frame (exclusive)
+        reference_frames: array_like
+            A list or array of frames that will be used as the reference frame of
+            each snippet (center frame if snippet_len_before = snippet_len_after)
         channel_ids: array_like
             A list or array of channel ids (ints) from which each trace will be
             extracted.
@@ -133,7 +135,7 @@ class RecordingExtractor(ABC):
         ----------
         snippets: numpy.ndarray
             Returns a list of the snippets as numpy arrays.
-            The length of the list is len(center_frames)
+            The length of the list is len(reference_frames)
             Each array has dimensions: (num_channels x snippet_len)
             Out-of-bounds cases should be handled by filling in zeros in the snippet.
         '''
@@ -141,26 +143,26 @@ class RecordingExtractor(ABC):
         if channel_ids is None:
             channel_ids = range(self.getNumChannels())
 
-        num_snippets = len(center_frames)
+        num_snippets = len(reference_frames)
         num_channels = len(channel_ids)
         num_frames = self.getNumFrames()
-        snippet_half_len = int(snippet_len/2)
         snippets = []
+        snippet_len = snippet_len_before + snippet_len_after
         for i in range(num_snippets):
             snippet_chunk = np.zeros((num_channels,snippet_len))
-            if (0<=center_frames[i]) and (center_frames[i]<num_frames):
-                snippet_range = np.array([int(center_frames[i])-snippet_half_len, int(center_frames[i])-snippet_half_len+snippet_len])
+            if (0<=reference_frames[i]) and (reference_frames[i]<num_frames):
+                snippet_range = np.array([int(reference_frames[i])-snippet_len_before, int(reference_frames[i])+snippet_len_after])
                 snippet_buffer = np.array([0,snippet_len])
                 # The following handles the out-of-bounds cases
                 if snippet_range[0] < 0:
                     snippet_buffer[0] -= snippet_range[0]
                     snippet_range[0] -= snippet_range[0]
                 if snippet_range[1] >= num_frames:
-                    snippet_buffer[1] -= snippet_range[1] + num_frames
-                    snippet_range[1] -= snippet_range[1] + num_frames
+                    snippet_buffer[1] -= snippet_range[1] - num_frames
+                    snippet_range[1] -= snippet_range[1] - num_frames
                 snippet_chunk[:,snippet_buffer[0]:snippet_buffer[1]] = self.getTraces(start_frame=snippet_range[0],
-                                                                                         end_frame=snippet_range[1],
-                                                                                         channel_ids=channel_ids)
+                                                                                      end_frame=snippet_range[1],
+                                                                                      channel_ids=channel_ids)
             snippets.append(snippet_chunk)
 
         return snippets
@@ -193,16 +195,107 @@ class RecordingExtractor(ABC):
         raise NotImplementedError("The getChannelInfo function is not \
                                   implemented for this extractor")
 
+    def addEpoch(self, epoch_name, start_frame, end_frame):
+        '''This function adds an epoch to your recording extractor that tracks
+        a certain time period in your recording. It is stored in an internal
+        dictionary of start and end frame tuples.
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be added
+        start_frame: int
+            The start frame of the epoch to be added (inclusive)
+        end_frame: int
+            The end frame of the epoch to be added (exclusive)
+
+        '''
+        #Default implementation only allows for frame info. Can override to put more info
+        if(isinstance(epoch_name, str)):
+            self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
+        else:
+            raise ValueError("epoch_name must be a string")
+
+    def removeEpoch(self, epoch_name):
+        '''This function removes an epoch from your recording extractor.
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be removed
+        '''
+        if(isinstance(epoch_name, str)):
+            if(epoch_name in list(self._epochs.keys())):
+                del self._epochs[epoch_name]
+            else:
+                raise ValueError("This epoch has not been added")
+        else:
+            raise ValueError("epoch_name must be a string")
+
     def getEpochNames(self):
-        []
+        '''This function returns a list of all the epoch names in your recording
 
-    def getEpochInfo(self,epoch_name):
-        raise NotImplementedError("The getEpochInfo function is not \
-                                  implemented for this extractor")
+        Returns
+        ----------
+        epoch_names: list
+            List of epoch names in the recording extractor
+        '''
+        epoch_names = list(self._epochs.keys())
+        if not epoch_names:
+            pass
+        else:
+            epoch_start_frames = []
+            for epoch_name in epoch_names:
+                epoch_info = self.getEpochInfo(epoch_name)
+                start_frame = epoch_info['start_frame']
+                epoch_start_frames.append(start_frame)
+            epoch_names = [epoch_name for _,epoch_name in sorted(zip(epoch_start_frames,epoch_names))]
+        return epoch_names
 
-    def getEpoch(self,epoch_name):
+    def getEpochInfo(self, epoch_name):
+        '''This function returns the start frame and end frame of the epoch
+        in a dict.
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be returned
+
+        Returns
+        ----------
+        epoch_info: dict
+            A dict containing the start frame and end frame of the epoch
+        '''
+        #Default (Can add more information into each epoch in subclass)
+        if(isinstance(epoch_name, str)):
+            if(epoch_name in list(self._epochs.keys())):
+                epoch_info = self._epochs[epoch_name]
+                return epoch_info
+            else:
+                raise ValueError("This epoch has not been added")
+        else:
+            raise ValueError("epoch_name must be a string")
+
+    def getEpoch(self, epoch_name):
+        '''This function returns a SubRecordingExtractor which is a view to the
+        given epoch
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be returned
+
+        Returns
+        ----------
+        epoch_extractor: SubRecordingExtractor
+            A SubRecordingExtractor which is a view to the given epoch
+        '''
+        epoch_info = self.getEpochInfo(epoch_name)
+        start_frame = epoch_info['start_frame']
+        end_frame = epoch_info['end_frame']
         from .SubRecordingExtractor import SubRecordingExtractor
-        return SubRecordingExtractor(parent_extractor=self,epoch_name=epoch_name)
+        return SubRecordingExtractor(parent_extractor=self, start_frame=start_frame,
+                                     end_frame=end_frame)
 
     @staticmethod
     def writeRecording(self, recording_extractor, save_path):
