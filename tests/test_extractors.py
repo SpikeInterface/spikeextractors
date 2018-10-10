@@ -58,6 +58,7 @@ class TestExtractors(unittest.TestCase):
         SX_mda=si.MdaSortingExtractor(path2)
         self._check_recording_return_types(RX_mda)
         self._check_recordings_equal(self.RX,RX_mda)
+        self._check_sorting_return_types(SX_mda)
         self._check_sortings_equal(self.SX,SX_mda)
 
     # don't do this test because pynwb causes a seg fault!
@@ -71,9 +72,9 @@ class TestExtractors(unittest.TestCase):
     def _check_recording_return_types(self,RX):
         M=RX.getNumChannels()
         N=RX.getNumFrames()
-        self.assertTrue(type(RX.getNumChannels())==int)
-        self.assertTrue(type(RX.getNumFrames())==int)
-        self.assertTrue(type(RX.getSamplingFrequency())==float)
+        self.assertTrue((type(RX.getNumChannels())==int) or (type(RX.getNumChannels())==np.int64))
+        self.assertTrue((type(RX.getNumFrames())==int) or (type(RX.getNumFrames())==np.int64))
+        self.assertTrue((type(RX.getSamplingFrequency())==float) or (type(RX.getSamplingFrequency())==np.float64))
         self.assertTrue(type(RX.getTraces(start_frame=0,end_frame=10))==np.ndarray)
         self.assertTrue(type(RX.getChannelInfo(channel_id=0))==dict)
 
@@ -81,12 +82,14 @@ class TestExtractors(unittest.TestCase):
         path1=self.test_dir+'/raw.brw'
         si.BiocamRecordingExtractor.writeRecording(self.RX,path1)
         RX_biocam=si.BiocamRecordingExtractor(path1)
+        self._check_recording_return_types(RX_biocam)
         self._check_recordings_equal(self.RX,RX_biocam)
 
     def test_hs2_extractor(self):
         path1=self.test_dir+'/firings_true.hdf5'
         si.HS2SortingExtractor.writeSorting(self.SX,path1)
         SX_hs2=si.HS2SortingExtractor(path1)
+        self._check_sorting_return_types(SX_hs2)
         self._check_sortings_equal(self.SX,SX_hs2)
 
     def test_multi_sub_extractor(self):
@@ -94,7 +97,7 @@ class TestExtractors(unittest.TestCase):
             recording_extractors=[self.RX,self.RX,self.RX],
             epoch_names=['A','B','C']
         )
-        RX_sub=si.SubRecordingExtractor(parent_extractor=RX_multi,epoch_name='C')
+        RX_sub = RX_multi.getEpoch('C')
         self._check_recordings_equal(self.RX,RX_sub)
 
     def _check_recordings_equal(self,RX1,RX2):
@@ -109,8 +112,6 @@ class TestExtractors(unittest.TestCase):
         # getTraces
         tmp1=RX1.getTraces()
         tmp2=RX2.getTraces()
-        print(tmp1.shape,tmp2.shape)
-        print(tmp1[0,0:10],tmp2[0,0:10])
         self.assertTrue(np.allclose(
             RX1.getTraces(),
             RX2.getTraces()
@@ -133,10 +134,17 @@ class TestExtractors(unittest.TestCase):
             self.assertTrue(np.isclose(RX1.timeToFrame(RX1.frameToTime(f)),RX2.timeToFrame(RX2.frameToTime(f))))
         # getSnippets
         frames=[30,50,80]
-        snippets1=RX1.getSnippets(snippet_len=20,center_frames=frames)
-        snippets2=RX2.getSnippets(snippet_len=20,center_frames=frames)
+        snippets1=RX1.getSnippets(snippet_len_before=10,snippet_len_after=10,start_frames=frames)
+        snippets2=RX2.getSnippets(snippet_len_before=10,snippet_len_after=10,start_frames=frames)
         for ii in range(len(frames)):
             self.assertTrue(np.allclose(snippets1[ii],snippets2[ii]))
+
+    def _check_sorting_return_types(self,SX):
+        unit_ids=SX.getUnitIds()
+        self.assertTrue(all(isinstance(id, int) or isinstance(id, np.int64) for id in unit_ids))
+        for id in unit_ids:
+            train=SX.getUnitSpikeTrain(id)
+            self.assertTrue(all(isinstance(x, float) or isinstance(x, np.float64) for x in train))
 
     def _check_sortings_equal(self,SX1,SX2):
         K=len(SX1.getUnitIds())

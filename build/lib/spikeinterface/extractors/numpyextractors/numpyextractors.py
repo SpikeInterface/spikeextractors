@@ -9,16 +9,16 @@ class NumpyRecordingExtractor(RecordingExtractor):
         self._timeseries=timeseries
         self._samplerate=float(samplerate)
         self._geom=geom
-
+        
     def getNumChannels(self):
         return self._timeseries.shape[0]
-
+    
     def getNumFrames(self):
         return self._timeseries.shape[1]
-
+    
     def getSamplingFrequency(self):
         return self._samplerate
-
+        
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if start_frame is None:
             start_frame=0
@@ -28,7 +28,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
             channel_ids=range(self.getNumChannels())
         recordings=self._timeseries[:,start_frame:end_frame][channel_ids,:]
         return recordings
-
+    
     def getChannelInfo(self, channel_id):
         return dict(
             location=self._geom[channel_id,:]
@@ -54,7 +54,7 @@ class NumpySortingExtractor(SortingExtractor):
     def addUnit(self,unit_id,times):
         self._unit_ids.append(unit_id)
         self._units[unit_id]=dict(times=times)
-
+        
     def getUnitIds(self):
         return self._unit_ids
 
