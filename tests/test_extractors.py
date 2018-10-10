@@ -69,6 +69,15 @@ class TestExtractors(unittest.TestCase):
         self._check_recording_return_types(RX_nwb)
         self._check_recordings_equal(self.RX,RX_nwb)
 
+    def _check_recording_return_types(self,RX):
+        M=RX.getNumChannels()
+        N=RX.getNumFrames()
+        self.assertTrue((type(RX.getNumChannels())==int) or (type(RX.getNumChannels())==np.int64))
+        self.assertTrue((type(RX.getNumFrames())==int) or (type(RX.getNumFrames())==np.int64))
+        self.assertTrue((type(RX.getSamplingFrequency())==float) or (type(RX.getSamplingFrequency())==np.float64))
+        self.assertTrue(type(RX.getTraces(start_frame=0,end_frame=10))==np.ndarray)
+        self.assertTrue(type(RX.getChannelInfo(channel_id=0))==dict)
+
     def test_biocam_extractor(self):
         path1=self.test_dir+'/raw.brw'
         si.BiocamRecordingExtractor.writeRecording(self.RX,path1)
@@ -90,14 +99,6 @@ class TestExtractors(unittest.TestCase):
         )
         RX_sub = RX_multi.getEpoch('C')
         self._check_recordings_equal(self.RX,RX_sub)
-
-    def _check_recording_return_types(self,RX):
-        M=RX.getNumChannels()
-        N=RX.getNumFrames()
-        self.assertTrue((type(RX.getNumChannels())==int) or (type(RX.getNumChannels())==np.int64))
-        self.assertTrue((type(RX.getSamplingFrequency())==float) or (type(RX.getSamplingFrequency())==np.float64))
-        self.assertTrue(type(RX.getTraces(start_frame=0,end_frame=10))==np.ndarray)
-        self.assertTrue(type(RX.getChannelInfo(channel_id=0))==dict)
 
     def _check_recordings_equal(self,RX1,RX2):
         M=RX1.getNumChannels()
