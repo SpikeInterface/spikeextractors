@@ -15,7 +15,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         return self._recording.analog_signals[0].signal.shape[1]
 
     def getSamplingFrequency(self):
-        return self._recording.sample_rate.magnitude
+        return self._recording.sample_rate
 
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if start_frame is None:
