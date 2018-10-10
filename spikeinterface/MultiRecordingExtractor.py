@@ -11,7 +11,7 @@ class MultiRecordingExtractor(RecordingExtractor):
         start_frames = 0
         for i, epoch_name in enumerate(epoch_names):
             num_frames = recording_extractors[i].getNumFrames()
-            self.addEpoch(self, epoch_name, start_frames, start_frames + num_frames)
+            self.addEpoch(epoch_name, start_frames, start_frames + num_frames)
             start_frames += num_frames
 
         self._RXs=recording_extractors
