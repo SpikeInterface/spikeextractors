@@ -39,6 +39,7 @@ class NumpySortingExtractor(SortingExtractor):
         SortingExtractor.__init__(self)
         self._unit_ids=[]
         self._units={}
+        # self._properties = {}
 
     def loadFromExtractor(sorting_extractor):
         ids=sorting_extractor.getUnitIds()
@@ -66,3 +67,16 @@ class NumpySortingExtractor(SortingExtractor):
         times=self._units[unit_id]['times']
         inds=np.where((start_frame<=times)&(times<end_frame))[0]
         return times[inds]
+
+    def setUnitProperty(self, key, data):
+        assert data.shape[0] == len(self.getUnitIds()), "Data size does not match unit size"
+        for i,d in enumerate(data):
+            self._units[self.getUnitIds()[i]][key] = d
+
+    def getUnitProperty(self, unit_id, property):
+        # assert len(self._properties)>0, "No properties defined"
+        try:
+            data = self._units[unit_id][property]
+        except:
+            raise Exception("Wrong property key. Valid keys are:\n"+"\n".join("{} ".format(k) for k in self._units[self.getUnitIds()[0]].keys()))
+        return data

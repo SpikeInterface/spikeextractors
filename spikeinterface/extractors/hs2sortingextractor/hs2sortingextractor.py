@@ -12,6 +12,11 @@ class HS2SortingExtractor(SortingExtractor):
         self._recording_file = recording_file
         self._rf = h5py.File(self._recording_file, mode='r')
         self._unit_ids = set(self._rf['cluster_id'].value)
+        if 'centres' in self._rf.keys():
+            self._unit_locs = self._rf['centres'].value # cache for faster access
+
+    def get_unit_indices(self, x):
+        return np.where(self._rf['cluster_id'].value == x)[0]
 
     def getUnitIds(self):
         return list(self._unit_ids)
@@ -21,13 +26,20 @@ class HS2SortingExtractor(SortingExtractor):
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        times = self._rf['times'].value[np.where(
-            self._rf['cluster_id'].value == unit_id)[0]]
+        times = self._rf['times'].value[self.get_unit_indices(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
 
     def getUnitChannels(self, unit_id):
-        return self._rf['ch'].value[np.where(self._rf['cluster_id'].value == unit_id)[0]]
+        return self._rf['ch'].value[self.get_unit_indices(unit_id)]
+
+    def getUnitProperty(self, unit_id, property):
+        if property == 'spike_locations':
+            return self._rf['data'][:2,self.get_unit_indices(unit_id)].T
+        elif property == 'unit_location':
+            return self._unit_locs[unit_id]
+        else:
+            raise Exception("Property does not exist.")
 
     @staticmethod
     def writeSorting(sorting_extractor,save_path):

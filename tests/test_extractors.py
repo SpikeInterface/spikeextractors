@@ -8,12 +8,12 @@ def append_to_path(dir0): # A convenience function
         sys.path.append(dir0)
 append_to_path(os.getcwd()+'/..')
 import spikeinterface as si
- 
+
 class TestExtractors(unittest.TestCase):
     def setUp(self):
         self.RX, self.SX, self.example_info = self._create_example()
         self.test_dir = tempfile.mkdtemp()
-        
+
     def tearDown(self):
         # Remove the directory after the test
         shutil.rmtree(self.test_dir)
@@ -48,7 +48,7 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(self.SX.getUnitIds(),self.example_info['unit_ids'])
         self.assertTrue(np.allclose(self.SX.getUnitSpikeTrain(1),self.example_info['train1']))
         self._check_recording_return_types(self.RX)
-     
+
     def test_mda_extractor(self):
         path1=self.test_dir+'/mda'
         path2=path1+'/firings_true.mda'
@@ -156,6 +156,6 @@ class TestExtractors(unittest.TestCase):
             train1=np.sort(SX1.getUnitSpikeTrain(id))
             train2=np.sort(SX2.getUnitSpikeTrain(id))
             self.assertTrue(np.allclose(train1,train2))
- 
+
 if __name__ == '__main__':
     unittest.main()
