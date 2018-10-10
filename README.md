@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/colehurwitz31/spikeinterface.svg?branch=master)](https://travis-ci.org/colehurwitz31/spikeinterface)
 
 Alpha Development
-Version 0.1.6
+Version 0.1.7
 
 # SpikeInterface
 
