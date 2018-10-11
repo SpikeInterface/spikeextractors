@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import numpy as np
 
 class SortingExtractor(ABC):
     '''A class that contains functions for extracting important information
@@ -62,13 +63,20 @@ class SortingExtractor(ABC):
         ----------
         unit_id: int
             The unit id for which the property will be added
+            (or a list of ids if you want to simultaneously set the property
+            for multiple units)
         property_name: str
             A property stored by the sorting extractor (pca_features, etc.)
+            (or a list of properties if the unit_id was a list)
         property_data
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if(isinstance(unit_id, int)):
+        if (type(unit_id)==list) or (type(unit_id)==np.ndarray):
+            for i,unit in enumerate(unit_id):
+                self.setUnitProperty(unit_id=unit,property_name=property_name,property_data=property_data[i])
+            return
+        if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
             if(unit_id in self.getUnitIds()):
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
@@ -96,7 +104,7 @@ class SortingExtractor(ABC):
             formats as specified by the user.
         '''
         print('WARNING: addUnitProperty is deprecated. Use setUnitProperty instead.')
-        if(isinstance(unit_id, int)):
+        if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
             if(unit_id in self.getUnitIds()):
                 if(isinstance(property_name, str)):
                     self._unit_properties[unit_id][property_name] = property_data
@@ -123,7 +131,7 @@ class SortingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if(isinstance(unit_id, int)):
+        if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
             if(unit_id in self.getUnitIds()):
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
