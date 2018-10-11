@@ -18,7 +18,8 @@ setuptools.setup(
         'neo',
         'pyyaml',
         'h5py',
-        'pynwb'
+        'pynwb',
+        'pyopenephys'
     ],
     classifiers=(
         "Programming Language :: Python :: 3",
