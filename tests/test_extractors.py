@@ -40,7 +40,7 @@ class TestExtractors(unittest.TestCase):
             samplerate=samplerate,
             unit_ids=[1,2,3],
             train1=train1,
-            unit_prop=80
+            unit_prop=80,
             channel_prop=(0,0)
         )
         return (RX,SX,example_info)
