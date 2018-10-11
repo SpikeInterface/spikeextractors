@@ -13,13 +13,14 @@ class MdaRecordingExtractor(RecordingExtractor):
         timeseries0=dataset_directory+'/raw.mda'
         self._dataset_params=read_dataset_params(dataset_directory)
         self._samplerate=self._dataset_params['samplerate']*1.0
-        verbose=is_url(timeseries0)
-        if download:
-            if verbose:
-                print('Downloading file if needed: '+timeseries0)
+        if is_kbucket_url(timeseries0):
+            download_needed=is_url(mlp.locateFile(timeseries0))
+        else:
+            download_needed=is_url(timeseries0)
+        if download and download_needed:
+            print('Downloading file: '+timeseries0)
             self._timeseries_path=mlp.realizeFile(timeseries0)
-            if verbose:
-                print('Done.')
+            print('Done.')
         else:
             self._timeseries_path=mlp.locateFile(timeseries0)
         geom0=dataset_directory+'/geom.csv'
@@ -83,12 +84,16 @@ class MdaRecordingExtractor(RecordingExtractor):
 class MdaSortingExtractor(SortingExtractor):
     def __init__(self, firings_file):
         SortingExtractor.__init__(self)
-        verbose=is_url(firings_file)
-        if verbose:
-            print('Downloading file if needed: '+firings_file)
-        self._firings_path=mlp.realizeFile(firings_file)
-        if verbose:
+        if is_kbucket_url(firings_file):
+            download_needed=is_url(mlp.locateFile(firings_file))
+        else:
+            download_needed=is_url(firings_file)
+        if download_needed:
+            print('Downloading file: '+firings_file)
+            self._firings_path=mlp.realizeFile(firings_file)
             print('Done.')
+        else:
+            self._firings_path=mlp.realizeFile(firings_file)
         self._firings=mdaio.readmda(self._firings_path)
         self._times=self._firings[1,:]
         self._labels=self._firings[2,:]
@@ -126,6 +131,9 @@ class MdaSortingExtractor(SortingExtractor):
         firings[1,:]=all_times
         firings[2,:]=all_labels
         mdaio.writemda64(firings,save_path)
+
+def is_kbucket_url(path):
+    return path.startswith('kbucket://') or path.startswith('sha1://')
     
 def is_url(path):
     return path.startswith('http://') or path.startswith('https://') or path.startswith('kbucket://') or path.startswith('sha1://')
