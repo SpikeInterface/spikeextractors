@@ -11,6 +11,7 @@ class RecordingExtractor(ABC):
     '''
     def __init__(self):
         self._epochs = {}
+        self._channel_properties = {}
 
     @abstractmethod
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
@@ -113,17 +114,18 @@ class RecordingExtractor(ABC):
         # Default implementation
         return time*self.getSamplingFrequency()
 
-    def getSnippets(self, snippet_len_before, snippet_len_after, reference_frames, channel_ids=None):
+    def getSnippets(self, *, reference_frames, snippet_len, channel_ids=None):
         '''This function returns data snippets from the given channels that
         are starting on the given frames and are the length of the given snippet
         lengths before and after.
 
         Parameters
         ----------
-        snippet_len_before: int
-            The number of frames before the reference frame (inclusive)
-        snippet_len_after: int
-            The number of frames after the reference frame (exclusive)
+        snippet_len: int or tuple
+            If int, the snippet will be centered at the reference frame and
+            and return half before and half after of the length. If tuple,
+            it will return the first value of before frames and the second value
+            of after frames around the reference frame (allows for asymmetry)
         reference_frames: array_like
             A list or array of frames that will be used as the reference frame of
             each snippet (center frame if snippet_len_before = snippet_len_after)
@@ -140,6 +142,13 @@ class RecordingExtractor(ABC):
             Out-of-bounds cases should be handled by filling in zeros in the snippet.
         '''
         # Default implementation
+        if isinstance(snippet_len, tuple):
+            snippet_len_before = snippet_len[0]
+            snippet_len_after = snippet_len[1]
+        else:
+            snippet_len_before = int((snippet_len+1)/2)
+            snippet_len_after = snippet_len-snippet_len_before
+
         if channel_ids is None:
             channel_ids = range(self.getNumChannels())
 
@@ -147,7 +156,6 @@ class RecordingExtractor(ABC):
         num_channels = len(channel_ids)
         num_frames = self.getNumFrames()
         snippets = []
-        snippet_len = snippet_len_before + snippet_len_after
         for i in range(num_snippets):
             snippet_chunk = np.zeros((num_channels,snippet_len))
             if (0<=reference_frames[i]) and (reference_frames[i]<num_frames):
@@ -167,33 +175,65 @@ class RecordingExtractor(ABC):
 
         return snippets
 
-    def getChannelInfo(self, channel_id):
-        '''This function returns the a dictionary containing information about
-        the channel specified by the channel id. Important keys in the dict to
-        fill out should be: 'group', 'position', and 'type'.
+    def setChannelProperty(self, channel_id, property_name, value):
+        '''This function adds a property dataset to the given channel under the
+        property name.
 
         Parameters
         ----------
         channel_id: int
-            The channel id of the channel for which information is returned.
+            The channel id for which the property will be added
+        property_name: str
+            A property stored by the RecordingExtractor (location, etc.)
+        value:
+            The data associated with the given property name. Could be many
+            formats as specified by the user.
+        '''
+        if(isinstance(channel_id, int)):
+            if(channel_id in range(self.getNumChannels())):
+                if channel_id not in self._channel_properties:
+                    self._channel_properties[channel_id]={}
+                if(isinstance(property_name, str)):
+                    self._channel_properties[channel_id][property_name] = value
+                else:
+                    raise ValueError("property_name must be a string")
+            else:
+                raise ValueError("Non-valid channel_id")
+        else:
+            raise ValueError("channel_id must be an int")
+
+    def getChannelProperty(self, channel_id, property_name):
+        '''This function returns the data stored under the property name from
+        the given channel.
+
+        Parameters
+        ----------
+        channel_id: int
+            The channel id for which the property will be returned
+        property_name: str
+            A property stored by the RecordingExtractor (location, etc.)
 
         Returns
         ----------
-        channel_info_dict: dict
-            A dictionary containing important information about the specified
-            channel. Should include:
-
-                    key = 'group', type = int
-                        the group number it is in, for tetrodes
-
-                    key = 'position', type = array_like
-                        two/three dimensional
-
-                    key = 'type', type = string
-                        recording ('rec') or reference ('ref')
+        property_data
+            The data associated with the given property name. Could be many
+            formats as specified by the user.
         '''
-        raise NotImplementedError("The getChannelInfo function is not \
-                                  implemented for this extractor")
+        if(isinstance(channel_id, int)):
+            if(channel_id in range(self.getNumChannels())):
+                if channel_id not in self._channel_properties:
+                    self._channel_properties[channel_id]={}
+                if(isinstance(property_name, str)):
+                    if(property_name in list(self._channel_properties[channel_id].keys())):
+                        return self._channel_properties[channel_id][property_name]
+                    else:
+                        raise ValueError("This property has not been added to this channel")
+                else:
+                    raise ValueError("property_name must be a string")
+            else:
+                raise ValueError("Non-valid channel_id")
+        else:
+            raise ValueError("channel_id must be an int")
 
     def addEpoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to your recording extractor that tracks

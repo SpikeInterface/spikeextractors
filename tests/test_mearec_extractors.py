@@ -12,7 +12,7 @@ def append_to_path(dir0): # A convenience function
         sys.path.append(dir0)
 append_to_path(os.getcwd()+'/..')
 import spikeinterface as si
- 
+
 class TestMearecExtractors(unittest.TestCase):
     def setUp(self):
         # Create a temporary directory
@@ -20,11 +20,11 @@ class TestMearecExtractors(unittest.TestCase):
         self._create_dataset()
         self.RX=si.MEArecRecordingExtractor(recording_folder=self.test_dir+'/recordings')
         self.SX=si.MEArecSortingExtractor(recording_folder=self.test_dir+'/recordings')
-        
+
     def tearDown(self):
         # Remove the directory after the test
         shutil.rmtree(self.test_dir)
-        
+
     def _create_dataset(self):
         M=32
         N=10000
@@ -76,7 +76,7 @@ class TestMearecExtractors(unittest.TestCase):
         with open(os.path.join(rec_folder, 'info.yaml'), 'w') as f:
             yaml.dump(info, f)
 
-     
+
     def test_recording_extractor(self):
         X=self.dataset['recordings']
         # getNumChannels
@@ -90,7 +90,7 @@ class TestMearecExtractors(unittest.TestCase):
         self.assertTrue(np.allclose(self.RX.getTraces(start_frame=0,end_frame=12,channel_ids=[0,3]),X[[0,3],0:12]))
         # getChannelInfo
         self.assertTrue(np.allclose(np.array(self.RX.getChannelInfo(channel_id=1)['location']),self.dataset['positions'][1,:]))
-    
+
     def test_sorting_extractor(self):
         K=self.dataset['num_units']
         # getUnitIds

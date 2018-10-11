@@ -32,12 +32,16 @@ class TestExtractors(unittest.TestCase):
         SX.addUnit(unit_id=1,times=train1)
         SX.addUnit(unit_id=2,times=np.random.uniform(0,N,L))
         SX.addUnit(unit_id=3,times=np.random.uniform(0,N,L))
+        SX.setUnitProperty(unit_id=1, property_name='stablility', value=80)
+        RX.setChannelProperty(channel_id=0, property_name='location', value=(0,0))
         example_info=dict(
             M=M,
             N=N,
             samplerate=samplerate,
             unit_ids=[1,2,3],
-            train1=train1
+            train1=train1,
+            unit_prop=80
+            channel_prop=(0,0)
         )
         return (RX,SX,example_info)
 
@@ -46,6 +50,8 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(self.RX.getNumFrames(),self.example_info['N'])
         self.assertEqual(self.RX.getSamplingFrequency(),self.example_info['samplerate'])
         self.assertEqual(self.SX.getUnitIds(),self.example_info['unit_ids'])
+        self.assertEqual(self.RX.getChannelProperty(channel_id=0, property_name='location'),self.example_info['channel_prop'])
+        self.assertEqual(self.SX.getUnitProperty(unit_id=1, property_name='stablility'),self.example_info['unit_prop'])
         self.assertTrue(np.allclose(self.SX.getUnitSpikeTrain(1),self.example_info['train1']))
         self._check_recording_return_types(self.RX)
 
@@ -134,8 +140,8 @@ class TestExtractors(unittest.TestCase):
             self.assertTrue(np.isclose(RX1.timeToFrame(RX1.frameToTime(f)),RX2.timeToFrame(RX2.frameToTime(f))))
         # getSnippets
         frames=[30,50,80]
-        snippets1=RX1.getSnippets(snippet_len_before=10,snippet_len_after=10,reference_frames=frames)
-        snippets2=RX2.getSnippets(snippet_len_before=10,snippet_len_after=10,reference_frames=frames)
+        snippets1=RX1.getSnippets(reference_frames=frames, snippet_len=20)
+        snippets2=RX2.getSnippets(reference_frames=frames, snippet_len=(10,10))
         for ii in range(len(frames)):
             self.assertTrue(np.allclose(snippets1[ii],snippets2[ii]))
 
