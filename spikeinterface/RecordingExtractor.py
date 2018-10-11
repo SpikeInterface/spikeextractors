@@ -128,7 +128,7 @@ class RecordingExtractor(ABC):
             of after frames around the reference frame (allows for asymmetry)
         reference_frames: array_like
             A list or array of frames that will be used as the reference frame of
-            each snippet (center frame if snippet_len_before = snippet_len_after)
+            each snippet
         channel_ids: array_like
             A list or array of channel ids (ints) from which each trace will be
             extracted.

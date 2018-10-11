@@ -66,15 +66,15 @@ class SortingExtractor(ABC):
             (or a list of ids if you want to simultaneously set the property
             for multiple units)
         property_name: str
-            A property stored by the sorting extractor (pca_features, etc.)
-            (or a list of properties if the unit_id was a list)
-        property_data
+            The name of the property to be stored
+        value
             The data associated with the given property name. Could be many
             formats as specified by the user.
+            (or a list of values if the unit_id was a list)
         '''
         if (type(unit_id)==list) or (type(unit_id)==np.ndarray):
             for i,unit in enumerate(unit_id):
-                self.setUnitProperty(unit_id=unit,property_name=property_name,property_data=property_data[i])
+                self.setUnitProperty(unit_id=unit,property_name=property_name,value=value[i])
             return
         if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
             if(unit_id in self.getUnitIds()):
@@ -98,8 +98,8 @@ class SortingExtractor(ABC):
         unit_id: int
             The unit id for which the property will be added
         property_name: str
-            A property stored by the sorting extractor (pca_features, etc.)
-        property_data
+            The name of the property
+        value
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
@@ -125,13 +125,13 @@ class SortingExtractor(ABC):
             The unit id for which the property will be returned
             (or a list of unit ids)
         property_name: str
-            A property stored by the sorting extractor (pca_features, etc.)
-            (or a list of properties if unit_id was a list)
+            The name of the property
         Returns
         ----------
-        property_data
+        value
             The data associated with the given property name. Could be many
             formats as specified by the user.
+            (or a list of values if unit_id was a list)
         '''
         if (type(unit_id)==list) or (type(unit_id)==np.ndarray):
             return [self.getUnitProperty(unit_id=unit,property_name=property_name) for unit in unit_id]
