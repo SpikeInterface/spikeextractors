@@ -147,6 +147,18 @@ class SortingExtractor(ABC):
         else:
             raise ValueError("unit_id must be an int")
 
+    def getUnitPropertyNames(self, unit_id):
+        if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
+            if(unit_id in self.getUnitIds()):
+                if unit_id not in self._unit_properties:
+                    self._unit_properties[unit_id]={}
+                return sorted(self._unit_properties[unit_id].keys())
+            else:
+                raise ValueError("Non-valid unit_id")
+        else:
+            raise ValueError("unit_id must be an int")
+
+
     @staticmethod
     def writeSorting(self, sorting_extractor, save_path):
         '''This function writes out the spike sorted data file of a given sorting
