@@ -122,15 +122,19 @@ class SortingExtractor(ABC):
         ----------
         unit_id: int
             The unit id for which the property will be returned
+            (or a list of unit ids)
         property_name: str
             A property stored by the sorting extractor (pca_features, etc.)
-
+            (or a list of properties if unit_id was a list)
         Returns
         ----------
         property_data
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
+        if (type(unit_id)==list) or (type(unit_id)==np.ndarray):
+            return [self.getUnitProperty(unit_id=unit,property_name=property_name) for unit in unit_id]
+
         if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
             if(unit_id in self.getUnitIds()):
                 if unit_id not in self._unit_properties:
