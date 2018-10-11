@@ -54,7 +54,7 @@ class SortingExtractor(ABC):
         '''
         pass
 
-    def addUnitProperty(self, unit_id, property_name, property_data):
+    def setUnitProperty(self, unit_id, property_name, property_data):
         '''This function adds a unit property data set under the given property
         name
 
@@ -70,6 +70,8 @@ class SortingExtractor(ABC):
         '''
         if(isinstance(unit_id, int)):
             if(unit_id in self.getUnitIds()):
+                if unit_id not in self._unit_properties:
+                    self._unit_properties[unit_id]={}
                 if(isinstance(property_name, str)):
                     self._unit_properties[unit_id][property_name] = property_data
                 else:
@@ -79,7 +81,33 @@ class SortingExtractor(ABC):
         else:
             raise ValueError("unit_id must be an int")
 
-    def getUnitProperty(self, property_name):
+    def addUnitProperty(self, unit_id, property_name, property_data):
+        '''This function adds a unit property data set under the given property
+        name
+
+        Parameters
+        ----------
+        unit_id: int
+            The unit id for which the property will be added
+        property_name: str
+            A property stored by the sorting extractor (pca_features, etc.)
+        property_data
+            The data associated with the given property name. Could be many
+            formats as specified by the user.
+        '''
+        print('WARNING: addUnitProperty is deprecated. Use setUnitProperty instead.')
+        if(isinstance(unit_id, int)):
+            if(unit_id in self.getUnitIds()):
+                if(isinstance(property_name, str)):
+                    self._unit_properties[unit_id][property_name] = property_data
+                else:
+                    raise ValueError("property_name must be a string")
+            else:
+                raise ValueError("Non-valid unit_id")
+        else:
+            raise ValueError("unit_id must be an int")
+
+    def getUnitProperty(self, unit_id, property_name):
         '''This function rerturns the data stored under the property name given
 
         Parameters
@@ -96,7 +124,9 @@ class SortingExtractor(ABC):
             formats as specified by the user.
         '''
         if(isinstance(unit_id, int)):
-            if(unit_id in list(self._unit_properties.keys())):
+            if(unit_id in self.getUnitIds()):
+                if unit_id not in self._unit_properties:
+                    self._unit_properties[unit_id]={}
                 if(isinstance(property_name, str)):
                     if(property_name in list(self._unit_properties[unit_id].keys())):
                         return self._unit_properties[unit_id][property_name]
