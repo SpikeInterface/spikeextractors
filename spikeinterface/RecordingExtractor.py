@@ -155,12 +155,13 @@ class RecordingExtractor(ABC):
         num_snippets = len(reference_frames)
         num_channels = len(channel_ids)
         num_frames = self.getNumFrames()
+        snippet_len_total = snippet_len_before + snippet_len_after
         snippets = []
         for i in range(num_snippets):
-            snippet_chunk = np.zeros((num_channels,snippet_len))
+            snippet_chunk = np.zeros((num_channels,snippet_len_total))
             if (0<=reference_frames[i]) and (reference_frames[i]<num_frames):
                 snippet_range = np.array([int(reference_frames[i])-snippet_len_before, int(reference_frames[i])+snippet_len_after])
-                snippet_buffer = np.array([0,snippet_len])
+                snippet_buffer = np.array([0,snippet_len_total])
                 # The following handles the out-of-bounds cases
                 if snippet_range[0] < 0:
                     snippet_buffer[0] -= snippet_range[0]
