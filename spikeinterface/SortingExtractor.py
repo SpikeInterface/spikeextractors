@@ -55,9 +55,9 @@ class SortingExtractor(ABC):
         '''
         pass
 
-    def setUnitProperty(self, unit_id, property_name, property_data):
+    def setUnitProperty(self, unit_id, property_name, value):
         '''This function adds a unit property data set under the given property
-        name
+        name to the given unit.
 
         Parameters
         ----------
@@ -81,7 +81,7 @@ class SortingExtractor(ABC):
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
                 if(isinstance(property_name, str)):
-                    self._unit_properties[unit_id][property_name] = property_data
+                    self._unit_properties[unit_id][property_name] = value
                 else:
                     raise ValueError("property_name must be a string")
             else:
@@ -89,9 +89,9 @@ class SortingExtractor(ABC):
         else:
             raise ValueError("unit_id must be an int")
 
-    def addUnitProperty(self, unit_id, property_name, property_data):
+    def addUnitProperty(self, unit_id, property_name, value):
         '''This function adds a unit property data set under the given property
-        name
+        name to the given unit.
 
         Parameters
         ----------
@@ -107,7 +107,7 @@ class SortingExtractor(ABC):
         if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
             if(unit_id in self.getUnitIds()):
                 if(isinstance(property_name, str)):
-                    self._unit_properties[unit_id][property_name] = property_data
+                    self._unit_properties[unit_id][property_name] = value
                 else:
                     raise ValueError("property_name must be a string")
             else:
@@ -117,6 +117,7 @@ class SortingExtractor(ABC):
 
     def getUnitProperty(self, unit_id, property_name):
         '''This function rerturns the data stored under the property name given
+        from the given unit.
 
         Parameters
         ----------

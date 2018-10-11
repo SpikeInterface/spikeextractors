@@ -6,7 +6,7 @@ def append_to_path(dir0): # A convenience function
         sys.path.append(dir0)
 append_to_path(os.getcwd()+'/..')
 import spikeinterface as si
- 
+
 class TestNumpyExtractors(unittest.TestCase):
     def setUp(self):
         M=4
@@ -24,10 +24,10 @@ class TestNumpyExtractors(unittest.TestCase):
         self.SX.addUnit(unit_id=1,times=self._train1)
         self.SX.addUnit(unit_id=2,times=np.random.uniform(0,N,L))
         self.SX.addUnit(unit_id=3,times=np.random.uniform(0,N,L))
-        
+
     def tearDown(self):
         pass
-     
+
     def test_recording_extractor(self):
         # getNumChannels
         self.assertEqual(self.RX.getNumChannels(),self._X.shape[0])
@@ -44,9 +44,9 @@ class TestNumpyExtractors(unittest.TestCase):
         self.assertEqual(self.RX.timeToFrame(12),12*self.RX.getSamplingFrequency())
         self.assertEqual(self.RX.frameToTime(12),12/self.RX.getSamplingFrequency())
         # getSnippets
-        snippets=self.RX.getSnippets(snippet_len_before=10,snippet_len_after=10,reference_frames=[0,30,50])
+        snippets=self.RX.getSnippets(reference_frames=[0,30,50], snippet_len=20)
         self.assertTrue(np.allclose(snippets[1],self._X[:,20:40]))
-    
+
     def test_sorting_extractor(self):
         unit_ids=[1,2,3]
         # getUnitIds
@@ -54,6 +54,6 @@ class TestNumpyExtractors(unittest.TestCase):
         # getUnitSpikeTrain
         st=self.SX.getUnitSpikeTrain(unit_id=1)
         self.assertTrue(np.allclose(st,self._train1))
- 
+
 if __name__ == '__main__':
     unittest.main()
