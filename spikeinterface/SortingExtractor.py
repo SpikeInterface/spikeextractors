@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import numpy as np
 
 class SortingExtractor(ABC):
     '''A class that contains functions for extracting important information
@@ -61,14 +62,14 @@ class SortingExtractor(ABC):
         Parameters
         ----------
         unit_id: int
-            The unit id for which the property will be added
+            The unit id for which the property will be set
         property_name: str
-            A property stored by the sorting extractor (pca_features, etc.)
-        property_data
+            The name of the property to be stored
+        value
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if(isinstance(unit_id, int)):
+        if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
             if(unit_id in self.getUnitIds()):
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
@@ -81,8 +82,26 @@ class SortingExtractor(ABC):
         else:
             raise ValueError("unit_id must be an int")
 
+    def setUnitsProperty(self, *, unit_ids=None, property_name, values):
+        '''Sets unit property data to a list of units
+
+        Parameters
+        ----------
+        unit_ids: list
+            The list of unit ids for which the property will be set
+            Defaults to getUnitIds()
+        property_name: str
+            The name of the property
+        value: list
+            The list of values to be set
+        '''
+        if unit_ids is None:
+            unit_ids=self.getUnitIds()
+        for i,unit in enumerate(unit_ids):
+            self.setUnitProperty(unit_id=unit,property_name=property_name,value=values[i])
+
     def addUnitProperty(self, unit_id, property_name, value):
-        '''This function adds a unit property data set under the given property
+        '''DEPRECATED! This function adds a unit property data set under the given property
         name to the given unit.
 
         Parameters
@@ -90,13 +109,13 @@ class SortingExtractor(ABC):
         unit_id: int
             The unit id for which the property will be added
         property_name: str
-            A property stored by the sorting extractor (pca_features, etc.)
-        property_data
+            The name of the property
+        value
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
         print('WARNING: addUnitProperty is deprecated. Use setUnitProperty instead.')
-        if(isinstance(unit_id, int)):
+        if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
             if(unit_id in self.getUnitIds()):
                 if(isinstance(property_name, str)):
                     self._unit_properties[unit_id][property_name] = value
@@ -116,15 +135,14 @@ class SortingExtractor(ABC):
         unit_id: int
             The unit id for which the property will be returned
         property_name: str
-            A property stored by the sorting extractor (pca_features, etc.)
-
+            The name of the property
         Returns
         ----------
-        property_data
+        value
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if(isinstance(unit_id, int)):
+        if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
             if(unit_id in self.getUnitIds()):
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
@@ -139,6 +157,58 @@ class SortingExtractor(ABC):
                 raise ValueError("Non-valid unit_id")
         else:
             raise ValueError("unit_id must be an int")
+
+    def getUnitsProperty(self, *, unit_ids=None, property_name):
+        '''Returns a list of values stored under the property name corresponding
+        to a list of units
+
+        Parameters
+        ----------
+        unit_ids: list
+            The unit ids for which the property will be returned
+            Defaults to getUnitIds()
+        property_name: str
+            The name of the property
+        Returns
+        ----------
+        values
+            The list of values
+        '''
+        if unit_ids is None:
+            unit_ids=self.getUnitIds()
+        return [self.getUnitProperty(unit_id=unit,property_name=property_name) for unit in unit_ids]
+
+    def getUnitPropertyNames(self, *, unit_id=None):
+        '''Get a list of property names for a given unit, or for all units if unit_id is None
+
+        Parameters
+        ----------
+        unit_id: int
+            The unit id for which the property names will be returned
+            If None (default), will return property names for all units
+        Returns
+        ----------
+        property_names
+            The list of property names
+        '''
+        if unit_id is None:
+            ret=[]
+            for unit in self.getUnitIds():
+                tmp=self.getUnitPropertyNames()
+                for pname in tmp:
+                    ret.append(pname)
+            ret=sorted(list(set(ret)))
+            return ret
+        if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
+            if(unit_id in self.getUnitIds()):
+                if unit_id not in self._unit_properties:
+                    self._unit_properties[unit_id]={}
+                return sorted(self._unit_properties[unit_id].keys())
+            else:
+                raise ValueError("Non-valid unit_id")
+        else:
+            raise ValueError("unit_id must be an int")
+
 
     @staticmethod
     def writeSorting(self, sorting_extractor, save_path):
