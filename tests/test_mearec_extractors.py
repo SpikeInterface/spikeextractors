@@ -89,7 +89,7 @@ class TestMearecExtractors(unittest.TestCase):
         self.assertTrue(np.allclose(self.RX.getTraces(),X))
         self.assertTrue(np.allclose(self.RX.getTraces(start_frame=0,end_frame=12,channel_ids=[0,3]),X[[0,3],0:12]))
         # getChannelInfo
-        self.assertTrue(np.allclose(np.array(self.RX.getChannelInfo(channel_id=1)['location']),
+        self.assertTrue(np.allclose(np.array(self.RX.getChannelProperty(1, 'location')),
                                     self.dataset['positions'][1,:]))
 
     def test_sorting_extractor(self):
