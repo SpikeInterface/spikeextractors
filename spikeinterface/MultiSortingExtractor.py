@@ -6,10 +6,10 @@ import numpy as np
 
 class MultiSortingExtractor(SortingExtractor):
     # We need the sorting extractors so that we can determine the number of frames in each
-    def __init__(self, sorting_extractors, recording_extractors, epoch_names=None):
-        self._RXs=recording_extractors
-        self._RX=RecordingExtractor(recording_extractors=recording_extractors)
-        self._SXs=sorting_extractors
+    def __init__(self, sortings, recordings, epoch_names=None):
+        self._RXs=recordings
+        self._RX=MultiRecordingExtractor(recordings=recordings)
+        self._SXs=sortings
         self._all_unit_ids=[]
         for SX in self._SXs:
             unit_ids=SX.getUnitIds()

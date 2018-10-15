@@ -99,7 +99,7 @@ class TestExtractors(unittest.TestCase):
 
     def test_multi_sub_extractor(self):
         RX_multi=si.MultiRecordingExtractor(
-            recording_extractors=[self.RX,self.RX,self.RX],
+            recordings=[self.RX,self.RX,self.RX],
             epoch_names=['A','B','C']
         )
         RX_sub = RX_multi.getEpoch('C')

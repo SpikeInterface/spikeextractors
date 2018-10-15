@@ -16,7 +16,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._fs = None
         self._positions = None
         self._recordings = None
-        
+
     def _initialize(self):
         rec_dict, info = load_recordings(recording_folder=self._recording_folder)
         self._fs  = info['recordings']['fs']*1000 #fs is in kHz
@@ -24,22 +24,22 @@ class MEArecRecordingExtractor(RecordingExtractor):
         for chan, pos in enumerate(rec_dict['positions']):
             self.setChannelProperty(chan, 'location', pos)
 
-        
+
     def getNumChannels(self):
         if self._recordings is None:
             self._initialize()
         return self._recordings.shape[0]
-    
+
     def getNumFrames(self):
         if self._recordings is None:
             self._initialize()
         return self._recordings.shape[1]
-    
+
     def getSamplingFrequency(self):
         if self._fs is None:
             self._initialize()
         return self._fs
-        
+
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if self._recordings is None:
             self._initialize()
@@ -61,7 +61,7 @@ class MEArecSortingExtractor(SortingExtractor):
         self._spike_trains = None
         self._unit_ids = None
         self._fs = None
-        
+
     def _initialize(self):
         print(self._recording_file)
         rec_dict,  info = load_recordings(recording_folder=self._recording_folder)
@@ -74,7 +74,7 @@ class MEArecSortingExtractor(SortingExtractor):
         if self._unit_ids is None:
             self._initialize()
         return self._unit_ids
-        
+
     def getNumUnits(self):
         if self._num_units is None:
             self._initialize()
@@ -89,7 +89,7 @@ class MEArecSortingExtractor(SortingExtractor):
             self._initialize()
         times = (self._spike_trains[unit_id].times.rescale('s') * self._fs.rescale('Hz')).magnitude
         inds = np.where((start_frame<=times)&(times<end_frame))
-        return times[inds]        
+        return times[inds]
 
 
 def load_recordings(recording_folder, verbose=False):
