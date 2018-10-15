@@ -18,8 +18,8 @@ class TestMearecExtractors(unittest.TestCase):
         # Create a temporary directory
         self.test_dir = tempfile.mkdtemp()
         self._create_dataset()
-        self.RX=si.MEArecRecordingExtractor(recording_folder=self.test_dir+'/recordings')
-        self.SX=si.MEArecSortingExtractor(recording_folder=self.test_dir+'/recordings')
+        self.RX=si.MEArecRecordingExtractor(recording_path=self.test_dir+'/recordings')
+        self.SX=si.MEArecSortingExtractor(recording_path=self.test_dir+'/recordings')
 
     def tearDown(self):
         # Remove the directory after the test
@@ -71,7 +71,7 @@ class TestMearecExtractors(unittest.TestCase):
         np.save(os.path.join(rec_folder, 'peaks'), peaks)
         np.save(os.path.join(rec_folder, 'sources'), sources)
 
-        info = {'recordings':{'fs': float(fs.rescale('kHz').magnitude)}}
+        info = {'recordings':{'fs': float(fs.rescale('Hz').magnitude)}}
 
         with open(os.path.join(rec_folder, 'info.yaml'), 'w') as f:
             yaml.dump(info, f)
@@ -100,6 +100,6 @@ class TestMearecExtractors(unittest.TestCase):
         st = self.SX.getUnitSpikeTrain(unit_id=1)
         st2 = (self.dataset['spiketrains'][1].times.rescale('s') * self.dataset['fs'].rescale('Hz')).magnitude
         self.assertTrue(np.allclose(st,st2))
-    #
+
 if __name__ == '__main__':
     unittest.main()
