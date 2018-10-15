@@ -82,7 +82,6 @@ class TestExtractors(unittest.TestCase):
         self.assertTrue((type(RX.getNumFrames())==int) or (type(RX.getNumFrames())==np.int64))
         self.assertTrue((type(RX.getSamplingFrequency())==float) or (type(RX.getSamplingFrequency())==np.float64))
         self.assertTrue(type(RX.getTraces(start_frame=0,end_frame=10))==np.ndarray)
-        self.assertTrue(type(RX.getChannelInfo(channel_id=0))==dict)
 
     def test_biocam_extractor(self):
         path1=self.test_dir+'/raw.brw'
@@ -127,14 +126,6 @@ class TestExtractors(unittest.TestCase):
             RX1.getTraces(start_frame=sf,end_frame=ef,channel_ids=ch),
             RX2.getTraces(start_frame=sf,end_frame=ef,channel_ids=ch)
         ))
-        # getChannelInfo
-        # commented out as not part of common API
-        # for m in range(M):
-        #     self.assertTrue(np.allclose(
-        #         np.array(RX1.getChannelInfo(channel_id=m)['location']),
-        #         np.array(RX2.getChannelInfo(channel_id=m)['location'])
-        #     ))
-        # timeToFrame / frameToTime
         for f in range(0,RX1.getNumFrames(),10):
             self.assertTrue(np.isclose(RX1.frameToTime(f),RX2.frameToTime(f)))
             self.assertTrue(np.isclose(RX1.timeToFrame(RX1.frameToTime(f)),RX2.timeToFrame(RX2.frameToTime(f))))

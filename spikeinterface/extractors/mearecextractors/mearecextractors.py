@@ -21,6 +21,8 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._fs  = info['General']['fs']*1000 #fs is in kHz
         self._positions = positions
         self._recordings = recordings
+        for m in range(self._recordings.shape[0]):
+            self.setChannelProperty(m,'location',self._positions[m,:])
         
     def getNumChannels(self):
         if self._recordings is None:
@@ -47,13 +49,6 @@ class MEArecRecordingExtractor(RecordingExtractor):
         if channel_ids is None:
             channel_ids=range(self.getNumChannels())
         return self._recordings[channel_ids,:][:,start_frame:end_frame]
-    
-    def getChannelInfo(self, channel_id):
-        if self._positions is None:
-            self._initialize()
-        return dict(
-            location=self._positions[channel_id,:]
-        )
 
 class MEArecSortingExtractor(SortingExtractor):
     def __init__(self, *, recording_folder=None, recording_file=None):

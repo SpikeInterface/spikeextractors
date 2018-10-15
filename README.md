@@ -73,7 +73,7 @@ print('Num. channels = {}'.format(RX.getNumChannels()))
 print('Sampling frequency = {} Hz'.format(RX.getSamplingFrequency()))
 print('Num. timepoints = {}'.format(RX.getNumFrames()))
 print('Stdev. on third channel = {}'.format(np.std(RX.getTraces(channel_ids=2))))
-print('Location of third electrode = {}'.format(RX.getChannelInfo(channel_id=2)['location']))
+print('Location of third electrode = {}'.format(RX.getChannelProperty(2,'location')))
 ```
 ```output
 Num. channels = 7

@@ -31,6 +31,8 @@ class MdaRecordingExtractor(RecordingExtractor):
             raise Exception('Incompatible dimensions between geom.csv and timeseries file {} <> {}'.format(self._geom.shape[0],X.N1()))
         self._num_channels=X.N1()
         self._num_timepoints=X.N2()
+        for m in range(self._num_channels):
+            self.setChannelProperty(m,'location',self._geom[m,:])
         
     def getNumChannels(self):
         return self._num_channels
@@ -52,11 +54,6 @@ class MdaRecordingExtractor(RecordingExtractor):
         recordings=X.readChunk(i1=0,i2=start_frame,N1=X.N1(),N2=end_frame-start_frame)
         recordings=recordings[channel_ids,:]
         return recordings
-    
-    def getChannelInfo(self, channel_id):
-        return dict(
-            location=self._geom[channel_id,:]
-        )
 
     @staticmethod
     def writeRecording(recording_extractor,save_path):
@@ -64,12 +61,12 @@ class MdaRecordingExtractor(RecordingExtractor):
         N=recording_extractor.getNumFrames()
         channel_ids=range(M)
         raw=recording_extractor.getTraces()
-        info0=recording_extractor.getChannelInfo(channel_ids[0])
-        nd=len(info0['location'])
+        location0=recording_extractor.getChannelProperty(0,'location')
+        nd=len(location0)
         geom=np.zeros((M,nd))
         for ii in range(len(channel_ids)):
-            info0=recording_extractor.getChannelInfo(channel_ids[ii])
-            geom[ii,:]=list(info0['location'])
+            location_ii=recording_extractor.getChannelProperty(channel_ids[ii],'location')
+            geom[ii,:]=list(location_ii)
         if not os.path.exists(save_path):
             os.mkdir(save_path)
         mdaio.writemda32(raw,save_path+'/raw.mda')
