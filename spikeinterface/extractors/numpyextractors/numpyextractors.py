@@ -38,10 +38,10 @@ class NumpySortingExtractor(SortingExtractor):
         self._units={}
         # self._properties = {}
 
-    def loadFromExtractor(sorting_extractor):
-        ids=sorting_extractor.getUnitIds()
+    def loadFromExtractor(sorting):
+        ids=sorting.getUnitIds()
         for id in ids:
-            self.addUnit(id,sorting_extractor.getUnitSpikeTrain(id))
+            self.addUnit(id,sorting.getUnitSpikeTrain(id))
 
     def setTimesLabels(self,times,labels):
         units=np.sort(np.unique(labels))

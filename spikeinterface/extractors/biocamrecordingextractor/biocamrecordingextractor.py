@@ -36,11 +36,11 @@ class BiocamRecordingExtractor(RecordingExtractor):
                              self.getNumChannels())).T[channel_ids]
 
     @staticmethod
-    def writeRecording(recording_extractor,save_path):
-        M=recording_extractor.getNumChannels()
-        N=recording_extractor.getNumFrames()
+    def writeRecording(recording,save_path):
+        M=recording.getNumChannels()
+        N=recording.getNumFrames()
         channel_ids=range(M)
-        raw=recording_extractor.getTraces()
+        raw=recording.getTraces()
         if raw.dtype!=int:
             raise Exception('Cannot write dataset in the format with non-int datatype:',raw.dtype)
         rf = h5py.File(save_path, 'w')
@@ -51,7 +51,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
         rf.create_dataset('3BRecInfo/3BRecVars/MinVolt', data=[0])
         rf.create_dataset('3BRecInfo/3BRecVars/MaxVolt', data=[1])
         rf.create_dataset('3BRecInfo/3BRecVars/NRecFrames', data=[N])
-        rf.create_dataset('3BRecInfo/3BRecVars/SamplingRate', data=[recording_extractor.getSamplingFrequency()])
+        rf.create_dataset('3BRecInfo/3BRecVars/SamplingRate', data=[recording.getSamplingFrequency()])
         rf.create_dataset('3BRecInfo/3BRecVars/SignalInversion', data=[1])
         rf.create_dataset('3BRecInfo/3BMeaChip/NCols', data=[M])
         rf.create_dataset('3BRecInfo/3BMeaStreams/Raw/Chs', data=np.vstack((np.arange(M), np.zeros(M))).T, dtype=int)

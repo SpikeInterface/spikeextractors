@@ -5,14 +5,14 @@ import numpy as np
 
 class SubSortingExtractor(SortingExtractor):
 
-    def __init__(self, parent_extractor, *, unit_ids=None, new_unit_ids=None, start_frame=None, end_frame=None):
-        self._parent_extractor=parent_extractor
+    def __init__(self, parent_sorting, *, unit_ids=None, new_unit_ids=None, start_frame=None, end_frame=None):
+        self._parent_sorting = parent_sorting
         self._unit_ids=unit_ids
         self._new_unit_ids=new_unit_ids
         self._start_frame=start_frame
         self._end_frame=end_frame
         if self._unit_ids is None:
-            self._unit_ids=self._parent_extractor.getUnitIds()
+            self._unit_ids=self._parent_sorting.getUnitIds()
         if self._new_unit_ids is None:
             self._new_unit_ids=self._unit_ids
         if self._start_frame is None:
@@ -34,4 +34,4 @@ class SubSortingExtractor(SortingExtractor):
         u=self._original_unit_id_lookup[unit_id]
         sf=self._start_frame+start_frame
         ef=self._end_frame+end_frame
-        return self._parent_extractor.getUnitSpikeTrain(unit_id=u,start_frame=sf,end_frame=ef)-self._start_frame
+        return self._parent_sorting.getUnitSpikeTrain(unit_id=u,start_frame=sf,end_frame=ef)-self._start_frame

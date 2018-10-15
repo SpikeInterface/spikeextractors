@@ -30,14 +30,14 @@ def read_python(path):
     return metadata
 
 
-def loadProbeFile(recording_extractor, probe_file):
+def loadProbeFile(recording, probe_file):
     '''Loads channel information into recording extractor. If a .prb file is given,
     then 'location' and 'group' information for each channel is stored. If a .csv
     file is given, then it will only store 'location'
 
     Parameters
     ----------
-    recording_extractor: RecordingExtractor
+    recording: RecordingExtractor
         The recording extractor to channel information
     probe_file: str
         Path to probe file. Either .prb or .csv
@@ -46,33 +46,33 @@ def loadProbeFile(recording_extractor, probe_file):
         probe_dict = read_python(probe_file)
         if 'channel_groups' in probe_dict.keys():
             numchannels = np.sum([len(cg['channels']) for key, cg in probe_dict['channel_groups'].items()])
-            assert numchannels ==  recording_extractor.getNumChannels()
+            assert numchannels ==  recording.getNumChannels()
             for cgroup_id, cgroup in probe_dict['channel_groups'].items():
                 for key_prop, prop_val in cgroup.items():
                     if key_prop == 'channels':
                         for i_ch, prop in enumerate(prop_val):
-                            recording_extractor.setChannelProperty(prop, 'group', int(cgroup_id))
+                            recording.setChannelProperty(prop, 'group', int(cgroup_id))
                     elif key_prop == 'geometry':
                         for (i_ch, prop) in prop_val.items():
-                            recording_extractor.setChannelProperty(i_ch, 'location', prop)
+                            recording.setChannelProperty(i_ch, 'location', prop)
         else:
             raise AttributeError("'.prb' file should contain the 'channel_groups' field")
     elif probe_file.endswith('.csv'):
         with open(probe_file) as csvfile:
             posreader = csv.reader(csvfile)
             for i_ch, pos in enumerate(posreader):
-                recording_extractor.setChannelProperty(i_ch, 'location', pos)
+                recording.setChannelProperty(i_ch, 'location', pos)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 
 
-def saveProbeFile(recording_extractor, probe_file, format=None):
+def saveProbeFile(recording, probe_file, format=None):
     '''Saves probe file from the channel information of the given recording
     extractor
 
     Parameters
     ----------
-    recording_extractor: RecordingExtractor
+    recording: RecordingExtractor
         The recording extractor to save probe file from
     probe_file: str
         file name of .prb or .csv file to save probe information to
@@ -86,9 +86,9 @@ def saveProbeFile(recording_extractor, probe_file, format=None):
     if probe_file.endswith('.csv'):
         # write csv probe file
         with open(probe_file, 'w') as f:
-            if 'location' in recording_extractor.getChannelPropertyNames():
-                for chan in range(recording_extractor.getNumChannels()):
-                    loc = recording_extractor.getChannelProperty(chan, 'location')
+            if 'location' in recording.getChannelPropertyNames():
+                for chan in range(recording.getNumChannels()):
+                    loc = recording.getChannelProperty(chan, 'location')
                     if len(loc) == 2:
                         f.write(str(loc[0]))
                         f.write(',')
@@ -105,17 +105,17 @@ def saveProbeFile(recording_extractor, probe_file, format=None):
                 raise AttributeError("Recording extractor needs to have "
                                      "'location' property to save .csv probe file")
     elif probe_file.endswith('.prb'):
-        _export_prb_file(recording_extractor, probe_file, format)
+        _export_prb_file(recording, probe_file, format)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be saved.")
 
 
-def _export_prb_file(recording_extractor, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100):
+def _export_prb_file(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100):
     '''Exports .prb file
 
     Parameters
     ----------
-    recording_extractor: RecordingExtractor
+    recording: RecordingExtractor
         The recording extractor to save probe file from
     file_name: str
         probe filename to be exported to
@@ -144,9 +144,9 @@ def _export_prb_file(recording_extractor, file_name, format=None, adjacency_dist
     abspath = os.path.abspath(file_name)
 
     if geometry:
-        if 'location' in recording_extractor.getChannelPropertyNames():
-            positions = np.array([recording_extractor.getChannelProperty(chan, 'location')
-                                  for chan in range(recording_extractor.getNumChannels())])
+        if 'location' in recording.getChannelPropertyNames():
+            positions = np.array([recording.getChannelProperty(chan, 'location')
+                                  for chan in range(recording.getNumChannels())])
         else:
             print("'location' property is not available and it will not be saved.")
             positions = None
@@ -154,15 +154,15 @@ def _export_prb_file(recording_extractor, file_name, format=None, adjacency_dist
     else:
         positions = None
 
-    if 'group' in recording_extractor.getChannelPropertyNames():
-        groups = np.array([recording_extractor.getChannelProperty(chan, 'group') for chan in range(recording_extractor.getNumChannels())])
+    if 'group' in recording.getChannelPropertyNames():
+        groups = np.array([recording.getChannelProperty(chan, 'group') for chan in range(recording.getNumChannels())])
         channel_groups = np.unique([groups])
     else:
         print("'group' property is not available and it will not be saved.")
         channel_groups = [0]
-        groups = np.array([0] * recording_extractor.getNumChannels())
+        groups = np.array([0] * recording.getNumChannels())
 
-    n_elec = recording_extractor.getNumChannels()
+    n_elec = recording.getNumChannels()
 
     # find adjacency graph
     if graph:

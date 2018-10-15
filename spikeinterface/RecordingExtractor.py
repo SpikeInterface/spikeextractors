@@ -267,19 +267,19 @@ class RecordingExtractor(ABC):
         else:
             raise ValueError("channel_id must be an int")
 
-    def copyChannelProperties(self, recording_extractor):
+    def copyChannelProperties(self, recording):
         '''Copy channel properties from another recording extractor to the current
         recording extractor.
 
         Parameters
         ----------
-        recording_extractor: RecordingExtractor
+        recording: RecordingExtractor
             The recording extractor from twhich the properties will be copied
         '''
-        for channel_id in range(recording_extractor.getNumChannels()):
-            curr_property_names = recording_extractor.getChannelPropertyNames(channel_id=channel_id)
+        for channel_id in range(recording.getNumChannels()):
+            curr_property_names = recording.getChannelPropertyNames(channel_id=channel_id)
             for curr_property_name in curr_property_names:
-                value = recording_extractor.getChannelProperty(channel_id=channel_id, property_name=curr_property_name)
+                value = recording.getChannelProperty(channel_id=channel_id, property_name=curr_property_name)
                 self.setChannelProperty(channel_id=channel_id, property_name=curr_property_name, value=value)
 
     def addEpoch(self, epoch_name, start_frame, end_frame):
@@ -381,11 +381,11 @@ class RecordingExtractor(ABC):
         start_frame = epoch_info['start_frame']
         end_frame = epoch_info['end_frame']
         from .SubRecordingExtractor import SubRecordingExtractor
-        return SubRecordingExtractor(parent_extractor=self, start_frame=start_frame,
+        return SubRecordingExtractor(parent_recording=self, start_frame=start_frame,
                                      end_frame=end_frame)
 
     @staticmethod
-    def writeRecording(self, recording_extractor, save_path):
+    def writeRecording(self, recording, save_path):
         '''This function writes out the recorded file of a given recording
         extractor to the file format of this current recording extractor. Allows
         for easy conversion between recording file formats. It is a static
@@ -393,7 +393,7 @@ class RecordingExtractor(ABC):
 
         Parameters
         ----------
-        recording_extractor: RecordingExtractor
+        recording: RecordingExtractor
             An RecordingExtractor that can extract information from the recording
             file to be converted to the new format.
 

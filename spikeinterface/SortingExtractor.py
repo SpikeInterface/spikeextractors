@@ -213,7 +213,7 @@ class SortingExtractor(ABC):
 
 
     @staticmethod
-    def writeSorting(self, sorting_extractor, save_path):
+    def writeSorting(self, sorting, save_path):
         '''This function writes out the spike sorted data file of a given sorting
         extractor to the file format of this current sorting extractor. Allows
         for easy conversion between spike sorting file formats. It is a static
@@ -221,7 +221,7 @@ class SortingExtractor(ABC):
 
         Parameters
         ----------
-        sorting_extractor: SortingExtractor
+        sorting: SortingExtractor
             A SortingExtractor that can extract information from the sorted data
             file to be converted to the new format.
 
