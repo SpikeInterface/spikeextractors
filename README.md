@@ -233,8 +233,8 @@ Once all abstract methods are overwritten in your RecordingExtractor or SortingE
 
 ## Tools that use RecordingExtractors and SortingExtractors
 
-- [spiketoolkit](https://github.com/alejoe91/spiketoolkit) A repository containing tools that utilize functions from the extractors. It also contains spike sorting algorithm wrappers that output sorting extractors post-sorting allowing for standardized evaluation and quality control. Maintained by Alessio Paolo Buccino.
-- [spikewidgets](https://github.com/magland/spikewidgets) A repository containing graphical widgets that utilize functions from the extractors to plot and visualize both the raw and sorted extracellular data. Maintained by Jeremy Magland.
+- [spiketoolkit](https://github.com/alejoe91/spiketoolkit) - A repository containing tools that utilize functions from the extractors. It also contains spike sorting algorithm wrappers that output sorting extractors post-sorting allowing for standardized evaluation and quality control. Maintained by Alessio Paolo Buccino.
+- [spikewidgets](https://github.com/magland/spikewidgets) - A repository containing graphical widgets that utilize functions from the extractors to plot and visualize both the raw and sorted extracellular data. Maintained by Jeremy Magland.
 ### Future Plans
 
 Coming soon...
