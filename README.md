@@ -178,17 +178,14 @@ class ExampleSortingExtractor(SortingExtractor):
         ## All file specific initialization code can go here.
         
     def getUnitIds(self):
-        Returns
-        ----------
-        unit_ids: array_like
-            A list or 1D array of the unit ids in recording (ints).
-        '''
+    
         #Fill code to get a unit_ids list containing all the ids (ints) of detected units in the recording
         
         return unit_ids
 
     @abstractmethod
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+    
         '''Code to extract spike frames from the specified unit.
         It will return spike frames from within three ranges:
             [start_frame, t_start+1, ..., end_frame-1]
@@ -200,19 +197,7 @@ class ExampleSortingExtractor(SortingExtractor):
         are given, respectively. Spike frames are returned in the form of an
         array_like of spike frames. In this implementation, start_frame is inclusive
         and end_frame is exclusive conforming to numpy standards.
-        Parameters
-        ----------
-        unit_id: int
-            The id that specifies a unit in the recording.
-        start_frame: int
-            The frame above which a spike frame is returned  (inclusive).
-        end_frame: int
-            The frame below which a spike frame is returned  (exclusive).
-        Returns
-        ----------
-        spike_train: numpy.ndarray
-            An 1D array containing all the frames for each spike in the
-            specified unit given the range of start and end frames.
+       
         '''
         
         return spike_train
