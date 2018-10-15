@@ -9,6 +9,8 @@ class NumpyRecordingExtractor(RecordingExtractor):
         self._timeseries=timeseries
         self._samplerate=float(samplerate)
         self._geom=geom
+        for m in range(self._timeseries.shape[0]):
+            self.setChannelProperty(m,'location',self._geom[m,:])
 
     def getNumChannels(self):
         return self._timeseries.shape[0]
@@ -28,11 +30,6 @@ class NumpyRecordingExtractor(RecordingExtractor):
             channel_ids=range(self.getNumChannels())
         recordings=self._timeseries[:,start_frame:end_frame][channel_ids,:]
         return recordings
-
-    def getChannelInfo(self, channel_id):
-        return dict(
-            location=self._geom[channel_id,:]
-        )
 
 class NumpySortingExtractor(SortingExtractor):
     def __init__(self):

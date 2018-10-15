@@ -268,6 +268,50 @@ class RecordingExtractor(ABC):
             raise ValueError("channel_id must be an int")
 
 
+    def getChannelPropertyNames(self, channel_id=None):
+        '''Get a list of property names for a given channel, or for all channels if channel_id is None
+         Parameters
+        ----------
+        channel_id: int
+            The channel id for which the property names will be returned
+            If None (default), will return property names for all channels
+        Returns
+        ----------
+        property_names
+            The list of property names
+        '''
+        if channel_id is None:
+            ret=[]
+            for channel in range(self.getNumChannels()):
+                tmp=self.getChannelPropertyNames(channel_id=channel)
+                for pname in tmp:
+                    ret.append(pname)
+            ret=sorted(list(set(ret)))
+            return ret
+        if (isinstance(channel_id, (int, np.int64))):
+            if(channel_id in range(self.getNumChannels())):
+                if channel_id not in self._channel_properties:
+                    self._channel_properties[channel_id]={}
+                return sorted(self._channel_properties[channel_id].keys())
+            else:
+                raise ValueError("Non-valid channel_id")
+        else:
+            raise ValueError("channel_id must be an int")
+
+    def copyChannelProperties(self, recording_extractor):
+        '''Copy channel properties from another recording extractor
+
+        Parameters
+        ----------
+        recording_extractor:
+            The other recording extractor
+        '''
+        for m in range(recording_extractor.getNumChannels()):
+            pnames=recording_extractor.getChannelPropertyNames(channel_id=m)
+            for pname in pnames:
+                val=recording_extractor.getChannelProperty(channel_id=m, property_name=pname)
+                self.setChannelProperty(channel_id=m, property_name=pname, value=val)
+
     def addEpoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to your recording extractor that tracks
         a certain time period in your recording. It is stored in an internal

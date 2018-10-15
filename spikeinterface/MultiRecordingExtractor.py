@@ -45,6 +45,9 @@ class MultiRecordingExtractor(RecordingExtractor):
         self._start_times.append(tt)
         self._num_frames=ff
 
+        # Set the channel properties based on the first recording extractor
+        self.copyChannelProperties(self._first_recording_extractor)
+
     def _find_section_for_frame(self, frame):
         inds=np.where(np.array(self._start_frames[:-1])<=frame)[0]
         ind=inds[-1]
@@ -93,6 +96,3 @@ class MultiRecordingExtractor(RecordingExtractor):
     def timeToFrame(self, time):
         RX, i_epoch, rel_time = self._find_section_for_time(time)
         return RX.timeToFrame(rel_time)+self._start_frames[i_epoch]
-
-    def getChannelInfo(self, channel_id):
-        return self._first_recording_extractor.getChannelInfo(channel_id)

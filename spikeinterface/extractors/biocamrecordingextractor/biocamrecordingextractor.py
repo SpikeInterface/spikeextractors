@@ -11,6 +11,8 @@ class BiocamRecordingExtractor(RecordingExtractor):
         self._recording_file = recording_file
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, self._chIndices, self._file_format, self._signalInv, self._positions, self._read_function = openBiocamFile(
             self._recording_file)
+        for m in range(self._nRecCh):
+            self.setChannelProperty(m,'location',self._positions[m])
 
     def getNumChannels(self):
         return self._nRecCh
@@ -32,11 +34,6 @@ class BiocamRecordingExtractor(RecordingExtractor):
             self._rf, start_frame, end_frame, self.getNumChannels())
         return data.reshape((end_frame - start_frame,
                              self.getNumChannels())).T[channel_ids]
-
-    def getChannelInfo(self, channel_id):
-        return dict(
-            location=self._positions[channel_id]
-        )
 
     @staticmethod
     def writeRecording(recording_extractor,save_path):

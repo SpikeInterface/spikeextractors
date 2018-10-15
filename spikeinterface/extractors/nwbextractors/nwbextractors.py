@@ -11,6 +11,7 @@ class CopyRecordingExtractor(si.RecordingExtractor):
     def __init__(self, other):
         si.RecordingExtractor.__init__(self)
         self._other=other
+        self.copyChannelProperties(other)
         
     def getNumChannels(self):
         return self._other.getNumChannels()
@@ -23,9 +24,6 @@ class CopyRecordingExtractor(si.RecordingExtractor):
         
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         return self._other.getTraces(start_frame=start_frame,end_frame=end_frame,channel_ids=channel_ids)
-    
-    def getChannelInfo(self, channel_id):
-        return self._other.getChannelInfo(channel_id)
 
 class NwbRecordingExtractor(CopyRecordingExtractor):
     def __init__(self, path, acquisition_name=None):
@@ -88,14 +86,13 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
         
         for m in range(M):
             id=m
-            info0=recording_extractor.getChannelInfo(m)
-            location=info0['location']
+            location=recording_extractor.getChannelProperty(m,'location')
             impedence=-1.0
             while len(location)<3:
                 location=np.append(location,[0])
             nwbfile.add_electrode(
                 id,
-                x=location[0], y=location[1], z=location[2],
+                x=float(location[0]), y=float(location[1]), z=float(location[2]),
                 imp=impedence,
                 location='electrode_location',
                 filtering='none',
