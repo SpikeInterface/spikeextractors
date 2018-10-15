@@ -178,7 +178,7 @@ class SortingExtractor(ABC):
             unit_ids=self.getUnitIds()
         return [self.getUnitProperty(unit_id=unit,property_name=property_name) for unit in unit_ids]
 
-    def getUnitPropertyNames(self, *, unit_id=None):
+    def getUnitPropertyNames(self, unit_id=None):
         '''Get a list of property names for a given unit, or for all units if unit_id is None
 
         Parameters
@@ -194,7 +194,7 @@ class SortingExtractor(ABC):
         if unit_id is None:
             ret=[]
             for unit in self.getUnitIds():
-                tmp=self.getUnitPropertyNames()
+                tmp=self.getUnitPropertyNames(unit)
                 for pname in tmp:
                     ret.append(pname)
             ret=sorted(list(set(ret)))

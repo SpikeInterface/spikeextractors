@@ -3,8 +3,10 @@ from spikeinterface import SortingExtractor
 
 import quantities as pq
 import numpy as np
+import os
 from os.path import join
 import h5py
+import yaml, json
 
 class MEArecRecordingExtractor(RecordingExtractor):
     def __init__(self, *, recording_folder=None, recording_file=None):
@@ -16,13 +18,12 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._recordings = None
         
     def _initialize(self):
-        recordings, times, positions, templates, spiketrains, sources, peaks, info = \
-            load_recordings(recording_folder=self._recording_folder,recording_file=self._recording_file)
-        self._fs  = info['General']['fs']*1000 #fs is in kHz
-        self._positions = positions
-        self._recordings = recordings
-        for m in range(self._recordings.shape[0]):
-            self.setChannelProperty(m,'location',self._positions[m,:])
+        rec_dict, info = load_recordings(recording_folder=self._recording_folder)
+        self._fs  = info['recordings']['fs']*1000 #fs is in kHz
+        self._recordings = rec_dict['recordings']
+        for chan, pos in enumerate(rec_dict['positions']):
+            self.setChannelProperty(chan, 'location', pos)
+
         
     def getNumChannels(self):
         if self._recordings is None:
@@ -50,6 +51,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
             channel_ids=range(self.getNumChannels())
         return self._recordings[channel_ids,:][:,start_frame:end_frame]
 
+
 class MEArecSortingExtractor(SortingExtractor):
     def __init__(self, *, recording_folder=None, recording_file=None):
         SortingExtractor.__init__(self)
@@ -62,12 +64,11 @@ class MEArecSortingExtractor(SortingExtractor):
         
     def _initialize(self):
         print(self._recording_file)
-        recordings, times, positions, templates, spiketrains, sources, peaks, info = \
-            load_recordings(recording_folder=self._recording_folder,recording_file=self._recording_file)
-        self._num_units = len(spiketrains)
+        rec_dict,  info = load_recordings(recording_folder=self._recording_folder)
+        self._num_units = len(rec_dict['spiketrains'])
         self._unit_ids = range(self._num_units)
-        self._spike_trains = spiketrains
-        self._fs  = info['General']['fs'] * pq.kHz #fs is in kHz
+        self._spike_trains = rec_dict['spiketrains']
+        self._fs  = info['recordings']['fs'] * pq.kHz #fs is in kHz
 
     def getUnitIds(self):
         if self._unit_ids is None:
@@ -89,8 +90,9 @@ class MEArecSortingExtractor(SortingExtractor):
         times = (self._spike_trains[unit_id].times.rescale('s') * self._fs.rescale('Hz')).magnitude
         inds = np.where((start_frame<=times)&(times<end_frame))
         return times[inds]        
-        
-def load_recordings(*, recording_folder=None, recording_file=None):
+
+
+def load_recordings(recording_folder, verbose=False):
     '''
     Load generated recordings (from template_gen.py)
 
@@ -104,40 +106,75 @@ def load_recordings(*, recording_folder=None, recording_file=None):
     info - dict
 
     '''
-    import yaml
-    if recording_folder:
-        print("Loading recordings from folder...")
+    if verbose:
+        print("Loading recordings...")
+
+    rec_dict = {}
+
+    if os.path.isfile(join(recording_folder, 'recordings.npy')):
         recordings = np.load(join(recording_folder, 'recordings.npy'))
+        rec_dict.update({'recordings': recordings})
+    if os.path.isfile(join(recording_folder, 'positions.npy')):
         positions = np.load(join(recording_folder, 'positions.npy'))
+        rec_dict.update({'positions': positions})
+    if os.path.isfile(join(recording_folder, 'times.npy')):
         times = np.load(join(recording_folder, 'times.npy'))
+        rec_dict.update({'times': times})
+    if os.path.isfile(join(recording_folder, 'templates.npy')):
         templates = np.load(join(recording_folder, 'templates.npy'))
+        rec_dict.update({'templates': templates})
+    if os.path.isfile(join(recording_folder, 'spiketrains.npy')):
         spiketrains = np.load(join(recording_folder, 'spiketrains.npy'))
+        rec_dict.update({'spiketrains': spiketrains})
+    if os.path.isfile(join(recording_folder, 'sources.npy')):
         sources = np.load(join(recording_folder, 'sources.npy'))
+        rec_dict.update({'sources': sources})
+    if os.path.isfile(join(recording_folder, 'peaks.npy')):
         peaks = np.load(join(recording_folder, 'peaks.npy'))
+        rec_dict.update({'peaks': peaks})
 
-        with open(join(recording_folder, 'info.yaml'), 'r') as f:
-            info = yaml.load(f)
-    elif recording_file:
-        print("Loading recordings from file...")
-        with h5py.File(recording_file,'r') as F:
-            recordings=np.array(F.get('recordings'))
-            positions=np.array(F.get('positions'))
-            times=np.array(F.get('times'))
-            templates=np.array(F.get('templates'))
-            n_neurons=F.attrs['n_neurons']
-            spiketrains=[]
-            for i in range(n_neurons):
-                spiketrains.append(dict(
-                    times=np.array(F.get('spiketrains/{}/times'.format(i)))
-                ))
-            sources=np.array(F.get('sources'))
-            peaks=np.array(F.get('peaks.npy'))
-            info=dict(
-                General=dict(F.attrs)
-            )
-            
-    if not isinstance(times, pq.Quantity):
-        times = times * pq.ms
+    with open(join(recording_folder, 'info.yaml'), 'r') as f:
+        info = yaml.load(f)
 
-    print("Done loading recordings...")
-    return recordings, times, positions, templates, spiketrains, sources, peaks, info
+    if verbose:
+        print("Done loading recordings...")
+
+    return rec_dict, info
+
+def hdf5_to_recording(input_file,output_folder):
+  if os.path.exists(output_folder):
+    raise Exception('Output folder already exists: '+output_folder)
+
+  os.mkdir(output_folder)
+
+  with h5py.File(input_file,'r') as F:
+    info=json.loads(str(F['info'][()]))
+    with open(output_folder+'/info.yaml','w') as f:
+      yaml.dump(info,f,default_flow_style=False)
+
+    peaks=np.array(F.get('peaks'))
+    np.save(output_folder+'/peaks.npy',peaks)
+    positions=np.array(F.get('positions'))
+    np.save(output_folder+'/positions.npy',positions)
+    recordings=np.array(F.get('recordings'))
+    np.save(output_folder+'/recordings.npy',recordings)
+    sources=np.array(F.get('sources'))
+    np.save(output_folder+'/sources.npy',sources)
+    templates=np.array(F.get('templates'))
+    np.save(output_folder+'/templates.npy',templates)
+    times=np.array(F.get('times'))
+    np.save(output_folder+'/times.npy',times)
+    spiketrains=[]
+    for ii in range(F.attrs['n_neurons']):
+      times=np.array(F.get('spiketrains/{}/times'.format(ii)))
+      t_stop=np.array(F.get('spiketrains/{}/t_stop'.format(ii)))
+      annotations_str=str(F.get('spiketrains/{}/annotations'.format(ii))[()])
+      annotations=json.loads(annotations_str)
+      st=neo.core.SpikeTrain(
+        times,
+        t_stop=t_stop,
+        units=quantities.s
+      )
+      st.annotations=annotations
+      spiketrains.append(st)
+    np.save(output_folder+'/spiketrains.npy',spiketrains)

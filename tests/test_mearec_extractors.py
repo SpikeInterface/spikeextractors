@@ -71,7 +71,7 @@ class TestMearecExtractors(unittest.TestCase):
         np.save(os.path.join(rec_folder, 'peaks'), peaks)
         np.save(os.path.join(rec_folder, 'sources'), sources)
 
-        info = {'General':{'fs': float(fs.rescale('kHz').magnitude)}}
+        info = {'recordings':{'fs': float(fs.rescale('kHz').magnitude)}}
 
         with open(os.path.join(rec_folder, 'info.yaml'), 'w') as f:
             yaml.dump(info, f)
@@ -88,8 +88,9 @@ class TestMearecExtractors(unittest.TestCase):
         # getTraces
         self.assertTrue(np.allclose(self.RX.getTraces(),X))
         self.assertTrue(np.allclose(self.RX.getTraces(start_frame=0,end_frame=12,channel_ids=[0,3]),X[[0,3],0:12]))
-        # getChannelProperty - location
-        self.assertTrue(np.allclose(np.array(self.RX.getChannelProperty(1,'location')),self.dataset['positions'][1,:]))
+        # getChannelInfo
+        self.assertTrue(np.allclose(np.array(self.RX.getChannelProperty(1, 'location')),
+                                    self.dataset['positions'][1,:]))
 
     def test_sorting_extractor(self):
         K=self.dataset['num_units']
