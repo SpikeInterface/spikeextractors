@@ -235,38 +235,6 @@ class RecordingExtractor(ABC):
                 raise ValueError("Non-valid channel_id")
         else:
             raise ValueError("channel_id must be an int")
-        
-    def getChannelPropertyNames(self, channel_id=None):
-        '''Get a list of property names for a given channel, or for all channels if channel_id is None
-
-        Parameters
-        ----------
-        channel_id: int
-            The channel id for which the property names will be returned
-            If None (default), will return property names for all channels
-        Returns
-        ----------
-        property_names
-            The list of property names
-        '''
-        if channel_id is None:
-            ret=[]
-            for channel in range(self.getNumChannels()):
-                tmp=self.getChannelPropertyNames(channel_id=channel)
-                for pname in tmp:
-                    ret.append(pname)
-            ret=sorted(list(set(ret)))
-            return ret
-        if (isinstance(channel_id, (int, np.int64))):
-            if(channel_id in range(self.getNumChannels())):
-                if channel_id not in self._channel_properties:
-                    self._channel_properties[channel_id]={}
-                return sorted(self._channel_properties[channel_id].keys())
-            else:
-                raise ValueError("Non-valid channel_id")
-        else:
-            raise ValueError("channel_id must be an int")
-
 
     def getChannelPropertyNames(self, channel_id=None):
         '''Get a list of property names for a given channel, or for all channels if channel_id is None
@@ -281,36 +249,38 @@ class RecordingExtractor(ABC):
             The list of property names
         '''
         if channel_id is None:
-            ret=[]
-            for channel in range(self.getNumChannels()):
-                tmp=self.getChannelPropertyNames(channel_id=channel)
-                for pname in tmp:
-                    ret.append(pname)
-            ret=sorted(list(set(ret)))
-            return ret
+            property_names = []
+            for channel_id in range(self.getNumChannels()):
+                curr_property_names = self.getChannelPropertyNames(channel_id=channel_id)
+                for curr_property_name in curr_property_names:
+                    property_names.append(curr_property_name)
+            property_names = sorted(list(set(property_names)))
+            return property_names
         if (isinstance(channel_id, (int, np.int64))):
             if(channel_id in range(self.getNumChannels())):
                 if channel_id not in self._channel_properties:
                     self._channel_properties[channel_id]={}
-                return sorted(self._channel_properties[channel_id].keys())
+                property_names = sorted(self._channel_properties[channel_id].keys())
+                return property_names
             else:
                 raise ValueError("Non-valid channel_id")
         else:
             raise ValueError("channel_id must be an int")
 
     def copyChannelProperties(self, recording_extractor):
-        '''Copy channel properties from another recording extractor
+        '''Copy channel properties from another recording extractor to the current
+        recording extractor.
 
         Parameters
         ----------
-        recording_extractor:
-            The other recording extractor
+        recording_extractor: RecordingExtractor
+            The recording extractor from twhich the properties will be copied
         '''
-        for m in range(recording_extractor.getNumChannels()):
-            pnames=recording_extractor.getChannelPropertyNames(channel_id=m)
-            for pname in pnames:
-                val=recording_extractor.getChannelProperty(channel_id=m, property_name=pname)
-                self.setChannelProperty(channel_id=m, property_name=pname, value=val)
+        for channel_id in range(recording_extractor.getNumChannels()):
+            curr_property_names = recording_extractor.getChannelPropertyNames(channel_id=channel_id)
+            for curr_property_name in curr_property_names:
+                value = recording_extractor.getChannelProperty(channel_id=channel_id, property_name=curr_property_name)
+                self.setChannelProperty(channel_id=channel_id, property_name=curr_property_name, value=value)
 
     def addEpoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to your recording extractor that tracks
