@@ -30,5 +30,6 @@ class TestTools(unittest.TestCase):
         position_loaded = [self.RX.getChannelProperty(chan, 'location') for chan in range(self.RX.getNumChannels())]
         self.assertTrue(np.allclose(positions[10], position_loaded[10]))
 
+
 if __name__ == '__main__':
     unittest.main()
