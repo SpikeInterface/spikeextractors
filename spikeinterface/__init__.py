@@ -15,4 +15,4 @@ from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor,
 from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor
 from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
 
-from .tools import *
+from .tools import loadProbeFile, saveProbeFile, read_python

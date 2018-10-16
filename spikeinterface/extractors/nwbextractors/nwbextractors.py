@@ -11,21 +11,19 @@ class CopyRecordingExtractor(si.RecordingExtractor):
     def __init__(self, other):
         si.RecordingExtractor.__init__(self)
         self._other=other
-        
+        self.copyChannelProperties(other)
+
     def getNumChannels(self):
         return self._other.getNumChannels()
-    
+
     def getNumFrames(self):
         return self._other.getNumFrames()
-    
+
     def getSamplingFrequency(self):
         return self._other.getSamplingFrequency()
-        
+
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         return self._other.getTraces(start_frame=start_frame,end_frame=end_frame,channel_ids=channel_ids)
-    
-    def getChannelInfo(self, channel_id):
-        return self._other.getChannelInfo(channel_id)
 
 class NwbRecordingExtractor(CopyRecordingExtractor):
     def __init__(self, path, acquisition_name=None):
@@ -57,10 +55,10 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             CopyRecordingExtractor.__init__(self,NRX)
 
     @staticmethod
-    def writeRecording(recording_extractor,save_path,acquisition_name):
-        M=recording_extractor.getNumChannels()
-        N=recording_extractor.getNumFrames()
-        
+    def writeRecording(recording,save_path,acquisition_name):
+        M=recording.getNumChannels()
+        N=recording.getNumFrames()
+
         nwbfile = NWBFile(
             source='SpikeInterface::NwbRecordingExtractor',
             session_description='',
@@ -85,17 +83,16 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             device=device,
             description=eg_description
         )
-        
+
         for m in range(M):
             id=m
-            info0=recording_extractor.getChannelInfo(m)
-            location=info0['location']
+            location=recording.getChannelProperty(m,'location')
             impedence=-1.0
             while len(location)<3:
                 location=np.append(location,[0])
             nwbfile.add_electrode(
                 id,
-                x=location[0], y=location[1], z=location[2],
+                x=float(location[0]), y=float(location[1]), z=float(location[2]),
                 imp=impedence,
                 location='electrode_location',
                 filtering='none',
@@ -103,19 +100,19 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
                 description='electrode_description'
             )
         electrode_table_region = nwbfile.create_electrode_table_region(
-            list(range(M)), 
+            list(range(M)),
             'electrode_table_region'
         )
 
-        rate = recording_extractor.getSamplingFrequency()/1000
-        ephys_data = recording_extractor.getTraces().T
-        
+        rate = recording.getSamplingFrequency()/1000
+        ephys_data = recording.getTraces().T
+
         ephys_ts = ElectricalSeries(
             name=acquisition_name,
             source='acquisition_source',
             data=ephys_data,
             electrodes=electrode_table_region,
-            starting_time=recording_extractor.frameToTime(0),
+            starting_time=recording.frameToTime(0),
             rate=rate,
             resolution=1e-6,
             comments='Generated from SpikeInterface::NwbRecordingExtractor',

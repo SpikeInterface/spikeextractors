@@ -31,16 +31,18 @@ class MdaRecordingExtractor(RecordingExtractor):
             raise Exception('Incompatible dimensions between geom.csv and timeseries file {} <> {}'.format(self._geom.shape[0],X.N1()))
         self._num_channels=X.N1()
         self._num_timepoints=X.N2()
-        
+        for m in range(self._num_channels):
+            self.setChannelProperty(m,'location',self._geom[m,:])
+
     def getNumChannels(self):
         return self._num_channels
-    
+
     def getNumFrames(self):
         return self._num_timepoints
-    
+
     def getSamplingFrequency(self):
         return self._samplerate
-        
+
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if start_frame is None:
             start_frame=0
@@ -52,29 +54,24 @@ class MdaRecordingExtractor(RecordingExtractor):
         recordings=X.readChunk(i1=0,i2=start_frame,N1=X.N1(),N2=end_frame-start_frame)
         recordings=recordings[channel_ids,:]
         return recordings
-    
-    def getChannelInfo(self, channel_id):
-        return dict(
-            location=self._geom[channel_id,:]
-        )
 
     @staticmethod
-    def writeRecording(recording_extractor,save_path):
-        M=recording_extractor.getNumChannels()
-        N=recording_extractor.getNumFrames()
+    def writeRecording(recording,save_path):
+        M=recording.getNumChannels()
+        N=recording.getNumFrames()
         channel_ids=range(M)
-        raw=recording_extractor.getTraces()
-        info0=recording_extractor.getChannelInfo(channel_ids[0])
-        nd=len(info0['location'])
+        raw=recording.getTraces()
+        location0=recording.getChannelProperty(0,'location')
+        nd=len(location0)
         geom=np.zeros((M,nd))
         for ii in range(len(channel_ids)):
-            info0=recording_extractor.getChannelInfo(channel_ids[ii])
-            geom[ii,:]=list(info0['location'])
+            location_ii=recording.getChannelProperty(channel_ids[ii],'location')
+            geom[ii,:]=list(location_ii)
         if not os.path.exists(save_path):
             os.mkdir(save_path)
         mdaio.writemda32(raw,save_path+'/raw.mda')
         params=dict(
-            samplerate=recording_extractor.getSamplingFrequency(),
+            samplerate=recording.getSamplingFrequency(),
             spike_sign=-1
         )
         with open(save_path+'/params.json','w') as f:
@@ -98,7 +95,7 @@ class MdaSortingExtractor(SortingExtractor):
         self._times=self._firings[1,:]
         self._labels=self._firings[2,:]
         self._unit_ids=np.unique(self._labels).astype(int)
-        
+
     def getUnitIds(self):
         return self._unit_ids
 
@@ -109,16 +106,16 @@ class MdaSortingExtractor(SortingExtractor):
             end_frame=np.Inf
         inds=np.where((self._labels==unit_id)&(start_frame<=self._times)&(self._times<end_frame))
         return self._times[inds]
-    
+
     @staticmethod
-    def writeSorting(sorting_extractor,save_path):
-        unit_ids=sorting_extractor.getUnitIds()
+    def writeSorting(sorting,save_path):
+        unit_ids=sorting.getUnitIds()
         K=np.max(unit_ids)
         times_list=[]
         labels_list=[]
         for i in range(len(unit_ids)):
             unit=unit_ids[i]
-            times=sorting_extractor.getUnitSpikeTrain(unit_id=unit)
+            times=sorting.getUnitSpikeTrain(unit_id=unit)
             times_list.append(times)
             labels_list.append(np.ones(times.shape)*unit)
         all_times=np.concatenate(times_list)
@@ -134,10 +131,10 @@ class MdaSortingExtractor(SortingExtractor):
 
 def is_kbucket_url(path):
     return path.startswith('kbucket://') or path.startswith('sha1://')
-    
+
 def is_url(path):
     return path.startswith('http://') or path.startswith('https://') or path.startswith('kbucket://') or path.startswith('sha1://')
-    
+
 def read_dataset_params(dsdir):
     params_fname=mlp.realizeFile(dsdir+'/params.json')
     if not os.path.exists(params_fname):
