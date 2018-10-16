@@ -33,5 +33,9 @@ class SubSortingExtractor(SortingExtractor):
             end_frame=np.Inf
         u=self._original_unit_id_lookup[unit_id]
         sf=self._start_frame+start_frame
-        ef=self._end_frame+end_frame
+        ef=self._start_frame+end_frame
+        if sf<self._start_frame:
+            sf=self._start_frame
+        if ef>self._end_frame:
+            ef=self._end_frame
         return self._parent_sorting.getUnitSpikeTrain(unit_id=u,start_frame=sf,end_frame=ef)-self._start_frame

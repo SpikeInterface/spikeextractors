@@ -19,7 +19,7 @@ class MultiSortingExtractor(SortingExtractor):
         return self._all_unit_ids
 
     def _find_section_for_frame(self,frame):
-        inds=np.where(np.array(self._start_frames[:-1])<=frame)[0]
+        inds=np.where(np.array(self._start_frames)<=frame)[0]
         ind=inds[-1]
         return ind, frame-self._start_frames[ind]
 

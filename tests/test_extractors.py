@@ -110,13 +110,22 @@ class TestExtractors(unittest.TestCase):
         self._check_sorting_return_types(SX_hs2)
         self._check_sortings_equal(self.SX,SX_hs2)
 
-    def test_multi_sub_extractor(self):
+    def test_multi_sub_recording_extractor(self):
         RX_multi=si.MultiRecordingExtractor(
             recordings=[self.RX,self.RX,self.RX],
             epoch_names=['A','B','C']
         )
         RX_sub = RX_multi.getEpoch('C')
         self._check_recordings_equal(self.RX,RX_sub)
+
+    def test_multi_sub_sorting_extractor(self):
+        N=self.RX.getNumFrames()
+        SX_multi=si.MultiSortingExtractor(
+            sorting_extractors=[self.SX,self.SX,self.SX],
+            start_frames=[0,N,2*N]
+        )
+        SX_sub = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2*N)
+        self._check_sortings_equal(self.SX,SX_sub)
 
     def _check_recordings_equal(self,RX1,RX2):
         M=RX1.getNumChannels()
