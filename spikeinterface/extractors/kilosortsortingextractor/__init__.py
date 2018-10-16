@@ -1,1 +1,1 @@
-from .kilosortsortingextractor import KilosortSortingExtractor
+from .kilosortsortingextractor import KiloSortSortingExtractor

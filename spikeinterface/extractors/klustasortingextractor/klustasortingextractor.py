@@ -5,10 +5,14 @@ import numpy as np
 import os
 from os.path import join
 import neo
+import h5py
 
 class KlustaSortingExtractor(SortingExtractor):
     def __init__(self, kwikfile, prmfile=None):
         SortingExtractor.__init__(self)
+        #TODO use h5py instead
+        f_= h5py.File(kwikfile)
+        raise Exception()
         if os.path.exists(kwikfile):
             kwikio = neo.io.KwikIO(filename=kwikfile, )
             blk = kwikio.read_block(raw_data_units='uV')
@@ -43,3 +47,7 @@ class KlustaSortingExtractor(SortingExtractor):
         times = self._spiketrains[self.getUnitIds().index(unit_id)].rescale('s').magnitude * self._fs
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
+
+    @staticmethod
+    def writeSorting(sorting, save_path):
+        pass

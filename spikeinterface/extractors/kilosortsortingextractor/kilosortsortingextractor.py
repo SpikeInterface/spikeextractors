@@ -6,10 +6,9 @@ import os
 from os.path import join
 import neo
 
-class KilosortSortingExtractor(SortingExtractor):
+class KiloSortSortingExtractor(SortingExtractor):
     def __init__(self, kilosort_folder):
         SortingExtractor.__init__(self)
-        print('Parsing output files...')
         spike_times = np.load(join(kilosort_folder, 'spike_times.npy'))
         spike_clusters = np.load(join(kilosort_folder, 'spike_clusters.npy'))
 
@@ -36,5 +35,5 @@ class KilosortSortingExtractor(SortingExtractor):
         return times[inds]
 
     @staticmethod
-    def writeSorting(self, sorting, save_path):
+    def writeSorting(sorting, save_path):
         pass
