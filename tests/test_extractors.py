@@ -27,11 +27,11 @@ class TestExtractors(unittest.TestCase):
         X=(X*100).astype(int)
         RX=si.NumpyRecordingExtractor(timeseries=X,samplerate=samplerate,geom=geom)
         SX=si.NumpySortingExtractor()
-        L=200
-        train1=np.random.uniform(0,N,L)
+        L=[200, 300, 400]
+        train1 = np.random.uniform(0,N,L[0])
         SX.addUnit(unit_id=1,times=train1)
-        SX.addUnit(unit_id=2,times=np.random.uniform(0,N,L))
-        SX.addUnit(unit_id=3,times=np.random.uniform(0,N,L))
+        SX.addUnit(unit_id=2,times=np.random.uniform(0,N,L[1]))
+        SX.addUnit(unit_id=3,times=np.random.uniform(0,N,L[2]))
         SX.setUnitProperty(unit_id=1, property_name='stablility', value=80)
         RX.setChannelProperty(channel_id=0, property_name='location', value=(0,0))
         example_info=dict(
@@ -89,6 +89,19 @@ class TestExtractors(unittest.TestCase):
         RX_biocam=si.BiocamRecordingExtractor(path1)
         self._check_recording_return_types(RX_biocam)
         self._check_recordings_equal(self.RX,RX_biocam)
+
+    def test_mearec_extractors(self):
+        path1=self.test_dir+'/raw'
+        si.MEArecRecordingExtractor.writeRecording(self.RX,path1)
+        RX_mearec=si.MEArecRecordingExtractor(path1)
+        self._check_recording_return_types(RX_mearec)
+        self._check_recordings_equal(self.RX,RX_mearec)
+
+        path2 = self.test_dir + '/firings_true'
+        si.MEArecSortingExtractor.writeSorting(self.SX, path2, self.RX.getSamplingFrequency())
+        SX_mearec = si.MEArecSortingExtractor(path2)
+        self._check_sorting_return_types(SX_mearec)
+        self._check_sortings_equal(self.SX, SX_mearec)
 
     def test_hs2_extractor(self):
         path1=self.test_dir+'/firings_true.hdf5'

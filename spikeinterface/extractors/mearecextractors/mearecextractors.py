@@ -7,9 +7,10 @@ import os
 from os.path import join
 import h5py
 import yaml, json
+import neo
 
 class MEArecRecordingExtractor(RecordingExtractor):
-    def __init__(self, *, recording_path=None):
+    def __init__(self, recording_path=None):
         RecordingExtractor.__init__(self)
         self._recording_path = recording_path
         self._fs = None
@@ -75,14 +76,14 @@ class MEArecRecordingExtractor(RecordingExtractor):
                 positions = np.array([recording.getChannelProperty(chan, 'location')
                                       for chan in range(recording.getNumChannels())])
                 np.save(join(save_folder, 'positions'), positions)
-            info = {'recordings': {'fs': recording.getSamplingFrequency() / 1000}}
+            info = {'recordings': {'fs': recording.getSamplingFrequency()}}
             with open(join(save_folder, 'info.yaml'), 'w') as f:
                 yaml.dump(info, f, default_flow_style=False)
             print('\nSaved recordings in', save_folder, ' folder\n')
 
 
 class MEArecSortingExtractor(SortingExtractor):
-    def __init__(self, *, recording_path=None):
+    def __init__(self, recording_path=None):
         SortingExtractor.__init__(self)
         self._recording_path = recording_path
         self._num_units = None
@@ -94,9 +95,13 @@ class MEArecSortingExtractor(SortingExtractor):
         rec_dict,  info = load_recordings(recordings=self._recording_path)
 
         self._num_units = len(rec_dict['spiketrains'])
-        self._unit_ids = range(self._num_units)
+        if 'unit_id' in rec_dict['spiketrains'][0].annotations:
+            self._unit_ids = [st.annotations['unit_id'] for st in rec_dict['spiketrains']]
+        else:
+            self._unit_ids = range(self._num_units)
         self._spike_trains = rec_dict['spiketrains']
         self._fs  = info['recordings']['fs'] * pq.Hz #fs is in kHz
+        print('Info: ',info)
 
     def getUnitIds(self):
         if self._unit_ids is None:
@@ -115,7 +120,8 @@ class MEArecSortingExtractor(SortingExtractor):
             end_frame=np.Inf
         if self._spike_trains is None:
             self._initialize()
-        times = (self._spike_trains[unit_id].times.rescale('s') * self._fs.rescale('Hz')).magnitude
+        times = (self._spike_trains[self.getUnitIds().index(unit_id)].times.rescale('s') *
+                 self._fs.rescale('Hz')).magnitude
         inds = np.where((start_frame<=times)&(times<end_frame))
         return times[inds]
 
@@ -123,34 +129,34 @@ class MEArecSortingExtractor(SortingExtractor):
     def writeSorting(sorting, save_path, sampling_frequency):
         if save_path.endswith('h5') or save_path.endswith('hdf5'):
             F = h5py.File(save_path, 'w')
-            info = {'recordings': {'fs': sampling_frequency}}
+            info = {'recordings': {'fs': sampling_frequency, 'n_neurons': len(sorting.getUnitIds())}}
             F.create_dataset('info', data=json.dumps(info))
-            for unit in sorting.getUnitIds():
-                st = sorting.getUnitSpikeTrain(unit) / sampling_frequency * pq.s
-                t_stop = np.max(sorting.getUnitSpikeTrain(unit)) / sampling_frequency * pq.s
+            for ii, unit in enumerate(sorting.getUnitIds()):
+                st = sorting.getUnitSpikeTrain(unit) / float(sampling_frequency) * pq.s
+                t_stop = np.max(sorting.getUnitSpikeTrain(unit)) / float(sampling_frequency) * pq.s
                 F.create_dataset('spiketrains/{}/times'.format(unit), data=st)
                 F.create_dataset('spiketrains/{}/t_stop'.format(unit), data=t_stop)
-                annotations = {'unit_id': unit}
+                annotations = {'unit_id': str(unit)}
                 annotations_str = json.dumps(annotations)
-                F.create_dataset('spiketrains/{}/annotations'.format(unit), data=annotations_str)
+                F.create_dataset('spiketrains/{}/annotations'.format(ii), data=annotations_str)
             F.close()
-            print('\nSaved recordings in', save_path, '\n')
+            print('\nSaved sorting in', save_path, '\n')
         elif save_path is not None:
             save_folder = save_path
             if not os.path.isdir(save_folder):
                 os.makedirs(save_folder)
             spiketrains = []
-            for unit in sorting.getUnitIds():
+            for ii, unit in enumerate(sorting.getUnitIds()):
                 st = sorting.getUnitSpikeTrain(unit) / sampling_frequency * pq.s
                 t_stop = np.max(sorting.getUnitSpikeTrain(unit)) / sampling_frequency * pq.s
-                spiketrain = neo.Spiketrain(st, t_start=0*pq.s, t_stop=t_stop)
-                spiketrain.annotate(unit_id= unit)
+                spiketrain = neo.core.SpikeTrain(times=st, t_start=0*pq.s, t_stop=t_stop)
+                spiketrain.annotate(unit_id=unit)
                 spiketrains.append(spiketrain)
             info = {'recordings': {'fs': sampling_frequency, 'n_neurons': len(spiketrains)}}
             np.save(join(save_folder, 'spiketrains'), spiketrains)
             with open(join(save_folder, 'info.yaml'), 'w') as f:
                 yaml.dump(info, f, default_flow_style=False)
-            print('\nSaved recordings in', save_folder, ' folder\n')
+            print('\nSaved sorting in', save_folder, ' folder\n')
 
 
 def load_recordings(recordings, verbose=False):
@@ -210,8 +216,8 @@ def load_recordings(recordings, verbose=False):
             spiketrains = []
             if 'n_neurons' in info['recordings']:
                 for ii in range(info['recordings']['n_neurons']):
-                    times = np.array(F.get('spiketrains/{}/times'.format(ii)))
-                    t_stop = np.array(F.get('spiketrains/{}/t_stop'.format(ii)))
+                    times = np.array(F.get('spiketrains/{}/times'.format(ii))) * pq.s
+                    t_stop = np.array(F.get('spiketrains/{}/t_stop'.format(ii)))  * pq.s
                     annotations_str = str(F.get('spiketrains/{}/annotations'.format(ii))[()])
                     annotations = json.loads(annotations_str)
                     st = neo.core.SpikeTrain(
