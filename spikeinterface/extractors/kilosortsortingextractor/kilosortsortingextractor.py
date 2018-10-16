@@ -34,3 +34,7 @@ class KilosortSortingExtractor(SortingExtractor):
         times = self._spiketrains[self.getUnitIds().index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
+
+    @staticmethod
+    def writeSorting(self, sorting, save_path):
+        pass
