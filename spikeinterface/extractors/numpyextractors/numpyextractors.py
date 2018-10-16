@@ -64,4 +64,4 @@ class NumpySortingExtractor(SortingExtractor):
             end_frame=np.Inf
         times=self._units[unit_id]['times']
         inds=np.where((start_frame<=times)&(times<end_frame))[0]
-        return times[inds]
+        return np.rint(times[inds]).astype(int)
