@@ -203,7 +203,7 @@ class ExampleSortingExtractor(SortingExtractor):
         return spike_train
         
     @staticmethod
-    def writeSorting(self, sorting, save_path):
+    def writeSorting(sorting, save_path):
         '''
         This is an example of a function that is not abstract so it is optional if you want to override it. It allows other 
         SortingExtractors to use your new SortingExtractor to convert their sorted data into your 
