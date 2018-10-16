@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/colehurwitz31/spikeinterface.svg?branch=master)](https://travis-ci.org/colehurwitz31/spikeinterface)
 
 Alpha Development
-Version 0.1.10
+Version 0.1.12
 
 
 # SpikeInterface
@@ -203,7 +203,7 @@ class ExampleSortingExtractor(SortingExtractor):
         return spike_train
         
     @staticmethod
-    def writeSorting(self, sorting, save_path):
+    def writeSorting(sorting, save_path):
         '''
         This is an example of a function that is not abstract so it is optional if you want to override it. It allows other 
         SortingExtractors to use your new SortingExtractor to convert their sorted data into your 

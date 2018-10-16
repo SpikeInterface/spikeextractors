@@ -28,7 +28,7 @@ class TestExtractors(unittest.TestCase):
         RX=si.NumpyRecordingExtractor(timeseries=X,samplerate=samplerate,geom=geom)
         SX=si.NumpySortingExtractor()
         L=[200, 300, 400]
-        train1 = np.random.uniform(0,N,L[0])
+        train1 = np.rint(np.random.uniform(0,N,L[0])).astype(int)
         SX.addUnit(unit_id=1,times=train1)
         SX.addUnit(unit_id=2,times=np.random.uniform(0,N,L[1]))
         SX.addUnit(unit_id=3,times=np.random.uniform(0,N,L[2]))
@@ -52,7 +52,8 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(self.SX.getUnitIds(),self.example_info['unit_ids'])
         self.assertEqual(self.RX.getChannelProperty(channel_id=0, property_name='location'),self.example_info['channel_prop'])
         self.assertEqual(self.SX.getUnitProperty(unit_id=1, property_name='stablility'),self.example_info['unit_prop'])
-        self.assertTrue(np.allclose(self.SX.getUnitSpikeTrain(1),self.example_info['train1']))
+        self.assertTrue(np.array_equal(self.SX.getUnitSpikeTrain(1),self.example_info['train1']))
+        self.assertTrue(issubclass(self.SX.getUnitSpikeTrain(1).dtype.type, np.integer))
         self._check_recording_return_types(self.RX)
 
     def test_mda_extractor(self):
@@ -110,13 +111,22 @@ class TestExtractors(unittest.TestCase):
         self._check_sorting_return_types(SX_hs2)
         self._check_sortings_equal(self.SX,SX_hs2)
 
-    def test_multi_sub_extractor(self):
+    def test_multi_sub_recording_extractor(self):
         RX_multi=si.MultiRecordingExtractor(
             recordings=[self.RX,self.RX,self.RX],
             epoch_names=['A','B','C']
         )
         RX_sub = RX_multi.getEpoch('C')
         self._check_recordings_equal(self.RX,RX_sub)
+
+    def test_multi_sub_sorting_extractor(self):
+        N=self.RX.getNumFrames()
+        SX_multi=si.MultiSortingExtractor(
+            sorting_extractors=[self.SX,self.SX,self.SX],
+            start_frames=[0,N,2*N]
+        )
+        SX_sub = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2*N)
+        self._check_sortings_equal(self.SX,SX_sub)
 
     def _check_recordings_equal(self,RX1,RX2):
         M=RX1.getNumChannels()
@@ -151,10 +161,11 @@ class TestExtractors(unittest.TestCase):
 
     def _check_sorting_return_types(self,SX):
         unit_ids=SX.getUnitIds()
-        self.assertTrue(all(isinstance(id, int) or isinstance(id, np.int64) for id in unit_ids))
+        self.assertTrue(all(isinstance(id, int) or isinstance(id, np.integer) for id in unit_ids))
         for id in unit_ids:
             train=SX.getUnitSpikeTrain(id)
-            self.assertTrue(all(isinstance(x, float) or isinstance(x, np.float64) for x in train))
+            print(train)
+            self.assertTrue(all(isinstance(x, int) or isinstance(x, np.integer) for x in train))
 
     def _check_sortings_equal(self,SX1,SX2):
         K=len(SX1.getUnitIds())
@@ -165,7 +176,9 @@ class TestExtractors(unittest.TestCase):
         for id in ids1:
             train1=np.sort(SX1.getUnitSpikeTrain(id))
             train2=np.sort(SX2.getUnitSpikeTrain(id))
-            self.assertTrue(np.allclose(train1,train2))
+            print(train1)
+            print(train2)
+            self.assertTrue(np.array_equal(train1,train2))
 
 if __name__ == '__main__':
     unittest.main()

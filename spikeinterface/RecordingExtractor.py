@@ -385,7 +385,7 @@ class RecordingExtractor(ABC):
                                      end_frame=end_frame)
 
     @staticmethod
-    def writeRecording(self, recording, save_path):
+    def writeRecording(recording, save_path):
         '''This function writes out the recorded file of a given recording
         extractor to the file format of this current recording extractor. Allows
         for easy conversion between recording file formats. It is a static

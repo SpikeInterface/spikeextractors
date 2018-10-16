@@ -61,7 +61,7 @@ def loadProbeFile(recording, probe_file):
         with open(probe_file) as csvfile:
             posreader = csv.reader(csvfile)
             for i_ch, pos in enumerate(posreader):
-                recording.setChannelProperty(i_ch, 'location', pos)
+                recording.setChannelProperty(i_ch, 'location', list(np.array(pos).astype(float)))
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 

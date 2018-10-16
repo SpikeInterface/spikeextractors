@@ -20,7 +20,7 @@ class TestNumpyExtractors(unittest.TestCase):
         self.RX=si.NumpyRecordingExtractor(timeseries=X,samplerate=samplerate,geom=geom)
         self.SX=si.NumpySortingExtractor()
         L=200
-        self._train1=np.random.uniform(0,N,L)
+        self._train1=np.rint(np.random.uniform(0,N,L)).astype(int)
         self.SX.addUnit(unit_id=1,times=self._train1)
         self.SX.addUnit(unit_id=2,times=np.random.uniform(0,N,L))
         self.SX.addUnit(unit_id=3,times=np.random.uniform(0,N,L))
