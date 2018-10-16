@@ -83,7 +83,7 @@ class SortingExtractor(ABC):
             raise ValueError("unit_id must be an int")
 
     def setUnitsProperty(self, *, unit_ids=None, property_name, values):
-        '''Sets unit property data to a list of units
+        '''Sets unit property data for a list of units
 
         Parameters
         ----------
@@ -175,8 +175,9 @@ class SortingExtractor(ABC):
             The list of values
         '''
         if unit_ids is None:
-            unit_ids=self.getUnitIds()
-        return [self.getUnitProperty(unit_id=unit,property_name=property_name) for unit in unit_ids]
+            unit_ids = self.getUnitIds()
+        values = [self.getUnitProperty(unit_id=unit,property_name=property_name) for unit in unit_ids]
+        return values
 
     def getUnitPropertyNames(self, unit_id=None):
         '''Get a list of property names for a given unit, or for all units if unit_id is None
@@ -189,21 +190,22 @@ class SortingExtractor(ABC):
         Returns
         ----------
         property_names
-            The list of property names
+            The list of property names from the specified unit(s)
         '''
         if unit_id is None:
-            ret=[]
-            for unit in self.getUnitIds():
-                tmp=self.getUnitPropertyNames(unit)
-                for pname in tmp:
-                    ret.append(pname)
-            ret=sorted(list(set(ret)))
-            return ret
+            property_names = []
+            for unit_id in self.getUnitIds():
+                curr_property_names = self.getUnitPropertyNames(unit_id)
+                for curr_property_name in curr_property_names:
+                    property_names.append(curr_property_name)
+            property_names = sorted(list(set(property_names)))
+            return property_names
         if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
             if(unit_id in self.getUnitIds()):
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
-                return sorted(self._unit_properties[unit_id].keys())
+                property_names = sorted(self._unit_properties[unit_id].keys())
+                return property_names
             else:
                 raise ValueError("Non-valid unit_id")
         else:
@@ -211,7 +213,7 @@ class SortingExtractor(ABC):
 
 
     @staticmethod
-    def writeSorting(self, sorting_extractor, save_path):
+    def writeSorting(self, sorting, save_path):
         '''This function writes out the spike sorted data file of a given sorting
         extractor to the file format of this current sorting extractor. Allows
         for easy conversion between spike sorting file formats. It is a static
@@ -219,7 +221,7 @@ class SortingExtractor(ABC):
 
         Parameters
         ----------
-        sorting_extractor: SortingExtractor
+        sorting: SortingExtractor
             A SortingExtractor that can extract information from the sorted data
             file to be converted to the new format.
 

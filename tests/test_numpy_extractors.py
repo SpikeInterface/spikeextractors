@@ -38,8 +38,8 @@ class TestNumpyExtractors(unittest.TestCase):
         # getTraces
         self.assertTrue(np.allclose(self.RX.getTraces(),self._X))
         self.assertTrue(np.allclose(self.RX.getTraces(start_frame=0,end_frame=12,channel_ids=[0,3]),self._X[[0,3],0:12]))
-        # getChannelInfo
-        self.assertTrue(np.allclose(np.array(self.RX.getChannelInfo(channel_id=1)['location']),self._geom[1,:]))
+        # getChannelProperty - location
+        self.assertTrue(np.allclose(np.array(self.RX.getChannelProperty(1,'location')),self._geom[1,:]))
         # timeToFrame / frameToTime
         self.assertEqual(self.RX.timeToFrame(12),12*self.RX.getSamplingFrequency())
         self.assertEqual(self.RX.frameToTime(12),12/self.RX.getSamplingFrequency())

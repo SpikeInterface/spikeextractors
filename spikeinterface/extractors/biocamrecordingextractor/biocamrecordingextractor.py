@@ -11,6 +11,8 @@ class BiocamRecordingExtractor(RecordingExtractor):
         self._recording_file = recording_file
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, self._chIndices, self._file_format, self._signalInv, self._positions, self._read_function = openBiocamFile(
             self._recording_file)
+        for m in range(self._nRecCh):
+            self.setChannelProperty(m,'location',self._positions[m])
 
     def getNumChannels(self):
         return self._nRecCh
@@ -33,17 +35,12 @@ class BiocamRecordingExtractor(RecordingExtractor):
         return data.reshape((end_frame - start_frame,
                              self.getNumChannels())).T[channel_ids]
 
-    def getChannelInfo(self, channel_id):
-        return dict(
-            location=self._positions[channel_id]
-        )
-
     @staticmethod
-    def writeRecording(recording_extractor,save_path):
-        M=recording_extractor.getNumChannels()
-        N=recording_extractor.getNumFrames()
+    def writeRecording(recording,save_path):
+        M=recording.getNumChannels()
+        N=recording.getNumFrames()
         channel_ids=range(M)
-        raw=recording_extractor.getTraces()
+        raw=recording.getTraces()
         if raw.dtype!=int:
             raise Exception('Cannot write dataset in the format with non-int datatype:',raw.dtype)
         rf = h5py.File(save_path, 'w')
@@ -54,7 +51,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
         rf.create_dataset('3BRecInfo/3BRecVars/MinVolt', data=[0])
         rf.create_dataset('3BRecInfo/3BRecVars/MaxVolt', data=[1])
         rf.create_dataset('3BRecInfo/3BRecVars/NRecFrames', data=[N])
-        rf.create_dataset('3BRecInfo/3BRecVars/SamplingRate', data=[recording_extractor.getSamplingFrequency()])
+        rf.create_dataset('3BRecInfo/3BRecVars/SamplingRate', data=[recording.getSamplingFrequency()])
         rf.create_dataset('3BRecInfo/3BRecVars/SignalInversion', data=[1])
         rf.create_dataset('3BRecInfo/3BMeaChip/NCols', data=[M])
         rf.create_dataset('3BRecInfo/3BMeaStreams/Raw/Chs', data=np.vstack((np.arange(M), np.zeros(M))).T, dtype=int)
