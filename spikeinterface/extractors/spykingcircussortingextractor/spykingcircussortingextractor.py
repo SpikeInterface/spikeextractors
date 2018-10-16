@@ -1,5 +1,4 @@
 from spikeinterface import SortingExtractor
-from spikeinterface.tools import read_python
 
 import numpy as np
 import os
@@ -36,4 +35,17 @@ class SpykingCircusSortingExtractor(SortingExtractor):
 
     @staticmethod
     def writeSorting(sorting, save_path):
-        pass
+        if os.path.isdir(save_path):
+            save_path = join(save_path, 'data.result.hdf5')
+        elif save_path.endswith('hdf5'):
+            if not save_path.endswith('result.hdf5') or not save_path.endswith('result-merged.hdf5'):
+                raise AttributeError("'save_path' is either a folder or an hdf5 file "
+                                     "ending with 'result.hdf5' or 'result-merged.hdf5")
+        else:
+            os.makedirs(save_path)
+            save_path = join(save_path, 'data.result.hdf5')
+        F = h5py.File(save_path, 'w')
+        spiketimes = F.create_group('spiketimes')
+
+        for id in sorting.getUnitIds():
+            spiketimes.create_dataset('tmp_'+str(id), data=sorting.getUnitSpikeTrain(id))

@@ -1,10 +1,8 @@
 from spikeinterface import SortingExtractor
-from spikeinterface.tools import read_python
 
 import numpy as np
 import os
 from os.path import join
-import neo
 
 class KiloSortSortingExtractor(SortingExtractor):
     def __init__(self, kilosort_folder):
@@ -36,4 +34,18 @@ class KiloSortSortingExtractor(SortingExtractor):
 
     @staticmethod
     def writeSorting(sorting, save_path):
-        pass
+        spike_times = np.array([])
+        spike_clusters = np.array([])
+
+        for id in sorting.getUnitIds():
+            st = sorting.getUnitSpikeTrain(id)
+            cl = [id] * len(sorting.getUnitSpikeTrain(id))
+            spike_times = np.concatenate((spike_times, np.array(st)))
+            spike_clusters = np.concatenate((spike_clusters, np.array(cl)))
+        sorting_idxs = np.argsort(spike_times)
+        spike_times = spike_times[sorting_idxs]
+        spike_clusters = spike_clusters[sorting_idxs]
+        if not os.path.isdir(save_path):
+            os.makedirs(save_path)
+        np.save(join(save_path, 'spike_times.npy'), spike_times.astype(int))
+        np.save(join(save_path, 'spike_clusters.npy'), spike_clusters.astype(int))
