@@ -105,7 +105,7 @@ class MdaSortingExtractor(SortingExtractor):
         if end_frame is None:
             end_frame=np.Inf
         inds=np.where((self._labels==unit_id)&(start_frame<=self._times)&(self._times<end_frame))
-        return self._times[inds]
+        return np.rint(self._times[inds]).astype(int)
 
     @staticmethod
     def writeSorting(sorting,save_path):

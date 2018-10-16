@@ -123,7 +123,7 @@ class MEArecSortingExtractor(SortingExtractor):
         times = (self._spike_trains[self.getUnitIds().index(unit_id)].times.rescale('s') *
                  self._fs.rescale('Hz')).magnitude
         inds = np.where((start_frame<=times)&(times<end_frame))
-        return times[inds]
+        return np.rint(times[inds]).astype(int)
 
     @staticmethod
     def writeSorting(sorting, save_path, sampling_frequency):
