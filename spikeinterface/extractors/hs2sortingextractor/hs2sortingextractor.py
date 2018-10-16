@@ -42,13 +42,13 @@ class HS2SortingExtractor(SortingExtractor):
             raise Exception("Property does not exist.")
 
     @staticmethod
-    def writeSorting(sorting_extractor,save_path):
-        unit_ids=sorting_extractor.getUnitIds()
+    def writeSorting(sorting,save_path):
+        unit_ids=sorting.getUnitIds()
         times_list=[]
         labels_list=[]
         for i in range(len(unit_ids)):
             unit=unit_ids[i]
-            times=sorting_extractor.getUnitSpikeTrain(unit_id=unit)
+            times=sorting.getUnitSpikeTrain(unit_id=unit)
             times_list.append(times)
             labels_list.append(np.ones(times.shape, dtype=int)*unit)
         all_times=np.concatenate(times_list)

@@ -30,62 +30,62 @@ def read_python(path):
     return metadata
 
 
-def loadProbeFile(recording, probefile):
-    '''Loads channel information in recording extractor
+def loadProbeFile(recording, probe_file):
+    '''Loads channel information into recording extractor. If a .prb file is given,
+    then 'location' and 'group' information for each channel is stored. If a .csv
+    file is given, then it will only store 'location'
 
     Parameters
     ----------
     recording: RecordingExtractor
         The recording extractor to channel information
-    probefile: str
+    probe_file: str
         Path to probe file. Either .prb or .csv
     '''
-    if probefile.endswith('.prb'):
-        probe_dict = read_python(probefile)
+    if probe_file.endswith('.prb'):
+        probe_dict = read_python(probe_file)
         if 'channel_groups' in probe_dict.keys():
             numchannels = np.sum([len(cg['channels']) for key, cg in probe_dict['channel_groups'].items()])
             assert numchannels ==  recording.getNumChannels()
-
             for cgroup_id, cgroup in probe_dict['channel_groups'].items():
                 for key_prop, prop_val in cgroup.items():
                     if key_prop == 'channels':
-                        # if len(prop_val) == recording.getNumChannels():
                         for i_ch, prop in enumerate(prop_val):
                             recording.setChannelProperty(prop, 'group', int(cgroup_id))
                     elif key_prop == 'geometry':
-                        # if len(prop_val) == recording.getNumChannels():
                         for (i_ch, prop) in prop_val.items():
                             recording.setChannelProperty(i_ch, 'location', prop)
         else:
             raise AttributeError("'.prb' file should contain the 'channel_groups' field")
-    elif probefile.endswith('.csv'):
-        with open(probefile) as csvfile:
+    elif probe_file.endswith('.csv'):
+        with open(probe_file) as csvfile:
             posreader = csv.reader(csvfile)
             for i_ch, pos in enumerate(posreader):
-                recording.setChannelProperty(i_ch, 'location', pos)
+                recording.setChannelProperty(i_ch, 'location', list(np.array(pos).astype(float)))
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 
 
-def saveProbeFile(recording, probefile, format=None):
-    '''Saves probe file from channel information of a recording extractor
+def saveProbeFile(recording, probe_file, format=None):
+    '''Saves probe file from the channel information of the given recording
+    extractor
 
     Parameters
     ----------
     recording: RecordingExtractor
         The recording extractor to save probe file from
-    probefile: str
-        filename of .prb or .csv file to save probe information to
+    probe_file: str
+        file name of .prb or .csv file to save probe information to
     format: str (optional)
         Format for .prb file. It can be either 'klusta' or 'spyking_circus'. Default is None.
     '''
-    probefile = os.path.abspath(probefile)
-    if not os.path.isdir(os.path.dirname(probefile)):
-        os.makedirs(os.path.dirname(probefile))
+    probe_file = os.path.abspath(probe_file)
+    if not os.path.isdir(os.path.dirname(probe_file)):
+        os.makedirs(os.path.dirname(probe_file))
 
-    if probefile.endswith('.csv'):
+    if probe_file.endswith('.csv'):
         # write csv probe file
-        with open(probefile, 'w') as f:
+        with open(probe_file, 'w') as f:
             if 'location' in recording.getChannelPropertyNames():
                 for chan in range(recording.getNumChannels()):
                     loc = recording.getChannelProperty(chan, 'location')
@@ -104,21 +104,21 @@ def saveProbeFile(recording, probefile, format=None):
             else:
                 raise AttributeError("Recording extractor needs to have "
                                      "'location' property to save .csv probe file")
-    elif probefile.endswith('.prb'):
-        _export_prb_file(recording, probefile, format)
+    elif probe_file.endswith('.prb'):
+        _export_prb_file(recording, probe_file, format)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be saved.")
 
 
-def _export_prb_file(recording, filename, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100):
+def _export_prb_file(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100):
     '''Exports .prb file
 
     Parameters
     ----------
     recording: RecordingExtractor
         The recording extractor to save probe file from
-    filename: str
-        probe filename
+    file_name: str
+        probe filename to be exported to
     format: str
         'klusta' | 'spiking_circus' (defualt=None)
     adjacency_distance: float
@@ -140,8 +140,8 @@ def _export_prb_file(recording, filename, format=None, adjacency_distance=None, 
         graph = True
         geometry = True
 
-    assert filename is not None
-    abspath = os.path.abspath(filename)
+    assert file_name is not None
+    abspath = os.path.abspath(file_name)
 
     if geometry:
         if 'location' in recording.getChannelPropertyNames():
@@ -189,7 +189,7 @@ def _export_prb_file(recording, filename, format=None, adjacency_distance=None, 
                             group_graph.append((elecs[i],  elecs[j]))
                 adj_graph.append(group_graph)
 
-    with open(filename, 'w') as f:
+    with open(file_name, 'w') as f:
         f.write('\n')
         if format=='spyking_circus':
             f.write('total_nb_channels = ' + str(n_elec) + '\n')

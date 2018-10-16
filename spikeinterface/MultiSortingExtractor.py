@@ -2,6 +2,8 @@ from .SortingExtractor import SortingExtractor
 from .RecordingExtractor import RecordingExtractor
 import numpy as np
 
+# Encapsulates a subset of a spike sorted dataset
+
 class MultiSortingExtractor(SortingExtractor):
     def __init__(self, *, sorting_extractors, start_frames, epoch_names=None):
         self._SXs=sorting_extractors

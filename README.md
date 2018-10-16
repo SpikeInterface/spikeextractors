@@ -89,7 +89,7 @@ We will now convert our numpy data into the MountainSort format with a MountainS
 
 ```python
 # Write this dataset in the MountainSort format
-si.MdaRecordingExtractor.writeRecording(recording_extractor=RX,output_dirname='sample_mountainsort_dataset')
+si.MdaRecordingExtractor.writeRecording(recording=RX,output_dirname='sample_mountainsort_dataset')
 ```
 
 The modular design of RecordingExtractor allow them to be used in a variety of other tasks. For example, RecordingExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubRecordingExtractors and MultiRecordingExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
@@ -130,7 +130,7 @@ Num. events for first second of unit 1 = 16
 
 Finally, we can write out our sorted file to the MountainSort format by using the built-in writeSorting method in the MountainSort SortingExtractor subclass.
 ```python
-si.MdaSortingExtractor.writeSorting(sorting_extractor=SX,firings_out='sample_mountainsort_dataset/firings_true.mda')
+si.MdaSortingExtractor.writeSorting(sorting=SX,firings_out='sample_mountainsort_dataset/firings_true.mda')
 ```
 
 Now that we have written out our numpy recorded and sorted files in the the MountainSort format, we can easily use the MdaRecordingExtractor and MdaSortingExtractor for our new datasets and the functionality sould be the same.
@@ -178,32 +178,34 @@ class ExampleSortingExtractor(SortingExtractor):
         ## All file specific initialization code can go here.
         
     def getUnitIds(self):
-        
+    
         #Fill code to get a unit_ids list containing all the ids (ints) of detected units in the recording
         
         return unit_ids
 
     @abstractmethod
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
-        '''Fill code to extract spike frames from the specified unit. It will return spike frames from 
-        within three ranges:
-                            [start_frame, t_start+1, ..., end_frame-1]
-                            [start_frame, start_frame+1, ..., final_unit_spike_frame - 1]
-                            [0, 1, ..., end_frame-1]
-                            [0, 1, ..., final_unit_spike_frame - 1]
-        if both start_frame and end_frame are given, if only start_frame is given, if only end_frame is 
-        given, or if neither start_frame or end_frame are given, respectively. Spike frames are returned 
-        in the form of an array_like of spike frames. In this implementation, start_frame is inclusive
+    
+        '''Code to extract spike frames from the specified unit.
+        It will return spike frames from within three ranges:
+            [start_frame, t_start+1, ..., end_frame-1]
+            [start_frame, start_frame+1, ..., final_unit_spike_frame - 1]
+            [0, 1, ..., end_frame-1]
+            [0, 1, ..., final_unit_spike_frame - 1]
+        if both start_frame and end_frame are given, if only start_frame is
+        given, if only end_frame is given, or if neither start_frame or end_frame
+        are given, respectively. Spike frames are returned in the form of an
+        array_like of spike frames. In this implementation, start_frame is inclusive
         and end_frame is exclusive conforming to numpy standards.
+       
         '''
         
         return spike_train
         
     @staticmethod
-    def writeSorting(self, sorting_extractor, save_path):
-        
+    def writeSorting(self, sorting, save_path):
         '''
-        This function is not abstract so it is optional if you want to override it. It allows other 
+        This is an example of a function that is not abstract so it is optional if you want to override it. It allows other 
         SortingExtractors to use your new SortingExtractor to convert their sorted data into your 
         sorting file format.
         '''
@@ -216,10 +218,8 @@ Once all abstract methods are overwritten in your RecordingExtractor or SortingE
 
 ## Tools that use RecordingExtractors and SortingExtractors
 
-Coming soon...
-<br/>
-<br/>
-
+- [spiketoolkit](https://github.com/alejoe91/spiketoolkit) - A repository containing tools that utilize functions from the extractors. It also contains spike sorting algorithm wrappers that output sorting extractors post-sorting allowing for standardized evaluation and quality control. Maintained by Alessio Paolo Buccino.
+- [spikewidgets](https://github.com/magland/spikewidgets) - A repository containing graphical widgets that utilize functions from the extractors to plot and visualize both the raw and sorted extracellular data. Maintained by Jeremy Magland.
 ### Future Plans
 
 Coming soon...

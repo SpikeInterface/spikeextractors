@@ -9,8 +9,9 @@ class NumpyRecordingExtractor(RecordingExtractor):
         self._timeseries=timeseries
         self._samplerate=float(samplerate)
         self._geom=geom
-        for m in range(self._timeseries.shape[0]):
-            self.setChannelProperty(m,'location',self._geom[m,:])
+        if geom is not None:
+            for m in range(self._timeseries.shape[0]):
+                self.setChannelProperty(m,'location',self._geom[m,:])
 
     def getNumChannels(self):
         return self._timeseries.shape[0]
@@ -38,10 +39,10 @@ class NumpySortingExtractor(SortingExtractor):
         self._units={}
         # self._properties = {}
 
-    def loadFromExtractor(sorting_extractor):
-        ids=sorting_extractor.getUnitIds()
+    def loadFromExtractor(self, sorting):
+        ids=sorting.getUnitIds()
         for id in ids:
-            self.addUnit(id,sorting_extractor.getUnitSpikeTrain(id))
+            self.addUnit(id,sorting.getUnitSpikeTrain(id))
 
     def setTimesLabels(self,times,labels):
         units=np.sort(np.unique(labels))
