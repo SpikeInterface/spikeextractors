@@ -6,27 +6,30 @@ import os
 from os.path import join
 import neo
 
-class KlustaSortingExtractor(SortingExtractor):
-    def __init__(self, kwikfile, prmfile=None):
+class KilosortSortingExtractor(SortingExtractor):
+    def __init__(self, kilosort_folder):
         SortingExtractor.__init__(self)
-        if os.path.exists(kwikfile):
-            kwikio = neo.io.KwikIO(filename=kwikfile, )
-            blk = kwikio.read_block(raw_data_units='uV')
-            self._spiketrains = blk.segments[0].spiketrains
-            self._unit_ids = [st.annotations['cluster_id'] for st in self._spiketrains]
-        else:
-            raise Exception('No kwik file!')
+        print('Parsing output files...')
+        spike_times = np.load(join(kilosort_folder, 'spike_times.npy'))
+        spike_clusters = np.load(join(kilosort_folder, 'spike_clusters.npy'))
+        spike_templates = np.load(join(kilosort_folder, 'templates.npy')).swapaxes(1, 2)
+        spike_templates_id = np.load(join(kilosort_folder, 'spike_templates.npy'))
 
-        if prmfile is None:
-            prmfile = [f for f in os.listdir(os.path.dirname(kwikfile)) if f.endswith('prm')]
-            if len(prmfile) == 1:
-                params = read_python(join(os.path.dirname(kwikfile),prmfile[0]))
-                self._fs = params['traces']['sample_rate']
-            elif len(prmfile) == 1:
-                raise AttributeError("klusta .prm file not found! Indicate .prm file with 'prmfile argument'")
-            else:
-                raise AttributeError("Found multiple klusta .prm files! Indicate .prm file with 'prmfile argument'")
+        self._spiketrains = []
+        clust_id, n_counts = np.unique(spike_clusters, return_counts=True)
+        self._unit_ids = list(clust_id)
+        spike_times.astype(int)
 
+        counts = 0
+        for clust, count in zip(clust_id, n_counts):
+            idx = np.where(spike_clusters == clust)[0]
+            # spike_templates.append(kl_templates[clust])
+            # counts += len(idx)
+            # spike_times = kl_times[idx]
+            # spiketrain = neo.SpikeTrain(spike_times, t_start=t_start, t_stop=t_stop)
+            # spike_trains.append(spiketrain)
+
+        spike_templates = np.array(spike_templates)
         # set unit properties
         for i_s, spiketrain in enumerate(self._spiketrains):
             for key, val in spiketrain.annotations.items():
