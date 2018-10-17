@@ -36,7 +36,6 @@ class KiloSortSortingExtractor(SortingExtractor):
     def writeSorting(sorting, save_path):
         spike_times = np.array([])
         spike_clusters = np.array([])
-
         for id in sorting.getUnitIds():
             st = sorting.getUnitSpikeTrain(id)
             cl = [id] * len(sorting.getUnitSpikeTrain(id))

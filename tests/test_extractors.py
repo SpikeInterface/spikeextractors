@@ -118,6 +118,13 @@ class TestExtractors(unittest.TestCase):
         self._check_sorting_return_types(SX_ks)
         self._check_sortings_equal(self.SX,SX_ks)
 
+    def test_klusta_extractor(self):
+        path1=self.test_dir+'/firings_true.kwik'
+        si.KlustaSortingExtractor.writeSorting(self.SX,path1)
+        SX_kl=si.KlustaSortingExtractor(path1)
+        self._check_sorting_return_types(SX_kl)
+        self._check_sortings_equal(self.SX,SX_kl)
+
     def test_spykingcircus_extractor(self):
         path1=self.test_dir+'/firings_true'
         si.SpykingCircusSortingExtractor.writeSorting(self.SX,path1)

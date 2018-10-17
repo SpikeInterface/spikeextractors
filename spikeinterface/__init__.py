@@ -16,4 +16,4 @@ from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor
 from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
 from .extractors.spykingcircussortingextractor.spykingcircussortingextractor import SpykingCircusSortingExtractor
 
-from .tools import loadProbeFile, saveProbeFile, read_python
+from .tools import loadProbeFile, saveProbeFile, writeBinaryDatFormat, read_python
