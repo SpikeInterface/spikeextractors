@@ -110,6 +110,38 @@ def saveProbeFile(recording, probe_file, format=None):
         raise NotImplementedError("Only .csv and .prb probe files can be saved.")
 
 
+def writeBinaryDatFormat(recording, save_path, transpose=False, dtype='float32'):
+    '''Saves the traces of a recording extractor in binary .dat format.
+
+    Parameters
+    ----------
+    recording: RecordingExtractor
+        The recording extractor object to be saved in .dat format
+    save_path: str
+        The path to the file.
+    transpose: bool
+        If True the data are transpose (spyking_circus). Default is False (klusta, kilosort, yass)
+    dtype: dtype
+        Tyep of the saved data. Default float32
+
+    Returns
+    -------
+
+    '''
+    save_path = os.path.abspath(save_path)
+    if not transpose:
+        if not save_path.endswith('dat'):
+            save_path += '.dat'
+        with open(save_path, 'wb') as f:
+            np.transpose(np.array(recording.getTraces(), dtype=dtype)).tofile(f)
+    elif transpose:
+        if not save_path.endswith('dat'):
+            save_path += '.dat'
+        with open(save_path, 'wb') as f:
+            np.array(recording.getTraces(), dtype=dtype).tofile(f)
+    return save_path
+
+
 def _export_prb_file(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100):
     '''Exports .prb file
 
