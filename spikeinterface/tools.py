@@ -118,7 +118,7 @@ def writeBinaryDatFormat(recording, save_path, transpose=False, dtype='float32')
     recording: RecordingExtractor
         The recording extractor object to be saved in .dat format
     save_path: str
-        The path to the file. If the folder does not exist it is created.
+        The path to the file.
     transpose: bool
         If True the data are transpose (spyking_circus). Default is False (klusta, kilosort, yass)
     dtype: dtype
