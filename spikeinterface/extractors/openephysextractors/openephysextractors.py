@@ -6,7 +6,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         try:
             import pyopenephys
         except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the OpenEphys Extractor, install pyopenephys: \n\n"
+            raise ModuleNotFoundError("To use the OpenEphys extractor, install pyopenephys: \n\n"
                                       "pip install pyopenephys\n\n")
         RecordingExtractor.__init__(self)
         self._recording_file = recording_file
@@ -38,7 +38,7 @@ class OpenEphysSortingExtractor(SortingExtractor):
         try:
             import pyopenephys
         except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the OpenEphys Extractor, install pyopenephys: \n\n"
+            raise ModuleNotFoundError("To use the OpenEphys extractor, install pyopenephys: \n\n"
                                       "pip install pyopenephys\n\n")
         SortingExtractor.__init__(self)
         self._recording_file = recording_file

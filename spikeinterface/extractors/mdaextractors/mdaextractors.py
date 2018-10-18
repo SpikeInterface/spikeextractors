@@ -52,7 +52,7 @@ class MdaRecordingExtractor(RecordingExtractor):
             from mountainlab_pytools import mlproc as mlp
             from mountainlab_pytools import mdaio
         except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the MdaExtractors, install mountainlab_pytools: \n\n"
+            raise ModuleNotFoundError("To use the Mda extractors, install mountainlab_pytools: \n\n"
                                       "pip install mountainlab_pytools\n\n")
         if start_frame is None:
             start_frame=0
@@ -71,7 +71,7 @@ class MdaRecordingExtractor(RecordingExtractor):
             from mountainlab_pytools import mlproc as mlp
             from mountainlab_pytools import mdaio
         except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the MdaExtractors, install mountainlab_pytools: \n\n"
+            raise ModuleNotFoundError("To use the Mda extractors, install mountainlab_pytools: \n\n"
                                       "pip install mountainlab_pytools\n\n")
         M=recording.getNumChannels()
         N=recording.getNumFrames()
@@ -100,7 +100,7 @@ class MdaSortingExtractor(SortingExtractor):
             from mountainlab_pytools import mlproc as mlp
             from mountainlab_pytools import mdaio
         except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the MdaExtractors, install mountainlab_pytools: \n\n"
+            raise ModuleNotFoundError("To use the Mda extractors, install mountainlab_pytools: \n\n"
                                       "pip install mountainlab_pytools\n\n")
         SortingExtractor.__init__(self)
         if is_kbucket_url(firings_file):
@@ -135,7 +135,7 @@ class MdaSortingExtractor(SortingExtractor):
             from mountainlab_pytools import mlproc as mlp
             from mountainlab_pytools import mdaio
         except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the MdaExtractors, install mountainlab_pytools: \n\n"
+            raise ModuleNotFoundError("To use the Mda extractors, install mountainlab_pytools: \n\n"
                                       "pip install mountainlab_pytools\n\n")
         unit_ids=sorting.getUnitIds()
         K=np.max(unit_ids)
@@ -168,7 +168,7 @@ def read_dataset_params(dsdir):
         from mountainlab_pytools import mlproc as mlp
         from mountainlab_pytools import mdaio
     except ModuleNotFoundError:
-        raise ModuleNotFoundError("To use the MdaExtractors, install mountainlab_pytools: \n\n"
+        raise ModuleNotFoundError("To use the Mda extractors, install mountainlab_pytools: \n\n"
                                   "pip install mountainlab_pytools\n\n")
     params_fname=mlp.realizeFile(dsdir+'/params.json')
     if not os.path.exists(params_fname):
