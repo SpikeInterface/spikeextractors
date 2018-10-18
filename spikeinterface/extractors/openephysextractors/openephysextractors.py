@@ -1,9 +1,13 @@
 from spikeinterface import RecordingExtractor, SortingExtractor
-import pyopenephys
 import numpy as np
 
 class OpenEphysRecordingExtractor(RecordingExtractor):
     def __init__(self, recording_file, *, probefile=None, experiment_id=0, recording_id=0):
+        try:
+            import pyopenephys
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the OpenEphys Extractor, install pyopenephys: \n\n"
+                                      "pip install pyopenephys\n\n")
         RecordingExtractor.__init__(self)
         self._recording_file = recording_file
         self._recording = pyopenephys.File(recording_file,
@@ -31,6 +35,11 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
 
 class OpenEphysSortingExtractor(SortingExtractor):
     def __init__(self, recording_file, *, probefile=None, experiment_id=0, recording_id=0):
+        try:
+            import pyopenephys
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the OpenEphys Extractor, install pyopenephys: \n\n"
+                                      "pip install pyopenephys\n\n")
         SortingExtractor.__init__(self)
         self._recording_file = recording_file
         self._recording = pyopenephys.File(recording_file,

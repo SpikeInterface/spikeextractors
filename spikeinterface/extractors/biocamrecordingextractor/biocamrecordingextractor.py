@@ -1,7 +1,6 @@
 from spikeinterface import RecordingExtractor
 
 import numpy as np
-from os.path import join
 import h5py
 import ctypes
 
