@@ -1,10 +1,7 @@
 from spikeinterface import SortingExtractor
 
 import numpy as np
-from os.path import join
 import h5py
-import ctypes
-
 
 class HS2SortingExtractor(SortingExtractor):
     def __init__(self, recording_file):

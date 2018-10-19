@@ -66,7 +66,7 @@ def loadProbeFile(recording, probe_file):
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 
 
-def saveProbeFile(recording, probe_file, format=None):
+def saveProbeFile(recording, probe_file, format=None, radius=100, dimensions='all'):
     '''Saves probe file from the channel information of the given recording
     extractor
 
@@ -105,12 +105,45 @@ def saveProbeFile(recording, probe_file, format=None):
                 raise AttributeError("Recording extractor needs to have "
                                      "'location' property to save .csv probe file")
     elif probe_file.endswith('.prb'):
-        _export_prb_file(recording, probe_file, format)
+        _export_prb_file(recording, probe_file, format, radius=radius, dimensions=dimensions)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be saved.")
 
 
-def _export_prb_file(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100):
+def writeBinaryDatFormat(recording, save_path, transpose=False, dtype='float32'):
+    '''Saves the traces of a recording extractor in binary .dat format.
+
+    Parameters
+    ----------
+    recording: RecordingExtractor
+        The recording extractor object to be saved in .dat format
+    save_path: str
+        The path to the file.
+    transpose: bool
+        If True the data are transpose (spyking_circus). Default is False (klusta, kilosort, yass)
+    dtype: dtype
+        Tyep of the saved data. Default float32
+
+    Returns
+    -------
+
+    '''
+    save_path = os.path.abspath(save_path)
+    if not transpose:
+        if not save_path.endswith('dat'):
+            save_path += '.dat'
+        with open(save_path, 'wb') as f:
+            np.transpose(np.array(recording.getTraces(), dtype=dtype)).tofile(f)
+    elif transpose:
+        if not save_path.endswith('dat'):
+            save_path += '.dat'
+        with open(save_path, 'wb') as f:
+            np.array(recording.getTraces(), dtype=dtype).tofile(f)
+    return save_path
+
+
+def _export_prb_file(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100,
+                     dimensions='all'):
     '''Exports .prb file
 
     Parameters
@@ -147,6 +180,8 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
         if 'location' in recording.getChannelPropertyNames():
             positions = np.array([recording.getChannelProperty(chan, 'location')
                                   for chan in range(recording.getNumChannels())])
+            if dimensions is not 'all':
+                positions = positions[:, dimensions]
         else:
             print("'location' property is not available and it will not be saved.")
             positions = None

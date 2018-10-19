@@ -1,11 +1,9 @@
 import spikeinterface as si
 
-import os, json
+import os
 import numpy as np
-from pynwb import NWBHDF5IO
 from datetime import datetime
-from pynwb import NWBFile
-from pynwb.ecephys import ElectricalSeries
+
 
 class CopyRecordingExtractor(si.RecordingExtractor):
     def __init__(self, other):
@@ -27,6 +25,13 @@ class CopyRecordingExtractor(si.RecordingExtractor):
 
 class NwbRecordingExtractor(CopyRecordingExtractor):
     def __init__(self, path, acquisition_name=None):
+        try:
+            from pynwb import NWBHDF5IO
+            from pynwb import NWBFile
+            from pynwb.ecephys import ElectricalSeries
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
         self._path=path
         self._acquisition_name=acquisition_name
         with NWBHDF5IO(path, 'r') as io:
@@ -56,6 +61,13 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
 
     @staticmethod
     def writeRecording(recording,save_path,acquisition_name):
+        try:
+            from pynwb import NWBHDF5IO
+            from pynwb import NWBFile
+            from pynwb.ecephys import ElectricalSeries
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
         M=recording.getNumChannels()
         N=recording.getNumFrames()
 

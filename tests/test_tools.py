@@ -30,6 +30,18 @@ class TestTools(unittest.TestCase):
         position_loaded = [self.RX.getChannelProperty(chan, 'location') for chan in range(self.RX.getNumChannels())]
         self.assertTrue(np.allclose(positions[10], position_loaded[10]))
 
+    def test_write_dat_file(self):
+        si.writeBinaryDatFormat(self.RX, self.test_dir+'rec.dat')
+        # load
+        data = np.memmap(open(self.test_dir+'rec.dat'), dtype='float32', mode='r', shape=(self.RX.getNumFrames(),
+                                                                                          self.RX.getNumChannels())).T
+        assert np.allclose(data, self.RX.getTraces())
+        si.writeBinaryDatFormat(self.RX, self.test_dir + 'rec.dat', transpose=True)
+        # load
+        data = np.memmap(open(self.test_dir + 'rec.dat'), dtype='float32', mode='r', shape=(self.RX.getNumChannels(),
+                                                                                            self.RX.getNumFrames()))
+        assert np.allclose(data, self.RX.getTraces())
+
 
 if __name__ == '__main__':
     unittest.main()

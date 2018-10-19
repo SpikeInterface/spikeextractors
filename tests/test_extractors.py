@@ -111,6 +111,27 @@ class TestExtractors(unittest.TestCase):
         self._check_sorting_return_types(SX_hs2)
         self._check_sortings_equal(self.SX,SX_hs2)
 
+    def test_kilosort_extractor(self):
+        path1=self.test_dir+'/firings_true'
+        si.KiloSortSortingExtractor.writeSorting(self.SX,path1)
+        SX_ks=si.KiloSortSortingExtractor(path1)
+        self._check_sorting_return_types(SX_ks)
+        self._check_sortings_equal(self.SX,SX_ks)
+
+    def test_klusta_extractor(self):
+        path1=self.test_dir+'/firings_true.kwik'
+        si.KlustaSortingExtractor.writeSorting(self.SX,path1)
+        SX_kl=si.KlustaSortingExtractor(path1)
+        self._check_sorting_return_types(SX_kl)
+        self._check_sortings_equal(self.SX,SX_kl)
+
+    def test_spykingcircus_extractor(self):
+        path1=self.test_dir+'/firings_true'
+        si.SpykingCircusSortingExtractor.writeSorting(self.SX,path1)
+        SX_spy=si.SpykingCircusSortingExtractor(path1)
+        self._check_sorting_return_types(SX_spy)
+        self._check_sortings_equal(self.SX,SX_spy)
+
     def test_multi_sub_recording_extractor(self):
         RX_multi=si.MultiRecordingExtractor(
             recordings=[self.RX,self.RX,self.RX],
