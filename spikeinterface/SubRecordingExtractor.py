@@ -16,7 +16,7 @@ class SubRecordingExtractor(RecordingExtractor):
             self._start_frame=0
         if self._end_frame is None:
             self._end_frame=self._parent_recording.getNumFrames()
-        self.copyChannelProperties(parent_recording)
+        self.copyChannelProperties(parent_recording,channel_ids=channel_ids)
 
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
         if start_frame is None:

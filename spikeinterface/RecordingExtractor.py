@@ -267,7 +267,7 @@ class RecordingExtractor(ABC):
         else:
             raise ValueError("channel_id must be an int")
 
-    def copyChannelProperties(self, recording):
+    def copyChannelProperties(self, recording, channel_ids=None):
         '''Copy channel properties from another recording extractor to the current
         recording extractor.
 
@@ -276,11 +276,14 @@ class RecordingExtractor(ABC):
         recording: RecordingExtractor
             The recording extractor from twhich the properties will be copied
         '''
-        for channel_id in range(recording.getNumChannels()):
+        if channel_ids is None:
+            channel_ids=range(recording.getNumChannels())
+
+        for ii,channel_id in enumerate(channel_ids):
             curr_property_names = recording.getChannelPropertyNames(channel_id=channel_id)
             for curr_property_name in curr_property_names:
                 value = recording.getChannelProperty(channel_id=channel_id, property_name=curr_property_name)
-                self.setChannelProperty(channel_id=channel_id, property_name=curr_property_name, value=value)
+                self.setChannelProperty(channel_id=ii, property_name=curr_property_name, value=value)
 
     def addEpoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to your recording extractor that tracks
