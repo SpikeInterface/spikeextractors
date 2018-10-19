@@ -66,7 +66,7 @@ def loadProbeFile(recording, probe_file):
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 
 
-def saveProbeFile(recording, probe_file, format=None):
+def saveProbeFile(recording, probe_file, format=None, radius=100, dimensions='all'):
     '''Saves probe file from the channel information of the given recording
     extractor
 
@@ -105,7 +105,7 @@ def saveProbeFile(recording, probe_file, format=None):
                 raise AttributeError("Recording extractor needs to have "
                                      "'location' property to save .csv probe file")
     elif probe_file.endswith('.prb'):
-        _export_prb_file(recording, probe_file, format)
+        _export_prb_file(recording, probe_file, format, radius=radius, dimensions=dimensions)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be saved.")
 
@@ -142,7 +142,8 @@ def writeBinaryDatFormat(recording, save_path, transpose=False, dtype='float32')
     return save_path
 
 
-def _export_prb_file(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100):
+def _export_prb_file(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100,
+                     dimensions='all'):
     '''Exports .prb file
 
     Parameters
@@ -179,6 +180,8 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
         if 'location' in recording.getChannelPropertyNames():
             positions = np.array([recording.getChannelProperty(chan, 'location')
                                   for chan in range(recording.getNumChannels())])
+            if dimensions is not 'all':
+                positions = positions[:, dimensions]
         else:
             print("'location' property is not available and it will not be saved.")
             positions = None

@@ -101,7 +101,6 @@ class MEArecSortingExtractor(SortingExtractor):
             self._unit_ids = range(self._num_units)
         self._spike_trains = rec_dict['spiketrains']
         self._fs  = info['recordings']['fs'] * pq.Hz #fs is in kHz
-        print('Info: ',info)
 
     def getUnitIds(self):
         if self._unit_ids is None:

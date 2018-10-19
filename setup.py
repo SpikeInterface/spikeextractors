@@ -14,12 +14,9 @@ setuptools.setup(
     install_requires=[
         'numpy',
         'quantities',
-        'mountainlab_pytools',
         'neo',
         'pyyaml',
         'h5py',
-        'pynwb',
-        'pyopenephys'
     ],
     classifiers=(
         "Programming Language :: Python :: 3",
