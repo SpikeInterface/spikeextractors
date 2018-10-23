@@ -55,6 +55,51 @@ class SortingExtractor(ABC):
         '''
         pass
 
+    def getUnitSpikeFeatures(self, unit_id, feature_name, start_frame=None, end_frame=None):
+        '''This function extracts the specified spike features from the specified unit.
+        It will return spike features from within three ranges:
+
+            [start_frame, t_start+1, ..., end_frame-1]
+            [start_frame, start_frame+1, ..., final_unit_spike_frame - 1]
+            [0, 1, ..., end_frame-1]
+            [0, 1, ..., final_unit_spike_frame - 1]
+
+        if both start_frame and end_frame are given, if only start_frame is
+        given, if only end_frame is given, or if neither start_frame or end_frame
+        are given, respectively. Spike features are returned in the form of an
+        array_like of spike features. In this implementation, start_frame is inclusive
+        and end_frame is exclusive conforming to numpy standards.
+
+        Parameters
+        ----------
+        unit_id: int
+            The id that specifies a unit in the recording.
+        feature_name: string
+            The name of the feature to be returned.
+        start_frame: int
+            The frame above which a spike frame is returned  (inclusive).
+        end_frame: int
+            The frame below which a spike frame is returned  (exclusive).
+        Returns
+        ----------
+        spike_features: numpy.ndarray
+            An array containing all the features for each spike in the
+            specified unit given the range of start and end frames.
+        '''
+        raise NotImplementedError("The getUnitSpikeFeatures function is not \
+                                  implemented for this extractor")
+
+    def getUnitSpikeFeatureNames(self):
+        '''This function returns the names of spike features across all units.
+
+        Returns
+        ----------
+        spike_features: list
+            A list of string names for each feature in the specified unit.
+        '''
+        
+        return []
+
     def setUnitProperty(self, unit_id, property_name, value):
         '''This function adds a unit property data set under the given property
         name to the given unit.
