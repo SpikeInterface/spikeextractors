@@ -89,20 +89,16 @@ class SortingExtractor(ABC):
         raise NotImplementedError("The getUnitSpikeFeatures function is not \
                                   implemented for this extractor")
 
-    def getUnitSpikeFeatureNames(self, unit_id):
-        '''This function returns the names of all spike features for the given unit.
+    def getUnitSpikeFeatureNames(self):
+        '''This function returns the names of spike features across all units.
 
-        Parameters
-        ----------
-        unit_id: int
-            The id that specifies a unit in the recording.
         Returns
         ----------
         spike_features: list
             A list of string names for each feature in the specified unit.
         '''
-        raise NotImplementedError("The getUnitSpikeFeatureNames function is not \
-                                  implemented for this extractor")
+        
+        return []
 
     def setUnitProperty(self, unit_id, property_name, value):
         '''This function adds a unit property data set under the given property
