@@ -4,31 +4,36 @@ from spikeinterface import SortingExtractor
 import os, json
 import numpy as np
 
+def _load_required_modules():
+    try:
+        from mountainlab_pytools import mdaio
+        from kbucket import client as kbucket
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError("To use the MdaExtractors, install mountainlab_pytools and kbucket: \n\n"
+                                  "pip install mountainlab_pytools kbucket\n\n")
+    return mdaio, kbucket
+
 class MdaRecordingExtractor(RecordingExtractor):
     def __init__(self, dataset_directory, *, download=True):
-        try:
-            from mountainlab_pytools import mlproc as mlp
-            from mountainlab_pytools import mdaio
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the MdaExtractors, install mountainlab_pytools: \n\n"
-                                      "pip install mountainlab_pytools\n\n")
+        mdaio,kbucket=_load_required_modules()
+
         RecordingExtractor.__init__(self)
         self._dataset_directory=dataset_directory
         timeseries0=dataset_directory+'/raw.mda'
         self._dataset_params=read_dataset_params(dataset_directory)
         self._samplerate=self._dataset_params['samplerate']*1.0
         if is_kbucket_url(timeseries0):
-            download_needed=is_url(mlp.locateFile(timeseries0))
+            download_needed=is_url(kbucket.findFile(timeseries0))
         else:
             download_needed=is_url(timeseries0)
         if download and download_needed:
             print('Downloading file: '+timeseries0)
-            self._timeseries_path=mlp.realizeFile(timeseries0)
+            self._timeseries_path=kbucket.realizeFile(timeseries0)
             print('Done.')
         else:
-            self._timeseries_path=mlp.locateFile(timeseries0)
+            self._timeseries_path=kbucket.findFile(timeseries0)
         geom0=dataset_directory+'/geom.csv'
-        self._geom_fname=mlp.realizeFile(geom0)
+        self._geom_fname=kbucket.realizeFile(geom0)
         self._geom=np.genfromtxt(self._geom_fname, delimiter=',')
         X=mdaio.DiskReadMda(self._timeseries_path)
         if self._geom.shape[0] != X.N1():
@@ -48,12 +53,8 @@ class MdaRecordingExtractor(RecordingExtractor):
         return self._samplerate
 
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
-        try:
-            from mountainlab_pytools import mlproc as mlp
-            from mountainlab_pytools import mdaio
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the Mda extractors, install mountainlab_pytools: \n\n"
-                                      "pip install mountainlab_pytools\n\n")
+        mdaio,kbucket=_load_required_modules()
+
         if start_frame is None:
             start_frame=0
         if end_frame is None:
@@ -67,12 +68,8 @@ class MdaRecordingExtractor(RecordingExtractor):
 
     @staticmethod
     def writeRecording(recording,save_path):
-        try:
-            from mountainlab_pytools import mlproc as mlp
-            from mountainlab_pytools import mdaio
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the Mda extractors, install mountainlab_pytools: \n\n"
-                                      "pip install mountainlab_pytools\n\n")
+        mdaio,kbucket=_load_required_modules()
+
         M=recording.getNumChannels()
         N=recording.getNumFrames()
         channel_ids=range(M)
@@ -96,23 +93,19 @@ class MdaRecordingExtractor(RecordingExtractor):
 
 class MdaSortingExtractor(SortingExtractor):
     def __init__(self, firings_file):
-        try:
-            from mountainlab_pytools import mlproc as mlp
-            from mountainlab_pytools import mdaio
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the Mda extractors, install mountainlab_pytools: \n\n"
-                                      "pip install mountainlab_pytools\n\n")
+        mdaio,kbucket=_load_required_modules()
+
         SortingExtractor.__init__(self)
         if is_kbucket_url(firings_file):
-            download_needed=is_url(mlp.locateFile(firings_file))
+            download_needed=is_url(kbucket.findFile(firings_file))
         else:
             download_needed=is_url(firings_file)
         if download_needed:
             print('Downloading file: '+firings_file)
-            self._firings_path=mlp.realizeFile(firings_file)
+            self._firings_path=kbucket.realizeFile(firings_file)
             print('Done.')
         else:
-            self._firings_path=mlp.realizeFile(firings_file)
+            self._firings_path=kbucket.realizeFile(firings_file)
         self._firings=mdaio.readmda(self._firings_path)
         self._times=self._firings[1,:]
         self._labels=self._firings[2,:]
@@ -131,14 +124,13 @@ class MdaSortingExtractor(SortingExtractor):
 
     @staticmethod
     def writeSorting(sorting,save_path):
-        try:
-            from mountainlab_pytools import mlproc as mlp
-            from mountainlab_pytools import mdaio
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the Mda extractors, install mountainlab_pytools: \n\n"
-                                      "pip install mountainlab_pytools\n\n")
+        mdaio,kbucket=_load_required_modules()
+
         unit_ids=sorting.getUnitIds()
-        K=np.max(unit_ids)
+        if len(unit_ids)>0:
+            K=np.max(unit_ids)
+        else:
+            K=0
         times_list=[]
         labels_list=[]
         for i in range(len(unit_ids)):
@@ -146,8 +138,8 @@ class MdaSortingExtractor(SortingExtractor):
             times=sorting.getUnitSpikeTrain(unit_id=unit)
             times_list.append(times)
             labels_list.append(np.ones(times.shape)*unit)
-        all_times=np.concatenate(times_list)
-        all_labels=np.concatenate(labels_list)
+        all_times=_concatenate(times_list)
+        all_labels=_concatenate(labels_list)
         sort_inds=np.argsort(all_times)
         all_times=all_times[sort_inds]
         all_labels=all_labels[sort_inds]
@@ -157,6 +149,11 @@ class MdaSortingExtractor(SortingExtractor):
         firings[2,:]=all_labels
         mdaio.writemda64(firings,save_path)
 
+def _concatenate(list):
+    if len(list)==0:
+        return np.array([])
+    return np.concatenate(list)
+
 def is_kbucket_url(path):
     return path.startswith('kbucket://') or path.startswith('sha1://')
 
@@ -164,13 +161,9 @@ def is_url(path):
     return path.startswith('http://') or path.startswith('https://') or path.startswith('kbucket://') or path.startswith('sha1://')
 
 def read_dataset_params(dsdir):
-    try:
-        from mountainlab_pytools import mlproc as mlp
-        from mountainlab_pytools import mdaio
-    except ModuleNotFoundError:
-        raise ModuleNotFoundError("To use the Mda extractors, install mountainlab_pytools: \n\n"
-                                  "pip install mountainlab_pytools\n\n")
-    params_fname=mlp.realizeFile(dsdir+'/params.json')
+    mdaio,kbucket=_load_required_modules()
+
+    params_fname=kbucket.realizeFile(dsdir+'/params.json')
     if not os.path.exists(params_fname):
         raise Exception('Dataset parameter file does not exist: '+params_fname)
     with open(params_fname) as f:
