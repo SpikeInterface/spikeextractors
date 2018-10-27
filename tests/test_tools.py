@@ -19,15 +19,16 @@ class TestTools(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
     def test_load_save_probes(self):
-        si.loadProbeFile(self.RX, 'tests/probe_test.prb')
-        assert 'location' in self.RX.getChannelPropertyNames()
-        assert 'group' in self.RX.getChannelPropertyNames()
-        positions = [self.RX.getChannelProperty(chan, 'location') for chan in range(self.RX.getNumChannels())]
+        SX = si.loadProbeFile(self.RX, 'tests/probe_test.prb')
+        print(SX.getChannelPropertyNames())
+        assert 'location' in SX.getChannelPropertyNames()
+        assert 'group' in SX.getChannelPropertyNames()
+        positions = [SX.getChannelProperty(chan, 'location') for chan in range(self.RX.getNumChannels())]
         # save in csv
-        si.saveProbeFile(self.RX, self.test_dir+'geom.csv')
+        si.saveProbeFile(SX, self.test_dir+'geom.csv')
         # load csv locations
-        si.loadProbeFile(self.RX, self.test_dir+'geom.csv')
-        position_loaded = [self.RX.getChannelProperty(chan, 'location') for chan in range(self.RX.getNumChannels())]
+        SX_load = si.loadProbeFile(SX, self.test_dir+'geom.csv')
+        position_loaded = [SX_load.getChannelProperty(chan, 'location') for chan in range(SX_load.getNumChannels())]
         self.assertTrue(np.allclose(positions[10], position_loaded[10]))
 
     def test_write_dat_file(self):
