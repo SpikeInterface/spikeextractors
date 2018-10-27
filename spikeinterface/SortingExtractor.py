@@ -114,7 +114,7 @@ class SortingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
+        if isinstance(unit_id, (int, np.integer)):
             if(unit_id in self.getUnitIds()):
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
@@ -160,7 +160,7 @@ class SortingExtractor(ABC):
             formats as specified by the user.
         '''
         print('WARNING: addUnitProperty is deprecated. Use setUnitProperty instead.')
-        if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
+        if isinstance(unit_id, (int, np.integer)):
             if(unit_id in self.getUnitIds()):
                 if(isinstance(property_name, str)):
                     self._unit_properties[unit_id][property_name] = value
@@ -187,7 +187,7 @@ class SortingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
+        if isinstance(unit_id, (int, np.integer)):
             if(unit_id in self.getUnitIds()):
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
@@ -245,7 +245,7 @@ class SortingExtractor(ABC):
                     property_names.append(curr_property_name)
             property_names = sorted(list(set(property_names)))
             return property_names
-        if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
+        if isinstance(unit_id, (int, np.integer)):
             if(unit_id in self.getUnitIds()):
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
