@@ -84,10 +84,12 @@ class RecordingExtractor(ABC):
         pass
 
     def getChannelIds(self):
-        '''
+        '''Returns the list of channel ids. If not specified, the range from 0 to num_channels - 1 is returned.
 
         Returns
         -------
+        channel_ids: list
+            Channel list
 
         '''
         if self._channel_ids is None:

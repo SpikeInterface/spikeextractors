@@ -98,7 +98,7 @@ class MEArecSortingExtractor(SortingExtractor):
         if 'unit_id' in rec_dict['spiketrains'][0].annotations:
             self._unit_ids = [st.annotations['unit_id'] for st in rec_dict['spiketrains']]
         else:
-            self._unit_ids = range(self._num_units)
+            self._unit_ids = list(range(self._num_units))
         self._spike_trains = rec_dict['spiketrains']
         self._fs  = info['recordings']['fs'] * pq.Hz #fs is in kHz
 
@@ -176,6 +176,7 @@ def load_recordings(recordings, verbose=False):
         print("Loading recordings...")
 
     rec_dict = {}
+    info = {}
 
     if os.path.isdir(recordings):
         recording_folder = recordings
@@ -205,7 +206,6 @@ def load_recordings(recordings, verbose=False):
     elif recordings.endswith('h5') or recordings.endswith('hdf5'):
         with h5py.File(recordings, 'r') as F:
             info = json.loads(str(F['info'][()]))
-            print(info)
             rec_dict['peaks'] = np.array(F.get('peaks'))
             rec_dict['positions'] = np.array(F.get('positions'))
             rec_dict['recordings'] = np.array(F.get('recordings'))
@@ -227,6 +227,8 @@ def load_recordings(recordings, verbose=False):
                     st.annotations = annotations
                     spiketrains.append(st)
                 rec_dict['spiketrains'] = spiketrains
+    else:
+        raise Exception("The provided file-folder is not a MEArec recording")
 
     if verbose:
         print("Done loading recordings...")
