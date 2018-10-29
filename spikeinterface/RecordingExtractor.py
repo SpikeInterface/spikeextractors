@@ -12,6 +12,7 @@ class RecordingExtractor(ABC):
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
+        self._channel_ids = None
 
     @abstractmethod
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
@@ -81,6 +82,20 @@ class RecordingExtractor(ABC):
             Sampling frequency of the recordings in Hz.
         '''
         pass
+
+    def getChannelIds(self):
+        '''Returns the list of channel ids. If not specified, the range from 0 to num_channels - 1 is returned.
+
+        Returns
+        -------
+        channel_ids: list
+            Channel list
+
+        '''
+        if self._channel_ids is None:
+            return list(range(self.getNumChannels()))
+        else:
+            return self._channel_ids
 
     def frameToTime(self, frame):
         '''This function converts a user-inputted frame index to a time with units of seconds.
@@ -190,7 +205,7 @@ class RecordingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if(isinstance(channel_id, int)):
+        if(isinstance(channel_id, (int, np.integer))):
             if(channel_id in range(self.getNumChannels())):
                 if channel_id not in self._channel_properties:
                     self._channel_properties[channel_id]={}
@@ -220,7 +235,7 @@ class RecordingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if(isinstance(channel_id, int)):
+        if(isinstance(channel_id, (int, np.integer))):
             if(channel_id in range(self.getNumChannels())):
                 if channel_id not in self._channel_properties:
                     self._channel_properties[channel_id]={}

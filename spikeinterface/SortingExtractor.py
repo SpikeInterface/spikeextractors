@@ -164,6 +164,8 @@ class SortingExtractor(ABC):
         '''
         if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
             if unit_id in self.getUnitIds():
+        if isinstance(unit_id, (int, np.integer)):
+            if(unit_id in self.getUnitIds()):
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
                 if isinstance(property_name, str):
@@ -237,6 +239,7 @@ class SortingExtractor(ABC):
         '''
         if (isinstance(unit_id, int)) or (isinstance(unit_id, np.int64)):
             if unit_id in self.getUnitIds():
+
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
                 if isinstance(property_name, str):
