@@ -14,9 +14,6 @@ class CopyRecordingExtractor(si.RecordingExtractor):
     def getChannelIds(self):
         return list(range(self._other.getNumChannels()))
 
-    def getNumChannels(self):
-        return self._other.getNumChannels()
-
     def getNumFrames(self):
         return self._other.getNumFrames()
 

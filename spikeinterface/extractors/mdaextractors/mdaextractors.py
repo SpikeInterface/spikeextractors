@@ -46,9 +46,6 @@ class MdaRecordingExtractor(RecordingExtractor):
     def getChannelIds(self):
         return list(range(self._num_channels))
 
-    def getNumChannels(self):
-        return self._num_channels
-
     def getNumFrames(self):
         return self._num_timepoints
 

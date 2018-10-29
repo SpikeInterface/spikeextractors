@@ -33,9 +33,6 @@ class SubRecordingExtractor(RecordingExtractor):
     def getChannelIds(self):
         return self._channel_ids
 
-    def getNumChannels(self):
-        return len(self._channel_ids)
-
     def getNumFrames(self):
         return self._end_frame-self._start_frame
 
