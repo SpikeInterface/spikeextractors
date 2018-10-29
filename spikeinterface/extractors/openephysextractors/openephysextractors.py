@@ -13,6 +13,9 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         self._recording = pyopenephys.File(recording_file,
                                            probefile).experiments[experiment_id].recordings[recording_id]
 
+    def getChannelIds(self):
+        return list(range(self._recording.analog_signals[0].signal.shape[0]))
+
     def getNumChannels(self):
         return self._recording.analog_signals[0].signal.shape[0]
 

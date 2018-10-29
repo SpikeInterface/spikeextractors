@@ -25,6 +25,10 @@ class MEArecRecordingExtractor(RecordingExtractor):
         for chan, pos in enumerate(rec_dict['positions']):
             self.setChannelProperty(chan, 'location', pos)
 
+    def getChannelIds(self):
+        if self._recordings is None:
+            self._initialize()
+        return list(range(self._recordings.shape[0]))
 
     def getNumChannels(self):
         if self._recordings is None:
