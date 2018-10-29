@@ -16,9 +16,6 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     def getChannelIds(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))
 
-    def getNumChannels(self):
-        return self._recording.analog_signals[0].signal.shape[0]
-
     def getNumFrames(self):
         return self._recording.analog_signals[0].signal.shape[1]
 
