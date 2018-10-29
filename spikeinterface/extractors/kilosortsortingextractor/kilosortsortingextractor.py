@@ -8,7 +8,11 @@ class KiloSortSortingExtractor(SortingExtractor):
     def __init__(self, kilosort_folder):
         SortingExtractor.__init__(self)
         spike_times = np.load(join(kilosort_folder, 'spike_times.npy'))
-        spike_clusters = np.load(join(kilosort_folder, 'spike_clusters.npy'))
+        spike_templates = np.load(join(kilosort_folder, 'spike_templates.npy'))
+        if os.path.isfile(join(kilosort_folder, 'spike_clusters.npy')):
+            spike_clusters = np.load(join(kilosort_folder, 'spike_clusters.npy'))
+        else:
+            spike_clusters = spike_templates
 
         self._spiketrains = []
         clust_id = np.unique(spike_clusters)
