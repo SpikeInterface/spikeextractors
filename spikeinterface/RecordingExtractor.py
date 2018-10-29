@@ -50,17 +50,6 @@ class RecordingExtractor(ABC):
         pass
 
     @abstractmethod
-    def getNumChannels(self):
-        '''This function returns the number of channels in the recording.
-
-        Returns
-        -------
-        num_channels: int
-            Number of channels in the recording.
-        '''
-        pass
-
-    @abstractmethod
     def getNumFrames(self):
         '''This function returns the number of frames in the recording.
 
@@ -81,6 +70,31 @@ class RecordingExtractor(ABC):
             Sampling frequency of the recordings in Hz.
         '''
         pass
+
+    @abstractmethod
+    def getChannelIds(self):
+        '''Returns the list of channel ids. If not specified, the range from 0 to num_channels - 1 is returned.
+
+        Returns
+        -------
+        channel_ids: list
+            Channel list
+
+        '''
+        pass
+
+
+    def getNumChannels(self):
+        '''This function returns the number of channels in the recording.
+
+        Returns
+        -------
+        num_channels: int
+            Number of channels in the recording.
+        '''
+        print('WARNING: this is a temporary warning. You should use getChannelIds() to iterate through the channels. '
+              'This warning will be removed in future versions of SpikeInterface.')
+        return len(self.getChannelIds())
 
     def frameToTime(self, frame):
         '''This function converts a user-inputted frame index to a time with units of seconds.
@@ -190,7 +204,7 @@ class RecordingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if(isinstance(channel_id, int)):
+        if(isinstance(channel_id, (int, np.integer))):
             if(channel_id in range(self.getNumChannels())):
                 if channel_id not in self._channel_properties:
                     self._channel_properties[channel_id]={}
@@ -220,7 +234,7 @@ class RecordingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if(isinstance(channel_id, int)):
+        if(isinstance(channel_id, (int, np.integer))):
             if(channel_id in range(self.getNumChannels())):
                 if channel_id not in self._channel_properties:
                     self._channel_properties[channel_id]={}

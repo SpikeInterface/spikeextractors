@@ -13,8 +13,8 @@ class NumpyRecordingExtractor(RecordingExtractor):
             for m in range(self._timeseries.shape[0]):
                 self.setChannelProperty(m,'location',self._geom[m,:])
 
-    def getNumChannels(self):
-        return self._timeseries.shape[0]
+    def getChannelIds(self):
+        return list(range(self._timeseries.shape[0]))
 
     def getNumFrames(self):
         return self._timeseries.shape[1]

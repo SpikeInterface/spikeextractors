@@ -13,8 +13,8 @@ class BiocamRecordingExtractor(RecordingExtractor):
         for m in range(self._nRecCh):
             self.setChannelProperty(m,'location',self._positions[m])
 
-    def getNumChannels(self):
-        return self._nRecCh
+    def getChannelIds(self):
+        return list(range(self._nRecCh))
 
     def getNumFrames(self):
         return self._nFrames

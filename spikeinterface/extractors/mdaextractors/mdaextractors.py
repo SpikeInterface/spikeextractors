@@ -43,8 +43,8 @@ class MdaRecordingExtractor(RecordingExtractor):
         for m in range(self._num_channels):
             self.setChannelProperty(m,'location',self._geom[m,:])
 
-    def getNumChannels(self):
-        return self._num_channels
+    def getChannelIds(self):
+        return list(range(self._num_channels))
 
     def getNumFrames(self):
         return self._num_timepoints

@@ -80,8 +80,8 @@ class MultiRecordingExtractor(RecordingExtractor):
         )
         return np.concatenate(list,axis=1)
 
-    def getNumChannels(self):
-        return self._num_channels
+    def getChannelIds(self):
+        return list(range(self._num_channels))
 
     def getNumFrames(self):
         return self._num_frames
