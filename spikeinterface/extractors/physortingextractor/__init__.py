@@ -1,1 +1,1 @@
-from .physortingextractor import PhyTemplatesSortingExtractor
+from .physortingextractor import PhySortingExtractor

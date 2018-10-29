@@ -4,7 +4,7 @@ import numpy as np
 import os
 from os.path import join
 
-class PhyTemplatesSortingExtractor(SortingExtractor):
+class PhySortingExtractor(SortingExtractor):
     def __init__(self, phy_folder):
         SortingExtractor.__init__(self)
         spike_times = np.load(join(phy_folder, 'spike_times.npy'))
@@ -36,8 +36,8 @@ class PhyTemplatesSortingExtractor(SortingExtractor):
 
         # set features
         for u_i, unit in enumerate(self.getUnitIds()):
-            self.setUnitFeature(unit, 'amplitudes', self._amps)
-            self.setUnitFeature(unit, 'pc_features', self._pc_features)
+            self.setUnitSpikeFeatures(unit, 'amplitudes', self._amps[u_i])
+            self.setUnitSpikeFeatures(unit, 'pc_features', self._pc_features[u_i])
 
     def getUnitIds(self):
         return list(self._unit_ids)
