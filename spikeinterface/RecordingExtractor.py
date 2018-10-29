@@ -12,7 +12,6 @@ class RecordingExtractor(ABC):
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
-        self._channel_ids = None
 
     @abstractmethod
     def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
@@ -83,6 +82,7 @@ class RecordingExtractor(ABC):
         '''
         pass
 
+    @abstractmethod
     def getChannelIds(self):
         '''Returns the list of channel ids. If not specified, the range from 0 to num_channels - 1 is returned.
 
@@ -92,10 +92,7 @@ class RecordingExtractor(ABC):
             Channel list
 
         '''
-        if self._channel_ids is None:
-            return list(range(self.getNumChannels()))
-        else:
-            return self._channel_ids
+        pass
 
     def frameToTime(self, frame):
         '''This function converts a user-inputted frame index to a time with units of seconds.
