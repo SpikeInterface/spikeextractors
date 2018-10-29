@@ -30,6 +30,9 @@ class SubRecordingExtractor(RecordingExtractor):
         ef=self._start_frame+end_frame
         return self._parent_recording.getTraces(start_frame=sf,end_frame=ef,channel_ids=ch_ids)
 
+    def getChannelIds(self):
+        return self._channel_ids
+
     def getNumChannels(self):
         return len(self._channel_ids)
 
