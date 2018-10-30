@@ -70,9 +70,9 @@ class MdaRecordingExtractor(RecordingExtractor):
     def writeRecording(recording,save_path):
         mdaio,kbucket=_load_required_modules()
 
-        M=recording.getNumChannels()
+        channel_ids=recording.getChannelIds()
+        M=len(channel_ids)
         N=recording.getNumFrames()
-        channel_ids=range(M)
         raw=recording.getTraces()
         location0=recording.getChannelProperty(0,'location')
         nd=len(location0)
