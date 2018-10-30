@@ -60,7 +60,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         if end_frame is None:
             end_frame=self.getNumFrames()
         if channel_ids is None:
-            channel_ids=range(self.getNumChannels())
+            channel_ids=self.getChannelIds()
         X=mdaio.DiskReadMda(self._timeseries_path)
         recordings=X.readChunk(i1=0,i2=start_frame,N1=X.N1(),N2=end_frame-start_frame)
         recordings=recordings[channel_ids,:]

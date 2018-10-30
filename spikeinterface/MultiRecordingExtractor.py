@@ -19,15 +19,16 @@ class MultiRecordingExtractor(RecordingExtractor):
         #Num channels and sampling frequency based off the initial extractor
         self._first_recording = recordings[0]
         self._num_channels = self._first_recording.getNumChannels()
+        self._channel_ids = self._first_recording.getChannelIds()
         self._sampling_frequency = self._first_recording.getSamplingFrequency()
 
         #Test if all recording extractors have same num channels and sampling frequency
         for i, recording in enumerate(recordings[1:]):
-            num_channels = recording.getNumChannels()
+            channel_ids = recording.getChannelIds()
             sampling_frequency = recording.getSamplingFrequency()
 
-            if (self._num_channels != num_channels):
-                raise ValueError("Inconsistent number of channels between extractor 0 and extractor " + str(i + 1))
+            if (self._channel_ids != channel_ids):
+                raise ValueError("Inconsistent channel ids between extractor 0 and extractor " + str(i + 1))
             if (self._sampling_frequency != sampling_frequency):
                 raise ValueError("Inconsistent sampling frequency between extractor 0 and extractor " + str(i + 1))
 
@@ -81,7 +82,7 @@ class MultiRecordingExtractor(RecordingExtractor):
         return np.concatenate(list,axis=1)
 
     def getChannelIds(self):
-        return list(range(self._num_channels))
+        return self._channel_ids
 
     def getNumFrames(self):
         return self._num_frames

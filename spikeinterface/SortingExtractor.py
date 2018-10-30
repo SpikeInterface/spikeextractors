@@ -97,7 +97,7 @@ class SortingExtractor(ABC):
         spike_features: list
             A list of string names for each feature in the specified unit.
         '''
-        
+
         return []
 
     def setUnitProperty(self, unit_id, property_name, value):
