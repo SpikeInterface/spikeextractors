@@ -215,7 +215,7 @@ class ExampleSortingExtractor(SortingExtractor):
     .
     .
     . 
-    .Optional functions and pre-implemented functions that a new SortingExtractor doesn't need to implement
+    . #Optional functions and pre-implemented functions that a new SortingExtractor doesn't need to implement
     .
     .
     .
