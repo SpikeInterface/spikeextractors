@@ -168,7 +168,7 @@ We have also implemented a variety of tools which use RecordingExtractors and So
 
 <br/>
 
-## Building a new RecordingExtractors/SortingExtractors
+## Building a new RecordingExtractor/SortingExtractor
 
 Building a new RecordingExtractors or SortingExtractors for specific file format is as simple as creating a new subclass based on the predefined base classes provided in SpikeInterface.
 
