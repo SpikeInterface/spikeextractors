@@ -106,7 +106,7 @@ The modular design of RecordingExtractor allow them to be used in a variety of o
 
 To run our standardized data retrieval functions for your sorted extracellular data, import the subclass SortingExtractor coinciding with your specific file format/spike sorter. Then, you can use that subclass of SortingExtractor to extract data and information from your spike sorted data file. We will show the functionality of the SortingExtractor by continuing our previous example. 
 
-First, we will add some random events and then use the NumpySortingExtractor to extract data about these events. Generally, SortingExtractors would be instantiated with a path to all the files containing information about the spike sorted units, but since this is a self-contained example, we will add the units manually to the extractor.
+First, we will add some random events and then use the NumpySortingExtractor to extract data about these events. Generally, SortingExtractors would be instantiated with a path the file containing information about the spike sorted units, but since this is a self-contained [example](https://github.com/colehurwitz31/spikeinterface/blob/master/examples/getting_started_with_sorting_extractors.ipynb), we will add the units manually to the SortingExtractor and show how to use it afterwards.
 
 ```python
 # Generate some random events
@@ -161,8 +161,6 @@ Num. events for unit 1 = 262
 Num. events for first second of unit 1 = 8
 ```
 SortingExtractors can also extract subsets of data from a sorted data file or can extract data from multiple files with SubSortingExtractor and MultiSortingExtractor, respectively.
-
-To play around with RecordingExtractors and SortingExtractors, we have provided a [Google Colaboratory](https://colab.research.google.com/drive/1T7m7o30_JuQ5LHSVChHPw1SoHUySe5U3). If you run the notebook in playground mode, you can experiment with extractors in a pre-installed environment.
 
 This concludes the basic tutorial about the Recording/Sorting Extractors. To see currently implemented extractor subclasses, please check the [extractors](https://github.com/colehurwitz31/spikeinterface/tree/master/spikeinterface/extractors) folder in our repo. 
 
@@ -233,6 +231,11 @@ class ExampleSortingExtractor(SortingExtractor):
 As you can see, our extractor base classes were designed to make implementing a new subclass as straightforward and flexible as possible while still enforcing standardized data retrieval functions.
 
 Once all abstract methods are overwritten in your RecordingExtractor or SortingExtractor, your subclass is ready for deployment and can be used with any pre-implemented tools (see **Tools that use RecordingExtractors and SortingExtractors**).
+<br/>
+
+## Interactive Example
+
+To play around with RecordingExtractors and SortingExtractors, we have provided a [Google Colaboratory](https://colab.research.google.com/drive/1T7m7o30_JuQ5LHSVChHPw1SoHUySe5U3). If you run the notebook in playground mode, you can experiment with extractors in a pre-installed environment.
 <br/>
 
 ## Tools that use RecordingExtractors and SortingExtractors
