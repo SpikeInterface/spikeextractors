@@ -235,7 +235,7 @@ Once all abstract methods are overwritten in your RecordingExtractor or SortingE
 
 ## Interactive Example
 
-To play around with RecordingExtractors and SortingExtractors, we have provided a [Google Colaboratory](https://colab.research.google.com/drive/1T7m7o30_JuQ5LHSVChHPw1SoHUySe5U3). If you run the notebook in playground mode, you can experiment with extractors in a pre-installed environment.
+To experiment with RecordingExtractors and SortingExtractors in a pre-installed environment, we have provided a [Google Colaboratory](https://colab.research.google.com/drive/1T7m7o30_JuQ5LHSVChHPw1SoHUySe5U3). If you run the given notebook in playground mode, you can try out the features and tools of SpikeInterface without installing any packages.
 <br/>
 
 ## Tools that use RecordingExtractors and SortingExtractors
