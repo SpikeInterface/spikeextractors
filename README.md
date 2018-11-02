@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/colehurwitz31/spikeinterface.svg?branch=master)](https://travis-ci.org/colehurwitz31/spikeinterface)
 
 Alpha Development
-Version 0.1.12
+Version 0.1.17
 
 
 # SpikeInterface
@@ -42,6 +42,12 @@ To run our standardized data retrieval functions for your raw extracellular data
 
 In this [example](https://github.com/colehurwitz31/spikeinterface/blob/master/examples/getting_started_with_recording_extractors.ipynb) from the examples repo, we show how to use an RecordingExtractor subclass on a generated, pure-noise timeseries dataset and a linear probe geometry.
 
+You will need mountainlab_pytools to run this example:
+
+```
+pip install mountainlab_pytools
+```
+
 First we will generate the properties, data, and probe geometry for this pure-noise dataset. 
 
 ```python
@@ -69,11 +75,11 @@ RX=si.NumpyRecordingExtractor(timeseries=timeseries,geom=geom,samplerate=sampler
 You can use the RecordingExtractor to retrieve data and information from the dataset with a variety of standard functions that are predefined in the RecordingExtractor base class.
 
 ```python
-print('Num. channels = {}'.format(RX.getNumChannels()))
+print('Num. channels = {}'.format(len(RX.getChannelIds())))
 print('Sampling frequency = {} Hz'.format(RX.getSamplingFrequency()))
 print('Num. timepoints = {}'.format(RX.getNumFrames()))
 print('Stdev. on third channel = {}'.format(np.std(RX.getTraces(channel_ids=2))))
-print('Location of third electrode = {}'.format(RX.getChannelProperty(2,'location')))
+print('Location of third electrode = {}'.format(RX.getChannelProperty(channel_id=2, property_name='location')))
 ```
 ```output
 Num. channels = 7
@@ -85,20 +91,22 @@ Location of third electrode = [ 2.  0.]
 
 RecordingExtractor subclasses also provide functionality to save the raw data with the specific format for which the RecordingExtractor was implemented. 
 
-We will now convert our numpy data into the MountainSort format with a MountainSort RecordingExtractor and our previously defined RecordingExtractor.
+We will now convert our numpy data into the MountainSort format and save it with a MountainSort RecordingExtractor and our previously defined RecordingExtractor.
 
 ```python
 # Write this dataset in the MountainSort format
-si.MdaRecordingExtractor.writeRecording(recording=RX,output_dirname='sample_mountainsort_dataset')
+si.MdaRecordingExtractor.writeRecording(recording=RX,save_path='sample_mountainsort_dataset')
 ```
 
-The modular design of RecordingExtractor allow them to be used in a variety of other tasks. For example, RecordingExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubRecordingExtractors and MultiRecordingExtractors, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
+
+
+The modular design of RecordingExtractor allow them to be used in a variety of other tasks. For example, RecordingExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubRecordingExtractors and MultiRecordingExtractors. 
 
 **SortingExtractor**
 
 To run our standardized data retrieval functions for your sorted extracellular data, import the subclass SortingExtractor coinciding with your specific file format/spike sorter. Then, you can use that subclass of SortingExtractor to extract data and information from your spike sorted data file. We will show the functionality of the SortingExtractor by continuing our previous example. 
 
-First, we will add some random events and then use the NumpySortingExtractor to extract data about these events. Generally, SortingExtractors would be instantiated with a path to all the files containing information about the spike sorted units, but since this is a self-contained example, we will add the units manually to the extractor.
+First, we will add some random events and then use the NumpySortingExtractor to extract data about these events. Generally, SortingExtractors would be instantiated with a path the file containing information about the spike sorted units, but since this is a self-contained [example](https://github.com/colehurwitz31/spikeinterface/blob/master/examples/getting_started_with_sorting_extractors.ipynb), we will add the units manually to the SortingExtractor and show how to use it afterwards.
 
 ```python
 # Generate some random events
@@ -124,13 +132,13 @@ print('Num. events for first second of unit 1 = {}'.format(len(st1)))
 ```
 ```output
 Unit ids = [1, 2, 3, 4]
-Num. events for unit 1 = 234
-Num. events for first second of unit 1 = 16
+Num. events for unit 1 = 262
+Num. events for first second of unit 1 = 8
 ```
 
 Finally, we can write out our sorted file to the MountainSort format by using the built-in writeSorting method in the MountainSort SortingExtractor subclass.
 ```python
-si.MdaSortingExtractor.writeSorting(sorting=SX,firings_out='sample_mountainsort_dataset/firings_true.mda')
+si.MdaSortingExtractor.writeSorting(sorting=SX,save_path='sample_mountainsort_dataset/firings_true.mda')
 ```
 
 Now that we have written out our numpy recorded and sorted files in the the MountainSort format, we can easily use the MdaRecordingExtractor and MdaSortingExtractor for our new datasets and the functionality sould be the same.
@@ -140,7 +148,7 @@ Now that we have written out our numpy recorded and sorted files in the the Moun
 RX2=si.MdaRecordingExtractor(dataset_directory='sample_mountainsort_dataset')
 SX2=si.MdaSortingExtractor(firings_file='sample_mountainsort_dataset/firings_true.mda')
 
-# We should get the same information as above
+# We should get he same information as above
 print('Unit ids = {}'.format(SX2.getUnitIds()))
 st=SX2.getUnitSpikeTrain(unit_id=1)
 print('Num. events for unit 1 = {}'.format(len(st)))
@@ -148,11 +156,11 @@ st1=SX2.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
 ```
 ```output
-Unit ids = [1, 2, 3, 4]
-Num. events for unit 1 = 234
-Num. events for first second of unit 1 = 16
+Unit ids = [1 2 3 4]
+Num. events for unit 1 = 262
+Num. events for first second of unit 1 = 8
 ```
-SortingExtractors can also extract subsets of data from a sorted data file or can extract data from multiple files with SubSortingExtractor and MultiSortingExtractor, respectively. Examples of these two classes can be seen in the [wiki](https://github.com/colehurwitz31/spikeinterface/wiki).
+SortingExtractors can also extract subsets of data from a sorted data file or can extract data from multiple files with SubSortingExtractor and MultiSortingExtractor, respectively.
 
 This concludes the basic tutorial about the Recording/Sorting Extractors. To see currently implemented extractor subclasses, please check the [extractors](https://github.com/colehurwitz31/spikeinterface/tree/master/spikeinterface/extractors) folder in our repo. 
 
@@ -160,7 +168,7 @@ We have also implemented a variety of tools which use RecordingExtractors and So
 
 <br/>
 
-## Building a new RecordingExtractors/SortingExtractors
+## Building a new RecordingExtractor/SortingExtractor
 
 Building a new RecordingExtractors or SortingExtractors for specific file format is as simple as creating a new subclass based on the predefined base classes provided in SpikeInterface.
 
@@ -183,7 +191,6 @@ class ExampleSortingExtractor(SortingExtractor):
         
         return unit_ids
 
-    @abstractmethod
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
     
         '''Code to extract spike frames from the specified unit.
@@ -201,6 +208,16 @@ class ExampleSortingExtractor(SortingExtractor):
         '''
         
         return spike_train
+    
+    .
+    .
+    .
+    . 
+    . #Optional functions and pre-implemented functions that a new SortingExtractor doesn't need to implement
+    .
+    .
+    .
+    .
         
     @staticmethod
     def writeSorting(sorting, save_path):
@@ -216,15 +233,15 @@ As you can see, our extractor base classes were designed to make implementing a 
 Once all abstract methods are overwritten in your RecordingExtractor or SortingExtractor, your subclass is ready for deployment and can be used with any pre-implemented tools (see **Tools that use RecordingExtractors and SortingExtractors**).
 <br/>
 
+## Interactive Example
+
+To experiment with RecordingExtractors and SortingExtractors in a pre-installed environment, we have provided a [Collaborative environment](https://gist.github.com/magland/e43542fe2dfe856fd04903b9ff1f8e4e). If you click on the link and then click on "Open in Collab", you can run the notebook and try out the features of and tools for SpikeInterface.
+<br/>
+
 ## Tools that use RecordingExtractors and SortingExtractors
 
 - [spiketoolkit](https://github.com/alejoe91/spiketoolkit) - A repository containing tools that utilize functions from the extractors. It also contains spike sorting algorithm wrappers that output sorting extractors post-sorting allowing for standardized evaluation and quality control. Maintained by Alessio Paolo Buccino.
 - [spikewidgets](https://github.com/magland/spikewidgets) - A repository containing graphical widgets that utilize functions from the extractors to plot and visualize both the raw and sorted extracellular data. Maintained by Jeremy Magland.
-### Future Plans
-
-Coming soon...
-<br/>
-<br/>
 
 ### Authors
 

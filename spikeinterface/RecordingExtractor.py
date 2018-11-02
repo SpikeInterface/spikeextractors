@@ -50,17 +50,6 @@ class RecordingExtractor(ABC):
         pass
 
     @abstractmethod
-    def getNumChannels(self):
-        '''This function returns the number of channels in the recording.
-
-        Returns
-        -------
-        num_channels: int
-            Number of channels in the recording.
-        '''
-        pass
-
-    @abstractmethod
     def getNumFrames(self):
         '''This function returns the number of frames in the recording.
 
@@ -93,6 +82,19 @@ class RecordingExtractor(ABC):
 
         '''
         pass
+
+
+    def getNumChannels(self):
+        '''This function returns the number of channels in the recording.
+
+        Returns
+        -------
+        num_channels: int
+            Number of channels in the recording.
+        '''
+        print('WARNING: this is a temporary warning. You should use getChannelIds() to iterate through the channels. '
+              'This warning will be removed in future versions of SpikeInterface.')
+        return len(self.getChannelIds())
 
     def frameToTime(self, frame):
         '''This function converts a user-inputted frame index to a time with units of seconds.
@@ -162,7 +164,7 @@ class RecordingExtractor(ABC):
             snippet_len_after = snippet_len-snippet_len_before
 
         if channel_ids is None:
-            channel_ids = range(self.getNumChannels())
+            channel_ids = self.getChannelIds()
 
         num_snippets = len(reference_frames)
         num_channels = len(channel_ids)
@@ -203,7 +205,7 @@ class RecordingExtractor(ABC):
             formats as specified by the user.
         '''
         if(isinstance(channel_id, (int, np.integer))):
-            if(channel_id in range(self.getNumChannels())):
+            if(channel_id in self.getChannelIds()):
                 if channel_id not in self._channel_properties:
                     self._channel_properties[channel_id]={}
                 if(isinstance(property_name, str)):
@@ -233,7 +235,7 @@ class RecordingExtractor(ABC):
             formats as specified by the user.
         '''
         if(isinstance(channel_id, (int, np.integer))):
-            if(channel_id in range(self.getNumChannels())):
+            if(channel_id in self.getChannelIds()):
                 if channel_id not in self._channel_properties:
                     self._channel_properties[channel_id]={}
                 if(isinstance(property_name, str)):
@@ -262,14 +264,14 @@ class RecordingExtractor(ABC):
         '''
         if channel_id is None:
             property_names = []
-            for channel_id in range(self.getNumChannels()):
+            for channel_id in self.getChannelIds():
                 curr_property_names = self.getChannelPropertyNames(channel_id=channel_id)
                 for curr_property_name in curr_property_names:
                     property_names.append(curr_property_name)
             property_names = sorted(list(set(property_names)))
             return property_names
         if (isinstance(channel_id, (int, np.int64))):
-            if(channel_id in range(self.getNumChannels())):
+            if(channel_id in self.getChannelIds()):
                 if channel_id not in self._channel_properties:
                     self._channel_properties[channel_id]={}
                 property_names = sorted(self._channel_properties[channel_id].keys())
@@ -289,13 +291,19 @@ class RecordingExtractor(ABC):
             The recording extractor from twhich the properties will be copied
         '''
         if channel_ids is None:
-            channel_ids=range(recording.getNumChannels())
+            channel_ids=recording.getChannelIds()
 
-        for ii,channel_id in enumerate(channel_ids):
-            curr_property_names = recording.getChannelPropertyNames(channel_id=channel_id)
+        if(isinstance(channel_ids, int)):
+            curr_property_names = recording.getChannelPropertyNames(channel_id=channel_ids)
             for curr_property_name in curr_property_names:
-                value = recording.getChannelProperty(channel_id=channel_id, property_name=curr_property_name)
-                self.setChannelProperty(channel_id=ii, property_name=curr_property_name, value=value)
+                value = recording.getChannelProperty(channel_id=channel_ids, property_name=curr_property_name)
+                self.setChannelProperty(channel_id=channel_ids, property_name=curr_property_name, value=value)
+        else:
+            for channel_id in channel_ids:
+                curr_property_names = recording.getChannelPropertyNames(channel_id=channel_id)
+                for curr_property_name in curr_property_names:
+                    value = recording.getChannelProperty(channel_id=channel_id, property_name=curr_property_name)
+                    self.setChannelProperty(channel_id=channel_id, property_name=curr_property_name, value=value)
 
     def addEpoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to your recording extractor that tracks

@@ -16,9 +16,6 @@ class NumpyRecordingExtractor(RecordingExtractor):
     def getChannelIds(self):
         return list(range(self._timeseries.shape[0]))
 
-    def getNumChannels(self):
-        return self._timeseries.shape[0]
-
     def getNumFrames(self):
         return self._timeseries.shape[1]
 
@@ -31,7 +28,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
         if end_frame is None:
             end_frame=self.getNumFrames()
         if channel_ids is None:
-            channel_ids=range(self.getNumChannels())
+            channel_ids=self.getChannelIds()
         recordings=self._timeseries[:,start_frame:end_frame][channel_ids,:]
         return recordings
 

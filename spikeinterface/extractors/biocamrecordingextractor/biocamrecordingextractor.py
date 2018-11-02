@@ -16,9 +16,6 @@ class BiocamRecordingExtractor(RecordingExtractor):
     def getChannelIds(self):
         return list(range(self._nRecCh))
 
-    def getNumChannels(self):
-        return self._nRecCh
-
     def getNumFrames(self):
         return self._nFrames
 

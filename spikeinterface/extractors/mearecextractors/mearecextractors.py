@@ -30,11 +30,6 @@ class MEArecRecordingExtractor(RecordingExtractor):
             self._initialize()
         return list(range(self._recordings.shape[0]))
 
-    def getNumChannels(self):
-        if self._recordings is None:
-            self._initialize()
-        return self._recordings.shape[0]
-
     def getNumFrames(self):
         if self._recordings is None:
             self._initialize()

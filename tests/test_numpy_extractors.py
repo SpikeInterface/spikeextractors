@@ -29,6 +29,8 @@ class TestNumpyExtractors(unittest.TestCase):
         pass
 
     def test_recording_extractor(self):
+        # getChannelIds
+        self.assertEqual(self.RX.getChannelIds(), [i for i in range(self._X.shape[0])])
         # getNumChannels
         self.assertEqual(self.RX.getNumChannels(),self._X.shape[0])
         # getNumFrames

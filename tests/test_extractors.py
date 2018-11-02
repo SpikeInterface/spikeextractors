@@ -19,24 +19,26 @@ class TestExtractors(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
     def _create_example(self):
-        M=4
-        N=10000
+        channel_ids = [0, 1, 2, 3]
+        num_channels=4
+        num_frames=10000
         samplerate=30000
-        X=np.random.normal(0,1,(M,N))
-        geom=np.random.normal(0,1,(M,2))
+        X=np.random.normal(0,1,(num_channels,num_frames))
+        geom=np.random.normal(0,1,(num_channels,2))
         X=(X*100).astype(int)
         RX=si.NumpyRecordingExtractor(timeseries=X,samplerate=samplerate,geom=geom)
         SX=si.NumpySortingExtractor()
-        L=[200, 300, 400]
-        train1 = np.rint(np.random.uniform(0,N,L[0])).astype(int)
+        spike_times=[200, 300, 400]
+        train1 = np.rint(np.random.uniform(0,num_frames,spike_times[0])).astype(int)
         SX.addUnit(unit_id=1,times=train1)
-        SX.addUnit(unit_id=2,times=np.random.uniform(0,N,L[1]))
-        SX.addUnit(unit_id=3,times=np.random.uniform(0,N,L[2]))
+        SX.addUnit(unit_id=2,times=np.random.uniform(0,num_frames,spike_times[1]))
+        SX.addUnit(unit_id=3,times=np.random.uniform(0,num_frames,spike_times[2]))
         SX.setUnitProperty(unit_id=1, property_name='stablility', value=80)
         RX.setChannelProperty(channel_id=0, property_name='location', value=(0,0))
         example_info=dict(
-            M=M,
-            N=N,
+            channel_ids=channel_ids,
+            num_channels=num_channels,
+            num_frames=num_frames,
             samplerate=samplerate,
             unit_ids=[1,2,3],
             train1=train1,
@@ -46,8 +48,9 @@ class TestExtractors(unittest.TestCase):
         return (RX,SX,example_info)
 
     def test_example(self):
-        self.assertEqual(self.RX.getNumChannels(),self.example_info['M'])
-        self.assertEqual(self.RX.getNumFrames(),self.example_info['N'])
+        self.assertEqual(self.RX.getChannelIds(),self.example_info['channel_ids'])
+        self.assertEqual(self.RX.getNumChannels(),self.example_info['num_channels'])
+        self.assertEqual(self.RX.getNumFrames(),self.example_info['num_frames'])
         self.assertEqual(self.RX.getSamplingFrequency(),self.example_info['samplerate'])
         self.assertEqual(self.SX.getUnitIds(),self.example_info['unit_ids'])
         self.assertEqual(self.RX.getChannelProperty(channel_id=0, property_name='location'),self.example_info['channel_prop'])
@@ -77,12 +80,15 @@ class TestExtractors(unittest.TestCase):
         self._check_recordings_equal(self.RX,RX_nwb)
 
     def _check_recording_return_types(self,RX):
+        channel_ids=RX.getChannelIds()
         M=RX.getNumChannels()
         N=RX.getNumFrames()
         self.assertTrue((type(RX.getNumChannels())==int) or (type(RX.getNumChannels())==np.int64))
         self.assertTrue((type(RX.getNumFrames())==int) or (type(RX.getNumFrames())==np.int64))
         self.assertTrue((type(RX.getSamplingFrequency())==float) or (type(RX.getSamplingFrequency())==np.float64))
         self.assertTrue(type(RX.getTraces(start_frame=0,end_frame=10))==np.ndarray)
+        for channel_id in channel_ids:
+            self.assertTrue((type(channel_id)==int) or (type(channel_id)==np.int64))
 
     def test_biocam_extractor(self):
         path1=self.test_dir+'/raw.brw'
@@ -152,6 +158,8 @@ class TestExtractors(unittest.TestCase):
     def _check_recordings_equal(self,RX1,RX2):
         M=RX1.getNumChannels()
         N=RX1.getNumFrames()
+        # getChannelIds
+        self.assertEqual(RX1.getChannelIds(),RX2.getChannelIds())
         # getNumChannels
         self.assertEqual(RX1.getNumChannels(),RX2.getNumChannels())
         # getNumFrames

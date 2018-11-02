@@ -46,9 +46,6 @@ class MdaRecordingExtractor(RecordingExtractor):
     def getChannelIds(self):
         return list(range(self._num_channels))
 
-    def getNumChannels(self):
-        return self._num_channels
-
     def getNumFrames(self):
         return self._num_timepoints
 
@@ -63,7 +60,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         if end_frame is None:
             end_frame=self.getNumFrames()
         if channel_ids is None:
-            channel_ids=range(self.getNumChannels())
+            channel_ids=self.getChannelIds()
         X=mdaio.DiskReadMda(self._timeseries_path)
         recordings=X.readChunk(i1=0,i2=start_frame,N1=X.N1(),N2=end_frame-start_frame)
         recordings=recordings[channel_ids,:]
@@ -73,9 +70,9 @@ class MdaRecordingExtractor(RecordingExtractor):
     def writeRecording(recording,save_path):
         mdaio,kbucket=_load_required_modules()
 
-        M=recording.getNumChannels()
+        channel_ids=recording.getChannelIds()
+        M=len(channel_ids)
         N=recording.getNumFrames()
-        channel_ids=range(M)
         raw=recording.getTraces()
         location0=recording.getChannelProperty(0,'location')
         nd=len(location0)
