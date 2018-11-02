@@ -11,6 +11,7 @@ class SortingExtractor(ABC):
     '''
     def __init__(self):
         self._unit_properties = {}
+        self._unit_features = {}
 
     @abstractmethod
     def getUnitIds(self):
@@ -55,6 +56,33 @@ class SortingExtractor(ABC):
         '''
         pass
 
+    def setUnitSpikeFeatures(self, unit_id, feature_name, value):
+        '''This function adds a unit features data set under the given features
+        name to the given unit.
+
+        Parameters
+        ----------
+        unit_id: int
+            The unit id for which the features will be set
+        feature_name: str
+            The name of the feature to be stored
+        value
+            The data associated with the given feature name. Could be many
+            formats as specified by the user.
+        '''
+        if isinstance(unit_id, (int, np.integer)):
+            if unit_id in self.getUnitIds():
+                if unit_id not in self._unit_features:
+                    self._unit_features[unit_id]={}
+                if isinstance(feature_name, str) and len(value) == len(self.getUnitSpikeTrain(unit_id)):
+                    self._unit_features[unit_id][feature_name] = value
+                else:
+                    raise ValueError("feature_name must be a string")
+            else:
+                raise ValueError("Non-valid unit_id")
+        else:
+            raise ValueError("unit_id must be an int")
+
     def getUnitSpikeFeatures(self, unit_id, feature_name, start_frame=None, end_frame=None):
         '''This function extracts the specified spike features from the specified unit.
         It will return spike features from within three ranges:
@@ -86,10 +114,27 @@ class SortingExtractor(ABC):
             An array containing all the features for each spike in the
             specified unit given the range of start and end frames.
         '''
-        raise NotImplementedError("The getUnitSpikeFeatures function is not \
-                                  implemented for this extractor")
+        if isinstance(unit_id, (int, np.integer)):
+            if unit_id in self.getUnitIds():
+                if unit_id not in self._unit_features:
+                    self._unit_features[unit_id]={}
+                if isinstance(feature_name, str):
+                    if feature_name in list(self._unit_features[unit_id].keys()):
+                        if start_frame is None:
+                            start_frame = 0
+                        if end_frame is None:
+                            end_frame = len(self.getUnitSpikeTrain(unit_id))
+                        return self._unit_features[unit_id][feature_name][start_frame : end_frame]
+                    else:
+                        raise ValueError("This property has not been added to this unit")
+                else:
+                    raise ValueError("property_name must be a string")
+            else:
+                raise ValueError("Non-valid unit_id")
+        else:
+            raise ValueError("unit_id must be an int")
 
-    def getUnitSpikeFeatureNames(self):
+    def getUnitSpikeFeatureNames(self, unit_id=None):
         '''This function returns the names of spike features across all units.
 
         Returns
@@ -97,8 +142,24 @@ class SortingExtractor(ABC):
         spike_features: list
             A list of string names for each feature in the specified unit.
         '''
-
-        return []
+        if unit_id is None:
+            feature_names = []
+            for unit_id in self.getUnitIds():
+                curr_feature_names = self.getUnitSpikeFeatureNames(unit_id)
+                for curr_feature_name in curr_feature_names:
+                    feature_names.append(curr_feature_name)
+            feature_names = sorted(list(set(feature_names)))
+            return feature_names
+        if isinstance(unit_id, (int, np.integer)):
+            if unit_id in self.getUnitIds():
+                if unit_id not in self._unit_features:
+                    self._unit_features[unit_id]={}
+                feature_names = sorted(self._unit_features[unit_id].keys())
+                return feature_names
+            else:
+                raise ValueError("Non-valid unit_id")
+        else:
+            raise ValueError("unit_id must be an int")
 
     def setUnitProperty(self, unit_id, property_name, value):
         '''This function adds a unit property data set under the given property
@@ -115,10 +176,10 @@ class SortingExtractor(ABC):
             formats as specified by the user.
         '''
         if isinstance(unit_id, (int, np.integer)):
-            if(unit_id in self.getUnitIds()):
+            if unit_id in self.getUnitIds():
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
-                if(isinstance(property_name, str)):
+                if isinstance(property_name, str):
                     self._unit_properties[unit_id][property_name] = value
                 else:
                     raise ValueError("property_name must be a string")
@@ -161,8 +222,8 @@ class SortingExtractor(ABC):
         '''
         print('WARNING: addUnitProperty is deprecated. Use setUnitProperty instead.')
         if isinstance(unit_id, (int, np.integer)):
-            if(unit_id in self.getUnitIds()):
-                if(isinstance(property_name, str)):
+            if unit_id in self.getUnitIds():
+                if isinstance(property_name, str):
                     self._unit_properties[unit_id][property_name] = value
                 else:
                     raise ValueError("property_name must be a string")
@@ -188,11 +249,11 @@ class SortingExtractor(ABC):
             formats as specified by the user.
         '''
         if isinstance(unit_id, (int, np.integer)):
-            if(unit_id in self.getUnitIds()):
+            if unit_id in self.getUnitIds():
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
-                if(isinstance(property_name, str)):
-                    if(property_name in list(self._unit_properties[unit_id].keys())):
+                if isinstance(property_name, str):
+                    if property_name in list(self._unit_properties[unit_id].keys()):
                         return self._unit_properties[unit_id][property_name]
                     else:
                         raise ValueError("This property has not been added to this unit")
@@ -246,7 +307,7 @@ class SortingExtractor(ABC):
             property_names = sorted(list(set(property_names)))
             return property_names
         if isinstance(unit_id, (int, np.integer)):
-            if(unit_id in self.getUnitIds()):
+            if unit_id in self.getUnitIds():
                 if unit_id not in self._unit_properties:
                     self._unit_properties[unit_id]={}
                 property_names = sorted(self._unit_properties[unit_id].keys())

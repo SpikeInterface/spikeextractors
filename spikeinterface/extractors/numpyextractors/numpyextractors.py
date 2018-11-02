@@ -48,7 +48,7 @@ class NumpySortingExtractor(SortingExtractor):
         units=np.sort(np.unique(labels))
         for unit in units:
             times0=times[np.where(labels==unit)[0]]
-            self.addUnit(unit_id=unit,times=times0)
+            self.addUnit(unit_id=int(unit),times=times0)
 
     def addUnit(self,unit_id,times):
         self._unit_ids.append(unit_id)
