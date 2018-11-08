@@ -39,7 +39,7 @@ class TestNumpyExtractors(unittest.TestCase):
         self.assertEqual(self.RX.getSamplingFrequency(),self._samplerate)
         # getTraces
         self.assertTrue(np.allclose(self.RX.getTraces(),self._X))
-        self.assertTrue(np.allclose(self.RX.getTraces(start_frame=0,end_frame=12,channel_ids=[0,3]),self._X[[0,3],0:12]))
+        self.assertTrue(np.allclose(self.RX.getTraces(channel_ids=[0,3], start_frame=0,end_frame=12),self._X[[0,3],0:12]))
         # getChannelProperty - location
         self.assertTrue(np.allclose(np.array(self.RX.getChannelProperty(1,'location')),self._geom[1,:]))
         # timeToFrame / frameToTime

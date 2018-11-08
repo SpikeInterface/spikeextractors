@@ -175,8 +175,8 @@ class TestExtractors(unittest.TestCase):
         ))
         sf=0; ef=0; ch=[0,M-1]
         self.assertTrue(np.allclose(
-            RX1.getTraces(start_frame=sf,end_frame=ef,channel_ids=ch),
-            RX2.getTraces(start_frame=sf,end_frame=ef,channel_ids=ch)
+            RX1.getTraces(channel_ids=ch, start_frame=sf,end_frame=ef),
+            RX2.getTraces(channel_ids=ch, start_frame=sf,end_frame=ef)
         ))
         for f in range(0,RX1.getNumFrames(),10):
             self.assertTrue(np.isclose(RX1.frameToTime(f),RX2.frameToTime(f)))

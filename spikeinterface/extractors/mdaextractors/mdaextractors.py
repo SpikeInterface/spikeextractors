@@ -52,7 +52,7 @@ class MdaRecordingExtractor(RecordingExtractor):
     def getSamplingFrequency(self):
         return self._samplerate
 
-    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
         mdaio,kbucket=_load_required_modules()
 
         if start_frame is None:
