@@ -14,7 +14,7 @@ class RecordingExtractor(ABC):
         self._channel_properties = {}
 
     @abstractmethod
-    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
         '''This function extracts and returns a trace from the recorded data from the
         given channels ids and the given start and end frame. It will return
         traces from within three ranges:
@@ -183,9 +183,9 @@ class RecordingExtractor(ABC):
                 if snippet_range[1] >= num_frames:
                     snippet_buffer[1] -= snippet_range[1] - num_frames
                     snippet_range[1] -= snippet_range[1] - num_frames
-                snippet_chunk[:,snippet_buffer[0]:snippet_buffer[1]] = self.getTraces(start_frame=snippet_range[0],
-                                                                                      end_frame=snippet_range[1],
-                                                                                      channel_ids=channel_ids)
+                snippet_chunk[:,snippet_buffer[0]:snippet_buffer[1]] = self.getTraces(channel_ids=channel_ids,
+                                                                                      start_frame=snippet_range[0],
+                                                                                      end_frame=snippet_range[1])
             snippets.append(snippet_chunk)
 
         return snippets

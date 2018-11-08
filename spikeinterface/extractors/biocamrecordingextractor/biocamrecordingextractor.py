@@ -22,7 +22,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
     def getSamplingFrequency(self):
         return self._samplingRate
 
-    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
