@@ -74,7 +74,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         M=len(channel_ids)
         N=recording.getNumFrames()
         raw=recording.getTraces()
-        location0=recording.getChannelProperty(0,'location')
+        location0=recording.getChannelProperty(channel_ids[0],'location')
         nd=len(location0)
         geom=np.zeros((M,nd))
         for ii in range(len(channel_ids)):
