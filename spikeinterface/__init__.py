@@ -14,6 +14,7 @@ from .extractors.kilosortsortingextractor import KiloSortSortingExtractor
 from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor, NumpySortingExtractor
 from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor
 from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
+from .extractors.physortingextractor.physortingextractor import PhySortingExtractor
 from .extractors.spykingcircussortingextractor.spykingcircussortingextractor import SpykingCircusSortingExtractor
 
 from .tools import loadProbeFile, saveProbeFile, writeBinaryDatFormat, read_python

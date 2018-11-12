@@ -40,7 +40,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
             self._initialize()
         return self._fs
 
-    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
         if self._recordings is None:
             self._initialize()
         if start_frame is None:
@@ -233,4 +233,3 @@ def load_recordings(recordings, verbose=False):
         print("Done loading recordings...")
 
     return rec_dict, info
-

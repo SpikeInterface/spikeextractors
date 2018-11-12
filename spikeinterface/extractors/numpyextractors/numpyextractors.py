@@ -22,7 +22,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
     def getSamplingFrequency(self):
         return self._samplerate
 
-    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame=0
         if end_frame is None:
@@ -48,7 +48,7 @@ class NumpySortingExtractor(SortingExtractor):
         units=np.sort(np.unique(labels))
         for unit in units:
             times0=times[np.where(labels==unit)[0]]
-            self.addUnit(unit_id=unit,times=times0)
+            self.addUnit(unit_id=int(unit),times=times0)
 
     def addUnit(self,unit_id,times):
         self._unit_ids.append(unit_id)

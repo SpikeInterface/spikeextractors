@@ -20,8 +20,8 @@ class CopyRecordingExtractor(si.RecordingExtractor):
     def getSamplingFrequency(self):
         return self._other.getSamplingFrequency()
 
-    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
-        return self._other.getTraces(start_frame=start_frame,end_frame=end_frame,channel_ids=channel_ids)
+    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
+        return self._other.getTraces(channel_ids=channel_ids, start_frame=start_frame,end_frame=end_frame)
 
 class NwbRecordingExtractor(CopyRecordingExtractor):
     def __init__(self, path, acquisition_name=None):
