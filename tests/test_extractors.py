@@ -71,13 +71,14 @@ class TestExtractors(unittest.TestCase):
         self._check_sorting_return_types(SX_mda)
         self._check_sortings_equal(self.SX,SX_mda)
 
-    # don't do this test because pynwb causes a seg fault!
-    def test_nwb_extractor(self):
-        path1=self.test_dir+'/test.nwb'
-        si.NwbRecordingExtractor.writeRecording(self.RX,path1,acquisition_name='test')
-        RX_nwb=si.NwbRecordingExtractor(path1,acquisition_name='test')
-        self._check_recording_return_types(RX_nwb)
-        self._check_recordings_equal(self.RX,RX_nwb)
+    # old: don't do this test because pynwb causes a seg fault!
+    # don't do this test because pynwb interface has changed
+    #def test_nwb_extractor(self):
+    #    path1=self.test_dir+'/test.nwb'
+    #    si.NwbRecordingExtractor.writeRecording(self.RX,path1,acquisition_name='test')
+    #    RX_nwb=si.NwbRecordingExtractor(path1,acquisition_name='test')
+    #    self._check_recording_return_types(RX_nwb)
+    #    self._check_recordings_equal(self.RX,RX_nwb)
 
     def _check_recording_return_types(self,RX):
         channel_ids=RX.getChannelIds()
