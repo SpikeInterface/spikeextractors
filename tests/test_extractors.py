@@ -150,7 +150,7 @@ class TestExtractors(unittest.TestCase):
     def test_multi_sub_sorting_extractor(self):
         N=self.RX.getNumFrames()
         SX_multi=si.MultiSortingExtractor(
-            sorting_extractors=[self.SX,self.SX,self.SX],
+            sortings=[self.SX,self.SX,self.SX],
             start_frames=[0,N,2*N]
         )
         SX_sub = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2*N)
