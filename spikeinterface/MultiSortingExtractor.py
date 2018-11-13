@@ -32,16 +32,22 @@ class MultiSortingExtractor(SortingExtractor):
         i_sec2, i_end_frame = self._find_section_for_frame(end_frame)
         if i_sec1==i_sec2:
             f0=self._start_frames[i_sec1]
-            return f0+self._SXs[i_sec1].getUnitSpikeTrain(unit_id=unit_id,start_frame=i_start_frame,end_frame=i_end_frame)
-        list=[]
-        list.append(
-            self._start_frames[i_sec1]+self._SXs[i_sec1].getUnitSpikeTrain(unit_id=unit_id,start_frame=i_start_frame,end_frame=np.Inf)
-        )
-        for i_sec in range(i_sec1+1,i_sec2):
-            list.append(
-                self._start_frames[i_sec]+self._SXs[i_sec].getUnitSpikeTrain(unit_id=unit_id)
+            if(unit_id in self._SXs[i_sec1].getUnitIds()):
+                return f0+self._SXs[i_sec1].getUnitSpikeTrain(unit_id=unit_id,start_frame=i_start_frame,end_frame=i_end_frame)
+            else:
+                return []
+        spike_train=[]
+        if(unit_id in self._SXs[i_sec1].getUnitIds()):
+            spike_train.append(
+                self._start_frames[i_sec1]+self._SXs[i_sec1].getUnitSpikeTrain(unit_id=unit_id,start_frame=i_start_frame,end_frame=np.Inf)
             )
-        list.append(
-            self._start_frames[i_sec2]+self._SXs[i_sec2].getUnitSpikeTrain(unit_id=unit_id,start_frame=0,end_frame=i_end_frame)
-        )
-        return np.concatenate(list)
+        for i_sec in range(i_sec1+1,i_sec2):
+            if(unit_id in self._SXs[i_sec].getUnitIds()):
+                spike_train.append(
+                    self._start_frames[i_sec]+self._SXs[i_sec].getUnitSpikeTrain(unit_id=unit_id)
+                )
+        if(unit_id in self._SXs[i_sec2].getUnitIds()):
+            spike_train.append(
+                self._start_frames[i_sec2]+self._SXs[i_sec2].getUnitSpikeTrain(unit_id=unit_id,start_frame=0,end_frame=i_end_frame)
+            )
+        return np.concatenate(spike_train)
