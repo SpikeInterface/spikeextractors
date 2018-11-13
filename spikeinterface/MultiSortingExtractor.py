@@ -5,7 +5,8 @@ import numpy as np
 # Encapsulates a subset of a spike sorted dataset
 
 class MultiSortingExtractor(SortingExtractor):
-    def __init__(self, *, sortings, start_frames, epoch_names=None):
+    def __init__(self, *, sortings, start_frames):
+        SortingExtractor.__init__(self)
         self._SXs=sortings
         self._start_frames=start_frames
         self._all_unit_ids=[]

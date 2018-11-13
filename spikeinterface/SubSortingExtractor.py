@@ -6,6 +6,7 @@ import numpy as np
 class SubSortingExtractor(SortingExtractor):
 
     def __init__(self, parent_sorting, *, unit_ids=None, renamed_unit_ids=None, start_frame=None, end_frame=None):
+        SortingExtractor.__init__(self)
         self._parent_sorting = parent_sorting
         self._unit_ids=unit_ids
         self._renamed_unit_ids=renamed_unit_ids
