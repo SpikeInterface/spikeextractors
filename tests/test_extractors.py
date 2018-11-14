@@ -11,7 +11,7 @@ import spikeinterface as si
 
 class TestExtractors(unittest.TestCase):
     def setUp(self):
-        self.RX, self.SX, self.example_info = self._create_example()
+        self.RX, self.SX, self.SX2, self.example_info = self._create_example()
         self.test_dir = tempfile.mkdtemp()
 
     def tearDown(self):
@@ -34,6 +34,13 @@ class TestExtractors(unittest.TestCase):
         SX.addUnit(unit_id=2,times=np.random.uniform(0,num_frames,spike_times[1]))
         SX.addUnit(unit_id=3,times=np.random.uniform(0,num_frames,spike_times[2]))
         SX.setUnitProperty(unit_id=1, property_name='stablility', value=80)
+        SX2=si.NumpySortingExtractor()
+        spike_times2=[100, 150, 450]
+        train2= np.rint(np.random.uniform(0,num_frames,spike_times[0])).astype(int)
+        SX2.addUnit(unit_id=3,times=train2)
+        SX2.addUnit(unit_id=4,times=np.random.uniform(0,num_frames,spike_times2[1]))
+        SX2.addUnit(unit_id=5,times=np.random.uniform(0,num_frames,spike_times2[2]))
+        SX2.setUnitProperty(unit_id=4, property_name='stablility', value=80)
         RX.setChannelProperty(channel_id=0, property_name='location', value=(0,0))
         example_info=dict(
             channel_ids=channel_ids,
@@ -45,7 +52,7 @@ class TestExtractors(unittest.TestCase):
             unit_prop=80,
             channel_prop=(0,0)
         )
-        return (RX,SX,example_info)
+        return (RX,SX,SX2, example_info)
 
     def test_example(self):
         self.assertEqual(self.RX.getChannelIds(),self.example_info['channel_ids'])
@@ -151,10 +158,42 @@ class TestExtractors(unittest.TestCase):
         N=self.RX.getNumFrames()
         SX_multi=si.MultiSortingExtractor(
             sortings=[self.SX,self.SX,self.SX],
-            start_frames=[0,N,2*N]
+            start_frames=[0, N, 2*N]
         )
         SX_sub = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2*N)
         self._check_sortings_equal(self.SX,SX_sub)
+
+        N=self.RX.getNumFrames()
+        SX_multi=si.MultiSortingExtractor(
+            sortings=[self.SX,self.SX,self.SX],
+            start_frames=[0,N,2*N]
+        )
+        SX_sub = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0)
+        self._check_sortings_equal(SX_multi,SX_sub)
+
+        N=self.RX.getNumFrames()
+        SX_multi=si.MultiSortingExtractor(
+            sortings=[self.SX,self.SX,self.SX],
+            start_frames=[2*N,0,N]
+        )
+        SX_sub = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2*N)
+        self._check_sortings_equal(self.SX,SX_sub)
+
+        N=self.RX.getNumFrames()
+        SX_multi=si.MultiSortingExtractor(
+            sortings=[self.SX,self.SX,self.SX],
+            start_frames=[0,0,0]
+        )
+        SX_sub = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0)
+        self._check_sortings_equal(SX_multi,SX_sub)
+
+        N=self.RX.getNumFrames()
+        SX_multi=si.MultiSortingExtractor(
+            sortings=[self.SX,self.SX2],
+            start_frames=[0,0]
+        )
+        SX_sub1 = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0,end_frame=N)
+        self._check_sortings_equal(SX_multi,SX_sub1)
 
     def _check_recordings_equal(self,RX1,RX2):
         M=RX1.getNumChannels()
