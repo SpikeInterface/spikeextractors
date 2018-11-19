@@ -1,5 +1,5 @@
-from spikeinterface import SortingExtractor
-from spikeinterface.tools import read_python
+from spikeextractors import SortingExtractor
+from spikeextractors.tools import read_python
 
 import numpy as np
 import os
