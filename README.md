@@ -1,12 +1,12 @@
-[![Build Status](https://travis-ci.org/colehurwitz31/spikeinterface.svg?branch=master)](https://travis-ci.org/colehurwitz31/spikeinterface)
+[![Build Status](https://travis-ci.org/colehurwitz31/spikeextractors.svg?branch=master)](https://travis-ci.org/colehurwitz31/spikeextractors)
 
 Alpha Development
 Version 0.1.24
 
 
-# SpikeInterface
+# spikeextractors
 
-SpikeInterface is a module that enables easy creation and deployment of tools for extracting raw or spike sorted extracellular data from any file format. Its design goals are as follows:
+Spikeextractors is a module that enables easy creation and deployment of tools for extracting raw or spike sorted extracellular data from any file format. Its design goals are as follows:
 
 1. To facilitate standardized analysis and visualization for both raw and sorted extracellular data.
 2. To promote straightfoward reuse of extracellular datasets.
@@ -14,33 +14,33 @@ SpikeInterface is a module that enables easy creation and deployment of tools fo
 
 Traditionally, researchers have attempted to achieve the above goals by creating standardized file formats for extracellular data. Although this approach seems promising, it can run into issues with legacy data and software, the need for wide-scale adoption of the format, steep learning curves, and an inability to adapt to new storage needs from experimental labs.
 
-To circumvent these problems, we designed SpikeInterface -- a module that attempts to standardize *data retrieval* rather than data storage. By standardizing data retrieval from extracellular datasets, we can eliminate the need for shared file formats and allow for the creation of new tools built off of our data retrieval guidelines.
+To circumvent these problems, we designed spikeextractors -- a module that attempts to standardize *data retrieval* rather than data storage. By standardizing data retrieval from extracellular datasets, we can eliminate the need for shared file formats and allow for the creation of new tools built off of our data retrieval guidelines.
 <br/>
 <br/>
 ## Getting Started with Preexisting Code
 
-To get started with SpikeInterface, you can install it with pip:
+To get started with spikeextractors, you can install it with pip:
 
 ```shell
-pip install spikeinterface
+pip install spikeextractors
 ```
-You can also install SpikeInterface locally by cloning the repo into your code base. If you installSpikeInterface locally, you need to run the setup.py file.
+You can also install spikeextractors locally by cloning the repo into your code base. If you install spikeextractors locally, you need to run the setup.py file.
 
 ```shell
-git clone https://github.com/colehurwitz31/spikeinterface.git
+git clone https://github.com/colehurwitz31/spikeextractors.git
 
-cd spikeinterface
+cd spikeextractors
 python setup.py install
 ```
 
-SpikeInterface allows the user to extract data from either raw or spike sorted datasets with a RecordingExtractor or SortingExtractor, respectively.
+Spikeextractors allows the user to extract data from either raw or spike sorted datasets with a RecordingExtractor or SortingExtractor, respectively.
 
 
 **RecordingExtractor**
 
 To run our standardized data retrieval functions for your raw extracellular data, import the subclass RecordingExtractor coinciding with your specific file format. Then, you can use that subclass of RecordingExtractor to extract data snippets and information from your raw data file. 
 
-In this [example](https://github.com/colehurwitz31/spikeinterface/blob/master/examples/getting_started_with_recording_extractors.ipynb) from the examples repo, we show how to use an RecordingExtractor subclass on a generated, pure-noise timeseries dataset and a linear probe geometry.
+In this [example](https://github.com/colehurwitz31/spikeextractors/blob/master/examples/getting_started_with_recording_extractors.ipynb) from the examples repo, we show how to use an RecordingExtractor subclass on a generated, pure-noise timeseries dataset and a linear probe geometry.
 
 You will need mountainlab_pytools to run this example:
 
@@ -63,13 +63,13 @@ geom=np.zeros((num_channels,2))
 geom[:,0]=range(num_channels)
 ```
 
-Now we can import SpikeInterface and use the NumpyRecordingExtractor since the raw data was stored in the numpy array format.
+Now we can import spikeextractors and use the NumpyRecordingExtractor since the raw data was stored in the numpy array format.
 
 ```python
-from spikeinterface import si
+from spikeextractors import se
 
 # Define the in-memory recording extractor
-RX=si.NumpyRecordingExtractor(timeseries=timeseries,geom=geom,samplerate=samplerate)
+RX=se.NumpyRecordingExtractor(timeseries=timeseries,geom=geom,samplerate=samplerate)
 ```
 
 You can use the RecordingExtractor to retrieve data and information from the dataset with a variety of standard functions that are predefined in the RecordingExtractor base class.
@@ -106,7 +106,7 @@ The modular design of RecordingExtractor allow them to be used in a variety of o
 
 To run our standardized data retrieval functions for your sorted extracellular data, import the subclass SortingExtractor coinciding with your specific file format/spike sorter. Then, you can use that subclass of SortingExtractor to extract data and information from your spike sorted data file. We will show the functionality of the SortingExtractor by continuing our previous example. 
 
-First, we will add some random events and then use the NumpySortingExtractor to extract data about these events. Generally, SortingExtractors would be instantiated with a path the file containing information about the spike sorted units, but since this is a self-contained [example](https://github.com/colehurwitz31/spikeinterface/blob/master/examples/getting_started_with_sorting_extractors.ipynb), we will add the units manually to the SortingExtractor and show how to use it afterwards.
+First, we will add some random events and then use the NumpySortingExtractor to extract data about these events. Generally, SortingExtractors would be instantiated with a path the file containing information about the spike sorted units, but since this is a self-contained [example](https://github.com/colehurwitz31/spikeextractors/blob/master/examples/getting_started_with_sorting_extractors.ipynb), we will add the units manually to the SortingExtractor and show how to use it afterwards.
 
 ```python
 # Generate some random events
@@ -138,15 +138,15 @@ Num. events for first second of unit 1 = 8
 
 Finally, we can write out our sorted file to the MountainSort format by using the built-in writeSorting method in the MountainSort SortingExtractor subclass.
 ```python
-si.MdaSortingExtractor.writeSorting(sorting=SX,save_path='sample_mountainsort_dataset/firings_true.mda')
+se.MdaSortingExtractor.writeSorting(sorting=SX,save_path='sample_mountainsort_dataset/firings_true.mda')
 ```
 
 Now that we have written out our numpy recorded and sorted files in the the MountainSort format, we can easily use the MdaRecordingExtractor and MdaSortingExtractor for our new datasets and the functionality sould be the same.
 
 ```python
 # Read the raw and sorted datasets with the Mda recording and sorting extractor static methods
-RX2=si.MdaRecordingExtractor(dataset_directory='sample_mountainsort_dataset')
-SX2=si.MdaSortingExtractor(firings_file='sample_mountainsort_dataset/firings_true.mda')
+RX2=se.MdaRecordingExtractor(dataset_directory='sample_mountainsort_dataset')
+SX2=se.MdaSortingExtractor(firings_file='sample_mountainsort_dataset/firings_true.mda')
 
 # We should get he same information as above
 print('Unit ids = {}'.format(SX2.getUnitIds()))
@@ -162,7 +162,7 @@ Num. events for first second of unit 1 = 8
 ```
 SortingExtractors can also extract subsets of data from a sorted data file or can extract data from multiple files with SubSortingExtractor and MultiSortingExtractor, respectively.
 
-This concludes the basic tutorial about the Recording/Sorting Extractors. To see currently implemented extractor subclasses, please check the [extractors](https://github.com/colehurwitz31/spikeinterface/tree/master/spikeinterface/extractors) folder in our repo. 
+This concludes the basic tutorial about the Recording/Sorting Extractors. To see currently implemented extractor subclasses, please check the [extractors](https://github.com/colehurwitz31/spikeextractors/tree/master/spikeextractors/extractors) folder in our repo. 
 
 We have also implemented a variety of tools which use RecordingExtractors and SortingExtractors. Links to these tools are contained in the **Tools that use RecordingExtractors and SortingExtractors** section of the README.
 
@@ -170,14 +170,14 @@ We have also implemented a variety of tools which use RecordingExtractors and So
 
 ## Building a new RecordingExtractor/SortingExtractor
 
-Building a new RecordingExtractors or SortingExtractors for specific file format is as simple as creating a new subclass based on the predefined base classes provided in SpikeInterface.
+Building a new RecordingExtractors or SortingExtractors for specific file format is as simple as creating a new subclass based on the predefined base classes provided in spikeextractors.
 
 To enable standardization among subclasses, RecordingExtractor and SortingExtractor are abstract base classes which require a new subclass to override all methods which are decorated with @abstractmethod.
 
 An example of how a new subclass for SortingExtractor can be created is provided below.
 
 ```python
-from spikeinterface import SortingExtractor
+from spikeextractors import SortingExtractor
 
 class ExampleSortingExtractor(SortingExtractor):
     def __init__(self, ex_parameter_1, ex_parameter_2):
@@ -235,13 +235,13 @@ Once all abstract methods are overwritten in your RecordingExtractor or SortingE
 
 ## Interactive Example
 
-To experiment with RecordingExtractors and SortingExtractors in a pre-installed environment, we have provided a [Collaborative environment](https://gist.github.com/magland/e43542fe2dfe856fd04903b9ff1f8e4e). If you click on the link and then click on "Open in Collab", you can run the notebook and try out the features of and tools for SpikeInterface.
+To experiment with RecordingExtractors and SortingExtractors in a pre-installed environment, we have provided a [Collaborative environment](https://gist.github.com/magland/e43542fe2dfe856fd04903b9ff1f8e4e). If you click on the link and then click on "Open in Collab", you can run the notebook and try out the features of and tools for spikeextractors.
 <br/>
 
 ## Tools that use RecordingExtractors and SortingExtractors
 
-- [spiketoolkit](https://github.com/alejoe91/spiketoolkit) - A repository containing tools that utilize functions from the extractors. It also contains spike sorting algorithm wrappers that output sorting extractors post-sorting allowing for standardized evaluation and quality control. Maintained by Alessio Paolo Buccino.
-- [spikewidgets](https://github.com/magland/spikewidgets) - A repository containing graphical widgets that utilize functions from the extractors to plot and visualize both the raw and sorted extracellular data. Maintained by Jeremy Magland.
+- [spiketoolkit](https://github.com/alejoe91/spiketoolkit) - A repository containing tools for analysis and evaluation of extracellular recordings built with spikeextractors.  It also contains wrapped spike sorting algorithms that take in recording extractors and output sorting extractors, allowing for standardized evaluation and quality control. Maintained by Alessio Paolo Buccino.
+- [spikewidgets](https://github.com/magland/spikewidgets) - A repository containing graphical widgets built with spikeextractors to visualize both the raw and sorted extracellular data along with sorting results. Maintained by Jeremy Magland.
 
 ### Authors
 
