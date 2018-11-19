@@ -9,7 +9,7 @@ def append_to_path(dir0):  # A convenience function
 
 
 append_to_path(os.getcwd() + '/..')
-import spikeinterface as si
+import spikeextractors as se
 
 
 class TestNumpyExtractors(unittest.TestCase):
@@ -22,8 +22,8 @@ class TestNumpyExtractors(unittest.TestCase):
         self._X = X
         self._geom = geom
         self._samplerate = samplerate
-        self.RX = si.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate, geom=geom)
-        self.SX = si.NumpySortingExtractor()
+        self.RX = se.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate, geom=geom)
+        self.SX = se.NumpySortingExtractor()
         L = 200
         self._train1 = np.rint(np.random.uniform(0, N, L)).astype(int)
         self.SX.addUnit(unit_id=1, times=self._train1)
