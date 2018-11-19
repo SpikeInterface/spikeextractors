@@ -92,8 +92,8 @@ class RecordingExtractor(ABC):
         num_channels: int
             Number of channels in the recording.
         '''
-        print('WARNING: this is a temporary warning. You should use getChannelIds() to iterate through the channels. '
-              'This warning will be removed in future versions of SpikeInterface.')
+        # print('WARNING: this is a temporary warning. You should use getChannelIds() to iterate through the channels. '
+        #       'This warning will be removed in future versions of SpikeInterface.')
         return len(self.getChannelIds())
 
     def frameToTime(self, frame):
@@ -156,7 +156,7 @@ class RecordingExtractor(ABC):
             Out-of-bounds cases should be handled by filling in zeros in the snippet.
         '''
         # Default implementation
-        if isinstance(snippet_len, tuple):
+        if isinstance(snippet_len, (tuple, list, np.ndarray)):
             snippet_len_before = snippet_len[0]
             snippet_len_after = snippet_len[1]
         else:

@@ -16,6 +16,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._fs = None
         self._positions = None
         self._recordings = None
+        self._initialize()
 
     def _initialize(self):
         rec_dict,  info = load_recordings(recordings=self._recording_path)
