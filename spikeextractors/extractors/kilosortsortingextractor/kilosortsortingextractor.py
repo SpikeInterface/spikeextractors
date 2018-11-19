@@ -1,4 +1,4 @@
-from spikeinterface import SortingExtractor
+from spikeextractors import SortingExtractor
 
 import numpy as np
 import os
