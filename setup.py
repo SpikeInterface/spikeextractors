@@ -4,7 +4,7 @@ pkg_name="spikeextractors"
 
 setuptools.setup(
     name=pkg_name,
-    version="0.1.24",
+    version="0.1.1",
     author="Cole Hurwitz, Jeremy Magland, Alessio Paolo Buccino, Matthias Hennig",
     author_email="colehurwitz@gmail.com",
     description="Python module for extracting recorded and spike sorted extracellular data from different file types and formats",
