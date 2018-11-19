@@ -20,15 +20,16 @@ class MultiRecordingExtractor(RecordingExtractor):
         # Num channels and sampling frequency based off the initial extractor
         self._first_recording = recordings[0]
         self._num_channels = self._first_recording.getNumChannels()
+        self._channel_ids = self._first_recording.getChannelIds()
         self._sampling_frequency = self._first_recording.getSamplingFrequency()
 
         # Test if all recording extractors have same num channels and sampling frequency
         for i, recording in enumerate(recordings[1:]):
-            num_channels = recording.getNumChannels()
+            channel_ids = recording.getChannelIds()
             sampling_frequency = recording.getSamplingFrequency()
 
-            if (self._num_channels != num_channels):
-                raise ValueError("Inconsistent number of channels between extractor 0 and extractor " + str(i + 1))
+            if (self._channel_ids != channel_ids):
+                raise ValueError("Inconsistent channel ids between extractor 0 and extractor " + str(i + 1))
             if (self._sampling_frequency != sampling_frequency):
                 raise ValueError("Inconsistent sampling frequency between extractor 0 and extractor " + str(i + 1))
 
@@ -59,7 +60,7 @@ class MultiRecordingExtractor(RecordingExtractor):
         ind = inds[-1]
         return self._RXs[ind], ind, time - self._start_times[ind]
 
-    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
@@ -67,23 +68,23 @@ class MultiRecordingExtractor(RecordingExtractor):
         RX1, i_sec1, i_start_frame = self._find_section_for_frame(start_frame)
         RX2, i_sec2, i_end_frame = self._find_section_for_frame(end_frame)
         if i_sec1 == i_sec2:
-            return RX1.getTraces(start_frame=i_start_frame, end_frame=i_end_frame, channel_ids=channel_ids)
+            return RX1.getTraces(channel_ids=channel_ids, start_frame=i_start_frame, end_frame=i_end_frame)
         list = []
         list.append(
-            self._RXs[i_sec1].getTraces(start_frame=i_start_frame, end_frame=self._RXs[i_sec1].getNumFrames(),
-                                        channel_ids=channel_ids)
+            self._RXs[i_sec1].getTraces(channel_ids=channel_ids, start_frame=i_start_frame,
+                                        end_frame=self._RXs[i_sec1].getNumFrames())
         )
         for i_sec in range(i_sec1 + 1, i_sec2):
             list.append(
                 self._RXs[i_sec].getTraces(channel_ids=channel_ids)
             )
         list.append(
-            self._RXs[i_sec2].getTraces(start_frame=0, end_frame=i_end_frame, channel_ids=channel_ids)
+            self._RXs[i_sec2].getTraces(channel_ids=channel_ids, start_frame=0, end_frame=i_end_frame)
         )
         return np.concatenate(list, axis=1)
 
     def getChannelIds(self):
-        return list(range(self._num_channels))
+        return self._channel_ids
 
     def getNumFrames(self):
         return self._num_frames

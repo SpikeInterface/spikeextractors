@@ -4,7 +4,7 @@ pkg_name="spikeinterface"
 
 setuptools.setup(
     name=pkg_name,
-    version="0.1.13",
+    version="0.1.24",
     author="Cole Hurwitz, Jeremy Magland, Alessio Paolo Buccino, Matthias Hennig",
     author_email="colehurwitz@gmail.com",
     description="Python interface for extracting recorded and spike sorted extracellular data from different file types and formats",

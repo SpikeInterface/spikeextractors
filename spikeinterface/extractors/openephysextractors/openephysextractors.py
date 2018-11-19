@@ -23,7 +23,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     def getSamplingFrequency(self):
         return float(self._recording.sample_rate.rescale('Hz').magnitude)
 
-    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

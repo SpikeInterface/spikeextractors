@@ -56,15 +56,14 @@ class MdaRecordingExtractor(RecordingExtractor):
     def getSamplingFrequency(self):
         return self._samplerate
 
-    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
         mdaio, kbucket = _load_required_modules()
-
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = self.getNumFrames()
         if channel_ids is None:
-            channel_ids = range(self.getNumChannels())
+            channel_ids = self.getChannelIds()
         X = mdaio.DiskReadMda(self._timeseries_path)
         recordings = X.readChunk(i1=0, i2=start_frame, N1=X.N1(), N2=end_frame - start_frame)
         recordings = recordings[channel_ids, :]
@@ -74,11 +73,11 @@ class MdaRecordingExtractor(RecordingExtractor):
     def writeRecording(recording, save_path):
         mdaio, kbucket = _load_required_modules()
 
-        M = recording.getNumChannels()
+        channel_ids = recording.getChannelIds()
+        M = len(channel_ids)
         N = recording.getNumFrames()
-        channel_ids = range(M)
         raw = recording.getTraces()
-        location0 = recording.getChannelProperty(0, 'location')
+        location0 = recording.getChannelProperty(channel_ids[0], 'location')
         nd = len(location0)
         geom = np.zeros((M, nd))
         for ii in range(len(channel_ids)):

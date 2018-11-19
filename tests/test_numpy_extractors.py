@@ -34,6 +34,8 @@ class TestNumpyExtractors(unittest.TestCase):
         pass
 
     def test_recording_extractor(self):
+        # getChannelIds
+        self.assertEqual(self.RX.getChannelIds(), [i for i in range(self._X.shape[0])])
         # getNumChannels
         self.assertEqual(self.RX.getNumChannels(), self._X.shape[0])
         # getNumFrames
@@ -43,7 +45,7 @@ class TestNumpyExtractors(unittest.TestCase):
         # getTraces
         self.assertTrue(np.allclose(self.RX.getTraces(), self._X))
         self.assertTrue(
-            np.allclose(self.RX.getTraces(start_frame=0, end_frame=12, channel_ids=[0, 3]), self._X[[0, 3], 0:12]))
+            np.allclose(self.RX.getTraces(channel_ids=[0, 3], start_frame=0, end_frame=12), self._X[[0, 3], 0:12]))
         # getChannelProperty - location
         self.assertTrue(np.allclose(np.array(self.RX.getChannelProperty(1, 'location')), self._geom[1, :]))
         # timeToFrame / frameToTime

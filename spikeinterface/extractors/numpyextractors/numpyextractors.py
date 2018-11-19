@@ -23,13 +23,13 @@ class NumpyRecordingExtractor(RecordingExtractor):
     def getSamplingFrequency(self):
         return self._samplerate
 
-    def getTraces(self, start_frame=None, end_frame=None, channel_ids=None):
+    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = self.getNumFrames()
         if channel_ids is None:
-            channel_ids = range(self.getNumChannels())
+            channel_ids = self.getChannelIds()
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
         return recordings
 

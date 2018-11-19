@@ -144,7 +144,7 @@ def saveProbeFile(recording, probe_file, format=None, radius=100, dimensions=Non
         # write csv probe file
         with open(probe_file, 'w') as f:
             if 'location' in recording.getChannelPropertyNames():
-                for chan in range(recording.getNumChannels()):
+                for chan in recording.getChannelIds():
                     loc = recording.getChannelProperty(chan, 'location')
                     if len(loc) == 2:
                         f.write(str(loc[0]))
@@ -236,7 +236,7 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
     if geometry:
         if 'location' in recording.getChannelPropertyNames():
             positions = np.array([recording.getChannelProperty(chan, 'location')
-                                  for chan in range(recording.getNumChannels())])
+                                  for chan in recording.getChannelIds()])
             if dimensions is not None:
                 positions = positions[:, dimensions]
         else:
@@ -247,7 +247,7 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
         positions = None
 
     if 'group' in recording.getChannelPropertyNames():
-        groups = np.array([recording.getChannelProperty(chan, 'group') for chan in range(recording.getNumChannels())])
+        groups = np.array([recording.getChannelProperty(chan, 'group') for chan in recording.getChannelIds()])
         channel_groups = np.unique([groups])
     else:
         print("'group' property is not available and it will not be saved.")
