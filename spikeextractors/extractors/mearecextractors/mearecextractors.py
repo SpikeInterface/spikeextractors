@@ -1,5 +1,5 @@
-from spikeinterface import RecordingExtractor
-from spikeinterface import SortingExtractor
+from spikeextractors import RecordingExtractor
+from spikeextractors import SortingExtractor
 
 import quantities as pq
 import numpy as np
