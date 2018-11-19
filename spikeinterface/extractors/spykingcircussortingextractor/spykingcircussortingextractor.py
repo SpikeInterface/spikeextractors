@@ -5,6 +5,7 @@ import os
 from os.path import join
 import h5py
 
+
 class SpykingCircusSortingExtractor(SortingExtractor):
     def __init__(self, spykingcircus_folder):
         SortingExtractor.__init__(self)
@@ -19,7 +20,6 @@ class SpykingCircusSortingExtractor(SortingExtractor):
         for temp in f_results['spiketimes'].keys():
             self._spiketrains.append(f_results['spiketimes'][temp].value)
             self._unit_ids.append(int(temp.split('_')[-1]))
-
 
     def getUnitIds(self):
         return list(self._unit_ids)
@@ -48,4 +48,4 @@ class SpykingCircusSortingExtractor(SortingExtractor):
         spiketimes = F.create_group('spiketimes')
 
         for id in sorting.getUnitIds():
-            spiketimes.create_dataset('tmp_'+str(id), data=sorting.getUnitSpikeTrain(id))
+            spiketimes.create_dataset('tmp_' + str(id), data=sorting.getUnitSpikeTrain(id))

@@ -1,6 +1,7 @@
 from spikeinterface import RecordingExtractor, SortingExtractor
 import numpy as np
 
+
 class OpenEphysRecordingExtractor(RecordingExtractor):
     def __init__(self, recording_file, *, probefile=None, experiment_id=0, recording_id=0):
         try:

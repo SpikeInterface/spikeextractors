@@ -3,6 +3,7 @@ from spikeinterface import SortingExtractor
 import numpy as np
 import h5py
 
+
 class HS2SortingExtractor(SortingExtractor):
     def __init__(self, recording_file):
         SortingExtractor.__init__(self)
@@ -10,7 +11,7 @@ class HS2SortingExtractor(SortingExtractor):
         self._rf = h5py.File(self._recording_file, mode='r')
         self._unit_ids = set(self._rf['cluster_id'].value)
         if 'centres' in self._rf.keys():
-            self._unit_locs = self._rf['centres'].value # cache for faster access
+            self._unit_locs = self._rf['centres'].value  # cache for faster access
 
     def get_unit_indices(self, x):
         return np.where(self._rf['cluster_id'].value == x)[0]
@@ -32,24 +33,24 @@ class HS2SortingExtractor(SortingExtractor):
 
     def getUnitProperty(self, unit_id, property):
         if property == 'spike_locations':
-            return self._rf['data'][:2,self.get_unit_indices(unit_id)].T
+            return self._rf['data'][:2, self.get_unit_indices(unit_id)].T
         elif property == 'unit_location':
             return self._unit_locs[unit_id]
         else:
             raise Exception("Property does not exist.")
 
     @staticmethod
-    def writeSorting(sorting,save_path):
-        unit_ids=sorting.getUnitIds()
-        times_list=[]
-        labels_list=[]
+    def writeSorting(sorting, save_path):
+        unit_ids = sorting.getUnitIds()
+        times_list = []
+        labels_list = []
         for i in range(len(unit_ids)):
-            unit=unit_ids[i]
-            times=sorting.getUnitSpikeTrain(unit_id=unit)
+            unit = unit_ids[i]
+            times = sorting.getUnitSpikeTrain(unit_id=unit)
             times_list.append(times)
-            labels_list.append(np.ones(times.shape, dtype=int)*unit)
-        all_times=np.concatenate(times_list)
-        all_labels=np.concatenate(labels_list)
+            labels_list.append(np.ones(times.shape, dtype=int) * unit)
+        all_times = np.concatenate(times_list)
+        all_labels = np.concatenate(labels_list)
         rf = h5py.File(save_path, mode='w')
         # for now only create the entries required by any RecordingExtractor
         rf.create_dataset("times", data=all_times)
