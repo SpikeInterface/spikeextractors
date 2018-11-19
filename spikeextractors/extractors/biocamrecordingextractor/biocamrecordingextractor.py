@@ -1,4 +1,4 @@
-from spikeinterface import RecordingExtractor
+from spikeextractors import RecordingExtractor
 
 import numpy as np
 import h5py
