@@ -1,13 +1,13 @@
-import spikeinterface as si
+import spikeextractors as se
 
 import os
 import numpy as np
 from datetime import datetime
 
 
-class CopyRecordingExtractor(si.RecordingExtractor):
+class CopyRecordingExtractor(se.RecordingExtractor):
     def __init__(self, other):
-        si.RecordingExtractor.__init__(self)
+        se.RecordingExtractor.__init__(self)
         self._other = other
         self.copyChannelProperties(other)
 
@@ -58,7 +58,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             else:
                 samplerate = ts.rate * 1000
             data = np.copy(np.transpose(ts.data))
-            NRX = si.NumpyRecordingExtractor(timeseries=data, samplerate=samplerate, geom=geom)
+            NRX = se.NumpyRecordingExtractor(timeseries=data, samplerate=samplerate, geom=geom)
             CopyRecordingExtractor.__init__(self, NRX)
 
     @staticmethod
