@@ -76,10 +76,10 @@ class TestExtractors(unittest.TestCase):
     def test_mda_extractor(self):
         path1 = self.test_dir + '/mda'
         path2 = path1 + '/firings_true.mda'
-        si.MdaRecordingExtractor.writeRecording(self.RX, path1)
-        si.MdaSortingExtractor.writeSorting(self.SX, path2)
-        RX_mda = si.MdaRecordingExtractor(path1)
-        SX_mda = si.MdaSortingExtractor(path2)
+        se.MdaRecordingExtractor.writeRecording(self.RX, path1)
+        se.MdaSortingExtractor.writeSorting(self.SX, path2)
+        RX_mda = se.MdaRecordingExtractor(path1)
+        SX_mda = se.MdaSortingExtractor(path2)
         self._check_recording_return_types(RX_mda)
         self._check_recordings_equal(self.RX, RX_mda)
         self._check_sorting_return_types(SX_mda)
@@ -89,8 +89,8 @@ class TestExtractors(unittest.TestCase):
     # don't do this test because pynwb interface has changed
     # def test_nwb_extractor(self):
     #    path1=self.test_dir+'/test.nwb'
-    #    si.NwbRecordingExtractor.writeRecording(self.RX,path1,acquisition_name='test')
-    #    RX_nwb=si.NwbRecordingExtractor(path1,acquisition_name='test')
+    #    se.NwbRecordingExtractor.writeRecording(self.RX,path1,acquisition_name='test')
+    #    RX_nwb=se.NwbRecordingExtractor(path1,acquisition_name='test')
     #    self._check_recording_return_types(RX_nwb)
     #    self._check_recordings_equal(self.RX,RX_nwb)
 
@@ -107,54 +107,54 @@ class TestExtractors(unittest.TestCase):
 
     def test_biocam_extractor(self):
         path1 = self.test_dir + '/raw.brw'
-        si.BiocamRecordingExtractor.writeRecording(self.RX, path1)
-        RX_biocam = si.BiocamRecordingExtractor(path1)
+        se.BiocamRecordingExtractor.writeRecording(self.RX, path1)
+        RX_biocam = se.BiocamRecordingExtractor(path1)
         self._check_recording_return_types(RX_biocam)
         self._check_recordings_equal(self.RX, RX_biocam)
 
     def test_mearec_extractors(self):
         path1 = self.test_dir + '/raw'
-        si.MEArecRecordingExtractor.writeRecording(self.RX, path1)
-        RX_mearec = si.MEArecRecordingExtractor(path1)
+        se.MEArecRecordingExtractor.writeRecording(self.RX, path1)
+        RX_mearec = se.MEArecRecordingExtractor(path1)
         self._check_recording_return_types(RX_mearec)
         self._check_recordings_equal(self.RX, RX_mearec)
 
         path2 = self.test_dir + '/firings_true'
-        si.MEArecSortingExtractor.writeSorting(self.SX, path2, self.RX.getSamplingFrequency())
-        SX_mearec = si.MEArecSortingExtractor(path2)
+        se.MEArecSortingExtractor.writeSorting(self.SX, path2, self.RX.getSamplingFrequency())
+        SX_mearec = se.MEArecSortingExtractor(path2)
         self._check_sorting_return_types(SX_mearec)
         self._check_sortings_equal(self.SX, SX_mearec)
 
     def test_hs2_extractor(self):
         path1 = self.test_dir + '/firings_true.hdf5'
-        si.HS2SortingExtractor.writeSorting(self.SX, path1)
-        SX_hs2 = si.HS2SortingExtractor(path1)
+        se.HS2SortingExtractor.writeSorting(self.SX, path1)
+        SX_hs2 = se.HS2SortingExtractor(path1)
         self._check_sorting_return_types(SX_hs2)
         self._check_sortings_equal(self.SX, SX_hs2)
 
     def test_kilosort_extractor(self):
         path1 = self.test_dir + '/firings_true'
-        si.KiloSortSortingExtractor.writeSorting(self.SX, path1)
-        SX_ks = si.KiloSortSortingExtractor(path1)
+        se.KiloSortSortingExtractor.writeSorting(self.SX, path1)
+        SX_ks = se.KiloSortSortingExtractor(path1)
         self._check_sorting_return_types(SX_ks)
         self._check_sortings_equal(self.SX, SX_ks)
 
     def test_klusta_extractor(self):
         path1 = self.test_dir + '/firings_true.kwik'
-        si.KlustaSortingExtractor.writeSorting(self.SX, path1)
-        SX_kl = si.KlustaSortingExtractor(path1)
+        se.KlustaSortingExtractor.writeSorting(self.SX, path1)
+        SX_kl = se.KlustaSortingExtractor(path1)
         self._check_sorting_return_types(SX_kl)
         self._check_sortings_equal(self.SX, SX_kl)
 
     def test_spykingcircus_extractor(self):
         path1 = self.test_dir + '/firings_true'
-        si.SpykingCircusSortingExtractor.writeSorting(self.SX, path1)
-        SX_spy = si.SpykingCircusSortingExtractor(path1)
+        se.SpykingCircusSortingExtractor.writeSorting(self.SX, path1)
+        SX_spy = se.SpykingCircusSortingExtractor(path1)
         self._check_sorting_return_types(SX_spy)
         self._check_sortings_equal(self.SX, SX_spy)
 
     def test_multi_sub_recording_extractor(self):
-        RX_multi = si.MultiRecordingExtractor(
+        RX_multi = se.MultiRecordingExtractor(
             recordings=[self.RX, self.RX, self.RX],
             epoch_names=['A', 'B', 'C']
         )
@@ -163,43 +163,43 @@ class TestExtractors(unittest.TestCase):
 
     def test_multi_sub_sorting_extractor(self):
         N = self.RX.getNumFrames()
-        SX_multi = si.MultiSortingExtractor(
+        SX_multi = se.MultiSortingExtractor(
             sortings=[self.SX, self.SX, self.SX],
             start_frames=[0, N, 2 * N]
         )
-        SX_sub = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2 * N)
+        SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2 * N)
         self._check_sortings_equal(self.SX, SX_sub)
 
         N = self.RX.getNumFrames()
-        SX_multi = si.MultiSortingExtractor(
+        SX_multi = se.MultiSortingExtractor(
             sortings=[self.SX, self.SX, self.SX],
             start_frames=[0, N, 2 * N]
         )
-        SX_sub = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0)
+        SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0)
         self._check_sortings_equal(SX_multi, SX_sub)
 
         N = self.RX.getNumFrames()
-        SX_multi = si.MultiSortingExtractor(
+        SX_multi = se.MultiSortingExtractor(
             sortings=[self.SX, self.SX, self.SX],
             start_frames=[2 * N, 0, N]
         )
-        SX_sub = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2 * N)
+        SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2 * N)
         self._check_sortings_equal(self.SX, SX_sub)
 
         N = self.RX.getNumFrames()
-        SX_multi = si.MultiSortingExtractor(
+        SX_multi = se.MultiSortingExtractor(
             sortings=[self.SX, self.SX, self.SX],
             start_frames=[0, 0, 0]
         )
-        SX_sub = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0)
+        SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0)
         self._check_sortings_equal(SX_multi, SX_sub)
 
         N = self.RX.getNumFrames()
-        SX_multi = si.MultiSortingExtractor(
+        SX_multi = se.MultiSortingExtractor(
             sortings=[self.SX, self.SX2],
             start_frames=[0, 0]
         )
-        SX_sub1 = si.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0, end_frame=N)
+        SX_sub1 = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0, end_frame=N)
         self._check_sortings_equal(SX_multi, SX_sub1)
 
     def _check_recordings_equal(self, RX1, RX2):
