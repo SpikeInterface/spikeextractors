@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
+
 class RecordingExtractor(ABC):
     '''A class that contains functions for extracting important information
     from recorded extracellular data. It is an abstract class so all
@@ -9,6 +10,7 @@ class RecordingExtractor(ABC):
 
 
     '''
+
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
@@ -83,7 +85,6 @@ class RecordingExtractor(ABC):
         '''
         pass
 
-
     def getNumChannels(self):
         '''This function returns the number of channels in the recording.
 
@@ -92,8 +93,8 @@ class RecordingExtractor(ABC):
         num_channels: int
             Number of channels in the recording.
         '''
-        print('WARNING: this is a temporary warning. You should use getChannelIds() to iterate through the channels. '
-              'This warning will be removed in future versions of SpikeInterface.')
+        # print('WARNING: this is a temporary warning. You should use getChannelIds() to iterate through the channels. '
+        #       'This warning will be removed in future versions of SpikeInterface.')
         return len(self.getChannelIds())
 
     def frameToTime(self, frame):
@@ -110,7 +111,7 @@ class RecordingExtractor(ABC):
             The corresponding time in seconds.
         '''
         # Default implementation
-        return frame/self.getSamplingFrequency()
+        return frame / self.getSamplingFrequency()
 
     def timeToFrame(self, time):
         '''This function converts a user-inputted time (in seconds) to a frame index.
@@ -126,7 +127,7 @@ class RecordingExtractor(ABC):
             The corresponding frame index.
         '''
         # Default implementation
-        return time*self.getSamplingFrequency()
+        return time * self.getSamplingFrequency()
 
     def getSnippets(self, *, reference_frames, snippet_len, channel_ids=None):
         '''This function returns data snippets from the given channels that
@@ -156,12 +157,12 @@ class RecordingExtractor(ABC):
             Out-of-bounds cases should be handled by filling in zeros in the snippet.
         '''
         # Default implementation
-        if isinstance(snippet_len, tuple):
+        if isinstance(snippet_len, (tuple, list, np.ndarray)):
             snippet_len_before = snippet_len[0]
             snippet_len_after = snippet_len[1]
         else:
-            snippet_len_before = int((snippet_len+1)/2)
-            snippet_len_after = snippet_len-snippet_len_before
+            snippet_len_before = int((snippet_len + 1) / 2)
+            snippet_len_after = snippet_len - snippet_len_before
 
         if channel_ids is None:
             channel_ids = self.getChannelIds()
@@ -172,10 +173,11 @@ class RecordingExtractor(ABC):
         snippet_len_total = snippet_len_before + snippet_len_after
         snippets = []
         for i in range(num_snippets):
-            snippet_chunk = np.zeros((num_channels,snippet_len_total))
-            if (0<=reference_frames[i]) and (reference_frames[i]<num_frames):
-                snippet_range = np.array([int(reference_frames[i])-snippet_len_before, int(reference_frames[i])+snippet_len_after])
-                snippet_buffer = np.array([0,snippet_len_total])
+            snippet_chunk = np.zeros((num_channels, snippet_len_total))
+            if (0 <= reference_frames[i]) and (reference_frames[i] < num_frames):
+                snippet_range = np.array(
+                    [int(reference_frames[i]) - snippet_len_before, int(reference_frames[i]) + snippet_len_after])
+                snippet_buffer = np.array([0, snippet_len_total])
                 # The following handles the out-of-bounds cases
                 if snippet_range[0] < 0:
                     snippet_buffer[0] -= snippet_range[0]
@@ -183,9 +185,9 @@ class RecordingExtractor(ABC):
                 if snippet_range[1] >= num_frames:
                     snippet_buffer[1] -= snippet_range[1] - num_frames
                     snippet_range[1] -= snippet_range[1] - num_frames
-                snippet_chunk[:,snippet_buffer[0]:snippet_buffer[1]] = self.getTraces(channel_ids=channel_ids,
-                                                                                      start_frame=snippet_range[0],
-                                                                                      end_frame=snippet_range[1])
+                snippet_chunk[:, snippet_buffer[0]:snippet_buffer[1]] = self.getTraces(channel_ids=channel_ids,
+                                                                                       start_frame=snippet_range[0],
+                                                                                       end_frame=snippet_range[1])
             snippets.append(snippet_chunk)
 
         return snippets
@@ -204,11 +206,11 @@ class RecordingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if(isinstance(channel_id, (int, np.integer))):
-            if(channel_id in self.getChannelIds()):
+        if (isinstance(channel_id, (int, np.integer))):
+            if (channel_id in self.getChannelIds()):
                 if channel_id not in self._channel_properties:
-                    self._channel_properties[channel_id]={}
-                if(isinstance(property_name, str)):
+                    self._channel_properties[channel_id] = {}
+                if (isinstance(property_name, str)):
                     self._channel_properties[channel_id][property_name] = value
                 else:
                     raise ValueError("property_name must be a string")
@@ -234,12 +236,12 @@ class RecordingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if(isinstance(channel_id, (int, np.integer))):
-            if(channel_id in self.getChannelIds()):
+        if (isinstance(channel_id, (int, np.integer))):
+            if (channel_id in self.getChannelIds()):
                 if channel_id not in self._channel_properties:
-                    self._channel_properties[channel_id]={}
-                if(isinstance(property_name, str)):
-                    if(property_name in list(self._channel_properties[channel_id].keys())):
+                    self._channel_properties[channel_id] = {}
+                if (isinstance(property_name, str)):
+                    if (property_name in list(self._channel_properties[channel_id].keys())):
                         return self._channel_properties[channel_id][property_name]
                     else:
                         raise ValueError("This property has not been added to this channel")
@@ -271,9 +273,9 @@ class RecordingExtractor(ABC):
             property_names = sorted(list(set(property_names)))
             return property_names
         if (isinstance(channel_id, (int, np.int64))):
-            if(channel_id in self.getChannelIds()):
+            if (channel_id in self.getChannelIds()):
                 if channel_id not in self._channel_properties:
-                    self._channel_properties[channel_id]={}
+                    self._channel_properties[channel_id] = {}
                 property_names = sorted(self._channel_properties[channel_id].keys())
                 return property_names
             else:
@@ -291,9 +293,8 @@ class RecordingExtractor(ABC):
             The recording extractor from twhich the properties will be copied
         '''
         if channel_ids is None:
-            channel_ids=recording.getChannelIds()
-
-        if(isinstance(channel_ids, int)):
+            channel_ids = recording.getChannelIds()
+        if (isinstance(channel_ids, int)):
             curr_property_names = recording.getChannelPropertyNames(channel_id=channel_ids)
             for curr_property_name in curr_property_names:
                 value = recording.getChannelProperty(channel_id=channel_ids, property_name=curr_property_name)
@@ -320,8 +321,8 @@ class RecordingExtractor(ABC):
             The end frame of the epoch to be added (exclusive)
 
         '''
-        #Default implementation only allows for frame info. Can override to put more info
-        if(isinstance(epoch_name, str)):
+        # Default implementation only allows for frame info. Can override to put more info
+        if (isinstance(epoch_name, str)):
             self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
         else:
             raise ValueError("epoch_name must be a string")
@@ -334,8 +335,8 @@ class RecordingExtractor(ABC):
         epoch_name: str
             The name of the epoch to be removed
         '''
-        if(isinstance(epoch_name, str)):
-            if(epoch_name in list(self._epochs.keys())):
+        if (isinstance(epoch_name, str)):
+            if (epoch_name in list(self._epochs.keys())):
                 del self._epochs[epoch_name]
             else:
                 raise ValueError("This epoch has not been added")
@@ -359,7 +360,7 @@ class RecordingExtractor(ABC):
                 epoch_info = self.getEpochInfo(epoch_name)
                 start_frame = epoch_info['start_frame']
                 epoch_start_frames.append(start_frame)
-            epoch_names = [epoch_name for _,epoch_name in sorted(zip(epoch_start_frames,epoch_names))]
+            epoch_names = [epoch_name for _, epoch_name in sorted(zip(epoch_start_frames, epoch_names))]
         return epoch_names
 
     def getEpochInfo(self, epoch_name):
@@ -376,9 +377,9 @@ class RecordingExtractor(ABC):
         epoch_info: dict
             A dict containing the start frame and end frame of the epoch
         '''
-        #Default (Can add more information into each epoch in subclass)
-        if(isinstance(epoch_name, str)):
-            if(epoch_name in list(self._epochs.keys())):
+        # Default (Can add more information into each epoch in subclass)
+        if (isinstance(epoch_name, str)):
+            if (epoch_name in list(self._epochs.keys())):
                 epoch_info = self._epochs[epoch_name]
                 return epoch_info
             else:

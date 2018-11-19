@@ -4,6 +4,7 @@ import numpy as np
 import h5py
 import ctypes
 
+
 class BiocamRecordingExtractor(RecordingExtractor):
     def __init__(self, recording_file):
         RecordingExtractor.__init__(self)
@@ -11,7 +12,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, self._chIndices, self._file_format, self._signalInv, self._positions, self._read_function = openBiocamFile(
             self._recording_file)
         for m in range(self._nRecCh):
-            self.setChannelProperty(m,'location',self._positions[m])
+            self.setChannelProperty(m, 'location', self._positions[m])
 
     def getChannelIds(self):
         return list(range(self._nRecCh))
@@ -35,17 +36,17 @@ class BiocamRecordingExtractor(RecordingExtractor):
                              self.getNumChannels())).T[channel_ids]
 
     @staticmethod
-    def writeRecording(recording,save_path):
-        M=recording.getNumChannels()
-        N=recording.getNumFrames()
-        channel_ids=range(M)
-        raw=recording.getTraces()
-        if raw.dtype!=int:
-            raise Exception('Cannot write dataset in the format with non-int datatype:',raw.dtype)
+    def writeRecording(recording, save_path):
+        M = recording.getNumChannels()
+        N = recording.getNumFrames()
+        channel_ids = range(M)
+        raw = recording.getTraces()
+        if raw.dtype != int:
+            raise Exception('Cannot write dataset in the format with non-int datatype:', raw.dtype)
         rf = h5py.File(save_path, 'w')
         # writing out in 100 format: Time x Channels
         g = rf.create_group('3BData')
-        d = rf.create_dataset('3BData/Raw', data=raw.T+2048, dtype=int)
+        d = rf.create_dataset('3BData/Raw', data=raw.T + 2048, dtype=int)
         g.attrs['Version'] = 100
         rf.create_dataset('3BRecInfo/3BRecVars/MinVolt', data=[0])
         rf.create_dataset('3BRecInfo/3BRecVars/MaxVolt', data=[1])
@@ -55,6 +56,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
         rf.create_dataset('3BRecInfo/3BMeaChip/NCols', data=[M])
         rf.create_dataset('3BRecInfo/3BMeaStreams/Raw/Chs', data=np.vstack((np.arange(M), np.zeros(M))).T, dtype=int)
         rf.close()
+
 
 def openBiocamFile(filename):
     """Open a Biocam hdf5 file, read and return the recording info, pick te correct method to access raw data, and return this to the caller."""
@@ -95,8 +97,8 @@ def openBiocamFile(filename):
 
     # determine correct function to read data
     print("# Signal inversion looks like " + str(signalInv) + ", guessing the "
-          "right method for data access.\n# If your results "
-          "look strange, signal polarity is wrong.")
+                                                              "right method for data access.\n# If your results "
+                                                              "look strange, signal polarity is wrong.")
     if file_format == 100:
         if signalInv == -1:
             read_function = readHDF5t_100
@@ -110,9 +112,11 @@ def openBiocamFile(filename):
 
     return (rf, nFrames, samplingRate, nRecCh, chIndices, file_format, signalInv, rawIndices, read_function)
 
+
 def readHDF5(rf, t0, t1):
     """In order to use the algorithms designed for the old format, the input data must be inverted."""
     return 4095 - rf['3BData/Raw'][t0:t1].flatten().astype(ctypes.c_short)
+
 
 def readHDF5t_100(rf, t0, t1, nch):
     """Transposed version for the interpolation method."""
@@ -125,6 +129,7 @@ def readHDF5t_100(rf, t0, t1, nch):
         return 2048 - rf['3BData/Raw'][t1:t0].flatten(
             'F').astype(ctypes.c_short)
 
+
 def readHDF5t_100_i(rf, t0, t1, nch):
     ''' Transposed version for the interpolation method. '''
     if t0 <= t1:
@@ -135,6 +140,7 @@ def readHDF5t_100_i(rf, t0, t1, nch):
         raise Exception('Reading backwards? Not sure about this.')
         return rf['3BData/Raw'][t1:t0].flatten(
             'F').astype(ctypes.c_short) - 2048
+
 
 def readHDF5t_101(rf, t0, t1, nch):
     ''' Transposed version for the interpolation method. '''
@@ -149,6 +155,7 @@ def readHDF5t_101(rf, t0, t1, nch):
             (-1, nch), order='C').flatten('C').astype(ctypes.c_short) - 2048
         d[np.where(np.abs(d) > 1500)[0]] = 0
         return d
+
 
 def readHDF5t_101_i(rf, t0, t1, nch):
     ''' Transposed version for the interpolation method. '''

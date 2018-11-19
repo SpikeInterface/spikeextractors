@@ -8,7 +8,7 @@ from datetime import datetime
 class CopyRecordingExtractor(si.RecordingExtractor):
     def __init__(self, other):
         si.RecordingExtractor.__init__(self)
-        self._other=other
+        self._other = other
         self.copyChannelProperties(other)
 
     def getChannelIds(self):
@@ -21,7 +21,8 @@ class CopyRecordingExtractor(si.RecordingExtractor):
         return self._other.getSamplingFrequency()
 
     def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
-        return self._other.getTraces(channel_ids=channel_ids, start_frame=start_frame,end_frame=end_frame)
+        return self._other.getTraces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame)
+
 
 class NwbRecordingExtractor(CopyRecordingExtractor):
     def __init__(self, path, acquisition_name=None):
@@ -32,35 +33,36 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
-        self._path=path
-        self._acquisition_name=acquisition_name
+        self._path = path
+        self._acquisition_name = acquisition_name
         with NWBHDF5IO(path, 'r') as io:
             nwbfile = io.read()
             if acquisition_name is None:
-                a_names=list(nwbfile.acquisition.keys())
-                if len(a_names)>1:
+                a_names = list(nwbfile.acquisition.keys())
+                if len(a_names) > 1:
                     raise Exception('More than one acquisition found. You must specify acquisition_name.')
-                if len(a_names)==0:
+                if len(a_names) == 0:
                     raise Exception('No acquisitions found in the .nwb file.')
-                acquisition_name=a_names[0]
-            ts=nwbfile.acquisition[acquisition_name]
-            self._nwb_timeseries=ts
-            M=np.array(ts.data).shape[1]
+                acquisition_name = a_names[0]
+            ts = nwbfile.acquisition[acquisition_name]
+            self._nwb_timeseries = ts
+            M = np.array(ts.data).shape[1]
             if M != len(ts.electrodes):
-                raise Exception('Number of electrodes does not match the shape of the data {}<>{}'.format(M,len(ts.electrodes)))
-            geom=np.zeros((M,3))
+                raise Exception(
+                    'Number of electrodes does not match the shape of the data {}<>{}'.format(M, len(ts.electrodes)))
+            geom = np.zeros((M, 3))
             for m in range(M):
-                geom[m,:]=[ts.electrodes[m][1],ts.electrodes[m][2],ts.electrodes[m][3]]
-            if hasattr(ts,'timestamps') and ts.timestamps:
-                samplerate=1/(ts.timestamps[1]-ts.timestamps[0]) # there's probably a better way
+                geom[m, :] = [ts.electrodes[m][1], ts.electrodes[m][2], ts.electrodes[m][3]]
+            if hasattr(ts, 'timestamps') and ts.timestamps:
+                samplerate = 1 / (ts.timestamps[1] - ts.timestamps[0])  # there's probably a better way
             else:
-                samplerate=ts.rate*1000
-            data=np.copy(np.transpose(ts.data))
-            NRX=si.NumpyRecordingExtractor(timeseries=data,samplerate=samplerate,geom=geom)
-            CopyRecordingExtractor.__init__(self,NRX)
+                samplerate = ts.rate * 1000
+            data = np.copy(np.transpose(ts.data))
+            NRX = si.NumpyRecordingExtractor(timeseries=data, samplerate=samplerate, geom=geom)
+            CopyRecordingExtractor.__init__(self, NRX)
 
     @staticmethod
-    def writeRecording(recording,save_path,acquisition_name):
+    def writeRecording(recording, save_path, acquisition_name):
         try:
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
@@ -68,8 +70,8 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
-        M=recording.getNumChannels()
-        N=recording.getNumFrames()
+        M = recording.getNumChannels()
+        N = recording.getNumFrames()
 
         nwbfile = NWBFile(
             source='SpikeInterface::NwbRecordingExtractor',
@@ -97,11 +99,11 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
         )
 
         for m in range(M):
-            id=m
-            location=recording.getChannelProperty(m,'location')
-            impedence=-1.0
-            while len(location)<3:
-                location=np.append(location,[0])
+            id = m
+            location = recording.getChannelProperty(m, 'location')
+            impedence = -1.0
+            while len(location) < 3:
+                location = np.append(location, [0])
             nwbfile.add_electrode(
                 id,
                 x=float(location[0]), y=float(location[1]), z=float(location[2]),
@@ -116,7 +118,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             'electrode_table_region'
         )
 
-        rate = recording.getSamplingFrequency()/1000
+        rate = recording.getSamplingFrequency() / 1000
         ephys_data = recording.getTraces().T
 
         ephys_ts = ElectricalSeries(

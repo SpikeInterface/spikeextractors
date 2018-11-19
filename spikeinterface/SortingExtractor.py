@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
+
 class SortingExtractor(ABC):
     '''A class that contains functions for extracting important information
     from spiked sorted data given a spike sorting software. It is an abstract
@@ -9,6 +10,7 @@ class SortingExtractor(ABC):
 
 
     '''
+
     def __init__(self):
         self._unit_properties = {}
         self._unit_features = {}
@@ -73,7 +75,7 @@ class SortingExtractor(ABC):
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.getUnitIds():
                 if unit_id not in self._unit_features:
-                    self._unit_features[unit_id]={}
+                    self._unit_features[unit_id] = {}
                 if isinstance(feature_name, str) and len(value) == len(self.getUnitSpikeTrain(unit_id)):
                     self._unit_features[unit_id][feature_name] = value
                 else:
@@ -117,14 +119,14 @@ class SortingExtractor(ABC):
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.getUnitIds():
                 if unit_id not in self._unit_features:
-                    self._unit_features[unit_id]={}
+                    self._unit_features[unit_id] = {}
                 if isinstance(feature_name, str):
                     if feature_name in list(self._unit_features[unit_id].keys()):
                         if start_frame is None:
                             start_frame = 0
                         if end_frame is None:
                             end_frame = len(self.getUnitSpikeTrain(unit_id))
-                        return self._unit_features[unit_id][feature_name][start_frame : end_frame]
+                        return self._unit_features[unit_id][feature_name][start_frame: end_frame]
                     else:
                         raise ValueError("This property has not been added to this unit")
                 else:
@@ -153,7 +155,7 @@ class SortingExtractor(ABC):
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.getUnitIds():
                 if unit_id not in self._unit_features:
-                    self._unit_features[unit_id]={}
+                    self._unit_features[unit_id] = {}
                 feature_names = sorted(self._unit_features[unit_id].keys())
                 return feature_names
             else:
@@ -178,7 +180,7 @@ class SortingExtractor(ABC):
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.getUnitIds():
                 if unit_id not in self._unit_properties:
-                    self._unit_properties[unit_id]={}
+                    self._unit_properties[unit_id] = {}
                 if isinstance(property_name, str):
                     self._unit_properties[unit_id][property_name] = value
                 else:
@@ -202,9 +204,9 @@ class SortingExtractor(ABC):
             The list of values to be set
         '''
         if unit_ids is None:
-            unit_ids=self.getUnitIds()
-        for i,unit in enumerate(unit_ids):
-            self.setUnitProperty(unit_id=unit,property_name=property_name,value=values[i])
+            unit_ids = self.getUnitIds()
+        for i, unit in enumerate(unit_ids):
+            self.setUnitProperty(unit_id=unit, property_name=property_name, value=values[i])
 
     def addUnitProperty(self, unit_id, property_name, value):
         '''DEPRECATED! This function adds a unit property data set under the given property
@@ -251,7 +253,7 @@ class SortingExtractor(ABC):
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.getUnitIds():
                 if unit_id not in self._unit_properties:
-                    self._unit_properties[unit_id]={}
+                    self._unit_properties[unit_id] = {}
                 if isinstance(property_name, str):
                     if property_name in list(self._unit_properties[unit_id].keys()):
                         return self._unit_properties[unit_id][property_name]
@@ -282,7 +284,7 @@ class SortingExtractor(ABC):
         '''
         if unit_ids is None:
             unit_ids = self.getUnitIds()
-        values = [self.getUnitProperty(unit_id=unit,property_name=property_name) for unit in unit_ids]
+        values = [self.getUnitProperty(unit_id=unit, property_name=property_name) for unit in unit_ids]
         return values
 
     def getUnitPropertyNames(self, unit_id=None):
@@ -309,14 +311,13 @@ class SortingExtractor(ABC):
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.getUnitIds():
                 if unit_id not in self._unit_properties:
-                    self._unit_properties[unit_id]={}
+                    self._unit_properties[unit_id] = {}
                 property_names = sorted(self._unit_properties[unit_id].keys())
                 return property_names
             else:
                 raise ValueError("Non-valid unit_id")
         else:
             raise ValueError("unit_id must be an int")
-
 
     @staticmethod
     def writeSorting(sorting, save_path):

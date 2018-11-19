@@ -9,6 +9,7 @@ import h5py
 import yaml, json
 import neo
 
+
 class MEArecRecordingExtractor(RecordingExtractor):
     def __init__(self, recording_path=None):
         RecordingExtractor.__init__(self)
@@ -16,11 +17,12 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._fs = None
         self._positions = None
         self._recordings = None
+        self._initialize()
 
     def _initialize(self):
-        rec_dict,  info = load_recordings(recordings=self._recording_path)
+        rec_dict, info = load_recordings(recordings=self._recording_path)
 
-        self._fs  = info['recordings']['fs']
+        self._fs = info['recordings']['fs']
         self._recordings = rec_dict['recordings']
         for chan, pos in enumerate(rec_dict['positions']):
             self.setChannelProperty(chan, 'location', pos)
@@ -44,12 +46,12 @@ class MEArecRecordingExtractor(RecordingExtractor):
         if self._recordings is None:
             self._initialize()
         if start_frame is None:
-            start_frame=0
+            start_frame = 0
         if end_frame is None:
-            end_frame=self.getNumFrames()
+            end_frame = self.getNumFrames()
         if channel_ids is None:
-            channel_ids=range(self.getNumChannels())
-        return self._recordings[channel_ids,:][:,start_frame:end_frame]
+            channel_ids = range(self.getNumChannels())
+        return self._recordings[channel_ids, :][:, start_frame:end_frame]
 
     @staticmethod
     def writeRecording(recording, save_path):
@@ -62,7 +64,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
                                       for chan in range(recording.getNumChannels())])
                 F.create_dataset('positions', data=positions)
             F.create_dataset('recordings', data=recording.getTraces())
-            F.create_dataset('times', data=np.arange(recording.getNumFrames()/recording.getSamplingFrequency()))
+            F.create_dataset('times', data=np.arange(recording.getNumFrames() / recording.getSamplingFrequency()))
             F.close()
             print('\nSaved recordings in', save_path, '\n')
         elif save_path is not None:
@@ -70,7 +72,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
             if not os.path.isdir(save_folder):
                 os.makedirs(save_folder)
             np.save(join(save_folder, 'recordings'), recording.getTraces())
-            np.save(join(save_folder, 'times'), np.arange(recording.getNumFrames()/recording.getSamplingFrequency()))
+            np.save(join(save_folder, 'times'), np.arange(recording.getNumFrames() / recording.getSamplingFrequency()))
             if 'location' in recording.getChannelPropertyNames():
                 positions = np.array([recording.getChannelProperty(chan, 'location')
                                       for chan in range(recording.getNumChannels())])
@@ -91,7 +93,7 @@ class MEArecSortingExtractor(SortingExtractor):
         self._fs = None
 
     def _initialize(self):
-        rec_dict,  info = load_recordings(recordings=self._recording_path)
+        rec_dict, info = load_recordings(recordings=self._recording_path)
 
         self._num_units = len(rec_dict['spiketrains'])
         if 'unit_id' in rec_dict['spiketrains'][0].annotations:
@@ -99,7 +101,7 @@ class MEArecSortingExtractor(SortingExtractor):
         else:
             self._unit_ids = list(range(self._num_units))
         self._spike_trains = rec_dict['spiketrains']
-        self._fs  = info['recordings']['fs'] * pq.Hz #fs is in kHz
+        self._fs = info['recordings']['fs'] * pq.Hz  # fs is in kHz
 
     def getUnitIds(self):
         if self._unit_ids is None:
@@ -113,14 +115,14 @@ class MEArecSortingExtractor(SortingExtractor):
 
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
-            start_frame=0
+            start_frame = 0
         if end_frame is None:
-            end_frame=np.Inf
+            end_frame = np.Inf
         if self._spike_trains is None:
             self._initialize()
         times = (self._spike_trains[self.getUnitIds().index(unit_id)].times.rescale('s') *
                  self._fs.rescale('Hz')).magnitude
-        inds = np.where((start_frame<=times)&(times<end_frame))
+        inds = np.where((start_frame <= times) & (times < end_frame))
         return np.rint(times[inds]).astype(int)
 
     @staticmethod
@@ -147,7 +149,7 @@ class MEArecSortingExtractor(SortingExtractor):
             for ii, unit in enumerate(sorting.getUnitIds()):
                 st = sorting.getUnitSpikeTrain(unit) / sampling_frequency * pq.s
                 t_stop = np.max(sorting.getUnitSpikeTrain(unit)) / sampling_frequency * pq.s
-                spiketrain = neo.core.SpikeTrain(times=st, t_start=0*pq.s, t_stop=t_stop)
+                spiketrain = neo.core.SpikeTrain(times=st, t_start=0 * pq.s, t_stop=t_stop)
                 spiketrain.annotate(unit_id=unit)
                 spiketrains.append(spiketrain)
             info = {'recordings': {'fs': sampling_frequency, 'n_neurons': len(spiketrains)}}
@@ -215,7 +217,7 @@ def load_recordings(recordings, verbose=False):
             if 'n_neurons' in info['recordings']:
                 for ii in range(info['recordings']['n_neurons']):
                     times = np.array(F.get('spiketrains/{}/times'.format(ii))) * pq.s
-                    t_stop = np.array(F.get('spiketrains/{}/t_stop'.format(ii)))  * pq.s
+                    t_stop = np.array(F.get('spiketrains/{}/t_stop'.format(ii))) * pq.s
                     annotations_str = str(F.get('spiketrains/{}/annotations'.format(ii))[()])
                     annotations = json.loads(annotations_str)
                     st = neo.core.SpikeTrain(

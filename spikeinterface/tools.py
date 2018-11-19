@@ -63,8 +63,8 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
                 subrecording = recording
             else:
                 assert np.all([chan in recording.getChannelIds() for chan in ordered_channels]), \
-                "all channel_ids in the 'channels' section of the probe file " \
-                "must be in the original recording channel ids"
+                    "all channel_ids in the 'channels' section of the probe file " \
+                    "must be in the original recording channel ids"
                 subrecording = SubRecordingExtractor(recording, channel_ids=ordered_channels)
             for cgroup_id in groups:
                 cgroup = probe_dict['channel_groups'][cgroup_id]
@@ -267,7 +267,7 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
                     for j in range(i, len(elecs)):
                         if elecs[i] != elecs[j]:
                             if np.linalg.norm(positions[elecs[i]] - positions[elecs[j]]) < adjacency_distance:
-                                group_graph.append((elecs[i],  elecs[j]))
+                                group_graph.append((elecs[i], elecs[j]))
                 adj_graph.append(group_graph)
         else:
             # all connected by group
@@ -278,19 +278,19 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
                 for i in range(len(elecs)):
                     for j in range(i, len(elecs)):
                         if elecs[i] != elecs[j]:
-                            group_graph.append((elecs[i],  elecs[j]))
+                            group_graph.append((elecs[i], elecs[j]))
                 adj_graph.append(group_graph)
 
     with open(file_name, 'w') as f:
         f.write('\n')
-        if format=='spyking_circus':
+        if format == 'spyking_circus':
             f.write('total_nb_channels = ' + str(n_elec) + '\n')
             f.write('radius = ' + str(radius) + '\n')
         f.write('channel_groups = {\n')
         if len(channel_groups) > 0:
             for i_chg, chg in enumerate(channel_groups):
                 f.write("     " + str(int(chg)) + ": ")
-                elecs = list(np.where(groups==chg)[0])
+                elecs = list(np.where(groups == chg)[0])
                 f.write("\n        {\n")
                 f.write("           'channels': " + str(elecs) + ',\n')
                 if graph:
@@ -303,7 +303,7 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
                 if geometry:
                     f.write("           'geometry':  {\n")
                     for i, pos in enumerate(positions[elecs]):
-                        f.write('               ' + str(elecs[i]) +': ' + str(list(pos)) + ',\n')
+                        f.write('               ' + str(elecs[i]) + ': ' + str(list(pos)) + ',\n')
                     f.write('           }\n')
                 f.write('       }\n}')
                 f.write('\n')

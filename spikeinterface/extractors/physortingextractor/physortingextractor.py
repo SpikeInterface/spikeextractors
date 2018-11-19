@@ -4,6 +4,7 @@ import numpy as np
 import os
 from os.path import join
 
+
 class PhySortingExtractor(SortingExtractor):
     def __init__(self, phy_folder):
         SortingExtractor.__init__(self)

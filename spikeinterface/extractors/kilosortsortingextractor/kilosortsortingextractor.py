@@ -4,6 +4,7 @@ import numpy as np
 import os
 from os.path import join
 
+
 class KiloSortSortingExtractor(SortingExtractor):
     def __init__(self, kilosort_folder):
         SortingExtractor.__init__(self)

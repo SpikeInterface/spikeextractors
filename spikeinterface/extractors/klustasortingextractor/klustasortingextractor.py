@@ -6,6 +6,7 @@ import os
 from os.path import join
 import h5py
 
+
 class KlustaSortingExtractor(SortingExtractor):
     def __init__(self, kwikfile):
         SortingExtractor.__init__(self)
@@ -59,7 +60,8 @@ class KlustaSortingExtractor(SortingExtractor):
             time_samples = np.array([])
             cluster_main = np.array([])
             if 'channel_group' in sorting.getUnitPropertyNames():
-                idxs = [unit for unit in sorting.getUnitIds() if sorting.getUnitProperty(unit, 'channel_group') == cgroup]
+                idxs = [unit for unit in sorting.getUnitIds() if
+                        sorting.getUnitProperty(unit, 'channel_group') == cgroup]
             else:
                 idxs = sorting.getUnitIds()
             clust = channel_group.create_group('clusters')
