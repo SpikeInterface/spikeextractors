@@ -11,7 +11,7 @@ def append_to_path(dir0):  # A convenience function
 
 
 append_to_path(os.getcwd() + '/..')
-import spikeinterface as si
+import spikeextractors as se
 
 
 class TestExtractors(unittest.TestCase):
@@ -31,15 +31,15 @@ class TestExtractors(unittest.TestCase):
         X = np.random.normal(0, 1, (num_channels, num_frames))
         geom = np.random.normal(0, 1, (num_channels, 2))
         X = (X * 100).astype(int)
-        RX = si.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate, geom=geom)
-        SX = si.NumpySortingExtractor()
+        RX = se.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate, geom=geom)
+        SX = se.NumpySortingExtractor()
         spike_times = [200, 300, 400]
         train1 = np.rint(np.random.uniform(0, num_frames, spike_times[0])).astype(int)
         SX.addUnit(unit_id=1, times=train1)
         SX.addUnit(unit_id=2, times=np.random.uniform(0, num_frames, spike_times[1]))
         SX.addUnit(unit_id=3, times=np.random.uniform(0, num_frames, spike_times[2]))
         SX.setUnitProperty(unit_id=1, property_name='stablility', value=80)
-        SX2 = si.NumpySortingExtractor()
+        SX2 = se.NumpySortingExtractor()
         spike_times2 = [100, 150, 450]
         train2 = np.rint(np.random.uniform(0, num_frames, spike_times[0])).astype(int)
         SX2.addUnit(unit_id=3, times=train2)
