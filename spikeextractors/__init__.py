@@ -8,6 +8,7 @@ from .MultiSortingExtractor import MultiSortingExtractor
 from .extractors.mdaextractors.mdaextractors import MdaRecordingExtractor, MdaSortingExtractor
 from .extractors.mearecextractors.mearecextractors import MEArecRecordingExtractor, MEArecSortingExtractor
 from .extractors.biocamrecordingextractor import BiocamRecordingExtractor
+from .extractors.exdirextractors import ExdirRecordingExtractor, ExdirSortingExtractor
 from .extractors.hs2sortingextractor import HS2SortingExtractor
 from .extractors.klustasortingextractor import KlustaSortingExtractor
 from .extractors.kilosortsortingextractor import KiloSortSortingExtractor
