@@ -1,8 +1,9 @@
 import numpy as np
 from .RecordingExtractor import RecordingExtractor
+from .SortingExtractor import SortingExtractor
 from .SubRecordingExtractor import SubRecordingExtractor
+from .SubSortingExtractor import SubSortingExtractor
 import os
-import os.path as op
 import csv
 
 
@@ -93,6 +94,10 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
                         elif isinstance(prop_val, (list, np.ndarray)) and len(prop_val) == channels_in_group:
                             for (i_ch, prop) in zip(subrecording.getChannelIds(), prop_val):
                                 subrecording.setChannelProperty(i_ch, key_prop, prop)
+                # create dummy locations
+                if 'geometry' not in cgroup.keys() and 'location' not in cgroup.keys():
+                    for i, chan in enumerate(subrecording.getChannelIds()):
+                        subrecording.setChannelProperty(chan, 'location', [i, 0])
         else:
             raise AttributeError("'.prb' file should contain the 'channel_groups' field")
 
@@ -179,7 +184,7 @@ def writeBinaryDatFormat(recording, save_path, transpose=False, dtype='float32')
     transpose: bool
         If True the data are transpose (spyking_circus). Default is False (klusta, kilosort, yass)
     dtype: dtype
-        Tyep of the saved data. Default float32
+        Type of the saved data. Default float32
 
     Returns
     -------
@@ -197,6 +202,53 @@ def writeBinaryDatFormat(recording, save_path, transpose=False, dtype='float32')
         with open(save_path, 'wb') as f:
             np.array(recording.getTraces(), dtype=dtype).tofile(f)
     return save_path
+
+
+def getSubExtractorsByProperty(extractor, property_name):
+    '''Divides Recording or Sorting Extractor based on the property_name (e.g. group)
+
+    Parameters
+    ----------
+    extractor: RecordingExtractor or SortingExtractor
+        The extractor to be subdivided in subextractors
+    property_name: str
+        The property used to subdivide the extractor
+
+    Returns
+    -------
+    List of subextractors
+
+    '''
+    if isinstance(extractor, RecordingExtractor):
+        if property_name not in extractor.getChannelPropertyNames():
+            raise ValueError("'property_name' must be must be a property of the recording channels")
+        else:
+            sub_list = []
+            recording = extractor
+            properties = np.array([recording.getChannelProperty(chan, property_name)
+                                   for chan in recording.getChannelIds()])
+            prop_list = np.unique(properties)
+            for prop in prop_list:
+                prop_idx = np.where(prop == properties)
+                chan_idx = list(np.array(recording.getChannelIds())[prop_idx])
+                sub_list.append(SubRecordingExtractor(recording, channel_ids=chan_idx))
+            return sub_list
+    elif isinstance(extractor, SortingExtractor):
+        if property_name not in extractor.getUnitPropertyNames():
+            raise ValueError("'property_name' must be must be a property of the units")
+        else:
+            sub_list = []
+            sorting = extractor
+            properties = np.array([sorting.getUnitProperty(unit, property_name)
+                                   for unit in sorting.getUnitIds()])
+            prop_list = np.unique(properties)
+            for prop in prop_list:
+                prop_idx = np.where(prop == properties)
+                unit_idx = list(np.array(sorting.getUnitIds())[prop_idx])
+                sub_list.append(SubSortingExtractor(sorting, unit_ids=unit_idx))
+            return sub_list
+    else:
+        raise ValueError("'extractor' must be a RecordingExtractor or a SortingExtractor")
 
 
 def _export_prb_file(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100,

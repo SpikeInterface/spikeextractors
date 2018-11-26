@@ -91,6 +91,7 @@ class MEArecSortingExtractor(SortingExtractor):
         self._spike_trains = None
         self._unit_ids = None
         self._fs = None
+        self._initialize()
 
     def _initialize(self):
         rec_dict, info = load_recordings(recordings=self._recording_path)

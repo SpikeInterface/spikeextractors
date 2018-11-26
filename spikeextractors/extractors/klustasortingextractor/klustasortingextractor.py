@@ -23,7 +23,7 @@ class KlustaSortingExtractor(SortingExtractor):
                 st = np.array(channel_groups[cgroup]['spikes']['time_samples'])[idx]
                 self._spiketrains.append(st)
                 self._unit_ids.append(int(cluster_id))
-                self.setUnitProperty(int(cluster_id), 'channel_group', group_id)
+                self.setUnitProperty(int(cluster_id), 'group', group_id)
 
     def getUnitIds(self):
         return list(self._unit_ids)
@@ -48,8 +48,8 @@ class KlustaSortingExtractor(SortingExtractor):
             save_path = join(save_path, 'klusta.kwik')
         F = h5py.File(save_path, 'w')
         F.attrs.create('kwik_version', data=2)
-        if 'channel_group' in sorting.getUnitPropertyNames():
-            cgroups = np.unique([sorting.getUnitProperty(unit, 'channel_group') for unit in sorting.getUnitIds()])
+        if 'group' in sorting.getUnitPropertyNames():
+            cgroups = np.unique([sorting.getUnitProperty(unit, 'group') for unit in sorting.getUnitIds()])
         else:
             cgroups = [0]
 
@@ -59,9 +59,9 @@ class KlustaSortingExtractor(SortingExtractor):
             channel_group = channel_groups.create_group(str(cgroup))
             time_samples = np.array([])
             cluster_main = np.array([])
-            if 'channel_group' in sorting.getUnitPropertyNames():
+            if 'group' in sorting.getUnitPropertyNames():
                 idxs = [unit for unit in sorting.getUnitIds() if
-                        sorting.getUnitProperty(unit, 'channel_group') == cgroup]
+                        sorting.getUnitProperty(unit, 'group') == cgroup]
             else:
                 idxs = sorting.getUnitIds()
             clust = channel_group.create_group('clusters')
