@@ -24,7 +24,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
         self._fs = info['recordings']['fs']
         self._recordings = rec_dict['recordings']
-        for chan, pos in enumerate(rec_dict['positions']):
+        for chan, pos in enumerate(rec_dict['channel_positions']):
             self.setChannelProperty(chan, 'location', pos)
 
     def getChannelIds(self):
@@ -62,7 +62,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
             if 'location' in recording.getChannelPropertyNames():
                 positions = np.array([recording.getChannelProperty(chan, 'location')
                                       for chan in range(recording.getNumChannels())])
-                F.create_dataset('positions', data=positions)
+                F.create_dataset('channel_positions', data=positions)
             F.create_dataset('recordings', data=recording.getTraces())
             F.create_dataset('times', data=np.arange(recording.getNumFrames() / recording.getSamplingFrequency()))
             F.close()
@@ -72,11 +72,11 @@ class MEArecRecordingExtractor(RecordingExtractor):
             if not os.path.isdir(save_folder):
                 os.makedirs(save_folder)
             np.save(join(save_folder, 'recordings'), recording.getTraces())
-            np.save(join(save_folder, 'times'), np.arange(recording.getNumFrames() / recording.getSamplingFrequency()))
+            np.save(join(save_folder, 'timestamps'), np.arange(recording.getNumFrames() / recording.getSamplingFrequency()))
             if 'location' in recording.getChannelPropertyNames():
                 positions = np.array([recording.getChannelProperty(chan, 'location')
                                       for chan in range(recording.getNumChannels())])
-                np.save(join(save_folder, 'positions'), positions)
+                np.save(join(save_folder, 'channel_positions'), positions)
             info = {'recordings': {'fs': recording.getSamplingFrequency()}}
             with open(join(save_folder, 'info.yaml'), 'w') as f:
                 yaml.dump(info, f, default_flow_style=False)
