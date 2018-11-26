@@ -185,35 +185,35 @@ def load_recordings(recordings, verbose=False):
         if os.path.isfile(join(recording_folder, 'recordings.npy')):
             recordings = np.load(join(recording_folder, 'recordings.npy'))
             rec_dict.update({'recordings': recordings})
-        if os.path.isfile(join(recording_folder, 'positions.npy')):
-            positions = np.load(join(recording_folder, 'positions.npy'))
-            rec_dict.update({'positions': positions})
-        if os.path.isfile(join(recording_folder, 'times.npy')):
-            times = np.load(join(recording_folder, 'times.npy'))
-            rec_dict.update({'times': times})
+        if os.path.isfile(join(recording_folder, 'channel_positions.npy')):
+            channel_positions = np.load(join(recording_folder, 'channel_positions.npy'))
+            rec_dict.update({'channel_positions': channel_positions})
+        if os.path.isfile(join(recording_folder, 'timestamps.npy')):
+            timestamps = np.load(join(recording_folder, 'timestamps.npy'))
+            rec_dict.update({'timestamps': timestamps})
         if os.path.isfile(join(recording_folder, 'templates.npy')):
             templates = np.load(join(recording_folder, 'templates.npy'))
             rec_dict.update({'templates': templates})
         if os.path.isfile(join(recording_folder, 'spiketrains.npy')):
             spiketrains = np.load(join(recording_folder, 'spiketrains.npy'))
             rec_dict.update({'spiketrains': spiketrains})
-        if os.path.isfile(join(recording_folder, 'sources.npy')):
-            sources = np.load(join(recording_folder, 'sources.npy'))
-            rec_dict.update({'sources': sources})
-        if os.path.isfile(join(recording_folder, 'peaks.npy')):
-            peaks = np.load(join(recording_folder, 'peaks.npy'))
-            rec_dict.update({'peaks': peaks})
+        if os.path.isfile(join(recording_folder, 'spike_traces.npy')):
+            spike_traces = np.load(join(recording_folder, 'spike_traces.npy'))
+            rec_dict.update({'spike_traces': spike_traces})
+        if os.path.isfile(join(recording_folder, 'voltage_peaks.npy')):
+            voltage_peaks = np.load(join(recording_folder, 'voltage_peaks.npy'))
+            rec_dict.update({'voltage_peaks': voltage_peaks})
         with open(join(recording_folder, 'info.yaml'), 'r') as f:
             info = yaml.load(f)
     elif recordings.endswith('h5') or recordings.endswith('hdf5'):
         with h5py.File(recordings, 'r') as F:
             info = json.loads(str(F['info'][()]))
-            rec_dict['peaks'] = np.array(F.get('peaks'))
-            rec_dict['positions'] = np.array(F.get('positions'))
+            rec_dict['voltage_peaks'] = np.array(F.get('voltage_peaks'))
+            rec_dict['channel_positions'] = np.array(F.get('channel_positions'))
             rec_dict['recordings'] = np.array(F.get('recordings'))
-            rec_dict['sources'] = np.array(F.get('sources'))
+            rec_dict['spike_traces'] = np.array(F.get('spike_traces'))
             rec_dict['templates'] = np.array(F.get('templates'))
-            rec_dict['times'] = np.array(F.get('times'))
+            rec_dict['timestamps'] = np.array(F.get('timestamps'))
             spiketrains = []
             if 'n_neurons' in info['recordings']:
                 for ii in range(info['recordings']['n_neurons']):
