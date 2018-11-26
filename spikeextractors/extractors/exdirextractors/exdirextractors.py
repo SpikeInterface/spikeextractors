@@ -44,7 +44,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
             end_frame = self.getNumFrames()
         if channel_ids is None:
             channel_ids = self.getChannelIds()
-        return recordings[channel_ids, start_frame:end_frame]
+        return self._recordings[channel_ids, start_frame:end_frame]
 
     @staticmethod
     def writeRecording(recording, exdir_file):
