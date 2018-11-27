@@ -132,6 +132,21 @@ class TestExtractors(unittest.TestCase):
         self._check_sorting_return_types(SX_hs2)
         self._check_sortings_equal(self.SX, SX_hs2)
 
+
+    # def test_exdir_extractors(self):
+    #     path1 = self.test_dir + '/raw'
+    #     se.ExdirRecordingExtractor.writeRecording(self.RX, path1)
+    #     RX_exdir = se.ExdirRecordingExtractor(path1)
+    #     self._check_recording_return_types(RX_exdir)
+    #     self._check_recordings_equal(self.RX, RX_exdir)
+    #
+    #     path2 = self.test_dir + '/firings_true'
+    #     se.ExdirSortingExtractor.writeSorting(self.SX, path2, self.RX.getSamplingFrequency())
+    #     SX_exdir = se.ExdirSortingExtractor(path2)
+    #     self._check_sorting_return_types(SX_exdir)
+    #     self._check_sortings_equal(self.SX, SX_exdir)
+
+
     def test_kilosort_extractor(self):
         path1 = self.test_dir + '/firings_true'
         se.KiloSortSortingExtractor.writeSorting(self.SX, path1)

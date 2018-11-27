@@ -294,7 +294,7 @@ class RecordingExtractor(ABC):
         '''
         if channel_ids is None:
             channel_ids = recording.getChannelIds()
-        if (isinstance(channel_ids, int)):
+        if isinstance(channel_ids, int):
             curr_property_names = recording.getChannelPropertyNames(channel_id=channel_ids)
             for curr_property_name in curr_property_names:
                 value = recording.getChannelProperty(channel_id=channel_ids, property_name=curr_property_name)
