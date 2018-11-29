@@ -35,7 +35,6 @@ class CuratedSortingExtractor(SortingExtractor):
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-            
         valid_unit_id = False
         spike_train = np.asarray([])
         for root in self._roots:
