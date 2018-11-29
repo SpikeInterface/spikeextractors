@@ -6,7 +6,7 @@ Version 0.2.2
 
 # spikeextractors
 
-Spikeextractors is a module that enables easy creation and deployment of tools for extracting raw or spike sorted extracellular data from any file format. Its design goals are as follows:
+Spikeextractors is a module that enables easy creation and deployment of tools for extracting, converting between, and modifying raw or spike sorted extracellular data from any file format. Its design goals are as follows:
 
 1. To facilitate standardized analysis and visualization for both raw and sorted extracellular data.
 2. To promote straightfoward reuse of extracellular datasets.
