@@ -34,10 +34,10 @@ class TestExtractors(unittest.TestCase):
         RX = se.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate, geom=geom)
         SX = se.NumpySortingExtractor()
         spike_times = [200, 300, 400]
-        train1 = np.rint(np.random.uniform(0, num_frames, spike_times[0])).astype(int)
+        train1 = np.sort(np.rint(np.random.uniform(0, num_frames, spike_times[0])).astype(int))
         SX.addUnit(unit_id=1, times=train1)
-        SX.addUnit(unit_id=2, times=np.random.uniform(0, num_frames, spike_times[1]))
-        SX.addUnit(unit_id=3, times=np.random.uniform(0, num_frames, spike_times[2]))
+        SX.addUnit(unit_id=2, times=np.sort(np.random.uniform(0, num_frames, spike_times[1])))
+        SX.addUnit(unit_id=3, times=np.sort(np.random.uniform(0, num_frames, spike_times[2])))
         SX.setUnitProperty(unit_id=1, property_name='stablility', value=80)
         SX2 = se.NumpySortingExtractor()
         spike_times2 = [100, 150, 450]
@@ -175,6 +175,22 @@ class TestExtractors(unittest.TestCase):
         )
         RX_sub = RX_multi.getEpoch('C')
         self._check_recordings_equal(self.RX, RX_sub)
+        
+    def test_curated_sorting_extractor(self):
+        CSX = se.CuratedSortingExtractor(
+            parent_sorting=self.SX
+        )
+        CSX.mergeUnits(unit_ids=[1, 2])
+        original_spike_train = np.sort(np.concatenate((self.SX.getUnitSpikeTrain(1), self.SX.getUnitSpikeTrain(2))))
+        self.assertTrue(np.array_equal(CSX.getUnitSpikeTrain(4), original_spike_train))
+        
+        CSX.splitUnit(unit_id=3, indices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        original_spike_train = self.SX.getUnitSpikeTrain(3)
+        split_spike_train_1 = CSX.getUnitSpikeTrain(5)
+        split_spike_train_2 = CSX.getUnitSpikeTrain(6)
+        self.assertTrue(np.array_equal(original_spike_train[:10], split_spike_train_1))
+        self.assertTrue(np.array_equal(original_spike_train[10:], split_spike_train_2))
+
 
     def test_multi_sub_sorting_extractor(self):
         N = self.RX.getNumFrames()
