@@ -19,4 +19,5 @@ from .extractors.openephysextractors.openephysextractors import OpenEphysRecordi
 from .extractors.physortingextractor.physortingextractor import PhySortingExtractor
 from .extractors.spykingcircussortingextractor.spykingcircussortingextractor import SpykingCircusSortingExtractor
 
+from . import example_datasets
 from .tools import loadProbeFile, saveProbeFile, writeBinaryDatFormat, getSubExtractorsByProperty

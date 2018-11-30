@@ -17,19 +17,19 @@ class CuratedSortingExtractor(SortingExtractor):
         self._indices_dict = {}
         for i, unit_id in enumerate(self._original_unit_ids):
             self._indices_dict[unit_id] = original_spike_indices[i]
-        del original_spike_indices        
-                
+        del original_spike_indices
+
         self._roots = []
         for i, unit_id in enumerate(self._original_unit_ids):
             root = Unit(unit_id)
             self._roots.append(root)
-    
+
     def getUnitIds(self):
         unit_ids = []
         for root in self._roots:
             unit_ids.append(root.unit_id)
         return unit_ids
-    
+
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
@@ -48,7 +48,7 @@ class CuratedSortingExtractor(SortingExtractor):
             return spike_train
         else:
             raise ValueError("invalid unit id")
-    
+
     def _collectSpikeTrains(self, unit): #post order traversal
         for child in unit.get_children():
             self._collectSpikeTrains(child)
@@ -62,18 +62,31 @@ class CuratedSortingExtractor(SortingExtractor):
             new_spike_train = np.sort(np.concatenate(new_spike_train).ravel())
             new_spike_train = new_spike_train[self._indices_dict[unit.unit_id]]
             unit.spike_train = new_spike_train
-    
+
     def _resetSpikeTrains(self, unit): #post order traversal
         for child in unit.get_children():
             self._resetSpikeTrains(child)
         unit.spike_train = np.asarray([])
 
-    def printCurationTree(self):
-        '''This function prints the current curation tree (roots are current unit ids).
+    def printCurationTree(self, unit_id):
+        '''This function prints the current curation tree for the unit_id (roots are current unit ids).
+
+        Parameters
+        ----------
+        unit_id: in
+            The unit id whose curation history will be printed.
         '''
-        for root in self._roots:
-            print(root)
-        
+        root_ids = []
+        for i in range(len(self._roots)):
+            root_id = self._roots[i].unit_id
+            root_ids.append(root_id)
+        if(unit_id in root_ids):
+            root_index = root_ids.index(unit_id)
+            print(self._roots[root_index])
+        else:
+            raise ValueError("invalid unit id")
+
+
     def excludeUnits(self, unit_ids):
         '''This function deletes roots from the curation tree according to the given unit_ids
 
@@ -98,7 +111,7 @@ class CuratedSortingExtractor(SortingExtractor):
             raise ValueError("invalid unit ids")
 
     def mergeUnits(self, unit_ids):
-        '''This function merges two roots from the curation tree according to the given unit_ids. It creates a new unit_id and root 
+        '''This function merges two roots from the curation tree according to the given unit_ids. It creates a new unit_id and root
         that has the merged roots as children.
 
         Parameters
@@ -129,8 +142,8 @@ class CuratedSortingExtractor(SortingExtractor):
             raise ValueError("invalid unit ids")
 
     def splitUnit(self, unit_id, indices):
-        '''This function splits a root from the curation tree according to the given unit_id and indices. It creates two new unit_ids 
-        and roots that have the split root as a child. This function splits the spike train of the root by the given indices. 
+        '''This function splits a root from the curation tree according to the given unit_id and indices. It creates two new unit_ids
+        and roots that have the split root as a child. This function splits the spike train of the root by the given indices.
 
         Parameters
         ----------
@@ -170,8 +183,8 @@ class CuratedSortingExtractor(SortingExtractor):
                 raise ValueError("invalid indices")
         else:
             raise ValueError("invalid unit ids")
-            
-            
+
+
 # The Unit class is a node in the curation tree. Each Unit contains its unit_id, children, and spike_train.
 class Unit(object):
     def __init__(self, unit_id):
@@ -181,10 +194,10 @@ class Unit(object):
 
     def add_child(self, child):
         self.children.append(child)
-        
+
     def get_children(self):
         return self.children
-        
+
     def __str__(self, level=0):
         if(level == 0):
             ret = "\t"*(max(level-1, 0)) +repr(self.unit_id)+ "\n"
