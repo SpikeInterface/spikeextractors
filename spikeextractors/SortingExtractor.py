@@ -77,9 +77,7 @@ class SortingExtractor(ABC):
                 if unit_id not in self._unit_features.keys():
                     self._unit_features[unit_id] = {}
                 if isinstance(feature_name, str) and len(value) == len(self.getUnitSpikeTrain(unit_id)):
-                    print('added feature')
                     self._unit_features[unit_id][feature_name] = value
-                    print(self._unit_features)
                 else:
                     raise ValueError("feature_name must be a string")
             else:
