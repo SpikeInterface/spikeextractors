@@ -74,10 +74,12 @@ class SortingExtractor(ABC):
         '''
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.getUnitIds():
-                if unit_id not in self._unit_features:
+                if unit_id not in self._unit_features.keys():
                     self._unit_features[unit_id] = {}
                 if isinstance(feature_name, str) and len(value) == len(self.getUnitSpikeTrain(unit_id)):
+                    print('added feature')
                     self._unit_features[unit_id][feature_name] = value
+                    print(self._unit_features)
                 else:
                     raise ValueError("feature_name must be a string")
             else:
@@ -118,17 +120,17 @@ class SortingExtractor(ABC):
         '''
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.getUnitIds():
-                if unit_id not in self._unit_features:
+                if unit_id not in self._unit_features.keys():
                     self._unit_features[unit_id] = {}
                 if isinstance(feature_name, str):
-                    if feature_name in list(self._unit_features[unit_id].keys()):
+                    if feature_name in self._unit_features[unit_id].keys():
                         if start_frame is None:
                             start_frame = 0
                         if end_frame is None:
                             end_frame = len(self.getUnitSpikeTrain(unit_id))
-                        return self._unit_features[unit_id][feature_name][start_frame: end_frame]
+                        return self._unit_features[unit_id][feature_name][start_frame:end_frame]
                     else:
-                        raise ValueError("This property has not been added to this unit")
+                        raise ValueError("This feature has not been added to this unit")
                 else:
                     raise ValueError("property_name must be a string")
             else:

@@ -357,8 +357,8 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
                     for i, pos in enumerate(positions[elecs]):
                         f.write('               ' + str(elecs[i]) + ': ' + str(list(pos)) + ',\n')
                     f.write('           }\n')
-                f.write('       }\n}')
-                f.write('\n')
+                f.write('       },\n')
+            f.write('}\n')
         else:
             for elec in range(n_elec):
                 f.write('    ' + str(elec) + ': ')

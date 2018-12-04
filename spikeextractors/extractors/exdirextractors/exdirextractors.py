@@ -47,7 +47,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
         return self._recordings[channel_ids, start_frame:end_frame]
 
     @staticmethod
-    def writeRecording(recording, exdir_file):
+    def writeRecording(recording, exdir_file, lfp=False):
         exdir, pq = _load_required_modules()
 
         channel_ids = recording.getChannelIds()
@@ -55,8 +55,29 @@ class ExdirRecordingExtractor(RecordingExtractor):
         N = recording.getNumFrames()
         raw = recording.getTraces()
         exdir_group = exdir.File(exdir_file, plugins=exdir.plugins.quantities)
-        timeseries = exdir_group.require_group('acquisition').require_dataset('timeseries', data=raw)
-        timeseries.attrs['sample_rate'] = recording.getSamplingFrequency() * pq.Hz
+        if not lfp:
+            timeseries = exdir_group.require_group('acquisition').require_dataset('timeseries', data=raw)
+            timeseries.attrs['sample_rate'] = recording.getSamplingFrequency() * pq.Hz
+        else:
+            print(recording.getChannelPropertyNames())
+            ephys = exdir_group.require_group('processing').require_group('electrophysiology')
+            if 'group' not in recording.getChannelPropertyNames():
+                lfp_group = ephys.require_group('Channel_group_0').require_group('LFP')
+                for ch in recording.getChannelIds():
+                    ch_group = lfp_group.require_group('LFP_timeseries_'+str(ch))
+                    data = ch_group.require_dataset('data', data=recording.getTraces(channel_ids=[ch]))
+                    data.attrs['sample_rate'] = recording.getSamplingFrequency() * pq.Hz
+            else:
+                channel_groups = np.unique([recording.getChannelProperty(ch, 'group')
+                                            for ch in recording.getChannelIds()])
+                for chan in channel_groups:
+                    lfp_group = ephys.require_group('Channel_group_' + str(chan)).require_group('LFP')
+                    for ch in recording.getChannelIds():
+                        if recording.getChannelProperty(ch, 'group') == chan:
+                            ch_group = lfp_group.require_group('LFP_timeseries_'+str(ch))
+                            data = ch_group.require_dataset('data', data=recording.getTraces(channel_ids=[ch]))
+                            data.attrs['sample_rate'] = recording.getSamplingFrequency() * pq.Hz
+
 
 
 class ExdirSortingExtractor(SortingExtractor):
@@ -113,18 +134,29 @@ class ExdirSortingExtractor(SortingExtractor):
         ephys = exdir_group.require_group('processing').require_group('electrophysiology')
         if 'group' not in sorting.getUnitPropertyNames():
             unittimes = ephys.require_group('Channel_group_0').require_group('UnitTimes')
+            eventwaveform = ephys.require_group('Channel_group_0').require_group('EventWaveform')
             for unit in sorting.getUnitIds():
                 unit_group = unittimes.require_group(str(unit))
                 unit_group.require_dataset('times',
                                            data=(sorting.getUnitSpikeTrain(unit).astype(float)
                                                  /sample_rate).rescale('s'))
+                if 'waveforms' in sorting.getUnitSpikeFeatureNames():
+                    waveform_ts = eventwaveform.require_group('waveform_timeseries')
+                    waveform_ts.require_dataset('data', data=sorting.getUnitSpikeFeatures(unit, 'waveforms'))
+                    waveform_ts.require_dataset('timestamps', data=sorting.getUnitSpikeFeatures(unit, 'waveforms'))
         else:
             channel_groups = np.unique([sorting.getUnitProperty(unit, 'group') for unit in sorting.getUnitIds()])
             for chan in channel_groups:
                 unittimes = ephys.require_group('Channel_group_'+str(chan)).require_group('UnitTimes')
+                eventwaveform = ephys.require_group('Channel_group'+str(chan)).require_group('EventWaveform')
                 for unit in sorting.getUnitIds():
                     if sorting.getUnitProperty(unit, 'group') == chan:
+                        print(unit, sorting.getUnitProperty(unit, 'group'), chan)
                         unit_group = unittimes.require_group(str(unit))
                         unit_group.require_dataset('times',
                                                    data=(sorting.getUnitSpikeTrain(unit).astype(float)
                                                          / sample_rate).rescale('s'))
+                    if 'waveforms' in sorting.getUnitSpikeFeatureNames(unit):
+                        waveform_ts = eventwaveform.require_group('waveform_timeseries')
+                        waveform_ts.require_dataset('data', data=sorting.getUnitSpikeFeatures(unit, 'waveforms'))
+                        waveform_ts.require_dataset('timestamps', data=sorting.getUnitSpikeFeatures(unit, 'waveforms'))
