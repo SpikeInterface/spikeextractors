@@ -4,6 +4,7 @@ from .SubSortingExtractor import SubSortingExtractor
 from .SubRecordingExtractor import SubRecordingExtractor
 from .MultiRecordingExtractor import MultiRecordingExtractor
 from .MultiSortingExtractor import MultiSortingExtractor
+from .CuratedSortingExtractor import CuratedSortingExtractor
 
 from .extractors.mdaextractors.mdaextractors import MdaRecordingExtractor, MdaSortingExtractor
 from .extractors.mearecextractors.mearecextractors import MEArecRecordingExtractor, MEArecSortingExtractor
@@ -18,4 +19,5 @@ from .extractors.openephysextractors.openephysextractors import OpenEphysRecordi
 from .extractors.physortingextractor.physortingextractor import PhySortingExtractor
 from .extractors.spykingcircussortingextractor.spykingcircussortingextractor import SpykingCircusSortingExtractor
 
+from . import example_datasets
 from .tools import loadProbeFile, saveProbeFile, writeBinaryDatFormat, getSubExtractorsByProperty
