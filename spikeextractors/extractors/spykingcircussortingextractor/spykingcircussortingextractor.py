@@ -1,20 +1,24 @@
 from spikeextractors import SortingExtractor
-
 import numpy as np
-import os
-from os.path import join
+from pathlib import Path
 import h5py
 
 
 class SpykingCircusSortingExtractor(SortingExtractor):
     def __init__(self, spykingcircus_folder):
         SortingExtractor.__init__(self)
-        files = os.listdir(spykingcircus_folder)
-        if np.any('merged' in files):
-            results = [f for f in os.listdir(spykingcircus_folder) if f.endswith('result-merged.hdf5')][0]
-        else:
-            results = [f for f in os.listdir(spykingcircus_folder) if f.endswith('result.hdf5')][0]
-        f_results = h5py.File(join(spykingcircus_folder, results))
+        spykingcircus_folder = Path(spykingcircus_folder)
+        files = spykingcircus_folder.iterdir()
+        results = None
+        for f in files:
+            if 'result.hdf5' in str(f):
+                results = f
+            if 'result-merged.hdf5' in str(f):
+                results = f
+                break
+        if results is None:
+            raise Exception(spykingcircus_folder, " is not a spyking circus folder")
+        f_results = h5py.File(results)
         self._spiketrains = []
         self._unit_ids = []
         for temp in f_results['spiketimes'].keys():
@@ -35,15 +39,16 @@ class SpykingCircusSortingExtractor(SortingExtractor):
 
     @staticmethod
     def writeSorting(sorting, save_path):
-        if os.path.isdir(save_path):
-            save_path = join(save_path, 'data.result.hdf5')
-        elif save_path.endswith('hdf5'):
-            if not save_path.endswith('result.hdf5') or not save_path.endswith('result-merged.hdf5'):
+        save_path = Path(save_path)
+        if save_path.is_dir():
+            save_path = save_path / 'data.result.hdf5'
+        elif save_path.suffix == '.hdf5':
+            if not str(save_path).endswith('result.hdf5') or not str(save_path).endswith('result-merged.hdf5'):
                 raise AttributeError("'save_path' is either a folder or an hdf5 file "
                                      "ending with 'result.hdf5' or 'result-merged.hdf5")
         else:
-            os.makedirs(save_path)
-            save_path = join(save_path, 'data.result.hdf5')
+            save_path.mkdir()
+            save_path = save_path / 'data.result.hdf5'
         F = h5py.File(save_path, 'w')
         spiketimes = F.create_group('spiketimes')
 

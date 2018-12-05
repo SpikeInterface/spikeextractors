@@ -1,23 +1,20 @@
 from spikeextractors import SortingExtractor
-
 import numpy as np
-import os
-from os.path import join
+from pathlib import Path
 
 
 class PhySortingExtractor(SortingExtractor):
     def __init__(self, phy_folder):
         SortingExtractor.__init__(self)
-        spike_times = np.load(join(phy_folder, 'spike_times.npy'))
-        spike_templates = np.load(join(phy_folder, 'spike_templates.npy'))
-        amplitudes = np.load(join(phy_folder, 'amplitudes.npy'))
-        pc_features = np.load(join(phy_folder, 'pc_features.npy'))
-        # pc_feature_ind = np.load(join(phy_folder, 'pc_feature_ind.npy'))
-        # self._templates = np.load(join(phy_folder, 'templates.npy'))
-        # template_ind = np.load(join(phy_folder, 'template_ind.npy'))
+        phy_folder = Path(phy_folder)
 
-        if os.path.isfile(join(phy_folder, 'spike_clusters.npy')):
-            spike_clusters = np.load(join(phy_folder, 'spike_clusters.npy'))
+        spike_times = np.load(phy_folder / 'spike_times.npy')
+        spike_templates = np.load(phy_folder / 'spike_templates.npy')
+        amplitudes = np.load(phy_folder / 'amplitudes.npy')
+        pc_features = np.load(phy_folder / 'pc_features.npy')
+
+        if (phy_folder /'spike_clusters.npy').is_file():
+            spike_clusters = np.load(phy_folder / 'spike_clusters.npy')
         else:
             spike_clusters = spike_templates
 
@@ -54,6 +51,7 @@ class PhySortingExtractor(SortingExtractor):
 
     @staticmethod
     def writeSorting(sorting, save_path):
+        save_path = Path(save_path)
         spike_times = np.array([])
         spike_clusters = np.array([])
         amplitudes = np.array([])
@@ -78,15 +76,15 @@ class PhySortingExtractor(SortingExtractor):
         spike_times = spike_times[sorting_idxs]
         spike_clusters = spike_clusters[sorting_idxs]
 
-        if not os.path.isdir(save_path):
-            os.makedirs(save_path)
-        np.save(join(save_path, 'spike_times.npy'), spike_times[:, np.newaxis].astype(int))
-        np.save(join(save_path, 'spike_clusters.npy'), spike_clusters[:, np.newaxis].astype(int))
+        if not save_path.is_dir():
+            save_path.mkdirs()
+        np.save(save_path /'spike_times.npy', spike_times[:, np.newaxis].astype(int))
+        np.save(save_path / 'spike_clusters.npy', spike_clusters[:, np.newaxis].astype(int))
         if len(amplitudes) > 0:
             amplitudes = amplitudes[sorting_idxs]
-            np.save(join(save_path, 'amplitudes.npy'), amplitudes[:, np.newaxis].astype(int))
+            np.save(save_path / 'amplitudes.npy', amplitudes[:, np.newaxis].astype(int))
         if len(pc_features) > 0:
             pc_features = pc_features[sorting_idxs]
-            np.save(join(save_path, 'pc_features.npy'), pc_features)
+            np.save(save_path / 'pc_features.npy', pc_features)
             pc_feature_ind = np.tile(np.arange(pc_features.shape[-1]), (len(sorting.getUnitIds()), 1))
-            np.save(join(save_path, 'pc_feature_ind.npy'), pc_feature_ind)
+            np.save(save_path / 'pc_feature_ind.npy', pc_feature_ind)

@@ -3,8 +3,7 @@ from spikeextractors import SortingExtractor
 
 import quantities as pq
 import numpy as np
-import os
-from os.path import join
+from pathlib import Path
 import h5py
 import yaml, json
 import neo
@@ -55,7 +54,8 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
     @staticmethod
     def writeRecording(recording, save_path):
-        if save_path.endswith('h5') or save_path.endswith('hdf5'):
+        save_path = Path(save_path)
+        if save_path.suffix == '.h5' or save_path.suffix == '.hdf5':
             F = h5py.File(save_path, 'w')
             info = {'recordings': {'fs': recording.getSamplingFrequency()}}
             F.create_dataset('info', data=json.dumps(info))
@@ -69,16 +69,16 @@ class MEArecRecordingExtractor(RecordingExtractor):
             print('\nSaved recordings in', save_path, '\n')
         elif save_path is not None:
             save_folder = save_path
-            if not os.path.isdir(save_folder):
-                os.makedirs(save_folder)
-            np.save(join(save_folder, 'recordings'), recording.getTraces())
-            np.save(join(save_folder, 'timestamps'), np.arange(recording.getNumFrames() / recording.getSamplingFrequency()))
+            if not save_folder.is_dir():
+                save_folder.mkdir()
+            np.save(save_folder / 'recordings', recording.getTraces())
+            np.save(save_folder / 'timestamps', np.arange(recording.getNumFrames() / recording.getSamplingFrequency()))
             if 'location' in recording.getChannelPropertyNames():
                 positions = np.array([recording.getChannelProperty(chan, 'location')
                                       for chan in range(recording.getNumChannels())])
-                np.save(join(save_folder, 'channel_positions'), positions)
+                np.save(save_folder / 'channel_positions', positions)
             info = {'recordings': {'fs': recording.getSamplingFrequency()}}
-            with open(join(save_folder, 'info.yaml'), 'w') as f:
+            with (save_folder /'info.yaml').open('w') as f:
                 yaml.dump(info, f, default_flow_style=False)
             print('\nSaved recordings in', save_folder, ' folder\n')
 
@@ -128,7 +128,8 @@ class MEArecSortingExtractor(SortingExtractor):
 
     @staticmethod
     def writeSorting(sorting, save_path, sampling_frequency):
-        if save_path.endswith('h5') or save_path.endswith('hdf5'):
+        save_path = Path(save_path)
+        if save_path.suffix == '.h5' or save_path.suffix == '.hdf5':
             F = h5py.File(save_path, 'w')
             info = {'recordings': {'fs': sampling_frequency, 'n_neurons': len(sorting.getUnitIds())}}
             F.create_dataset('info', data=json.dumps(info))
@@ -144,8 +145,8 @@ class MEArecSortingExtractor(SortingExtractor):
             print('\nSaved sorting in', save_path, '\n')
         elif save_path is not None:
             save_folder = save_path
-            if not os.path.isdir(save_folder):
-                os.makedirs(save_folder)
+            if not save_folder.is_dir():
+                save_folder.mkdir()
             spiketrains = []
             for ii, unit in enumerate(sorting.getUnitIds()):
                 st = sorting.getUnitSpikeTrain(unit) / sampling_frequency * pq.s
@@ -154,8 +155,8 @@ class MEArecSortingExtractor(SortingExtractor):
                 spiketrain.annotate(unit_id=unit)
                 spiketrains.append(spiketrain)
             info = {'recordings': {'fs': sampling_frequency, 'n_neurons': len(spiketrains)}}
-            np.save(join(save_folder, 'spiketrains'), spiketrains)
-            with open(join(save_folder, 'info.yaml'), 'w') as f:
+            np.save(save_folder / 'spiketrains', spiketrains)
+            with (save_folder / 'info.yaml').open('w') as f:
                 yaml.dump(info, f, default_flow_style=False)
             print('\nSaved sorting in', save_folder, ' folder\n')
 
@@ -179,33 +180,33 @@ def load_recordings(recordings, verbose=False):
 
     rec_dict = {}
     info = {}
-
-    if os.path.isdir(recordings):
+    recordings = Path(recordings)
+    if recordings.is_dir():
         recording_folder = recordings
-        if os.path.isfile(join(recording_folder, 'recordings.npy')):
-            recordings = np.load(join(recording_folder, 'recordings.npy'))
+        if (recording_folder /'recordings.npy').is_file():
+            recordings = np.load(recording_folder /'recordings.npy')
             rec_dict.update({'recordings': recordings})
-        if os.path.isfile(join(recording_folder, 'channel_positions.npy')):
-            channel_positions = np.load(join(recording_folder, 'channel_positions.npy'))
+        if (recording_folder / 'channel_positions.npy').is_file():
+            channel_positions = np.load(recording_folder / 'channel_positions.npy')
             rec_dict.update({'channel_positions': channel_positions})
-        if os.path.isfile(join(recording_folder, 'timestamps.npy')):
-            timestamps = np.load(join(recording_folder, 'timestamps.npy'))
+        if (recording_folder / 'timestamps.npy').is_file():
+            timestamps = np.load(recording_folder / 'timestamps.npy')
             rec_dict.update({'timestamps': timestamps})
-        if os.path.isfile(join(recording_folder, 'templates.npy')):
-            templates = np.load(join(recording_folder, 'templates.npy'))
+        if (recording_folder / 'templates.npy').is_file():
+            templates = np.load(recording_folder / 'templates.npy')
             rec_dict.update({'templates': templates})
-        if os.path.isfile(join(recording_folder, 'spiketrains.npy')):
-            spiketrains = np.load(join(recording_folder, 'spiketrains.npy'))
+        if (recording_folder / 'spiketrains.npy').is_file():
+            spiketrains = np.load(recording_folder / 'spiketrains.npy')
             rec_dict.update({'spiketrains': spiketrains})
-        if os.path.isfile(join(recording_folder, 'spike_traces.npy')):
-            spike_traces = np.load(join(recording_folder, 'spike_traces.npy'))
+        if (recording_folder / 'spike_traces.npy').is_file():
+            spike_traces = np.load(recording_folder / 'spike_traces.npy')
             rec_dict.update({'spike_traces': spike_traces})
-        if os.path.isfile(join(recording_folder, 'voltage_peaks.npy')):
-            voltage_peaks = np.load(join(recording_folder, 'voltage_peaks.npy'))
+        if (recording_folder / 'voltage_peaks.npy').is_file():
+            voltage_peaks = np.load(recording_folder / 'voltage_peaks.npy')
             rec_dict.update({'voltage_peaks': voltage_peaks})
-        with open(join(recording_folder, 'info.yaml'), 'r') as f:
+        with (recording_folder / 'info.yaml').open('r') as f:
             info = yaml.load(f)
-    elif recordings.endswith('h5') or recordings.endswith('hdf5'):
+    elif recordings.suffix == '.h5' or recordings.suffix == '.hdf5':
         with h5py.File(recordings, 'r') as F:
             info = json.loads(str(F['info'][()]))
             rec_dict['voltage_peaks'] = np.array(F.get('voltage_peaks'))

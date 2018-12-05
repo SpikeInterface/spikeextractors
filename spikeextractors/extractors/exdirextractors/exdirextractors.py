@@ -1,7 +1,5 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-
-import os, json
 import numpy as np
 
 

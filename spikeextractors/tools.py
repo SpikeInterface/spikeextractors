@@ -3,7 +3,6 @@ from .RecordingExtractor import RecordingExtractor
 from .SortingExtractor import SortingExtractor
 from .SubRecordingExtractor import SubRecordingExtractor
 from .SubSortingExtractor import SubSortingExtractor
-import os
 import csv
 from pathlib import Path
 
@@ -23,9 +22,9 @@ def read_python(path):
 
     '''
     from six import exec_
-    path = os.path.realpath(os.path.expanduser(path))
-    assert os.path.exists(path)
-    with open(path, 'r') as f:
+    path = Path(path).absolute()
+    assert path.is_file()
+    with path.open('r') as f:
         contents = f.read()
     metadata = {}
     exec_(contents, {}, metadata)
@@ -48,7 +47,8 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
     ---------
     subRecordingExtractor
     '''
-    if str(probe_file).endswith('.prb'):
+    probe_file = Path(probe_file)
+    if probe_file.suffix == '.prb':
         probe_dict = read_python(probe_file)
         if 'channel_groups' in probe_dict.keys():
             # numchannels = np.sum([len(cg['channels']) for key, cg in probe_dict['channel_groups'].items()])
@@ -102,7 +102,7 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
         else:
             raise AttributeError("'.prb' file should contain the 'channel_groups' field")
 
-    elif str(probe_file).endswith('.csv'):
+    elif probe_file.suffix == '.csv':
         if channel_map is not None:
             assert np.all([chan in recording.getChannelIds() for chan in channel_map]), \
                 "all channel_ids in 'channel_map' must be in the original recording channel ids"
@@ -146,7 +146,7 @@ def saveProbeFile(recording, probe_file, format=None, radius=100, dimensions=Non
     if not probe_file.parent.is_dir():
         probe_file.parent.mkdir()
 
-    if str(probe_file).endswith('.csv'):
+    if probe_file.suffix == '.csv':
         # write csv probe file
         with probe_file.open('w') as f:
             if 'location' in recording.getChannelPropertyNames():
@@ -167,7 +167,7 @@ def saveProbeFile(recording, probe_file, format=None, radius=100, dimensions=Non
             else:
                 raise AttributeError("Recording extractor needs to have "
                                      "'location' property to save .csv probe file")
-    elif str(probe_file).endswith('.prb'):
+    elif probe_file.suffix == '.prb':
         _export_prb_file(recording, probe_file, format, radius=radius, dimensions=dimensions)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be saved.")
@@ -193,14 +193,14 @@ def writeBinaryDatFormat(recording, save_path, transpose=False, dtype='float32')
     '''
     save_path = Path(save_path)
     if not transpose:
-        if not str(save_path).endswith('dat'):
-            save_path += '.dat'
-        with open(save_path, 'wb') as f:
+        if not save_path.suffix == '.dat':
+            save_path = save_path.parent / (save_path.name + '.dat')
+        with save_path.open('wb') as f:
             np.transpose(np.array(recording.getTraces(), dtype=dtype)).tofile(f)
     elif transpose:
-        if not save_path.endswith('dat'):
-            save_path += '.dat'
-        with open(save_path, 'wb') as f:
+        if not save_path.suffix == '.dat':
+            save_path = save_path.parent / (save_path.name + '.dat')
+        with save_path.open('wb') as f:
             np.array(recording.getTraces(), dtype=dtype).tofile(f)
     return save_path
 
@@ -283,9 +283,9 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
         graph = True
         geometry = True
 
+    file_name = Path(file_name)
     assert file_name is not None
     abspath = file_name.absolute()
-    print(abspath)
 
     if geometry:
         if 'location' in recording.getChannelPropertyNames():

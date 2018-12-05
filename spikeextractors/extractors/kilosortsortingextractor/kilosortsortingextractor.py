@@ -1,17 +1,15 @@
 from spikeextractors import SortingExtractor
-
 import numpy as np
-import os
-from os.path import join
-
+from pathlib import Path
 
 class KiloSortSortingExtractor(SortingExtractor):
     def __init__(self, kilosort_folder):
         SortingExtractor.__init__(self)
-        spike_times = np.load(join(kilosort_folder, 'spike_times.npy'))
-        spike_templates = np.load(join(kilosort_folder, 'spike_templates.npy'))
-        if os.path.isfile(join(kilosort_folder, 'spike_clusters.npy')):
-            spike_clusters = np.load(join(kilosort_folder, 'spike_clusters.npy'))
+        kilosort_folder = Path(kilosort_folder)
+        spike_times = np.load(kilosort_folder / 'spike_times.npy')
+        spike_templates = np.load(kilosort_folder /'spike_templates.npy')
+        if (kilosort_folder / 'spike_clusters.npy').is_file():
+            spike_clusters = np.load(kilosort_folder / 'spike_clusters.npy')
         else:
             spike_clusters = spike_templates
 
@@ -39,6 +37,7 @@ class KiloSortSortingExtractor(SortingExtractor):
 
     @staticmethod
     def writeSorting(sorting, save_path):
+        save_path = Path(save_path)
         spike_times = np.array([])
         spike_templates = np.array([])
         for id in sorting.getUnitIds():
@@ -49,7 +48,7 @@ class KiloSortSortingExtractor(SortingExtractor):
         sorting_idxs = np.argsort(spike_times)
         spike_times = spike_times[sorting_idxs]
         spike_clusters = spike_templates[sorting_idxs]
-        if not os.path.isdir(save_path):
-            os.makedirs(save_path)
-        np.save(join(save_path, 'spike_times.npy'), spike_times.astype(int))
-        np.save(join(save_path, 'spike_templates.npy'), spike_clusters.astype(int))
+        if not save_path.is_dir():
+            save_path.mkdir()
+        np.save(save_path / 'spike_times.npy', spike_times.astype(int))
+        np.save(save_path /'spike_templates.npy', spike_clusters.astype(int))

@@ -206,11 +206,11 @@ class RecordingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if (isinstance(channel_id, (int, np.integer))):
-            if (channel_id in self.getChannelIds()):
+        if isinstance(channel_id, (int, np.integer)):
+            if channel_id in self.getChannelIds():
                 if channel_id not in self._channel_properties:
                     self._channel_properties[channel_id] = {}
-                if (isinstance(property_name, str)):
+                if isinstance(property_name, str):
                     self._channel_properties[channel_id][property_name] = value
                 else:
                     raise ValueError("property_name must be a string")
@@ -236,12 +236,12 @@ class RecordingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if (isinstance(channel_id, (int, np.integer))):
-            if (channel_id in self.getChannelIds()):
+        if isinstance(channel_id, (int, np.integer)):
+            if channel_id in self.getChannelIds():
                 if channel_id not in self._channel_properties:
                     self._channel_properties[channel_id] = {}
-                if (isinstance(property_name, str)):
-                    if (property_name in list(self._channel_properties[channel_id].keys())):
+                if isinstance(property_name, str):
+                    if property_name in list(self._channel_properties[channel_id].keys()):
                         return self._channel_properties[channel_id][property_name]
                     else:
                         raise ValueError("This property has not been added to this channel")
@@ -272,8 +272,8 @@ class RecordingExtractor(ABC):
                     property_names.append(curr_property_name)
             property_names = sorted(list(set(property_names)))
             return property_names
-        if (isinstance(channel_id, (int, np.int64))):
-            if (channel_id in self.getChannelIds()):
+        if isinstance(channel_id, (int, np.integer)):
+            if channel_id in self.getChannelIds():
                 if channel_id not in self._channel_properties:
                     self._channel_properties[channel_id] = {}
                 property_names = sorted(self._channel_properties[channel_id].keys())
@@ -322,7 +322,7 @@ class RecordingExtractor(ABC):
 
         '''
         # Default implementation only allows for frame info. Can override to put more info
-        if (isinstance(epoch_name, str)):
+        if isinstance(epoch_name, str):
             self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
         else:
             raise ValueError("epoch_name must be a string")
@@ -335,8 +335,8 @@ class RecordingExtractor(ABC):
         epoch_name: str
             The name of the epoch to be removed
         '''
-        if (isinstance(epoch_name, str)):
-            if (epoch_name in list(self._epochs.keys())):
+        if isinstance(epoch_name, str):
+            if epoch_name in list(self._epochs.keys()):
                 del self._epochs[epoch_name]
             else:
                 raise ValueError("This epoch has not been added")
@@ -378,8 +378,8 @@ class RecordingExtractor(ABC):
             A dict containing the start frame and end frame of the epoch
         '''
         # Default (Can add more information into each epoch in subclass)
-        if (isinstance(epoch_name, str)):
-            if (epoch_name in list(self._epochs.keys())):
+        if isinstance(epoch_name, str):
+            if epoch_name in list(self._epochs.keys()):
                 epoch_info = self._epochs[epoch_name]
                 return epoch_info
             else:

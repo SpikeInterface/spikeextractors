@@ -3,7 +3,6 @@ from spikeextractors.tools import read_python
 
 import numpy as np
 import os
-from os.path import join
 import h5py
 
 

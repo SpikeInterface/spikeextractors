@@ -1,8 +1,9 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 
-import os, json
+import json
 import numpy as np
+from pathlib import Path
 
 
 def _load_required_modules():
@@ -20,22 +21,23 @@ class MdaRecordingExtractor(RecordingExtractor):
         mdaio, kbucket = _load_required_modules()
 
         RecordingExtractor.__init__(self)
+        dataset_directory = Path(dataset_directory)
         self._dataset_directory = dataset_directory
-        timeseries0 = dataset_directory + '/raw.mda'
+        timeseries0 = dataset_directory / 'raw.mda'
         self._dataset_params = read_dataset_params(dataset_directory)
         self._samplerate = self._dataset_params['samplerate'] * 1.0
-        if is_kbucket_url(timeseries0):
-            download_needed = is_url(kbucket.findFile(timeseries0))
+        if is_kbucket_url(str(timeseries0)):
+            download_needed = is_url(kbucket.findFile(str(timeseries0)))
         else:
-            download_needed = is_url(timeseries0)
+            download_needed = is_url(str(timeseries0))
         if download and download_needed:
             print('Downloading file: ' + timeseries0)
-            self._timeseries_path = kbucket.realizeFile(timeseries0)
+            self._timeseries_path = kbucket.realizeFile(str(timeseries0))
             print('Done.')
         else:
-            self._timeseries_path = kbucket.findFile(timeseries0)
-        geom0 = dataset_directory + '/geom.csv'
-        self._geom_fname = kbucket.realizeFile(geom0)
+            self._timeseries_path = kbucket.findFile(str(timeseries0))
+        geom0 = dataset_directory / 'geom.csv'
+        self._geom_fname = kbucket.realizeFile(str(geom0))
         self._geom = np.genfromtxt(self._geom_fname, delimiter=',')
         X = mdaio.DiskReadMda(self._timeseries_path)
         if self._geom.shape[0] != X.N1():
@@ -72,7 +74,7 @@ class MdaRecordingExtractor(RecordingExtractor):
     @staticmethod
     def writeRecording(recording, save_path):
         mdaio, kbucket = _load_required_modules()
-
+        save_path = Path(save_path)
         channel_ids = recording.getChannelIds()
         M = len(channel_ids)
         N = recording.getNumFrames()
@@ -83,16 +85,16 @@ class MdaRecordingExtractor(RecordingExtractor):
         for ii in range(len(channel_ids)):
             location_ii = recording.getChannelProperty(channel_ids[ii], 'location')
             geom[ii, :] = list(location_ii)
-        if not os.path.exists(save_path):
-            os.mkdir(save_path)
-        mdaio.writemda32(raw, save_path + '/raw.mda')
+        if not save_path.is_dir():
+            save_path.mkdir()
+        mdaio.writemda32(raw, str(save_path / 'raw.mda'))
         params = dict(
             samplerate=recording.getSamplingFrequency(),
             spike_sign=-1
         )
-        with open(save_path + '/params.json', 'w') as f:
+        with (save_path / 'params.json').open('w') as f:
             json.dump(params, f)
-        np.savetxt(save_path + '/geom.csv', geom, delimiter=',')
+        np.savetxt(save_path / 'geom.csv', geom, delimiter=',')
 
 
 class MdaSortingExtractor(SortingExtractor):
@@ -129,7 +131,7 @@ class MdaSortingExtractor(SortingExtractor):
     @staticmethod
     def writeSorting(sorting, save_path):
         mdaio, kbucket = _load_required_modules()
-
+        save_path = Path(save_path)
         unit_ids = sorting.getUnitIds()
         if len(unit_ids) > 0:
             K = np.max(unit_ids)
@@ -151,7 +153,7 @@ class MdaSortingExtractor(SortingExtractor):
         firings = np.zeros((3, L))
         firings[1, :] = all_times
         firings[2, :] = all_labels
-        mdaio.writemda64(firings, save_path)
+        mdaio.writemda64(firings, str(save_path))
 
 
 def _concatenate(list):
@@ -172,8 +174,8 @@ def is_url(path):
 def read_dataset_params(dsdir):
     mdaio, kbucket = _load_required_modules()
 
-    params_fname = kbucket.realizeFile(dsdir + '/params.json')
-    if not os.path.exists(params_fname):
-        raise Exception('Dataset parameter file does not exist: ' + params_fname)
-    with open(params_fname) as f:
+    params_fname = Path(kbucket.realizeFile(str(dsdir / 'params.json')))
+    if not params_fname.is_file():
+        raise Exception('Dataset parameter file does not exist: ' + str(params_fname))
+    with params_fname.open() as f:
         return json.load(f)
