@@ -1,15 +1,14 @@
 from spikeextractors import SortingExtractor
 from spikeextractors.tools import read_python
-
 import numpy as np
-import os
+from pathlib import Path
 import h5py
 
 
 class KlustaSortingExtractor(SortingExtractor):
     def __init__(self, kwikfile):
         SortingExtractor.__init__(self)
-        kwikfile = os.path.abspath(kwikfile)
+        kwikfile = Path(kwikfile).absolute()
         F = h5py.File(kwikfile)
         channel_groups = F.get('channel_groups')
         self._spiketrains = []
@@ -18,7 +17,7 @@ class KlustaSortingExtractor(SortingExtractor):
             group_id = int(cgroup)
             for cluster_id in channel_groups[cgroup]['clusters']['main']:
                 clusters = np.array(channel_groups[cgroup]['spikes']['clusters']['main'])
-                idx = np.nonzero(clusters == int(cluster_id))
+                idx =    np.nonzero(clusters == int(cluster_id))
                 st = np.array(channel_groups[cgroup]['spikes']['time_samples'])[idx]
                 self._spiketrains.append(st)
                 self._unit_ids.append(int(cluster_id))
@@ -38,13 +37,14 @@ class KlustaSortingExtractor(SortingExtractor):
 
     @staticmethod
     def writeSorting(sorting, save_path):
-        if os.path.isdir(save_path):
-            save_path = join(save_path, 'klusta.kwik')
-        elif save_path.endswith('kwik'):
+        save_path = Path(save_path)
+        if save_path.is_dir():
+            save_path = save_path / 'klusta.kwik'
+        elif save_path.suffix == '.kwik':
             pass
         else:
-            os.makedirs(save_path)
-            save_path = join(save_path, 'klusta.kwik')
+            save_path.mkdir()
+            save_path = save_path / 'klusta.kwik'
         F = h5py.File(save_path, 'w')
         F.attrs.create('kwik_version', data=2)
         if 'group' in sorting.getUnitPropertyNames():
