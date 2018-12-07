@@ -71,9 +71,9 @@ class SubRecordingExtractor(RecordingExtractor):
     def copyChannelProperties(self, recording, channel_ids=None):
         if channel_ids is None:
             channel_ids = self.getChannelIds()
-        if (isinstance(channel_ids, int)):
+        if isinstance(channel_ids, int):
             recording_ch_id = channel_ids
-            if (recording is self._parent_recording):
+            if recording is self._parent_recording:
                 recording_ch_id = self.getOriginalChannelIds(channel_ids)
             curr_property_names = recording.getChannelPropertyNames(channel_id=recording_ch_id)
             for curr_property_name in curr_property_names:
@@ -82,7 +82,7 @@ class SubRecordingExtractor(RecordingExtractor):
         else:
             for channel_id in channel_ids:
                 recording_ch_id = channel_id
-                if (recording is self._parent_recording):
+                if recording is self._parent_recording:
                     recording_ch_id = self.getOriginalChannelIds(channel_id)
                 curr_property_names = recording.getChannelPropertyNames(channel_id=recording_ch_id)
                 for curr_property_name in curr_property_names:
@@ -90,16 +90,16 @@ class SubRecordingExtractor(RecordingExtractor):
                     self.setChannelProperty(channel_id=channel_id, property_name=curr_property_name, value=value)
 
     def getOriginalChannelIds(self, channel_ids):
-        if (isinstance(channel_ids, (int, np.integer))):
-            if (channel_ids in self.getChannelIds()):
+        if isinstance(channel_ids, (int, np.integer)):
+            if channel_ids in self.getChannelIds():
                 original_ch_ids = self._original_channel_id_lookup[channel_ids]
             else:
                 raise ValueError("Non-valid channel_id")
         else:
             original_ch_ids = []
             for channel_id in channel_ids:
-                if (isinstance(channel_id, (int, np.integer))):
-                    if (channel_id in self.getChannelIds()):
+                if isinstance(channel_id, (int, np.integer)):
+                    if channel_id in self.getChannelIds():
                         original_ch_id = self._original_channel_id_lookup[channel_id]
                         original_ch_ids.append(original_ch_id)
                     else:

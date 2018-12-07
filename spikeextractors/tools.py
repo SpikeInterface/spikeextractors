@@ -50,8 +50,6 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
     if probe_file.endswith('.prb'):
         probe_dict = read_python(probe_file)
         if 'channel_groups' in probe_dict.keys():
-            # numchannels = np.sum([len(cg['channels']) for key, cg in probe_dict['channel_groups'].items()])
-            # assert numchannels ==  recording.getNumChannels()
             ordered_channels = np.array([], dtype=int)
             groups = sorted(probe_dict['channel_groups'].keys())
             for cgroup_id in groups:
@@ -66,7 +64,7 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
                 assert np.all([chan in recording.getChannelIds() for chan in ordered_channels]), \
                     "all channel_ids in the 'channels' section of the probe file " \
                     "must be in the original recording channel ids"
-                subrecording = SubRecordingExtractor(recording, channel_ids=ordered_channels)
+                subrecording = SubRecordingExtractor(recording, channel_ids=list(ordered_channels))
             for cgroup_id in groups:
                 cgroup = probe_dict['channel_groups'][cgroup_id]
                 if 'channels' not in cgroup.keys() and len(groups) > 1:
