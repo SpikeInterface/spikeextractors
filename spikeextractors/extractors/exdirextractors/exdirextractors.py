@@ -45,7 +45,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
         return self._recordings[channel_ids, start_frame:end_frame]
 
     @staticmethod
-    def writeRecording(recording, exdir_file, lfp=False):
+    def writeRecording(recording, exdir_file, lfp=False, mua=False):
         exdir, pq = _load_required_modules()
 
         channel_ids = recording.getChannelIds()
@@ -53,11 +53,12 @@ class ExdirRecordingExtractor(RecordingExtractor):
         N = recording.getNumFrames()
         raw = recording.getTraces()
         exdir_group = exdir.File(exdir_file, plugins=exdir.plugins.quantities)
-        if not lfp:
+
+        if not lfp and not mua:
             timeseries = exdir_group.require_group('acquisition').require_dataset('timeseries', data=raw)
             timeseries.attrs['sample_rate'] = recording.getSamplingFrequency() * pq.Hz
-        else:
-            print(recording.getChannelPropertyNames())
+            return
+        elif lfp:
             ephys = exdir_group.require_group('processing').require_group('electrophysiology')
             if 'group' in recording.getChannelPropertyNames():
                 channel_groups = np.unique([recording.getChannelProperty(ch, 'group')
@@ -105,6 +106,66 @@ class ExdirRecordingExtractor(RecordingExtractor):
                     for i_c, ch in enumerate(recording.getChannelIds()):
                         if recording.getChannelProperty(ch, 'group') == chan:
                             ts_group = lfp_group.require_group('LFP_timeseries_'+str(ch))
+                            ts_group.attrs['electrode_group_id'] = chan
+                            ts_group.attrs['electrode_identity'] = ch
+                            ts_group.attrs['num_samples'] = recording.getNumFrames()
+                            ts_group.attrs['electrode_idx'] = i_c
+                            ts_group.attrs['start_time'] = 0 * pq.s
+                            ts_group.attrs['stop_time'] = recording.getNumFrames() / \
+                                                          float(recording.getSamplingFrequency()) * pq.s
+                            ts_group.attrs['sample_rate'] = recording.getSamplingFrequency() * pq.Hz
+                            data = ts_group.require_dataset('data', data=recording.getTraces(channel_ids=[ch]))
+                            data.attrs['sample_rate'] = recording.getSamplingFrequency() * pq.Hz
+                            data.attrs['unit'] = pq.uV
+            return
+        elif mua:
+            ephys = exdir_group.require_group('processing').require_group('electrophysiology')
+            if 'group' in recording.getChannelPropertyNames():
+                channel_groups = np.unique([recording.getChannelProperty(ch, 'group')
+                                            for ch in recording.getChannelIds()])
+            else:
+                channel_groups  =[0]
+
+            if len(channel_groups) == 1:
+                chan = 0
+                ch_group = ephys.require_group('Channel_group_' + str(chan))
+                mua_group = ch_group.require_group('MUA')
+                ch_group.attrs['electrode_group_id'] = chan
+                ch_group.attrs['electrode_identities'] = np.array(recording.getChannelIds())
+                ch_group.attrs['electrode_idx'] = np.array(recording.getChannelIds())
+                ch_group.attrs['start_time'] = 0 * pq.s
+                ch_group.attrs['stop_time'] = recording.getNumFrames() / \
+                                              float(recording.getSamplingFrequency()) * pq.s
+                for i_c, ch in enumerate(recording.getChannelIds()):
+                    ts_group = mua_group.require_group('MUA_timeseries_' + str(ch))
+                    ts_group.attrs['electrode_group_id'] = chan
+                    ts_group.attrs['electrode_identity'] = ch
+                    ts_group.attrs['num_samples'] = recording.getNumFrames()
+                    ts_group.attrs['electrode_idx'] = i_c
+                    ts_group.attrs['start_time'] = 0 * pq.s
+                    ts_group.attrs['stop_time'] = recording.getNumFrames() / \
+                                                  float(recording.getSamplingFrequency()) * pq.s
+                    ts_group.attrs['sample_rate'] = recording.getSamplingFrequency() * pq.Hz
+                    data = ts_group.require_dataset('data', data=recording.getTraces(channel_ids=[ch]))
+                    data.attrs['sample_rate'] = recording.getSamplingFrequency() * pq.Hz
+                    data.attrs['unit'] = pq.uV
+            else:
+                channel_groups = np.unique([recording.getChannelProperty(ch, 'group')
+                                            for ch in recording.getChannelIds()])
+                for chan in channel_groups:
+                    ch_group = ephys.require_group('Channel_group_' + str(chan))
+                    mua_group = ch_group.require_group('MUA')
+                    ch_group.attrs['electrode_group_id'] = chan
+                    ch_group.attrs['electrode_identities'] = np.array([i_c for i_c, ch in enumerate(recording.getChannelIds())
+                                                               if recording.getChannelProperty(ch, 'group') == chan])
+                    ch_group.attrs['electrode_idx'] = np.array([i_c for i_c, ch in enumerate(recording.getChannelIds())
+                                                        if recording.getChannelProperty(ch, 'group') == chan])
+                    ch_group.attrs['start_time'] = 0 * pq.s
+                    ch_group.attrs['stop_time'] = recording.getNumFrames() / \
+                                                   float(recording.getSamplingFrequency()) * pq.s
+                    for i_c, ch in enumerate(recording.getChannelIds()):
+                        if recording.getChannelProperty(ch, 'group') == chan:
+                            ts_group = mua_group.require_group('MUA_timeseries_'+str(ch))
                             ts_group.attrs['electrode_group_id'] = chan
                             ts_group.attrs['electrode_identity'] = ch
                             ts_group.attrs['num_samples'] = recording.getNumFrames()
