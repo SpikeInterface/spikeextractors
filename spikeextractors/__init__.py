@@ -17,6 +17,7 @@ from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor,
 from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor
 from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
 from .extractors.physortingextractor.physortingextractor import PhySortingExtractor
+from .extractors.rawrecordingextractor import RawRecordingExtractor
 from .extractors.spykingcircussortingextractor.spykingcircussortingextractor import SpykingCircusSortingExtractor
 
 from . import example_datasets

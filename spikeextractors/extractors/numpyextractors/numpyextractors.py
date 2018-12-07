@@ -1,13 +1,19 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-
+from pathlib import Path
 import numpy as np
 
 
 class NumpyRecordingExtractor(RecordingExtractor):
-    def __init__(self, *, timeseries, samplerate, geom=None):
+    def __init__(self, timeseries, samplerate, geom=None):
         RecordingExtractor.__init__(self)
-        self._timeseries = timeseries
+        if isinstance(timeseries, str):
+            if Path(timeseries).is_file():
+                self._timeseries = np.load(timeseries)
+        elif isinstance(timeseries, np.ndarray):
+            self._timeseries = timeseries
+        else:
+            raise ValueError("'timeseries must be a .npy file name or a numpy array")
         self._samplerate = float(samplerate)
         self._geom = geom
         if geom is not None:
@@ -32,6 +38,11 @@ class NumpyRecordingExtractor(RecordingExtractor):
             channel_ids = self.getChannelIds()
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
         return recordings
+
+    @staticmethod
+    def writeRecording(recording, save_path):
+        save_path = Path(save_path)
+        np.save(save_path, recording.getTraces())
 
 
 class NumpySortingExtractor(SortingExtractor):
