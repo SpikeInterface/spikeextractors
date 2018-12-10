@@ -80,6 +80,9 @@ class MdaRecordingExtractor(RecordingExtractor):
         N = recording.getNumFrames()
         raw = recording.getTraces()
 
+        if not save_path.is_dir():
+            save_path.mkdir()
+
         if 'location' in recording.getChannelPropertyNames():
             location0 = recording.getChannelProperty(channel_ids[0], 'location')
             nd = len(location0)
@@ -89,8 +92,6 @@ class MdaRecordingExtractor(RecordingExtractor):
                 geom[ii, :] = list(location_ii)
             np.savetxt(save_path / 'geom.csv', geom, delimiter=',')
 
-        if not save_path.is_dir():
-            save_path.mkdir()
         mdaio.writemda32(raw, str(save_path / 'raw.mda'))
         params = dict(
             samplerate=recording.getSamplingFrequency(),
