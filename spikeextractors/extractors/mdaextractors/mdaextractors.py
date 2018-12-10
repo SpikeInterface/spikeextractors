@@ -79,12 +79,16 @@ class MdaRecordingExtractor(RecordingExtractor):
         M = len(channel_ids)
         N = recording.getNumFrames()
         raw = recording.getTraces()
-        location0 = recording.getChannelProperty(channel_ids[0], 'location')
-        nd = len(location0)
-        geom = np.zeros((M, nd))
-        for ii in range(len(channel_ids)):
-            location_ii = recording.getChannelProperty(channel_ids[ii], 'location')
-            geom[ii, :] = list(location_ii)
+
+        if 'location' in recording.getChannelPropertyNames():
+            location0 = recording.getChannelProperty(channel_ids[0], 'location')
+            nd = len(location0)
+            geom = np.zeros((M, nd))
+            for ii in range(len(channel_ids)):
+                location_ii = recording.getChannelProperty(channel_ids[ii], 'location')
+                geom[ii, :] = list(location_ii)
+            np.savetxt(save_path / 'geom.csv', geom, delimiter=',')
+
         if not save_path.is_dir():
             save_path.mkdir()
         mdaio.writemda32(raw, str(save_path / 'raw.mda'))
@@ -94,7 +98,6 @@ class MdaRecordingExtractor(RecordingExtractor):
         )
         with (save_path / 'params.json').open('w') as f:
             json.dump(params, f)
-        np.savetxt(save_path / 'geom.csv', geom, delimiter=',')
 
 
 class MdaSortingExtractor(SortingExtractor):
