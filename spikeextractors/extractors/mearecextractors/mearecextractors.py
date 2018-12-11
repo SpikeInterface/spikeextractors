@@ -50,7 +50,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
             end_frame = self.getNumFrames()
         if channel_ids is None:
             channel_ids = range(self.getNumChannels())
-        return self._recordings[channel_ids, :][:, start_frame:end_frame]
+        return self._recordings[channel_ids, start_frame:end_frame]
 
     @staticmethod
     def writeRecording(recording, save_path):
