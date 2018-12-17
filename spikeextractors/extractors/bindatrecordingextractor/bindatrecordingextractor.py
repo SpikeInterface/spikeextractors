@@ -4,7 +4,7 @@ import numpy as np
 from pathlib import Path
 
 
-class RawRecordingExtractor(RecordingExtractor):
+class BinDatRecordingExtractor(RecordingExtractor):
     def __init__(self, datfile, samplerate, numchan, dtype=None, geom=None):
         RecordingExtractor.__init__(self)
         self._datfile = Path(datfile)
