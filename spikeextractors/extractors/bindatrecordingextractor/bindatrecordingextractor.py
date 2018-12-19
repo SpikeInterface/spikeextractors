@@ -49,11 +49,15 @@ class BinDatRecordingExtractor(RecordingExtractor):
                 np.array(recording.getTraces(), dtype=dtype).tofile(f)
 
 
-def _read_binary(file, numchan, dtype):
+def _read_binary(file, numchan, dtype, frames_first=True):
     numchan = int(numchan)
     with Path(file).open() as f:
         nsamples = os.fstat(f.fileno()).st_size // (numchan * np.dtype(dtype).itemsize)
-        samples = np.memmap(f, np.dtype(dtype), mode='r',
-                            shape=(nsamples, numchan))
-        samples = np.transpose(samples)
+        if frames_first:
+            samples = np.memmap(f, np.dtype(dtype), mode='r',
+                                shape=(nsamples, numchan))
+            samples = np.transpose(samples)
+        else:
+            samples = np.memmap(f, np.dtype(dtype), mode='r',
+                                shape=(numchan, nsamples))
     return samples
