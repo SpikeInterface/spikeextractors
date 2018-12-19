@@ -42,20 +42,15 @@ class BinDatRecordingExtractor(RecordingExtractor):
         if dtype == None:
             dtype = np.float32
         if not transpose:
-            if not save_path.suffix == '.dat':
-                save_path = save_path.parent / (save_path.name + '.dat')
             with save_path.open('wb') as f:
                 np.transpose(np.array(recording.getTraces(), dtype=dtype)).tofile(f)
         elif transpose:
-            if not save_path.suffix == '.dat':
-                save_path = save_path.parent / (save_path.name + '.dat')
             with save_path.open('wb') as f:
                 np.array(recording.getTraces(), dtype=dtype).tofile(f)
 
 
 def _read_binary(file, numchan, dtype):
     numchan = int(numchan)
-    assert file.suffix == '.dat'
     with Path(file).open() as f:
         nsamples = os.fstat(f.fileno()).st_size // (numchan * np.dtype(dtype).itemsize)
         samples = np.memmap(f, np.dtype(dtype), mode='r',
