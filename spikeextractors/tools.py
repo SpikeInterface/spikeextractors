@@ -203,7 +203,7 @@ def writeBinaryDatFormat(recording, save_path, transpose=False, dtype='float32')
     return save_path
 
 
-def getSubExtractorsByProperty(extractor, property_name):
+def getSubExtractorsByProperty(extractor, property_name, return_property_list=False):
     '''Divides Recording or Sorting Extractor based on the property_name (e.g. group)
 
     Parameters
@@ -212,6 +212,8 @@ def getSubExtractorsByProperty(extractor, property_name):
         The extractor to be subdivided in subextractors
     property_name: str
         The property used to subdivide the extractor
+    return_property_list: bool
+        If True the property list is returned
 
     Returns
     -------
@@ -231,7 +233,10 @@ def getSubExtractorsByProperty(extractor, property_name):
                 prop_idx = np.where(prop == properties)
                 chan_idx = list(np.array(recording.getChannelIds())[prop_idx])
                 sub_list.append(SubRecordingExtractor(recording, channel_ids=chan_idx))
-            return sub_list
+            if return_property_list:
+                return sub_list, prop_list
+            else:
+                return sub_list
     elif isinstance(extractor, SortingExtractor):
         if property_name not in extractor.getUnitPropertyNames():
             raise ValueError("'property_name' must be must be a property of the units")
@@ -245,7 +250,10 @@ def getSubExtractorsByProperty(extractor, property_name):
                 prop_idx = np.where(prop == properties)
                 unit_idx = list(np.array(sorting.getUnitIds())[prop_idx])
                 sub_list.append(SubSortingExtractor(sorting, unit_ids=unit_idx))
-            return sub_list
+            if return_property_list:
+                return sub_list, prop_list
+            else:
+                return sub_list
     else:
         raise ValueError("'extractor' must be a RecordingExtractor or a SortingExtractor")
 

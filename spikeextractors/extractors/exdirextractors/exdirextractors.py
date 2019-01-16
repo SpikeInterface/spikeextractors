@@ -68,7 +68,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
 
             if len(channel_groups) == 1:
                 chan = 0
-                ch_group = ephys.require_group('Channel_group_' + str(chan))
+                ch_group = ephys.require_group('channel_group_' + str(chan))
                 lfp_group = ch_group.require_group('LFP')
                 ch_group.attrs['electrode_group_id'] = chan
                 ch_group.attrs['electrode_identities'] = np.arange(len(recording.getChannelIds()))
@@ -93,7 +93,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
                 channel_groups = np.unique([recording.getChannelProperty(ch, 'group')
                                             for ch in recording.getChannelIds()])
                 for chan in channel_groups:
-                    ch_group = ephys.require_group('Channel_group_' + str(chan))
+                    ch_group = ephys.require_group('channel_group_' + str(chan))
                     lfp_group = ch_group.require_group('LFP')
                     ch_group.attrs['electrode_group_id'] = chan
                     ch_group.attrs['electrode_identities'] = np.array([i_c for i_c, ch in enumerate(recording.getChannelIds())
@@ -128,7 +128,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
 
             if len(channel_groups) == 1:
                 chan = 0
-                ch_group = ephys.require_group('Channel_group_' + str(chan))
+                ch_group = ephys.require_group('channel_group_' + str(chan))
                 mua_group = ch_group.require_group('MUA')
                 ch_group.attrs['electrode_group_id'] = chan
                 ch_group.attrs['electrode_identities'] = np.arange(len(recording.getChannelIds()))
@@ -153,7 +153,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
                 channel_groups = np.unique([recording.getChannelProperty(ch, 'group')
                                             for ch in recording.getChannelIds()])
                 for chan in channel_groups:
-                    ch_group = ephys.require_group('Channel_group_' + str(chan))
+                    ch_group = ephys.require_group('channel_group_' + str(chan))
                     mua_group = ch_group.require_group('MUA')
                     ch_group.attrs['electrode_group_id'] = chan
                     ch_group.attrs['electrode_identities'] = np.array([i_c for i_c, ch in enumerate(recording.getChannelIds())
@@ -244,7 +244,7 @@ class ExdirSortingExtractor(SortingExtractor):
         if len(channel_groups) == 1:
             chan = 0
             print("Single group: ", chan)
-            ch_group = ephys.require_group('Channel_group_' + str(chan))
+            ch_group = ephys.require_group('channel_group_' + str(chan))
             unittimes = ch_group.require_group('UnitTimes')
             eventwaveform = ch_group.require_group('EventWaveform')
             if recording is not None:
@@ -302,7 +302,7 @@ class ExdirSortingExtractor(SortingExtractor):
                     waveform_ts.attrs['sample_rate'] = sample_rate
                     waveform_ts.attrs['sample_length'] = waveforms.shape[1]
                     waveform_ts.attrs['num_samples'] = len(waveforms)
-            clustering = ephys.require_group('Channel_group_' + str(chan)).require_group('Clustering')
+            clustering = ephys.require_group('channel_group_' + str(chan)).require_group('Clustering')
             ts = clustering.require_dataset('timestamps', data=timestamps * pq.s)
             ts.attrs['num_samples'] = len(timestamps)
             ts.attrs['unit'] = pq.s
@@ -314,7 +314,7 @@ class ExdirSortingExtractor(SortingExtractor):
             channel_groups = np.unique([sorting.getUnitProperty(unit, 'group') for unit in sorting.getUnitIds()])
             for chan in channel_groups:
                 print("Group: ", chan)
-                ch_group = ephys.require_group('Channel_group_' + str(chan))
+                ch_group = ephys.require_group('channel_group_' + str(chan))
                 unittimes = ch_group.require_group('UnitTimes')
                 eventwaveform = ch_group.require_group('EventWaveform')
                 if recording is not None:
@@ -378,7 +378,7 @@ class ExdirSortingExtractor(SortingExtractor):
                         waveform_ts.attrs['sample_rate'] = sample_rate
                         waveform_ts.attrs['sample_length'] = waveforms.shape[1]
                         waveform_ts.attrs['num_samples'] = len(waveforms)
-                clustering = ephys.require_group('Channel_group_' + str(chan)).require_group('Clustering')
+                clustering = ephys.require_group('channel_group_' + str(chan)).require_group('Clustering')
                 ts = clustering.require_dataset('timestamps', data=timestamps*pq.s)
                 ts.attrs['num_samples'] = len(timestamps)
                 ts.attrs['unit'] = pq.s
