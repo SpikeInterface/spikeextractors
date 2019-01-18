@@ -90,7 +90,7 @@ class MdaRecordingExtractor(RecordingExtractor):
             for ii in range(len(channel_ids)):
                 location_ii = recording.getChannelProperty(channel_ids[ii], 'location')
                 geom[ii, :] = list(location_ii)
-            np.savetxt(save_path / 'geom.csv', geom, delimiter=',')
+            np.savetxt(str(save_path / 'geom.csv'), geom, delimiter=',')
 
         mdaio.writemda32(raw, str(save_path / 'raw.mda'))
         params = dict(
