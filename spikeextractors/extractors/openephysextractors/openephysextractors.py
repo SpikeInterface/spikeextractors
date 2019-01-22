@@ -3,7 +3,7 @@ import numpy as np
 
 
 class OpenEphysRecordingExtractor(RecordingExtractor):
-    def __init__(self, recording_file, *, probefile=None, experiment_id=0, recording_id=0):
+    def __init__(self, recording_file, *, experiment_id=0, recording_id=0):
         try:
             import pyopenephys
         except ModuleNotFoundError:
@@ -11,8 +11,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
                                       "pip install pyopenephys\n\n")
         RecordingExtractor.__init__(self)
         self._recording_file = recording_file
-        self._recording = pyopenephys.File(recording_file,
-                                           probefile).experiments[experiment_id].recordings[recording_id]
+        self._recording = pyopenephys.File(recording_file).experiments[experiment_id].recordings[recording_id]
 
     def getChannelIds(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))
@@ -35,7 +34,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
 
 
 class OpenEphysSortingExtractor(SortingExtractor):
-    def __init__(self, recording_file, *, probefile=None, experiment_id=0, recording_id=0):
+    def __init__(self, recording_file, *, experiment_id=0, recording_id=0):
         try:
             import pyopenephys
         except ModuleNotFoundError:
@@ -43,8 +42,7 @@ class OpenEphysSortingExtractor(SortingExtractor):
                                       "pip install pyopenephys\n\n")
         SortingExtractor.__init__(self)
         self._recording_file = recording_file
-        self._recording = pyopenephys.File(recording_file,
-                                           probefile).experiments[experiment_id].recordings[recording_id]
+        self._recording = pyopenephys.File(recording_file).experiments[experiment_id].recordings[recording_id]
         self._spiketrains = self._recording.spiketrains
         self._unit_ids = list([np.unique(st.clusters)[0] for st in self._spiketrains])
 
