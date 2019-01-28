@@ -180,28 +180,6 @@ class RecordingExtractor(ABC):
         pad_samples_last = 0
         snippet_idxs = np.array([], dtype=int)
         for i in range(num_snippets):
-        #     if reference_frames[i] - snippet_len_before < 0:
-        #         pad_first = True
-        #         snippet_idxs = np.concatenate((snippet_idxs, np.arange(0,
-        #                                                 int(reference_frames[i] + snippet_len_after))))
-        #         pad_samples_first = int(abs(reference_frames[i] - snippet_len_before))
-        #     elif reference_frames[i] + snippet_len_after > num_frames:
-        #         pad_last = True
-        #         snippet_idxs = np.concatenate((snippet_idxs, np.arange(int(reference_frames[i] - snippet_len_before),
-        #                                                 num_frames)))
-        #         pad_samples_last = int(abs(reference_frames[i] + snippet_len_after - num_frames))
-        #     else:
-        #         snippet_idxs = np.concatenate((snippet_idxs, np.arange(int(reference_frames[i] - snippet_len_before),
-        #                                                 int(reference_frames[i] + snippet_len_after))))
-        #
-        # snippets = self.getTraces(channel_ids=channel_ids)[:, snippet_idxs]
-        # if pad_first:
-        #     snippets = np.pad(snippets, ((0, 0), (pad_samples_first, 0)), 'constant')
-        # if pad_last:
-        #     snippets = np.pad(snippets, ((0, 0), (0, pad_samples_last)), 'constant')
-        #
-        # snippets = snippets.reshape((num_snippets, num_channels, snippet_len_total))
-
             snippet_chunk = np.zeros((num_channels, snippet_len_total))
             if (0 <= reference_frames[i]) and (reference_frames[i] < num_frames):
                 snippet_range = np.array(
@@ -218,8 +196,6 @@ class RecordingExtractor(ABC):
                                                                                        start_frame=snippet_range[0],
                                                                                        end_frame=snippet_range[1])
             snippets[i] = snippet_chunk
-        # snippets.append(snippet_chunk)
-
         return snippets
 
     def setChannelProperty(self, channel_id, property_name, value):
@@ -320,7 +296,7 @@ class RecordingExtractor(ABC):
         Parameters
         ----------
         recording: RecordingExtractor
-            The recording extractor from twhich the properties will be copied
+            The recording extractor from which the properties will be copied
         '''
         if channel_ids is None:
             channel_ids = recording.getChannelIds()
