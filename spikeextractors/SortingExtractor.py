@@ -79,7 +79,10 @@ class SortingExtractor(ABC):
                 if isinstance(feature_name, str) and len(value) == len(self.getUnitSpikeTrain(unit_id)):
                     self._unit_features[unit_id][feature_name] = value
                 else:
-                    raise ValueError("feature_name must be a string")
+                    if not isinstance(feature_name, str):
+                        raise ValueError("feature_name must be a string")
+                    else:
+                        raise ValueError("feature values should have the same length as the spike train")
             else:
                 raise ValueError("Non-valid unit_id")
         else:
