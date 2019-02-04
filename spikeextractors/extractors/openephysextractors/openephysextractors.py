@@ -28,7 +28,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         if end_frame is None:
             end_frame = self.getNumFrames()
         if channel_ids is None:
-            channel_ids = range(self.getNumChannels())
+            channel_ids = self.getChannelIds()
 
         return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
 
