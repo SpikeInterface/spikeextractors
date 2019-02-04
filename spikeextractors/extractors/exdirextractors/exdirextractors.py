@@ -179,7 +179,6 @@ class ExdirRecordingExtractor(RecordingExtractor):
                             data.attrs['unit'] = pq.uV
 
 
-
 class ExdirSortingExtractor(SortingExtractor):
     def __init__(self, exdir_file, sample_rate=None):
         exdir, pq = _load_required_modules()
@@ -191,6 +190,8 @@ class ExdirSortingExtractor(SortingExtractor):
         if 'acquisition' in exdir_group.keys():
             if 'timeseries' in exdir_group['acquisition'].keys():
                 sample_rate = exdir_group['acquisition']['timeseries'].attrs['sample_rate']
+            elif sample_rate is None:
+                raise Exception("Provide 'sample_rate' argument (Hz)")
         else:
             if sample_rate is None:
                 raise Exception("Provide 'sample_rate' argument (Hz)")
@@ -217,7 +218,7 @@ class ExdirSortingExtractor(SortingExtractor):
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        times = self._spike_trains[unit_id]
+        times = self._spike_trains[self._unit_ids.index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return np.rint(times[inds]).astype(int)
 
@@ -351,11 +352,12 @@ class ExdirSortingExtractor(SortingExtractor):
                                                          / sample_rate).rescale('s')))
                         nums = np.concatenate((nums, [unit]*len(sorting.getUnitSpikeTrain(unit))))
 
-                    if 'waveforms' in sorting.getUnitSpikeFeatureNames(unit):
-                        if len(waveforms) == 0:
-                            waveforms = sorting.getUnitSpikeFeatures(unit, 'waveforms')
-                        else:
-                            waveforms = np.vstack((waveforms, sorting.getUnitSpikeFeatures(unit, 'waveforms')))
+                        if 'waveforms' in sorting.getUnitSpikeFeatureNames(unit):
+                            if len(waveforms) == 0:
+                                waveforms = sorting.getUnitSpikeFeatures(unit, 'waveforms')
+                            else:
+                                waveforms = np.vstack((waveforms, sorting.getUnitSpikeFeatures(unit, 'waveforms')))
+                print(timestamps.shape, waveforms.shape)
                 print("Saving eventwaveforms and clustering")
                 if 'waveforms' in sorting.getUnitSpikeFeatureNames():
                     waveform_ts = eventwaveform.require_group('waveform_timeseries')
