@@ -3,7 +3,7 @@ from spikeextractors import SortingExtractor
 try:
     import tridesclous as tdc
     HAVE_TDC = True
-except IMportError:
+except ImportError:
     HAVE_TDC = False
 
 
@@ -27,4 +27,5 @@ class TridesclousSortingExtractor(SortingExtractor):
             spike_times = spike_times[spike_times >= start_frame]
         if end_frame is not None:
             spike_times = spike_times[spike_times < end_frame]
+        return spike_times
 
