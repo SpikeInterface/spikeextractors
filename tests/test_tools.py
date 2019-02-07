@@ -1,8 +1,8 @@
 import numpy as np
-import os, sys
 import unittest
 import tempfile, shutil
 import spikeextractors as se
+from pathlib import Path
 
 
 class TestTools(unittest.TestCase):
@@ -26,9 +26,9 @@ class TestTools(unittest.TestCase):
         assert 'group' in SX.getChannelPropertyNames()
         positions = [SX.getChannelProperty(chan, 'location') for chan in range(self.RX.getNumChannels())]
         # save in csv
-        se.saveProbeFile(SX, self.test_dir + 'geom.csv')
+        se.saveProbeFile(SX, Path(self.test_dir) / 'geom.csv')
         # load csv locations
-        SX_load = se.loadProbeFile(SX, self.test_dir + 'geom.csv')
+        SX_load = se.loadProbeFile(SX, Path(self.test_dir) / 'geom.csv')
         position_loaded = [SX_load.getChannelProperty(chan, 'location') for chan in range(SX_load.getNumChannels())]
         self.assertTrue(np.allclose(positions[10], position_loaded[10]))
 

@@ -248,19 +248,27 @@ class ExdirSortingExtractor(SortingExtractor):
             ch_group = ephys.require_group('channel_group_' + str(chan))
             unittimes = ch_group.require_group('UnitTimes')
             eventwaveform = ch_group.require_group('EventWaveform')
+            unit_stop_time = np.max(np.max([(sorting.getUnitSpikeTrain(u).astype(float) / sample_rate).rescale('s')
+                                            for u in sorting.getUnitIds()]))
+            recording_stop_time = None
             if recording is not None:
                 ch_group.attrs['electrode_group_id'] = chan
                 ch_group.attrs['electrode_identities'] = np.array([])
                 ch_group.attrs['electrode_idx'] = np.arange(len(recording.getChannelIds()))
                 ch_group.attrs['start_time'] = 0 * pq.s
-                ch_group.attrs['stop_time'] = recording.getNumFrames() / \
-                                              float(recording.getSamplingFrequency()) * pq.s
+                recording_stop_time = recording.getNumFrames() / float(recording.getSamplingFrequency()) * pq.s
+
                 unittimes.attrs['electrode_group_id'] = chan
                 unittimes.attrs['electrode_identities'] = np.array([])
                 unittimes.attrs['electrode_idx'] = np.array(recording.getChannelIds())
                 unittimes.attrs['start_time'] = 0 * pq.s
-                unittimes.attrs['stop_time'] = recording.getNumFrames() / \
-                                               float(recording.getSamplingFrequency()) * pq.s
+
+            if recording_stop_time is not None:
+                unittimes.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
+                    else unit_stop_time
+                ch_group.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
+                    else unit_stop_time
+
             nums = np.array([])
             timestamps = np.array([])
             waveforms = np.array([])
@@ -298,8 +306,9 @@ class ExdirSortingExtractor(SortingExtractor):
                     waveform_ts.attrs['electrode_identities'] = np.array([])
                     waveform_ts.attrs['electrode_idx'] = np.arange(len(recording.getChannelIds()))
                     waveform_ts.attrs['start_time'] = 0 * pq.s
-                    waveform_ts.attrs['stop_time'] = recording.getNumFrames() / \
-                                                     float(recording.getSamplingFrequency()) * pq.s
+                    if recording_stop_time is not None:
+                        waveform_ts.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
+                            else unit_stop_time
                     waveform_ts.attrs['sample_rate'] = sample_rate
                     waveform_ts.attrs['sample_length'] = waveforms.shape[1]
                     waveform_ts.attrs['num_samples'] = len(waveforms)
@@ -318,22 +327,29 @@ class ExdirSortingExtractor(SortingExtractor):
                 ch_group = ephys.require_group('channel_group_' + str(chan))
                 unittimes = ch_group.require_group('UnitTimes')
                 eventwaveform = ch_group.require_group('EventWaveform')
+                unit_stop_time = np.max(np.max([(sorting.getUnitSpikeTrain(u).astype(float) / sample_rate).rescale('s')
+                                                  for u in sorting.getUnitIds()]))
+                recording_stop_time = None
                 if recording is not None:
                     unittimes.attrs['electrode_group_id'] = chan
                     unittimes.attrs['electrode_identities'] = np.array([])
                     unittimes.attrs['electrode_idx'] = np.array([ch for i_c, ch in enumerate(recording.getChannelIds())
                                                                  if recording.getChannelProperty(ch, 'group') == chan])
                     unittimes.attrs['start_time'] = 0 * pq.s
-                    unittimes.attrs['stop_time'] = recording.getNumFrames() / \
-                                                  float(recording.getSamplingFrequency()) * pq.s
+                    recording_stop_time = recording.getNumFrames() / float(recording.getSamplingFrequency()) * pq.s
+
                     ch_group.attrs['electrode_group_id'] = chan
                     ch_group.attrs['electrode_identities'] = np.array([i_c for i_c, ch in enumerate(recording.getChannelIds())
                                                                        if recording.getChannelProperty(ch, 'group') == chan])
                     ch_group.attrs['electrode_idx'] = np.array([i_c for i_c, ch in enumerate(recording.getChannelIds())
                                                        if recording.getChannelProperty(ch, 'group') == chan])
                     ch_group.attrs['start_time'] = 0 * pq.s
-                    ch_group.attrs['stop_time'] = recording.getNumFrames() / \
-                                                  float(recording.getSamplingFrequency()) * pq.s
+
+                if recording_stop_time is not None:
+                    unittimes.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
+                        else unit_stop_time
+                    ch_group.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
+                        else unit_stop_time
                 nums = np.array([])
                 timestamps = np.array([])
                 waveforms = np.array([])
@@ -375,8 +391,9 @@ class ExdirSortingExtractor(SortingExtractor):
                                                                        enumerate(recording.getChannelIds())
                                                                        if recording.getChannelProperty(ch, 'group') == chan])
                         waveform_ts.attrs['start_time'] = 0 * pq.s
-                        waveform_ts.attrs['stop_time'] = recording.getNumFrames() / \
-                                                       float(recording.getSamplingFrequency()) * pq.s
+                        if recording_stop_time is not None:
+                            waveform_ts.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
+                                else unit_stop_time
                         waveform_ts.attrs['sample_rate'] = sample_rate
                         waveform_ts.attrs['sample_length'] = waveforms.shape[1]
                         waveform_ts.attrs['num_samples'] = len(waveforms)

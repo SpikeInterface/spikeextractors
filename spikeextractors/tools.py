@@ -113,7 +113,7 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
             subrecording = SubRecordingExtractor(recording, channel_ids=channel_map)
         else:
             subrecording = recording
-        with open(probe_file) as csvfile:
+        with probe_file.open() as csvfile:
             posreader = csv.reader(csvfile)
             row_count = 0
             loaded_pos = []
