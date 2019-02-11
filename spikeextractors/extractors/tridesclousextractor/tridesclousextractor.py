@@ -21,8 +21,7 @@ class TridesclousSortingExtractor(SortingExtractor):
     def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
         spikes = self.dataio.get_spikes(seg_num=0, chan_grp=self.chan_grp, i_start=None, i_stop=None)
         spikes = spikes[spikes['cluster_label'] == unit_id]
-        spike_indexes = spikes['index']
-        spike_times = spikes['index'] / self.dataio.sample_rate
+        spike_times = spikes['index']
         if start_frame is not None:
             spike_times = spike_times[spike_times >= start_frame]
         if end_frame is not None:
