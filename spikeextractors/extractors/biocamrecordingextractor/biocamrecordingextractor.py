@@ -1,8 +1,15 @@
 from spikeextractors import RecordingExtractor
 
 import numpy as np
-import h5py
 import ctypes
+
+def _load_required_modules():
+    try:
+        import h5py
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError("To use the BiocamRecordingExtractor install h5py: \n\n"
+                                  "pip install h5py\n\n")
+    return h5py
 
 
 class BiocamRecordingExtractor(RecordingExtractor):
@@ -37,6 +44,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
 
     @staticmethod
     def writeRecording(recording, save_path):
+        h5py = _load_required_modules()
         M = recording.getNumChannels()
         N = recording.getNumFrames()
         channel_ids = range(M)
@@ -60,6 +68,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
 
 def openBiocamFile(filename):
     """Open a Biocam hdf5 file, read and return the recording info, pick te correct method to access raw data, and return this to the caller."""
+    h5py = _load_required_modules()
     rf = h5py.File(filename, 'r')
     # Read recording variables
     recVars = rf.require_group('3BRecInfo/3BRecVars/')
