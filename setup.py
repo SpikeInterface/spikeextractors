@@ -13,10 +13,6 @@ setuptools.setup(
     package_data={},
     install_requires=[
         'numpy',
-        'quantities',
-        'neo',
-        'pyyaml',
-        'h5py',
     ],
     classifiers=(
         "Programming Language :: Python :: 3",
