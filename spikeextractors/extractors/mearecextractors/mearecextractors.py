@@ -12,7 +12,7 @@ def _load_required_modules():
         import h5py
         import yaml
     except ModuleNotFoundError:
-        raise ModuleNotFoundError("To use the MEArecSortingExtractor or writeSorting, install neo, quantities, pyyaml, and h5py: \n\n"
+        raise ModuleNotFoundError("To use the MEArec extractors, install neo, quantities, pyyaml, and h5py: \n\n"
                                   "pip install neo quantities pyyaml h5py\n\n")
     return neo, pq, h5py, yaml
 
