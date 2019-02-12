@@ -1,11 +1,19 @@
 from spikeextractors import SortingExtractor
 
 import numpy as np
-import h5py
+
+def _load_required_modules():
+    try:
+        import h5py
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError("To use the BiocamRecordingExtractor install h5py: \n\n"
+                                  "pip install h5py\n\n")
+    return h5py
 
 
 class HS2SortingExtractor(SortingExtractor):
     def __init__(self, recording_file):
+        h5py = _load_required_modules()
         SortingExtractor.__init__(self)
         self._recording_file = recording_file
         self._rf = h5py.File(self._recording_file, mode='r')
@@ -41,6 +49,7 @@ class HS2SortingExtractor(SortingExtractor):
 
     @staticmethod
     def writeSorting(sorting, save_path):
+        h5py = _load_required_modules()
         unit_ids = sorting.getUnitIds()
         times_list = []
         labels_list = []
