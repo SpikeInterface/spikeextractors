@@ -5,11 +5,9 @@ from pathlib import Path
 
 
 class BinDatRecordingExtractor(RecordingExtractor):
-    def __init__(self, datfile, samplerate, numchan, frames_first=True, dtype=None, geom=None):
+    def __init__(self, datfile, samplerate, numchan, dtype, frames_first=True, geom=None):
         RecordingExtractor.__init__(self)
         self._datfile = Path(datfile)
-        if dtype == None:
-            dtype = np.float32
         self._frame_first = frames_first
         self._timeseries = _read_binary(self._datfile, numchan, dtype, frames_first)
         self._samplerate = float(samplerate)
