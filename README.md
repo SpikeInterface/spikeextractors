@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/SpikeInterface/spikeextractors.svg?branch=master)](https://travis-ci.org/colehurwitz31/spikeextractors)
 
 Alpha Development
-Version 0.2.7
+Version 0.3.0
 
 
 # spikeextractors
@@ -17,7 +17,7 @@ Traditionally, researchers have attempted to achieve the above goals by creating
 To circumvent these problems, we designed spikeextractors -- a module that attempts to standardize *data retrieval* rather than data storage. By standardizing data retrieval from extracellular datasets, we can eliminate the need for shared file formats and allow for the creation of new tools built off of our data retrieval guidelines.
 <br/>
 <br/>
-## Getting Started with Preexisting Code
+## Installation
 
 To get started with spikeextractors, you can install it with pip:
 
@@ -32,6 +32,21 @@ git clone https://github.com/SpikeInterface/spikeextractors.git
 cd spikeextractors
 python setup.py install
 ```
+
+## Authors
+
+[Cole Hurwitz](https://www.inf.ed.ac.uk/people/students/Cole_Hurwitz.html) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland 
+
+[Jeremy Magland](https://www.simonsfoundation.org/team/jeremy-magland/) - Center for Computational Mathematics (CCM), Flatiron Institute, New York, United States
+
+[Alessio Paolo Buccino](https://www.mn.uio.no/ifi/english/people/aca/alessiob/) - Center for Inegrative Neurolasticity (CINPLA), Department of Biosciences, Physics, and Informatics, University of Oslo, Oslo, Norway
+
+[Matthias Hennig](http://homepages.inf.ed.ac.uk/mhennig/) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland
+<br/>
+<br/>
+For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com
+
+## Getting Started with Preexisting Code
 
 Spikeextractors allows the user to extract data from either raw or spike sorted datasets with a RecordingExtractor or SortingExtractor, respectively.
 
@@ -242,16 +257,3 @@ To experiment with RecordingExtractors and SortingExtractors in a pre-installed 
 
 - [spiketoolkit](https://github.com/SpikeInterface/spiketoolkit) - A repository containing tools for analysis and evaluation of extracellular recordings built with spikeextractors.  It also contains wrapped spike sorting algorithms that take in recording extractors and output sorting extractors, allowing for standardized evaluation and quality control. Maintained by Alessio Paolo Buccino.
 - [spikewidgets](https://github.com/SpikeInterface/spikewidgets) - A repository containing graphical widgets built with spikeextractors to visualize both the raw and sorted extracellular data along with sorting results. Maintained by Jeremy Magland.
-
-### Authors
-
-[Cole Hurwitz](https://www.inf.ed.ac.uk/people/students/Cole_Hurwitz.html) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland 
-
-[Jeremy Magland](https://www.simonsfoundation.org/team/jeremy-magland/) - Center for Computational Biology (CCB), Flatiron Institute, New York, United States
-
-[Alessio Paolo Buccino](https://www.mn.uio.no/ifi/english/people/aca/alessiob/) - Center for Inegrative Neurolasticity (CINPLA), Department of Biosciences, Physics, and Informatics, University of Oslo, Oslo, Norway
-
-[Matthias Hennig](http://homepages.inf.ed.ac.uk/mhennig/) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland
-<br/>
-<br/>
-For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com

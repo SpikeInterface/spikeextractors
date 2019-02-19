@@ -1,12 +1,20 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 
-import quantities as pq
 import numpy as np
 from pathlib import Path
-import h5py
-import yaml, json
-import neo
+import json #pyyaml
+
+def _load_required_modules():
+    try:
+        import neo
+        import quantities as pq
+        import h5py
+        import yaml
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError("To use the MEArec extractors, install neo, quantities, pyyaml, and h5py: \n\n"
+                                  "pip install neo quantities pyyaml h5py\n\n")
+    return neo, pq, h5py, yaml
 
 
 class MEArecRecordingExtractor(RecordingExtractor):
@@ -54,6 +62,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
     @staticmethod
     def writeRecording(recording, save_path):
+        neo, pq, h5py, yaml = _load_required_modules()
         save_path = Path(save_path)
         if save_path.suffix == '.h5' or save_path.suffix == '.hdf5':
             F = h5py.File(save_path, 'w')
@@ -85,6 +94,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
 class MEArecSortingExtractor(SortingExtractor):
     def __init__(self, recording_path=None):
+        neo, pq, h5py, yaml = _load_required_modules()
         SortingExtractor.__init__(self)
         self._recording_path = recording_path
         self._num_units = None
@@ -94,6 +104,7 @@ class MEArecSortingExtractor(SortingExtractor):
         self._initialize()
 
     def _initialize(self):
+        neo, pq, h5py, yaml = _load_required_modules()
         rec_dict, info = load_recordings(recordings=self._recording_path)
 
         self._num_units = len(rec_dict['spiketrains'])
@@ -128,6 +139,7 @@ class MEArecSortingExtractor(SortingExtractor):
 
     @staticmethod
     def writeSorting(sorting, save_path, sampling_frequency):
+        neo, pq, h5py, yaml = _load_required_modules()
         save_path = Path(save_path)
         if save_path.suffix == '.h5' or save_path.suffix == '.hdf5':
             F = h5py.File(save_path, 'w')
@@ -175,6 +187,7 @@ def load_recordings(recordings, verbose=False):
     info - dict
 
     '''
+    neo, pq, h5py, yaml = _load_required_modules()
     if verbose:
         print("Loading recordings...")
 

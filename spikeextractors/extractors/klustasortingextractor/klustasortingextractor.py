@@ -2,11 +2,18 @@ from spikeextractors import SortingExtractor
 from spikeextractors.tools import read_python
 import numpy as np
 from pathlib import Path
-import h5py
 
+def _load_required_modules():
+    try:
+        import h5py
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError("To use the KlustaSortingExtractor install h5py: \n\n"
+                                  "pip install h5py\n\n")
+    return h5py
 
 class KlustaSortingExtractor(SortingExtractor):
     def __init__(self, kwikfile):
+        h5py = _load_required_modules()
         SortingExtractor.__init__(self)
         kwikfile = Path(kwikfile).absolute()
         F = h5py.File(kwikfile)
@@ -37,6 +44,7 @@ class KlustaSortingExtractor(SortingExtractor):
 
     @staticmethod
     def writeSorting(sorting, save_path):
+        h5py = _load_required_modules()
         save_path = Path(save_path)
         if save_path.is_dir():
             save_path = save_path / 'klusta.kwik'

@@ -237,7 +237,7 @@ class ExdirSortingExtractor(SortingExtractor):
         exdir_group = exdir.File(exdir_file, plugins=exdir.plugins.quantities)
         ephys = exdir_group.require_group('processing').require_group('electrophysiology')
 
-        if 'group' in recording.getUnitPropertyNames():
+        if 'group' in sorting.getUnitPropertyNames():
             channel_groups = np.unique([sorting.getUnitProperty(unit, 'group') for unit in sorting.getUnitIds()])
         else:
             channel_groups = [0]
