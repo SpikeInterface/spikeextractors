@@ -237,7 +237,7 @@ class ExdirSortingExtractor(SortingExtractor):
         exdir_group = exdir.File(exdir_file, plugins=exdir.plugins.quantities)
         ephys = exdir_group.require_group('processing').require_group('electrophysiology')
 
-        if 'group' in recording.getChannelPropertyNames():
+        if 'group' in recording.getUnitPropertyNames():
             channel_groups = np.unique([sorting.getUnitProperty(unit, 'group') for unit in sorting.getUnitIds()])
         else:
             channel_groups = [0]
@@ -248,8 +248,8 @@ class ExdirSortingExtractor(SortingExtractor):
             ch_group = ephys.require_group('channel_group_' + str(chan))
             unittimes = ch_group.require_group('UnitTimes')
             eventwaveform = ch_group.require_group('EventWaveform')
-            unit_stop_time = np.max(np.max([(sorting.getUnitSpikeTrain(u).astype(float) / sample_rate).rescale('s')
-                                            for u in sorting.getUnitIds()]))
+            unit_stop_time = np.max([(np.max(sorting.getUnitSpikeTrain(u).astype(float) / sample_rate).rescale('s'))
+                                     for u in sorting.getUnitIds()]) * pq.s
             recording_stop_time = None
             if recording is not None:
                 ch_group.attrs['electrode_group_id'] = chan
@@ -327,8 +327,8 @@ class ExdirSortingExtractor(SortingExtractor):
                 ch_group = ephys.require_group('channel_group_' + str(chan))
                 unittimes = ch_group.require_group('UnitTimes')
                 eventwaveform = ch_group.require_group('EventWaveform')
-                unit_stop_time = np.max(np.max([(sorting.getUnitSpikeTrain(u).astype(float) / sample_rate).rescale('s')
-                                                  for u in sorting.getUnitIds()]))
+                unit_stop_time = np.max([(np.max(sorting.getUnitSpikeTrain(u).astype(float) / sample_rate).rescale('s'))
+                                         for u in sorting.getUnitIds()]) * pq.s
                 recording_stop_time = None
                 if recording is not None:
                     unittimes.attrs['electrode_group_id'] = chan
