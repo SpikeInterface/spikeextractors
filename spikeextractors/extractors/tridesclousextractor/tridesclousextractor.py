@@ -13,9 +13,9 @@ class TridesclousSortingExtractor(SortingExtractor):
         SortingExtractor.__init__(self)
         self.dataio = tdc.DataIO(tdc_folder)
         if chan_grp is None:
-            # if chan_grp is not provide take the first one if unique
+            # if chan_grp is not provided, take the first one if unique
             chan_grps = list(self.dataio.channel_groups.keys())
-            assert len(chan_grps) == 1, 'There are sevreal in the folder chan_grp, specify it'
+            assert len(chan_grps) == 1, 'There are several in the folder chan_grp, specify it'
             chan_grp = chan_grps[0]
             
         self.chan_grp = chan_grp
