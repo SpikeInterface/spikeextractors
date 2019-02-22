@@ -8,10 +8,16 @@ except ImportError:
 
 
 class TridesclousSortingExtractor(SortingExtractor):
-    def __init__(self, tdc_folder, chan_grp=0):
+    def __init__(self, tdc_folder, chan_grp=None):
         assert HAVE_TDC, 'must install tridesclous'
         SortingExtractor.__init__(self)
         self.dataio = tdc.DataIO(tdc_folder)
+        if chan_grp is None:
+            # if chan_grp is not provided, take the first one if unique
+            chan_grps = list(self.dataio.channel_groups.keys())
+            assert len(chan_grps) == 1, 'There are several in the folder chan_grp, specify it'
+            chan_grp = chan_grps[0]
+            
         self.chan_grp = chan_grp
         self.catalogue = self.dataio.load_catalogue(name='initial', chan_grp=chan_grp)
 
