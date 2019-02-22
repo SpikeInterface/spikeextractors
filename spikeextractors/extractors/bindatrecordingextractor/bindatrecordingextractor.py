@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 class BinDatRecordingExtractor(RecordingExtractor):
-    def __init__(self, datfile, samplerate, numchan, dtype, frames_first=True, geom=None):
+    def __init__(self, datfile, samplerate, numchan, dtype, recording_channels=None, frames_first=True, geom=None):
         RecordingExtractor.__init__(self)
         self._datfile = Path(datfile)
         self._frame_first = frames_first
@@ -15,9 +15,15 @@ class BinDatRecordingExtractor(RecordingExtractor):
         if geom is not None:
             for m in range(self._timeseries.shape[0]):
                 self.setChannelProperty(m, 'location', self._geom[m, :])
+        if recording_channels is not None:
+            assert len(recording_channels) == self._timeseries.shape[0], \
+                'Provided recording channels have the wrong length'
+            self._channels = recording_channels
+        else:
+            self._channels = list(range(self._timeseries.shape[0]))
 
     def getChannelIds(self):
-        return list(range(self._timeseries.shape[0]))
+        return self._channels
 
     def getNumFrames(self):
         return self._timeseries.shape[1]
@@ -31,7 +37,9 @@ class BinDatRecordingExtractor(RecordingExtractor):
         if end_frame is None:
             end_frame = self.getNumFrames()
         if channel_ids is None:
-            channel_ids = self.getChannelIds()
+            channel_ids = list(range(self._timeseries.shape[0]))
+        else:
+            channel_ids = [self._channels.index(ch) for ch in channel_ids]
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
         return recordings
 
