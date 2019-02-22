@@ -1,2 +1,2 @@
-from .toy_example1 import toy_example1
+from .toy_example import toy_example
 from .real import real

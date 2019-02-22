@@ -5,7 +5,7 @@ from .synthesize_random_firings import synthesize_random_firings
 from .synthesize_timeseries import synthesize_timeseries
 
 
-def toy_example1(duration=10, num_channels=4, samplerate=30000, K=10):
+def toy_example(duration=10, num_channels=4, samplerate=30000, K=10):
     upsamplefac = 13
 
     waveforms, geom = synthesize_random_waveforms(K=K, M=num_channels, average_peak_amplitude=-100,
