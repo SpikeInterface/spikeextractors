@@ -1,4 +1,5 @@
 from spikeextractors import SortingExtractor
+from pathlib import Path
 
 try:
     import tridesclous as tdc
@@ -10,8 +11,9 @@ except ImportError:
 class TridesclousSortingExtractor(SortingExtractor):
     def __init__(self, tdc_folder, chan_grp=None):
         assert HAVE_TDC, 'must install tridesclous'
+        tdc_folder = Path(tdc_folder)
         SortingExtractor.__init__(self)
-        self.dataio = tdc.DataIO(tdc_folder)
+        self.dataio = tdc.DataIO(str(tdc_folder))
         if chan_grp is None:
             # if chan_grp is not provided, take the first one if unique
             chan_grps = list(self.dataio.channel_groups.keys())
