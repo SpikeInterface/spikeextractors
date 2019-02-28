@@ -6,17 +6,17 @@ Version 0.3.0
 
 # spikeextractors
 
-Spikeextractors is a module that enables easy creation and deployment of tools for extracting, converting between, and curating raw or spike sorted extracellular data from any file format. Its design goals are as follows:
+SpikeExtractors provides tools for extracting, converting between, and curating raw or spike sorted extracellular data from any file format. Its design goals are as follows:
 
 1. To facilitate standardized analysis and visualization for both raw and sorted extracellular data.
 2. To promote straightfoward reuse of extracellular datasets.
 3. To increase reproducibility of electrophysiological studies using spike sorting software.
+4. To address issues of file format compatibility within electrophysiology research without creating yet another file format.
 
-Traditionally, researchers have attempted to achieve the above goals by creating standardized file formats for extracellular data. Although this approach seems promising, it can run into issues with legacy data and software, the need for wide-scale adoption of the format, steep learning curves, and an inability to adapt to new storage needs from experimental labs.
+SpikeExtractors attempts to standardize *data retrieval* rather than data storage. This eliminates the need for shared file formats and allows for the creation of new tools built off of our data retrieval guidelines.
 
-To circumvent these problems, we designed spikeextractors -- a module that attempts to standardize *data retrieval* rather than data storage. By standardizing data retrieval from extracellular datasets, we can eliminate the need for shared file formats and allow for the creation of new tools built off of our data retrieval guidelines.
-<br/>
-<br/>
+In addition to implementing multi-format I/O for various formats, the framework makes it possible to develop software tools that are agnostic to the underlying formats by working with the standardized python objects (recording and sorting extractors). These include processing routines (filters, sorting algorithms, downstream processing) and visualization widgets. It also provides mechanisms for lazy manipulation of recordings and sortings (concatenation, combination, subset extraction).
+
 ## Installation
 
 To get started with spikeextractors, you can install it with pip:
@@ -24,13 +24,20 @@ To get started with spikeextractors, you can install it with pip:
 ```shell
 pip install spikeextractors
 ```
-You can also install spikeextractors locally by cloning the repo into your code base. If you install spikeextractors locally, you need to run the setup.py file.
+
+To get updated versions, periodically run:
+
+```shell
+pip install --upgrade spikeextractors
+```
+
+You can also install spikeextractors locally in development mode by cloning the repo to your local machine and then installing in editable mode.
 
 ```shell
 git clone https://github.com/SpikeInterface/spikeextractors.git
 
 cd spikeextractors
-python setup.py install
+pip install -e .
 ```
 
 ## Authors
@@ -48,14 +55,14 @@ For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com
 
 ## Getting Started with Preexisting Code
 
-Spikeextractors allows the user to extract data from either raw or spike sorted datasets with a RecordingExtractor or SortingExtractor, respectively.
+There are two typies of spike extractors: recording extractors (inherited from RecordingExtractor) and sorting extractors (inherited from SortingExtractor). These allow the user to represent data from multi-channel raw extracellular traces (recordings) and the results of spike sorting (sortings).
 
 
 **RecordingExtractor**
 
-To run our standardized data retrieval functions for your raw extracellular data, import the subclass RecordingExtractor coinciding with your specific file format. Then, you can use that subclass of RecordingExtractor to extract data snippets and information from your raw data file. 
+To work with raw extracellular data, import the subclass of RecordingExtractor coinciding with your specific file format. Then, you can use an instance of that class to extract data snippets and information from your raw data file. 
 
-In this [example](https://github.com/SpikeInterface/spikeextractors/blob/master/examples/getting_started_with_recording_extractors.ipynb) from the examples repo, we show how to use an RecordingExtractor subclass on a generated, pure-noise timeseries dataset and a linear probe geometry.
+In this [example](https://github.com/SpikeInterface/spikeextractors/blob/master/examples/getting_started_with_recording_extractors.ipynb) we show how to use a RecordingExtractor subclass on a generated, pure-noise timeseries dataset and a linear probe geometry.
 
 You will need mountainlab_pytools to run this example:
 
@@ -78,7 +85,7 @@ geom=np.zeros((num_channels,2))
 geom[:,0]=range(num_channels)
 ```
 
-Now we can import spikeextractors and use the NumpyRecordingExtractor since the raw data was stored in the numpy array format.
+Now we can import spikeextractors and use the NumpyRecordingExtractor since the raw data was stored in the numpy array format. (Typically the data would originate from a file on disk, but we are using an in-memory dataset for illustration.)
 
 ```python
 from spikeextractors import se
@@ -112,8 +119,6 @@ We will now convert our numpy data into the MountainSort format and save it with
 # Write this dataset in the MountainSort format
 si.MdaRecordingExtractor.writeRecording(recording=RX,save_path='sample_mountainsort_dataset')
 ```
-
-
 
 The modular design of RecordingExtractor allow them to be used in a variety of other tasks. For example, RecordingExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubRecordingExtractors and MultiRecordingExtractors. 
 
