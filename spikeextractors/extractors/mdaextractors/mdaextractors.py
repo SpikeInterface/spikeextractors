@@ -10,7 +10,7 @@ class MdaRecordingExtractor(RecordingExtractor):
     def __init__(self, dataset_directory, *, download=True):
         RecordingExtractor.__init__(self)
         self._dataset_directory = dataset_directory
-        timeseries0 = dataset_directory + '/raw.mda'
+        timeseries0 = os.path.join(dataset_directory, 'raw.mda')
         self._dataset_params = read_dataset_params(dataset_directory)
         self._samplerate = self._dataset_params['samplerate'] * 1.0
         if is_kbucket_url(timeseries0):
@@ -23,7 +23,7 @@ class MdaRecordingExtractor(RecordingExtractor):
                 self._timeseries_path = _find_file(path=timeseries0)
         else:
             self._timeseries_path = os.path.abspath(timeseries0)
-        geom0 = dataset_directory + '/geom.csv'
+        geom0 = os.path.join(dataset_directory, 'geom.csv')
         self._geom_fname = _realize_file(path=geom0)
         self._geom = np.genfromtxt(self._geom_fname, delimiter=',')
         X = DiskReadMda(self._timeseries_path)
@@ -71,11 +71,11 @@ class MdaRecordingExtractor(RecordingExtractor):
             geom[ii, :] = list(location_ii)
         if not os.path.isdir(save_path):
             os.mkdir(save_path)
-        writemda32(raw, save_path + '/raw.mda')
+        writemda32(raw, os.path.join(save_path, 'raw.mda'))
         params["samplerate"] = recording.getSamplingFrequency()
-        with open(save_path + '/params.json','w') as f:
+        with open(os.path.join(save_path, 'params.json'),'w') as f:
             json.dump(params, f)
-        np.savetxt(save_path + '/geom.csv', geom, delimiter=',')
+        np.savetxt(os.path.join(save_path, 'geom.csv'), geom, delimiter=',')
 
 
 class MdaSortingExtractor(SortingExtractor):
@@ -174,7 +174,7 @@ def _find_file(*,path):
 
 
 def read_dataset_params(dsdir):
-    fname1=dsdir+'/params.json'
+    fname1=os.path.join(dsdir, 'params.json')
     fname2=_realize_file(path=fname1)
     if not fname2:
         raise Exception('Unable to find file: '+fname1)
