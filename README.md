@@ -64,12 +64,6 @@ To work with raw extracellular data, import the subclass of RecordingExtractor c
 
 In this [example](https://github.com/SpikeInterface/spikeextractors/blob/master/examples/getting_started_with_recording_extractors.ipynb) we show how to use a RecordingExtractor subclass on a generated, pure-noise timeseries dataset and a linear probe geometry.
 
-You will need mountainlab_pytools to run this example:
-
-```
-pip install mountainlab_pytools
-```
-
 First we will generate the properties, data, and probe geometry for this pure-noise dataset. 
 
 ```python
