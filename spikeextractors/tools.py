@@ -58,11 +58,11 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
                 for key_prop, prop_val in cgroup.items():
                     if key_prop == 'channels':
                         ordered_channels = np.concatenate((ordered_channels, prop_val))
-
+            
             if list(ordered_channels) == recording.getChannelIds():
                 subrecording = recording
             else:
-                assert np.all([chan in ordered_channels for chan in recording.getChannelIds()]), \
+                assert np.all([chan in recording.getChannelIds() for chan in ordered_channels]), \
                     "all channel_ids in the 'channels' section of the probe file " \
                     "must be in the original recording channel ids"
                 present_ordered_channels = [chan for chan in ordered_channels if chan in recording.getChannelIds()]
