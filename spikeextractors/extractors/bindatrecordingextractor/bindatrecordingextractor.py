@@ -60,8 +60,6 @@ def _read_binary(file, numchan, dtype, frames_first, offset):
     numchan = int(numchan)
     with Path(file).open() as f:
         nsamples = (os.fstat(f.fileno()).st_size - offset) // (numchan * np.dtype(dtype).itemsize)
-        print(numchan)
-        print(nsamples)
         if frames_first:
             samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
                                 shape=(nsamples, numchan))
