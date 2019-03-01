@@ -5,11 +5,11 @@ from pathlib import Path
 
 
 class BinDatRecordingExtractor(RecordingExtractor):
-    def __init__(self, datfile, samplerate, numchan, dtype, recording_channels=None, frames_first=True, geom=None):
+    def __init__(self, datfile, samplerate, numchan, dtype, recording_channels=None, frames_first=True, geom=None, offset=0):
         RecordingExtractor.__init__(self)
         self._datfile = Path(datfile)
         self._frame_first = frames_first
-        self._timeseries = _read_binary(self._datfile, numchan, dtype, frames_first)
+        self._timeseries = _read_binary(self._datfile, numchan, dtype, frames_first, offset)
         self._samplerate = float(samplerate)
         self._geom = geom
         if geom is not None:
@@ -56,15 +56,15 @@ class BinDatRecordingExtractor(RecordingExtractor):
                 np.array(recording.getTraces(), dtype=dtype).tofile(f)
 
 
-def _read_binary(file, numchan, dtype, frames_first):
+def _read_binary(file, numchan, dtype, frames_first, offset):
     numchan = int(numchan)
     with Path(file).open() as f:
-        nsamples = os.fstat(f.fileno()).st_size // (numchan * np.dtype(dtype).itemsize)
+        nsamples = (os.fstat(f.fileno()).st_size - offset) // (numchan * np.dtype(dtype).itemsize)
         if frames_first:
-            samples = np.memmap(f, np.dtype(dtype), mode='r',
+            samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
                                 shape=(nsamples, numchan))
             samples = np.transpose(samples)
         else:
-            samples = np.memmap(f, np.dtype(dtype), mode='r',
+            samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
                                 shape=(numchan, nsamples))
     return samples
