@@ -3,15 +3,17 @@ import numpy as np
 
 
 class OpenEphysRecordingExtractor(RecordingExtractor):
-    def __init__(self, recording_file, *, experiment_id=0, recording_id=0):
+    def __init__(self, recording_file, *, experiment_id=0, recording_id=0, dtype='float'):
         try:
             import pyopenephys
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the OpenEphys extractor, install pyopenephys: \n\n"
                                       "pip install pyopenephys\n\n")
+        assert dtype == 'int16' or 'float' in dtype, "'dtype' can be int16 (memory map) or 'float' (load into memory)"
         RecordingExtractor.__init__(self)
         self._recording_file = recording_file
         self._recording = pyopenephys.File(recording_file).experiments[experiment_id].recordings[recording_id]
+        self._dtype = dtype
 
     def getChannelIds(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))
@@ -29,8 +31,11 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
             end_frame = self.getNumFrames()
         if channel_ids is None:
             channel_ids = self.getChannelIds()
-
-        return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
+        if self._dtype == 'int16':
+            return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
+        elif self._dtype == 'float':
+            return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame] * \
+                   self._recording.analog_signals[0].gain
 
 
 class OpenEphysSortingExtractor(SortingExtractor):
