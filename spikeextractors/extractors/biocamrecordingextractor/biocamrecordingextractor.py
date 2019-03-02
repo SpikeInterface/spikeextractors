@@ -60,8 +60,6 @@ class BiocamRecordingExtractor(RecordingExtractor):
         h5py = _load_required_modules()
         M = recording.getNumChannels()
         N = recording.getNumFrames()
-        if raw.dtype != int:
-            print("Note raw data is not integer, but will be saved as integer.")
         rf = h5py.File(save_path, 'w')
         g = rf.create_group('3BData')
         dr = rf.create_dataset('3BData/Raw', (M*N,), dtype=int)
