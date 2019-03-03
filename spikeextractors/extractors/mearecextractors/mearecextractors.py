@@ -70,6 +70,9 @@ class MEArecRecordingExtractor(RecordingExtractor):
     def writeRecording(recording, save_path):
         neo, pq, h5py, yaml = _load_required_modules()
         save_path = Path(save_path)
+        if save_path.is_dir():
+            raise print("The file will be saved as recording.h5 in the provided folder")
+            save_path = save_path / 'recording.h5'
         if save_path.suffix == '.h5' or save_path.suffix == '.hdf5':
             F = h5py.File(save_path, 'w')
             info = {'recordings': {'fs': recording.getSamplingFrequency()}}
@@ -82,20 +85,8 @@ class MEArecRecordingExtractor(RecordingExtractor):
             F.create_dataset('times', data=np.arange(recording.getNumFrames() / recording.getSamplingFrequency()))
             F.close()
             print('\nSaved recordings in', save_path, '\n')
-        elif save_path is not None:
-            save_folder = save_path
-            if not save_folder.is_dir():
-                save_folder.mkdir()
-            np.save(save_folder / 'recordings', recording.getTraces())
-            np.save(save_folder / 'timestamps', np.arange(recording.getNumFrames() / recording.getSamplingFrequency()))
-            if 'location' in recording.getChannelPropertyNames():
-                positions = np.array([recording.getChannelProperty(chan, 'location')
-                                      for chan in range(recording.getNumChannels())])
-                np.save(save_folder / 'channel_positions', positions)
-            info = {'recordings': {'fs': recording.getSamplingFrequency()}}
-            with (save_folder /'info.yaml').open('w') as f:
-                yaml.dump(info, f, default_flow_style=False)
-            print('\nSaved recordings in', save_folder, ' folder\n')
+        else:
+            raise Exception("Provide a folder or an .h5/.hdf5 as 'save_path'")
 
 
 class MEArecSortingExtractor(SortingExtractor):
@@ -115,7 +106,7 @@ class MEArecSortingExtractor(SortingExtractor):
         fh.close() # not required as no raw data is read
         self._num_units = len(rec_dict['spiketrains'])
         if 'unit_id' in rec_dict['spiketrains'][0].annotations:
-            self._unit_ids = [st.annotations['unit_id'] for st in rec_dict['spiketrains']]
+            self._unit_ids = [int(st.annotations['unit_id']) for st in rec_dict['spiketrains']]
         else:
             self._unit_ids = list(range(self._num_units))
         self._spike_trains = rec_dict['spiketrains']
@@ -147,6 +138,9 @@ class MEArecSortingExtractor(SortingExtractor):
     def writeSorting(sorting, save_path, sampling_frequency):
         neo, pq, h5py, yaml = _load_required_modules()
         save_path = Path(save_path)
+        if save_path.is_dir():
+            raise print("The file will be saved as sorting.h5 in the provided folder")
+            save_path = save_path / 'sorting.h5'
         if save_path.suffix == '.h5' or save_path.suffix == '.hdf5':
             F = h5py.File(save_path, 'w')
             info = {'recordings': {'fs': sampling_frequency, 'n_neurons': len(sorting.getUnitIds())}}
@@ -158,25 +152,11 @@ class MEArecSortingExtractor(SortingExtractor):
                 F.create_dataset('spiketrains/{}/t_stop'.format(unit), data=t_stop)
                 annotations = {'unit_id': str(unit)}
                 annotations_str = json.dumps(annotations)
-                F.create_dataset('spiketrains/{}/annotations'.format(ii), data=annotations_str)
+                F.create_dataset('spiketrains/{}/annotations'.format(unit), data=annotations_str)
             F.close()
             print('\nSaved sorting in', save_path, '\n')
-        elif save_path is not None:
-            save_folder = save_path
-            if not save_folder.is_dir():
-                save_folder.mkdir()
-            spiketrains = []
-            for ii, unit in enumerate(sorting.getUnitIds()):
-                st = sorting.getUnitSpikeTrain(unit) / sampling_frequency * pq.s
-                t_stop = np.max(sorting.getUnitSpikeTrain(unit)) / sampling_frequency * pq.s
-                spiketrain = neo.core.SpikeTrain(times=st, t_start=0 * pq.s, t_stop=t_stop)
-                spiketrain.annotate(unit_id=unit)
-                spiketrains.append(spiketrain)
-            info = {'recordings': {'fs': sampling_frequency, 'n_neurons': len(spiketrains)}}
-            np.save(save_folder / 'spiketrains', spiketrains)
-            with (save_folder / 'info.yaml').open('w') as f:
-                yaml.dump(info, f, default_flow_style=False)
-            print('\nSaved sorting in', save_folder, ' folder\n')
+        else:
+            raise Exception("Provide a folder or an .h5/.hdf5 as 'save_path'")
 
 
 def load_recordings(recordings, verbose=False):
@@ -205,29 +185,26 @@ def load_recordings(recordings, verbose=False):
     elif recordings.suffix == '.h5' or recordings.suffix == '.hdf5':
         F = h5py.File(recordings, 'r')
         info = json.loads(str(F['info'][()]))
-        rec_dict['voltage_peaks'] = np.array(F.get('voltage_peaks'))
         rec_dict['channel_positions'] = np.array(F.get('channel_positions'))
         rec_dict['recordings'] = F.get('recordings')
-        rec_dict['spike_traces'] = np.array(F.get('spike_traces'))
-        rec_dict['templates'] = np.array(F.get('templates'))
-        rec_dict['timestamps'] = np.array(F.get('timestamps'))
         spiketrains = []
         if 'n_neurons' in info['recordings']:
-            for ii in range(info['recordings']['n_neurons']):
-                times = np.array(F.get('spiketrains/{}/times'.format(ii))) * pq.s
-                t_stop = np.array(F.get('spiketrains/{}/t_stop'.format(ii))) * pq.s
-                annotations_str = str(F.get('spiketrains/{}/annotations'.format(ii))[()])
-                annotations = json.loads(annotations_str)
-                st = neo.core.SpikeTrain(
-                    times,
-                    t_stop=t_stop,
-                    units=pq.s
-                )
-                st.annotations = annotations
-                spiketrains.append(st)
-            rec_dict['spiketrains'] = spiketrains
+            if 'spiketrains' in F:
+                for k in F.get('spiketrains').keys():
+                    times = np.array(F.get('spiketrains/{}/times'.format(k))) * pq.s
+                    t_stop = np.array(F.get('spiketrains/{}/t_stop'.format(k))) * pq.s
+                    annotations_str = str(F.get('spiketrains/{}/annotations'.format(k))[()])
+                    annotations = json.loads(annotations_str)
+                    st = neo.core.SpikeTrain(
+                        times,
+                        t_stop=t_stop,
+                        units=pq.s
+                    )
+                    st.annotations = annotations
+                    spiketrains.append(st)
+                rec_dict['spiketrains'] = spiketrains
     else:
-        raise Exception("The provided file-folder is not a MEArec recording")
+        raise Exception("The provided file is not a MEArec recording")
 
     if verbose:
         print("Done loading recordings...")

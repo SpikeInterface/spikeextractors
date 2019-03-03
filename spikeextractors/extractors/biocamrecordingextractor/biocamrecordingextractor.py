@@ -14,11 +14,12 @@ def _load_required_modules():
 
 
 class BiocamRecordingExtractor(RecordingExtractor):
-    def __init__(self, recording_file):
+    def __init__(self, recording_file, verbose=False):
         RecordingExtractor.__init__(self)
         self._recording_file = recording_file
-        self._rf, self._nFrames, self._samplingRate, self._nRecCh, self._chIndices, self._file_format, self._signalInv, self._positions, self._read_function = openBiocamFile(
-            self._recording_file)
+        self._rf, self._nFrames, self._samplingRate, self._nRecCh, self._chIndices, \
+        self._file_format, self._signalInv, self._positions, self._read_function = openBiocamFile(
+            self._recording_file, verbose=verbose)
         for m in range(self._nRecCh):
             self.setChannelProperty(m, 'location', self._positions[m])
 
@@ -79,12 +80,11 @@ class BiocamRecordingExtractor(RecordingExtractor):
         d = np.ndarray((1,len(r)),dtype=[('Row','<i2'),('Col','<i2')])
         d['Row'] = r
         d['Col'] = c
-        print(d)
         rf.create_dataset('3BRecInfo/3BMeaStreams/Raw/Chs', data=d)
         rf.close()
 
 
-def openBiocamFile(filename):
+def openBiocamFile(filename, verbose=False):
     """Open a Biocam hdf5 file, read and return the recording info, pick te correct method to access raw data, and return this to the caller."""
     h5py = _load_required_modules()
     rf = h5py.File(filename, 'r')
@@ -108,11 +108,12 @@ def openBiocamFile(filename):
     else:
         raise Exception('Unknown data file format.')
 
-    print('# 3Brain data format:', file_format, 'signal inversion', signalInv)
-    print('#       signal range: ', recVars['MinVolt'][0], '- ', recVars['MaxVolt'][0])
-    print('# channels: ', nRecCh)
-    print('# frames: ', nFrames)
-    print('# sampling rate: ', samplingRate)
+    if verbose:
+        print('# 3Brain data format:', file_format, 'signal inversion', signalInv)
+        print('#       signal range: ', recVars['MinVolt'][0], '- ', recVars['MaxVolt'][0])
+        print('# channels: ', nRecCh)
+        print('# frames: ', nFrames)
+        print('# sampling rate: ', samplingRate)
     # get channel locations
     r = rf['3BRecInfo/3BMeaStreams/Raw/Chs'][()]['Row']
     c = rf['3BRecInfo/3BMeaStreams/Raw/Chs'][()]['Col']
@@ -120,8 +121,9 @@ def openBiocamFile(filename):
     # assign channel numbers
     chIndices = np.array([(x - 1) + (y - 1) * nCols for (y, x) in rawIndices])
     # determine correct function to read data
-    print("# Signal inversion looks like " + str(signalInv) + ", guessing correct method for data access.")
-    print("# If your results look wrong, signal polarity is may be wrong.")
+    if verbose:
+        print("# Signal inversion looks like " + str(signalInv) + ", guessing correct method for data access.")
+        print("# If your results look wrong, signal polarity is may be wrong.")
     if file_format == 100:
         if signalInv == -1:
             read_function = readHDF5t_100

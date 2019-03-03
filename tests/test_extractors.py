@@ -113,13 +113,14 @@ class TestExtractors(unittest.TestCase):
         self._check_recordings_equal(self.RX, RX_biocam)
 
     def test_mearec_extractors(self):
-        path1 = self.test_dir + '/raw'
+        path1 = self.test_dir + '/raw.h5'
         se.MEArecRecordingExtractor.writeRecording(self.RX, path1)
         RX_mearec = se.MEArecRecordingExtractor(path1)
+        tr = RX_mearec.getTraces(channel_ids=[0,1], end_frame=1000)
         self._check_recording_return_types(RX_mearec)
         self._check_recordings_equal(self.RX, RX_mearec)
 
-        path2 = self.test_dir + '/firings_true'
+        path2 = self.test_dir + '/firings_true.h5'
         se.MEArecSortingExtractor.writeSorting(self.SX, path2, self.RX.getSamplingFrequency())
         SX_mearec = se.MEArecSortingExtractor(path2)
         self._check_sorting_return_types(SX_mearec)
@@ -251,8 +252,8 @@ class TestExtractors(unittest.TestCase):
             RX1.getTraces(),
             RX2.getTraces()
         ))
-        sf = 0;
-        ef = 0;
+        sf = 0
+        ef = N
         ch = [0, M - 1]
         self.assertTrue(np.allclose(
             RX1.getTraces(channel_ids=ch, start_frame=sf, end_frame=ef),
@@ -273,7 +274,7 @@ class TestExtractors(unittest.TestCase):
         self.assertTrue(all(isinstance(id, int) or isinstance(id, np.integer) for id in unit_ids))
         for id in unit_ids:
             train = SX.getUnitSpikeTrain(id)
-            print(train)
+            # print(train)
             self.assertTrue(all(isinstance(x, int) or isinstance(x, np.integer) for x in train))
 
     def _check_sortings_equal(self, SX1, SX2):
@@ -285,8 +286,8 @@ class TestExtractors(unittest.TestCase):
         for id in ids1:
             train1 = np.sort(SX1.getUnitSpikeTrain(id))
             train2 = np.sort(SX2.getUnitSpikeTrain(id))
-            print(train1)
-            print(train2)
+            # print(train1)
+            # print(train2)
             self.assertTrue(np.array_equal(train1, train2))
 
 
