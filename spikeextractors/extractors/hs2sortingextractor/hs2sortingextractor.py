@@ -17,12 +17,12 @@ class HS2SortingExtractor(SortingExtractor):
         SortingExtractor.__init__(self)
         self._recording_file = recording_file
         self._rf = h5py.File(self._recording_file, mode='r')
-        self._unit_ids = set(self._rf['cluster_id'].value)
+        self._unit_ids = set(self._rf['cluster_id'][()])
         if 'centres' in self._rf.keys():
-            self._unit_locs = self._rf['centres'].value  # cache for faster access
+            self._unit_locs = self._rf['centres'][()]  # cache for faster access
 
     def get_unit_indices(self, x):
-        return np.where(self._rf['cluster_id'].value == x)[0]
+        return np.where(self._rf['cluster_id'][()] == x)[0]
 
     def getUnitIds(self):
         return list(self._unit_ids)
@@ -32,12 +32,12 @@ class HS2SortingExtractor(SortingExtractor):
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        times = self._rf['times'].value[self.get_unit_indices(unit_id)]
+        times = self._rf['times'][()][self.get_unit_indices(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
 
     def getUnitChannels(self, unit_id):
-        return self._rf['ch'].value[self.get_unit_indices(unit_id)]
+        return self._rf['ch'][self.get_unit_indices(unit_id)]
 
     def getUnitProperty(self, unit_id, property):
         if property == 'spike_locations':

@@ -24,11 +24,17 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._fs = None
         self._positions = None
         self._recordings = None
+        self._filehandle = None
         self._initialize()
 
-    def _initialize(self):
-        rec_dict, info = load_recordings(recordings=self._recording_path)
+    def __del__(self):
+        if self._filehandle is not None:
+            self._filehandle.close()
 
+    def _initialize(self):
+        rec_dict, info, fh = load_recordings(recordings=self._recording_path)
+
+        self._filehandle = fh
         self._fs = info['recordings']['fs']
         self._recordings = rec_dict['recordings']
         for chan, pos in enumerate(rec_dict['channel_positions']):
@@ -105,8 +111,8 @@ class MEArecSortingExtractor(SortingExtractor):
 
     def _initialize(self):
         neo, pq, h5py, yaml = _load_required_modules()
-        rec_dict, info = load_recordings(recordings=self._recording_path)
-
+        rec_dict, info, fh = load_recordings(recordings=self._recording_path)
+        fh.close() # not required as no raw data is read
         self._num_units = len(rec_dict['spiketrains'])
         if 'unit_id' in rec_dict['spiketrains'][0].annotations:
             self._unit_ids = [st.annotations['unit_id'] for st in rec_dict['spiketrains']]
@@ -195,58 +201,35 @@ def load_recordings(recordings, verbose=False):
     info = {}
     recordings = Path(recordings)
     if recordings.is_dir():
-        recording_folder = recordings
-        if (recording_folder /'recordings.npy').is_file():
-            recordings = np.load(recording_folder /'recordings.npy')
-            rec_dict.update({'recordings': recordings})
-        if (recording_folder / 'channel_positions.npy').is_file():
-            channel_positions = np.load(recording_folder / 'channel_positions.npy')
-            rec_dict.update({'channel_positions': channel_positions})
-        if (recording_folder / 'timestamps.npy').is_file():
-            timestamps = np.load(recording_folder / 'timestamps.npy')
-            rec_dict.update({'timestamps': timestamps})
-        if (recording_folder / 'templates.npy').is_file():
-            templates = np.load(recording_folder / 'templates.npy')
-            rec_dict.update({'templates': templates})
-        if (recording_folder / 'spiketrains.npy').is_file():
-            spiketrains = np.load(recording_folder / 'spiketrains.npy')
-            rec_dict.update({'spiketrains': spiketrains})
-        if (recording_folder / 'spike_traces.npy').is_file():
-            spike_traces = np.load(recording_folder / 'spike_traces.npy')
-            rec_dict.update({'spike_traces': spike_traces})
-        if (recording_folder / 'voltage_peaks.npy').is_file():
-            voltage_peaks = np.load(recording_folder / 'voltage_peaks.npy')
-            rec_dict.update({'voltage_peaks': voltage_peaks})
-        with (recording_folder / 'info.yaml').open('r') as f:
-            info = yaml.load(f)
+        raise Exception("Folders not supported for MEArec recordings")
     elif recordings.suffix == '.h5' or recordings.suffix == '.hdf5':
-        with h5py.File(recordings, 'r') as F:
-            info = json.loads(str(F['info'][()]))
-            rec_dict['voltage_peaks'] = np.array(F.get('voltage_peaks'))
-            rec_dict['channel_positions'] = np.array(F.get('channel_positions'))
-            rec_dict['recordings'] = np.array(F.get('recordings'))
-            rec_dict['spike_traces'] = np.array(F.get('spike_traces'))
-            rec_dict['templates'] = np.array(F.get('templates'))
-            rec_dict['timestamps'] = np.array(F.get('timestamps'))
-            spiketrains = []
-            if 'n_neurons' in info['recordings']:
-                for ii in range(info['recordings']['n_neurons']):
-                    times = np.array(F.get('spiketrains/{}/times'.format(ii))) * pq.s
-                    t_stop = np.array(F.get('spiketrains/{}/t_stop'.format(ii))) * pq.s
-                    annotations_str = str(F.get('spiketrains/{}/annotations'.format(ii))[()])
-                    annotations = json.loads(annotations_str)
-                    st = neo.core.SpikeTrain(
-                        times,
-                        t_stop=t_stop,
-                        units=pq.s
-                    )
-                    st.annotations = annotations
-                    spiketrains.append(st)
-                rec_dict['spiketrains'] = spiketrains
+        F = h5py.File(recordings, 'r')
+        info = json.loads(str(F['info'][()]))
+        rec_dict['voltage_peaks'] = np.array(F.get('voltage_peaks'))
+        rec_dict['channel_positions'] = np.array(F.get('channel_positions'))
+        rec_dict['recordings'] = F.get('recordings')
+        rec_dict['spike_traces'] = np.array(F.get('spike_traces'))
+        rec_dict['templates'] = np.array(F.get('templates'))
+        rec_dict['timestamps'] = np.array(F.get('timestamps'))
+        spiketrains = []
+        if 'n_neurons' in info['recordings']:
+            for ii in range(info['recordings']['n_neurons']):
+                times = np.array(F.get('spiketrains/{}/times'.format(ii))) * pq.s
+                t_stop = np.array(F.get('spiketrains/{}/t_stop'.format(ii))) * pq.s
+                annotations_str = str(F.get('spiketrains/{}/annotations'.format(ii))[()])
+                annotations = json.loads(annotations_str)
+                st = neo.core.SpikeTrain(
+                    times,
+                    t_stop=t_stop,
+                    units=pq.s
+                )
+                st.annotations = annotations
+                spiketrains.append(st)
+            rec_dict['spiketrains'] = spiketrains
     else:
         raise Exception("The provided file-folder is not a MEArec recording")
 
     if verbose:
         print("Done loading recordings...")
 
-    return rec_dict, info
+    return rec_dict, info, F
