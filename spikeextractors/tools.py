@@ -58,13 +58,12 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
                 for key_prop, prop_val in cgroup.items():
                     if key_prop == 'channels':
                         ordered_channels = np.concatenate((ordered_channels, prop_val))
-
+            
             if list(ordered_channels) == recording.getChannelIds():
                 subrecording = recording
             else:
-                assert np.all([chan in ordered_channels for chan in recording.getChannelIds()]), \
-                    "all channel_ids in the 'channels' section of the probe file " \
-                    "must be in the original recording channel ids"
+                if not np.all([chan in recording.getChannelIds() for chan in ordered_channels]):
+                    print('Some channel in PRB file are in original recording')
                 present_ordered_channels = [chan for chan in ordered_channels if chan in recording.getChannelIds()]
                 subrecording = SubRecordingExtractor(recording, channel_ids=present_ordered_channels)
             for cgroup_id in groups:
@@ -82,7 +81,9 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
                             if prop in subrecording.getChannelIds():
                                 subrecording.setChannelProperty(prop, 'group', int(cgroup_id))
                     elif key_prop == 'geometry' or key_prop == 'location':
-                        if isinstance(prop_val, dict) and len(prop_val.keys()) == channels_in_group:
+                        if isinstance(prop_val, dict):
+                            if len(prop_val.keys()) == channels_in_group:
+                                print('geometry in PRB have not the same length as channel in group')
                             for (i_ch, prop) in prop_val.items():
                                 if i_ch in subrecording.getChannelIds():
                                     subrecording.setChannelProperty(i_ch, 'location', prop)
