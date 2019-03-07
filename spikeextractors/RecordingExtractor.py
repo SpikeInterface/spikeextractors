@@ -198,6 +198,89 @@ class RecordingExtractor(ABC):
             snippets[i] = snippet_chunk
         return snippets
 
+    def setChannelLocations(self, channel_ids, locations):
+        '''This function sets the location properties of each specified channel
+        id with the corresponding locations of the passed in locations list.
+
+        Parameters
+        ----------
+        channel_ids: array_like
+            The channel ids (ints) for which the locations will be specified
+        locations: array_like
+            A list of corresonding locations (array_like) for the given channel_ids
+        '''
+        if len(channel_ids) == len(locations):
+            for i in range(len(channel_ids)):
+                if isinstance(locations[i],(list,np.ndarray)):
+                    location = np.asarray(locations[i])
+                    self.setChannelProperty(channel_ids[i], 'location', location.astype(float))
+                else:
+                    raise ValueError(str(locations[i]) + " must be an array_like")
+        else:
+            raise ValueError("channel_ids and locations must have same length")
+
+    def getChannelLocations(self, channel_ids):
+        '''This function returns the location of each channel specifed by
+        channel_ids
+
+        Parameters
+        ----------
+        channel_ids: array_like
+            The channel ids (ints) for which the locations will be returned
+
+        Returns
+        ----------
+        locations: array_like
+            Returns a list of corresonding locations (floats) for the given
+            channel_ids
+        '''
+        locations = []
+        for channel_id in channel_ids:
+            location = self.getChannelProperty(channel_id, 'location')
+            locations.append(location)
+        return locations
+
+    def setChannelGroups(self, channel_ids, groups):
+        '''This function sets the group property of each specified channel
+        id with the corresponding group of the passed in groups list.
+
+        Parameters
+        ----------
+        channel_ids: array_like
+            The channel ids (ints) for which the groups will be specified
+        groups: array_like
+            A list of corresonding groups (ints) for the given channel_ids
+        '''
+        if len(channel_ids) == len(groups):
+            for i in range(len(channel_ids)):
+                if isinstance(groups[i], int):
+                    self.setChannelProperty(channel_ids[i], 'group', groups[i])
+                else:
+                    raise ValueError(str(groups[i]) + " must be an int")
+        else:
+            raise ValueError("channel_ids and groups must have same length")
+
+    def getChannelGroups(self, channel_ids):
+        '''This function returns the group of each channel specifed by
+        channel_ids
+
+        Parameters
+        ----------
+        channel_ids: array_like
+            The channel ids (ints) for which the groups will be returned
+
+        Returns
+        ----------
+        groups: array_like
+            Returns a list of corresonding groups (ints) for the given
+            channel_ids
+        '''
+        groups = []
+        for channel_id in channel_ids:
+            group = self.getChannelProperty(channel_id, 'group')
+            groups.append(group)
+        return groups
+
     def setChannelProperty(self, channel_id, property_name, value):
         '''This function adds a property dataset to the given channel under the
         property name.
@@ -219,11 +302,11 @@ class RecordingExtractor(ABC):
                 if isinstance(property_name, str):
                     self._channel_properties[channel_id][property_name] = value
                 else:
-                    raise ValueError("property_name must be a string")
+                    raise ValueError(str(property_name) + " must be a string")
             else:
-                raise ValueError("Non-valid channel_id")
+                raise ValueError(str(channel_id) + " is not a valid channel_id")
         else:
-            raise ValueError("channel_id must be an int")
+            raise ValueError(str(channel_id) + " must be an int")
 
     def getChannelProperty(self, channel_id, property_name):
         '''This function returns the data stored under the property name from
@@ -250,13 +333,13 @@ class RecordingExtractor(ABC):
                     if property_name in list(self._channel_properties[channel_id].keys()):
                         return self._channel_properties[channel_id][property_name]
                     else:
-                        raise ValueError("This property has not been added to this channel")
+                        raise ValueError(str(property_name) + " has not been added to channel " + str(channel_id))
                 else:
-                    raise ValueError("property_name must be a string")
+                    raise ValueError(str(property_name) + " must be a string")
             else:
-                raise ValueError("Non-valid channel_id")
+                raise ValueError(str(channel_id) + " is not a valid channel_id")
         else:
-            raise ValueError("channel_id must be an int")
+            raise ValueError(str(channel_id) + " must be an int")
 
     def getChannelPropertyNames(self, channel_id=None):
         '''Get a list of property names for a given channel, or for all channels if channel_id is None
@@ -285,9 +368,9 @@ class RecordingExtractor(ABC):
                 property_names = sorted(self._channel_properties[channel_id].keys())
                 return property_names
             else:
-                raise ValueError("Non-valid channel_id")
+                raise ValueError(str(channel_id) + " is not a valid channel_id")
         else:
-            raise ValueError("channel_id must be an int")
+            raise ValueError(str(channel_id) + " must be an int")
 
     def copyChannelProperties(self, recording, channel_ids=None):
         '''Copy channel properties from another recording extractor to the current
