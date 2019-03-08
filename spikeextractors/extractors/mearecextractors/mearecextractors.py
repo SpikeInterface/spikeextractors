@@ -112,6 +112,10 @@ class MEArecSortingExtractor(SortingExtractor):
         self._spike_trains = rec_dict['spiketrains']
         self._fs = info['recordings']['fs'] * pq.Hz  # fs is in kHz
 
+        if 'soma_position' in self._spike_trains[0].annotations:
+            for u, st in zip(self._unit_ids, self._spike_trains):
+                self.setUnitProperty(u, 'soma_location', st.annotations['soma_position'])
+
     def getUnitIds(self):
         if self._unit_ids is None:
             self._initialize()
@@ -190,7 +194,9 @@ def load_recordings(recordings, verbose=False):
         spiketrains = []
         if 'n_neurons' in info['recordings']:
             if 'spiketrains' in F:
-                for k in F.get('spiketrains').keys():
+                ordered_keys = sorted([int(k) for k in F.get('spiketrains').keys()])
+                ordered_keys = [str(k) for k in ordered_keys]
+                for k in ordered_keys:
                     times = np.array(F.get('spiketrains/{}/times'.format(k))) * pq.s
                     t_stop = np.array(F.get('spiketrains/{}/t_stop'.format(k))) * pq.s
                     annotations_str = str(F.get('spiketrains/{}/annotations'.format(k))[()])
