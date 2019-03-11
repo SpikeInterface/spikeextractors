@@ -71,7 +71,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         neo, pq, h5py, yaml = _load_required_modules()
         save_path = Path(save_path)
         if save_path.is_dir():
-            raise print("The file will be saved as recording.h5 in the provided folder")
+            print("The file will be saved as recording.h5 in the provided folder")
             save_path = save_path / 'recording.h5'
         if save_path.suffix == '.h5' or save_path.suffix == '.hdf5':
             F = h5py.File(save_path, 'w')
@@ -143,7 +143,7 @@ class MEArecSortingExtractor(SortingExtractor):
         neo, pq, h5py, yaml = _load_required_modules()
         save_path = Path(save_path)
         if save_path.is_dir():
-            raise print("The file will be saved as sorting.h5 in the provided folder")
+            print("The file will be saved as sorting.h5 in the provided folder")
             save_path = save_path / 'sorting.h5'
         if save_path.suffix == '.h5' or save_path.suffix == '.hdf5':
             F = h5py.File(save_path, 'w')
