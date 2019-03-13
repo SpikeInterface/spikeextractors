@@ -84,9 +84,9 @@ class SortingExtractor(ABC):
                     else:
                         raise ValueError("feature values should have the same length as the spike train")
             else:
-                raise ValueError("Non-valid unit_id")
+                raise ValueError(str(unit_id) + " is not a valid unit_id")
         else:
-            raise ValueError("unit_id must be an int")
+            raise ValueError(str(unit_id) + " must be an int")
 
     def getUnitSpikeFeatures(self, unit_id, feature_name, start_frame=None, end_frame=None):
         '''This function extracts the specified spike features from the specified unit.
@@ -131,13 +131,13 @@ class SortingExtractor(ABC):
                             end_frame = len(self.getUnitSpikeTrain(unit_id))
                         return self._unit_features[unit_id][feature_name][start_frame:end_frame]
                     else:
-                        raise ValueError("This feature has not been added to this unit")
+                        raise ValueError(str(feature_name) + " has not been added to unit " + str(unit_id))
                 else:
-                    raise ValueError("property_name must be a string")
+                    raise ValueError(str(feature_name) + " must be a string")
             else:
-                raise ValueError("Non-valid unit_id")
+                raise ValueError(str(unit_id) + " is not a valid unit_id")
         else:
-            raise ValueError("unit_id must be an int")
+            raise ValueError(str(unit_id) + " must be an int")
 
     def getUnitSpikeFeatureNames(self, unit_id=None):
         '''This function returns the names of spike features across all units.
@@ -162,9 +162,9 @@ class SortingExtractor(ABC):
                 feature_names = sorted(self._unit_features[unit_id].keys())
                 return feature_names
             else:
-                raise ValueError("Non-valid unit_id")
+                raise ValueError(str(unit_id) + " is not a valid unit_id")
         else:
-            raise ValueError("unit_id must be an int")
+            raise ValueError(str(unit_id) + " must be an int")
 
     def setUnitProperty(self, unit_id, property_name, value):
         '''This function adds a unit property data set under the given property
@@ -187,11 +187,11 @@ class SortingExtractor(ABC):
                 if isinstance(property_name, str):
                     self._unit_properties[unit_id][property_name] = value
                 else:
-                    raise ValueError("property_name must be a string")
+                    raise ValueError(str(property_name) + " must be a string")
             else:
-                raise ValueError("Non-valid unit_id")
+                raise ValueError(str(unit_id) + " is not a valid unit_id")
         else:
-            raise ValueError("unit_id must be an int")
+            raise ValueError(str(unit_id) + " must be an int")
 
     def setUnitsProperty(self, *, unit_ids=None, property_name, values):
         '''Sets unit property data for a list of units
@@ -231,11 +231,11 @@ class SortingExtractor(ABC):
                 if isinstance(property_name, str):
                     self._unit_properties[unit_id][property_name] = value
                 else:
-                    raise ValueError("property_name must be a string")
+                    raise ValueError(str(property_name) + " must be a string")
             else:
-                raise ValueError("Non-valid unit_id")
+                raise ValueError(str(unit_id) + " is not a valid unit_id")
         else:
-            raise ValueError("unit_id must be an int")
+            raise ValueError(str(unit_id) + " must be an int")
 
     def getUnitProperty(self, unit_id, property_name):
         '''This function rerturns the data stored under the property name given
@@ -261,13 +261,13 @@ class SortingExtractor(ABC):
                     if property_name in list(self._unit_properties[unit_id].keys()):
                         return self._unit_properties[unit_id][property_name]
                     else:
-                        raise ValueError("This property has not been added to this unit")
+                        raise ValueError(str(property_name) + " has not been added to unit " + str(unit_id))
                 else:
-                    raise ValueError("property_name must be a string")
+                    raise ValueError(str(property_name) + " must be a string")
             else:
-                raise ValueError("Non-valid unit_id")
+                raise ValueError(str(unit_id) + " is not a valid unit_id")
         else:
-            raise ValueError("unit_id must be an int")
+            raise ValueError(str(unit_id) + " must be an int")
 
     def getUnitsProperty(self, *, unit_ids=None, property_name):
         '''Returns a list of values stored under the property name corresponding
@@ -318,9 +318,9 @@ class SortingExtractor(ABC):
                 property_names = sorted(self._unit_properties[unit_id].keys())
                 return property_names
             else:
-                raise ValueError("Non-valid unit_id")
+                raise ValueError(str(unit_id) + " is not a valid unit_id")
         else:
-            raise ValueError("unit_id must be an int")
+            raise ValueError(str(unit_id) + " must be an int")
 
     @staticmethod
     def writeSorting(sorting, save_path):

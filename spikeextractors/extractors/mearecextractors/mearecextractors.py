@@ -18,7 +18,7 @@ def _load_required_modules():
 
 
 class MEArecRecordingExtractor(RecordingExtractor):
-    def __init__(self, recording_path=None):
+    def __init__(self, recording_path):
         RecordingExtractor.__init__(self)
         self._recording_path = recording_path
         self._fs = None
@@ -90,7 +90,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
 
 class MEArecSortingExtractor(SortingExtractor):
-    def __init__(self, recording_path=None):
+    def __init__(self, recording_path):
         neo, pq, h5py, yaml = _load_required_modules()
         SortingExtractor.__init__(self)
         self._recording_path = recording_path
