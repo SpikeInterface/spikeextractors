@@ -145,39 +145,31 @@ def saveProbeFile(recording, probe_file, format=None, radius=100, dimensions=Non
     recording: RecordingExtractor
         The recording extractor to save probe file from
     probe_file: str
-        file name of .prb or .csv file to save probe information to
+        file name of .prb or .csv or npy file to save probe information to
     format: str (optional)
-        Format for .prb file. It can be either 'klusta' or 'spyking_circus'. Default is None.
+        if file is:
+          * .csv: then format must be csv
+          * .prb format must be 'klusta' or 'spyking_circus' or 'tridesclous'
+          * .npy format must 'yass'
+    
+        Format for .prb file. It can be either 'klusta' or 'spyking_circus' or 'tridesclous'. Default is None.
     '''
     probe_file = Path(probe_file)
     if not probe_file.parent.is_dir():
         probe_file.parent.mkdir()
 
     if probe_file.suffix == '.csv':
-        # write csv probe file
-        with probe_file.open('w') as f:
-            if 'location' in recording.getChannelPropertyNames():
-                for chan in recording.getChannelIds():
-                    loc = recording.getChannelProperty(chan, 'location')
-                    if len(loc) == 2:
-                        f.write(str(loc[0]))
-                        f.write(',')
-                        f.write(str(loc[1]))
-                        f.write('\n')
-                    elif len(loc) == 3:
-                        f.write(str(loc[0]))
-                        f.write(',')
-                        f.write(str(loc[1]))
-                        f.write(',')
-                        f.write(str(loc[2]))
-                        f.write('\n')
-            else:
-                raise AttributeError("Recording extractor needs to have "
-                                     "'location' property to save .csv probe file")
+        # assert format in ['csv'], 'extention must csv with format=csv'
+            _export_probe_file_CSV(recording, probe_file)
     elif probe_file.suffix == '.prb':
-        _export_prb_file(recording, probe_file, format, radius=radius, dimensions=dimensions)
+        assert format in ['klusta', 'spyking_circus', 'tridesclous'], \
+                    'extention must prb with format=klusta, spyking_circus or tridesclous'
+        _export_probe_file_PRB(recording, probe_file, format, radius=radius, dimensions=dimensions)
+    elif probe_file.suffix == '.npy':
+        assert format in ['yass', ], 'extention must prb with format=yass'
+        _export_probe_file_NPY(recording, probe_file, format, dimensions=dimensions)
     else:
-        raise NotImplementedError("Only .csv and .prb probe files can be saved.")
+        raise NotImplementedError("Only .csv or .prb or .npy probe files can be saved.")
 
 
 def writeBinaryDatFormat(recording, save_path, transpose=False, dtype='float32'):
@@ -267,7 +259,37 @@ def getSubExtractorsByProperty(extractor, property_name, return_property_list=Fa
         raise ValueError("'extractor' must be a RecordingExtractor or a SortingExtractor")
 
 
-def _export_prb_file(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100,
+def _export_probe_file_CSV(recording, probe_file):
+    
+    if 'location' in recording.getChannelPropertyNames():
+        with probe_file.open('w') as f:
+            for chan in recording.getChannelIds():
+                loc = recording.getChannelProperty(chan, 'location')
+                if len(loc) == 2:
+                    f.write(str(loc[0]))
+                    f.write(',')
+                    f.write(str(loc[1]))
+                    f.write('\n')
+                elif len(loc) == 3:
+                    f.write(str(loc[0]))
+                    f.write(',')
+                    f.write(str(loc[1]))
+                    f.write(',')
+                    f.write(str(loc[2]))
+                    f.write('\n')
+    else:
+        raise AttributeError("Recording extractor needs to have "
+                             "'location' property to save .csv probe file")
+
+
+def _export_probe_file_NPY(recording, file_name, format, dimensions='all'):
+    assert 'location' in recording.getChannelPropertyNames()
+    positions = np.array([recording.getChannelProperty(chan, 'location') for chan in recording.getChannelIds()])
+    if dimensions is not None and dimensions is not 'all':
+        positions = positions[:, dimensions]
+    np.save(str(file_name), positions)
+
+def _export_probe_file_PRB(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100,
                      dimensions='all'):
     '''Exports .prb file
 
