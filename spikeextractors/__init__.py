@@ -21,6 +21,7 @@ from .extractors.physortingextractor.physortingextractor import PhySortingExtrac
 from .extractors.bindatrecordingextractor import BinDatRecordingExtractor
 from .extractors.spykingcircussortingextractor.spykingcircussortingextractor import SpykingCircusSortingExtractor
 from .extractors.tridesclousextractor.tridesclousextractor import TridesclousSortingExtractor
+from .extractors.yasssortingextractor.yasssortingextractor import YassSortingExtractor
 
 from . import example_datasets
 from .tools import loadProbeFile, saveProbeFile, writeBinaryDatFormat, getSubExtractorsByProperty
