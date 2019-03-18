@@ -129,7 +129,7 @@ class TestExtractors(unittest.TestCase):
     def test_hs2_extractor(self):
         path1 = self.test_dir + '/firings_true.hdf5'
         se.HS2SortingExtractor.writeSorting(self.SX, path1)
-        SX_hs2 = se.HS2SortingExtractor(path1)
+        SX_hs2 = se.HS2SortingExtractor(path1, generated_by_HS2=False)
         self._check_sorting_return_types(SX_hs2)
         self._check_sortings_equal(self.SX, SX_hs2)
 
@@ -176,7 +176,7 @@ class TestExtractors(unittest.TestCase):
         )
         RX_sub = RX_multi.getEpoch('C')
         self._check_recordings_equal(self.RX, RX_sub)
-        
+
     def test_curated_sorting_extractor(self):
         CSX = se.CuratedSortingExtractor(
             parent_sorting=self.SX
@@ -184,7 +184,7 @@ class TestExtractors(unittest.TestCase):
         CSX.mergeUnits(unit_ids=[1, 2])
         original_spike_train = np.sort(np.concatenate((self.SX.getUnitSpikeTrain(1), self.SX.getUnitSpikeTrain(2))))
         self.assertTrue(np.array_equal(CSX.getUnitSpikeTrain(4), original_spike_train))
-        
+
         CSX.splitUnit(unit_id=3, indices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         original_spike_train = self.SX.getUnitSpikeTrain(3)
         split_spike_train_1 = CSX.getUnitSpikeTrain(5)

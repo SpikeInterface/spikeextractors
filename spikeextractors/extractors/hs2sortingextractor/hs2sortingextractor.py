@@ -12,22 +12,23 @@ def _load_required_modules():
 
 
 class HS2SortingExtractor(SortingExtractor):
-    def __init__(self, recording_file):
+    def __init__(self, recording_file, generated_by_HS2=True):
         h5py = _load_required_modules()
         SortingExtractor.__init__(self)
         self._recording_file = recording_file
         self._rf = h5py.File(self._recording_file, mode='r')
         self._unit_ids = set(self._rf['cluster_id'][()])
-        if 'centres' in self._rf.keys():
-            self._unit_locs = self._rf['centres'][()]  # cache for faster access
-            for unit_id in self._unit_ids:
-                self.setUnitProperty(unit_id, 'unit_location', self._unit_locs[unit_id])
-        if 'spike_locations' in self._rf.keys():
-            for unit_id in self._unit_ids:
-                self.setUnitProperty(unit_id, 'spike_locations', self._rf['data'][:2, self.get_unit_indices(unit_id)].T)
-        if 'ch' in self._rf.keys():
-            for unit_id in self._unit_ids:
-                self.setUnitProperty(unit_id, 'spike_max_channels', np.asarray(self._rf['ch'])[self.get_unit_indices(unit_id)])
+        if(generated_by_HS2):
+            if 'centres' in self._rf.keys():
+                self._unit_locs = self._rf['centres'][()]  # cache for faster access
+                for unit_id in self._unit_ids:
+                    self.setUnitProperty(unit_id, 'unit_location', self._unit_locs[unit_id])
+            if 'data' in self._rf.keys():
+                for unit_id in self._unit_ids:
+                    self.setUnitProperty(unit_id, 'spike_locations', self._rf['data'][:2, self.get_unit_indices(unit_id)].T)
+            if 'ch' in self._rf.keys():
+                for unit_id in self._unit_ids:
+                    self.setUnitProperty(unit_id, 'spike_max_channels', np.asarray(self._rf['ch'])[self.get_unit_indices(unit_id)])
 
     def get_unit_indices(self, x):
         return np.where(self._rf['cluster_id'][()] == x)[0]
