@@ -200,7 +200,8 @@ def writeBinaryDatFormat(recording, save_path, transpose=False, dtype=None, chun
     -------
     '''
     save_path = Path(save_path)
-    if not save_path.suffix == '.dat':
+    if save_path.suffix == '':
+        # when suffix is already raw/bin/dat do not change it.
         save_path = save_path.parent / (save_path.name + '.dat')
     
     if chunksize is None:
@@ -217,10 +218,10 @@ def writeBinaryDatFormat(recording, save_path, transpose=False, dtype=None, chun
         n_chunk = n_sample // chunksize
         if n_sample % chunksize > 0:
             n_chunk += 1
-        with raw_filename.open('wb') as f:
+        with save_path.open('wb') as f:
             for i in range(n_chunk):
                 traces = recording.getTraces(start_frame=i*chunksize,
-                                                            end_frame=min((i+1)*chunksize, n_sample))
+                                            end_frame=min((i+1)*chunksize, n_sample))
                 if dtype is not None:
                     traces = traces.astype(dtype)
                 if transpose:
