@@ -1,4 +1,4 @@
-from spikeextractors import SortingExtractor
+rom spikeextractors import SortingExtractor
 
 import numpy as np
 
@@ -20,11 +20,14 @@ class HS2SortingExtractor(SortingExtractor):
         self._unit_ids = set(self._rf['cluster_id'][()])
         if 'centres' in self._rf.keys():
             self._unit_locs = self._rf['centres'][()]  # cache for faster access
-
-        #Set initial properties here
-        for unit_id in self._unit_ids:
-            self.setUnitProperty(unit_id, 'spike_locations', self._rf['data'][:2, self.get_unit_indices(unit_id)].T)
-            self.setUnitProperty(unit_id, 'unit_location', self._unit_locs[unit_id])
+            for unit_id in self._unit_ids:
+                self.setUnitProperty(unit_id, 'unit_location', self._unit_locs[unit_id])
+        if 'spike_locations' in self._rf.keys():
+            for unit_id in self._unit_ids:
+                self.setUnitProperty(unit_id, 'spike_locations', self._rf['data'][:2, self.get_unit_indices(unit_id)].T)
+        if 'ch' in self._rf.keys():
+            for unit_id in self._unit_ids:
+                self.setUnitProperty(unit_id, 'spike_max_channels', np.asarray(self._rf['ch'])[self.get_unit_indices(unit_id)])
 
     def get_unit_indices(self, x):
         return np.where(self._rf['cluster_id'][()] == x)[0]
