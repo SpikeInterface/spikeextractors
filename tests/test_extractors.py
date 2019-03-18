@@ -129,7 +129,7 @@ class TestExtractors(unittest.TestCase):
     def test_hs2_extractor(self):
         path1 = self.test_dir + '/firings_true.hdf5'
         se.HS2SortingExtractor.writeSorting(self.SX, path1)
-        SX_hs2 = se.HS2SortingExtractor(path1, generated_by_HS2=False)
+        SX_hs2 = se.HS2SortingExtractor(path1)
         self._check_sorting_return_types(SX_hs2)
         self._check_sortings_equal(self.SX, SX_hs2)
 
