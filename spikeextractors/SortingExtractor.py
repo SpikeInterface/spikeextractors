@@ -347,6 +347,32 @@ class SortingExtractor(ABC):
                     value = sorting.getUnitProperty(unit_id=unit_id, property_name=curr_property_name)
                     self.setUnitProperty(unit_id=unit_id, property_name=curr_property_name, value=value)
 
+    def copyUnitSpikeFeatures(self, sorting, unit_ids=None):
+        '''Copy unit spike features from another sorting extractor to the current
+        sorting extractor.
+
+        Parameters
+        ----------
+        sorting: SortingExtractor
+            The sorting extractor from which the spike features will be copied
+        unit_ids: (array_like, int)
+            The list (or single value) of unit_ids for which the spike features will be copied.
+        def getUnitSpikeFeatures(self, unit_id, feature_name, start_frame=None, end_frame=None):
+        '''
+        if unit_ids is None:
+            unit_ids = sorting.getUnitIds()
+        if isinstance(unit_ids, int):
+            curr_feature_names = sorting.getUnitSpikeFeatureNames(unit_id=unit_ids)
+            for curr_feature_name in curr_feature_names:
+                value = sorting.getUnitSpikeFeatures(unit_id=unit_ids, feature_name=curr_feature_name)
+                self.setUnitSpikeFeatures(unit_id=unit_ids, feature_name=curr_feature_name, value=value)
+        else:
+            for unit_id in unit_ids:
+                curr_feature_names = sorting.getUnitSpikeFeatureNames(unit_id=unit_id)
+                for curr_feature_name in curr_feature_names:
+                    value = sorting.getUnitSpikeFeatures(unit_id=unit_id, feature_name=curr_feature_name)
+                    self.setUnitSpikeFeatures(unit_id=unit_id, feature_name=curr_feature_name, value=value)
+
     @staticmethod
     def writeSorting(sorting, save_path):
         '''This function writes out the spike sorted data file of a given sorting

@@ -25,6 +25,7 @@ class CuratedSortingExtractor(SortingExtractor):
             self._roots.append(root)
 
         self.copyUnitProperties(parent_sorting)
+        self.copyUnitSpikeFeatures(parent_sorting)
 
     def getUnitIds(self):
         unit_ids = []
