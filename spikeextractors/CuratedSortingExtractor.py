@@ -24,6 +24,8 @@ class CuratedSortingExtractor(SortingExtractor):
             root = Unit(unit_id)
             self._roots.append(root)
 
+        self.copyUnitProperties(parent_sorting)
+
     def getUnitIds(self):
         unit_ids = []
         for root in self._roots:
@@ -134,6 +136,7 @@ class CuratedSortingExtractor(SortingExtractor):
                 new_root.add_child(self._roots[root_index])
                 for spike_index in self._indices_dict[unit_id]:
                     self._indices_dict[new_root_id].append(len(self._indices_dict[new_root_id]))
+
                 indices_to_be_deleted.append(root_index)
             self._indices_dict[new_root_id] = np.asarray(self._indices_dict[new_root_id])
             self._roots = [self._roots[i] for i,_ in enumerate(root_ids) if i not in indices_to_be_deleted]

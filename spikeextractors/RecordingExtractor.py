@@ -380,6 +380,8 @@ class RecordingExtractor(ABC):
         ----------
         recording: RecordingExtractor
             The recording extractor from which the properties will be copied
+        channel_ids: (array_like, int)
+            The list (or single value) of channel_ids for which the properties will be copied.
         '''
         if channel_ids is None:
             channel_ids = recording.getChannelIds()

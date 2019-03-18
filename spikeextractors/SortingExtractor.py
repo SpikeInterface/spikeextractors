@@ -322,6 +322,31 @@ class SortingExtractor(ABC):
         else:
             raise ValueError(str(unit_id) + " must be an int")
 
+    def copyUnitProperties(self, sorting, unit_ids=None):
+        '''Copy unit properties from another sorting extractor to the current
+        sorting extractor.
+
+        Parameters
+        ----------
+        sorting: SortingExtractor
+            The sorting extractor from which the properties will be copied
+        unit_ids: (array_like, int)
+            The list (or single value) of unit_ids for which the properties will be copied.
+        '''
+        if unit_ids is None:
+            unit_ids = sorting.getUnitIds()
+        if isinstance(unit_ids, int):
+            curr_property_names = sorting.getUnitPropertyNames(unit_id=unit_ids)
+            for curr_property_name in curr_property_names:
+                value = sorting.getUnitProperty(unit_id=unit_ids, property_name=curr_property_name)
+                self.setUnitProperty(unit_id=unit_ids, property_name=curr_property_name, value=value)
+        else:
+            for unit_id in unit_ids:
+                curr_property_names = sorting.getUnitPropertyNames(unit_id=unit_id)
+                for curr_property_name in curr_property_names:
+                    value = sorting.getUnitProperty(unit_id=unit_id, property_name=curr_property_name)
+                    self.setUnitProperty(unit_id=unit_id, property_name=curr_property_name, value=value)
+
     @staticmethod
     def writeSorting(sorting, save_path):
         '''This function writes out the spike sorted data file of a given sorting
