@@ -1,4 +1,4 @@
-rom spikeextractors import SortingExtractor
+from spikeextractors import SortingExtractor
 
 import numpy as np
 
@@ -43,9 +43,6 @@ class HS2SortingExtractor(SortingExtractor):
         times = self._rf['times'][()][self.get_unit_indices(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
-
-    def getUnitChannels(self, unit_id):
-        return self._rf['ch'][self.get_unit_indices(unit_id)]
 
     @staticmethod
     def writeSorting(sorting, save_path):
