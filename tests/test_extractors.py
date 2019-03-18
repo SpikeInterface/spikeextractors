@@ -176,7 +176,7 @@ class TestExtractors(unittest.TestCase):
         )
         RX_sub = RX_multi.getEpoch('C')
         self._check_recordings_equal(self.RX, RX_sub)
-        
+
     def test_curated_sorting_extractor(self):
         CSX = se.CuratedSortingExtractor(
             parent_sorting=self.SX
@@ -184,7 +184,7 @@ class TestExtractors(unittest.TestCase):
         CSX.mergeUnits(unit_ids=[1, 2])
         original_spike_train = np.sort(np.concatenate((self.SX.getUnitSpikeTrain(1), self.SX.getUnitSpikeTrain(2))))
         self.assertTrue(np.array_equal(CSX.getUnitSpikeTrain(4), original_spike_train))
-        
+
         CSX.splitUnit(unit_id=3, indices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         original_spike_train = self.SX.getUnitSpikeTrain(3)
         split_spike_train_1 = CSX.getUnitSpikeTrain(5)

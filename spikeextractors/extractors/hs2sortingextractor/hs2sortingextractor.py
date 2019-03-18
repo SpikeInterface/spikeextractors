@@ -20,6 +20,14 @@ class HS2SortingExtractor(SortingExtractor):
         self._unit_ids = set(self._rf['cluster_id'][()])
         if 'centres' in self._rf.keys():
             self._unit_locs = self._rf['centres'][()]  # cache for faster access
+            for unit_id in self._unit_ids:
+                self.setUnitProperty(unit_id, 'unit_location', self._unit_locs[unit_id])
+        if 'data' in self._rf.keys():
+            for unit_id in self._unit_ids:
+                self.setUnitProperty(unit_id, 'spike_locations', self._rf['data'][:2, self.get_unit_indices(unit_id)].T)
+        if 'ch' in self._rf.keys():
+            for unit_id in self._unit_ids:
+                self.setUnitProperty(unit_id, 'spike_max_channels', np.asarray(self._rf['ch'])[self.get_unit_indices(unit_id)])
 
     def get_unit_indices(self, x):
         return np.where(self._rf['cluster_id'][()] == x)[0]
@@ -35,17 +43,6 @@ class HS2SortingExtractor(SortingExtractor):
         times = self._rf['times'][()][self.get_unit_indices(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
-
-    def getUnitChannels(self, unit_id):
-        return self._rf['ch'][self.get_unit_indices(unit_id)]
-
-    def getUnitProperty(self, unit_id, property):
-        if property == 'spike_locations':
-            return self._rf['data'][:2, self.get_unit_indices(unit_id)].T
-        elif property == 'unit_location':
-            return self._unit_locs[unit_id]
-        else:
-            raise Exception("Property does not exist.")
 
     @staticmethod
     def writeSorting(sorting, save_path):
