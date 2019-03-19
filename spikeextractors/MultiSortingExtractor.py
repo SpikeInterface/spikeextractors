@@ -3,7 +3,7 @@ from .RecordingExtractor import RecordingExtractor
 import numpy as np
 
 
-# Encapsulates a subset of a spike sorted dataset
+# Encapsulates a grouping of sorting extractors
 
 class MultiSortingExtractor(SortingExtractor):
     def __init__(self, *, sortings, start_frames=None):
@@ -19,7 +19,7 @@ class MultiSortingExtractor(SortingExtractor):
         self._start_frames = start_frames
         self._allzeros = np.all([start == 0 for start in start_frames])
         if self._allzeros:
-            u_id  =0
+            u_id  = 0
             for s_i, SX in enumerate(self._SXs):
                 unit_ids = SX.getUnitIds()
                 for unit_id in unit_ids:
@@ -87,33 +87,35 @@ class MultiSortingExtractor(SortingExtractor):
                 raise ValueError("Non-valid unit_id")
             sx = self._unit_map[unit_id]['sx']
             unit_id_sx = self._unit_map[unit_id]['unit']
-            return self._SXs[sx].getUnitSpikeFeatures(unit_id_sx, feature_name, start_frame=None, end_frame=None)
+            return self._SXs[sx].getUnitSpikeFeatures(unit_id_sx, feature_name, start_frame=start_frame, end_frame=end_frame)
         else:
             raise NotImplementedError()
 
 
     def getUnitSpikeFeatureNames(self, unit_id=None):
-        if unit_id is None:
-            feature_names = []
-            for unit_id in self.getUnitIds():
-                curr_feature_names = self.getUnitSpikeFeatureNames(unit_id)
-                for curr_feature_name in curr_feature_names:
-                    feature_names.append(curr_feature_name)
-            feature_names = sorted(list(set(feature_names)))
-            return feature_names
-        if isinstance(unit_id, (int, np.integer)):
-            if unit_id in self.getUnitIds():
-                if unit_id not in self._unit_map.keys():
-                    raise ValueError("Non-valid unit_id")
-                sx = self._unit_map[unit_id]['sx']
-                unit_id_sx = self._unit_map[unit_id]['unit']
-                feature_names = sorted(self._SXs[sx].getUnitSpikeFeatureNames(unit_id_sx))
+        if self._allzeros:
+            if unit_id is None:
+                feature_names = []
+                for unit_id in self.getUnitIds():
+                    curr_feature_names = self.getUnitSpikeFeatureNames(unit_id)
+                    for curr_feature_name in curr_feature_names:
+                        feature_names.append(curr_feature_name)
+                feature_names = sorted(list(set(feature_names)))
                 return feature_names
+            if isinstance(unit_id, (int, np.integer)):
+                if unit_id in self.getUnitIds():
+                    if unit_id not in self._unit_map.keys():
+                        raise ValueError("Non-valid unit_id")
+                    sx = self._unit_map[unit_id]['sx']
+                    unit_id_sx = self._unit_map[unit_id]['unit']
+                    feature_names = sorted(self._SXs[sx].getUnitSpikeFeatureNames(unit_id_sx))
+                    return feature_names
+                else:
+                    raise ValueError("Non-valid unit_id")
             else:
-                raise ValueError("Non-valid unit_id")
+                raise ValueError("unit_id must be an int")
         else:
-            raise ValueError("unit_id must be an int")
-
+            return self._unit_features
 
     def setUnitSpikeFeatures(self, unit_id, feature_name, value):
         if self._allzeros:
