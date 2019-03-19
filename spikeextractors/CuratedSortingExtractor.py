@@ -18,7 +18,11 @@ class CuratedSortingExtractor(SortingExtractor):
             root = Unit(unit_id)
             root.set_spike_train(parent_sorting.getUnitSpikeTrain(unit_id))
             self._roots.append(root)
-
+        '''
+        Copies over properties and spike features from parent_sorting.
+        Only spike features will be preserved with merges and splits, properties
+        cannot be resolved in these cases.
+        '''
         self.copyUnitProperties(parent_sorting)
         self.copyUnitSpikeFeatures(parent_sorting)
 
