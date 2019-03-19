@@ -140,12 +140,17 @@ class SortingExtractor(ABC):
             raise ValueError(str(unit_id) + " must be an int")
 
     def getUnitSpikeFeatureNames(self, unit_id=None):
-        '''This function returns the names of spike features across all units.
+        '''This function returns the names of spike features for a single
+        unit or across all units (depending on the given unit_id).
 
         Returns
         ----------
         spike_features: list
             A list of string names for each feature in the specified unit.
+            
+        unit_id: int
+            The unit_id for which the feature names will be returned. If None,
+            the function will return all feature names across all units).
         '''
         if unit_id is None:
             feature_names = []
