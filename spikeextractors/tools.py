@@ -180,7 +180,7 @@ def saveProbeFile(recording, probe_file, format=None, radius=100, dimensions=Non
         raise NotImplementedError("Only .csv and .prb probe files can be saved.")
 
 
-def writeBinaryDatFormat(recording, save_path, transpose=False, dtype='float32'):
+def writeBinaryDatFormat(recording, save_path, time_axis=0, dtype=None, chunksize=None):
     '''Saves the traces of a recording extractor in binary .dat format.
 
     Parameters
@@ -189,26 +189,47 @@ def writeBinaryDatFormat(recording, save_path, transpose=False, dtype='float32')
         The recording extractor object to be saved in .dat format
     save_path: str
         The path to the file.
-    transpose: bool
-        If True the data are transpose (spyking_circus). Default is False (klusta, kilosort, yass)
+    time_axis: 0 (default) or 1
+        If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
+        If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
     dtype: dtype
         Type of the saved data. Default float32
-
+    chunksize: None or int
+        If not None then the copy done by chunk size.
+        Thi avoid to much memory consumption for big files.
     Returns
     -------
-
     '''
     save_path = Path(save_path)
-    if not transpose:
-        if not save_path.suffix == '.dat':
-            save_path = save_path.parent / (save_path.name + '.dat')
+    if save_path.suffix == '':
+        # when suffix is already raw/bin/dat do not change it.
+        save_path = save_path.parent / (save_path.name + '.dat')
+    
+    if chunksize is None:
+        traces = recording.getTraces()
+        if dtype is not None:
+            traces = traces.astype(dtype)
+        if time_axis == 0:
+            traces = traces.T
         with save_path.open('wb') as f:
-            np.transpose(np.array(recording.getTraces(), dtype=dtype)).tofile(f)
-    elif transpose:
-        if not save_path.suffix == '.dat':
-            save_path = save_path.parent / (save_path.name + '.dat')
+            traces.tofile(f)
+    else:
+        assert time_axis ==0, 'chunked writting work only with time_axis 0'
+        n_sample = recording.getNumFrames()
+        n_chan = recording.getNumChannels()
+        n_chunk = n_sample // chunksize
+        if n_sample % chunksize > 0:
+            n_chunk += 1
         with save_path.open('wb') as f:
-            np.array(recording.getTraces(), dtype=dtype).tofile(f)
+            for i in range(n_chunk):
+                traces = recording.getTraces(start_frame=i*chunksize,
+                                            end_frame=min((i+1)*chunksize, n_sample))
+                if dtype is not None:
+                    traces = traces.astype(dtype)
+                if time_axis == 0:
+                    traces = traces.T
+                f.write(traces.tobytes())
+    
     return save_path
 
 
