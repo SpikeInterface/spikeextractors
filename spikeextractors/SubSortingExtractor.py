@@ -88,12 +88,10 @@ class SubSortingExtractor(SortingExtractor):
                 sorting_unit_id = unit_id
                 if sorting is self._parent_sorting:
                     sorting_unit_id = self.getOriginalUnitIds(unit_id)
-                print(sorting_unit_id)
-                print(unit_id)
                 curr_feature_names = sorting.getUnitSpikeFeatureNames(unit_id=sorting_unit_id)
                 for curr_feature_name in curr_feature_names:
                     value = sorting.getUnitSpikeFeatures(unit_id=sorting_unit_id, feature_name=curr_feature_name)
-                    self.setUnitSpikeFeatures(unit_id=unit_id, v=curr_feature_name, value=value)
+                    self.setUnitSpikeFeatures(unit_id=unit_id, feature_name=curr_feature_name, value=value)
 
     def getOriginalUnitIds(self, unit_ids):
         if isinstance(unit_ids, (int, np.integer)):
