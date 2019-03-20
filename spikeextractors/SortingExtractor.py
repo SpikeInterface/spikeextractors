@@ -147,7 +147,7 @@ class SortingExtractor(ABC):
         ----------
         spike_features: list
             A list of string names for each feature in the specified unit.
-            
+
         unit_id: int
             The unit_id for which the feature names will be returned. If None,
             the function will return all feature names across all units).

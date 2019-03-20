@@ -4,7 +4,7 @@ import numpy as np
 
 # A Sorting Extractor that allows for manual curation of a sorting result (Represents curation as a tree of units)
 
-class CuratedSortingExtractor(SortingExtractor):
+class CurationSortingExtractor(SortingExtractor):
 
     def __init__(self, parent_sorting):
         SortingExtractor.__init__(self)
@@ -18,7 +18,11 @@ class CuratedSortingExtractor(SortingExtractor):
             root = Unit(unit_id)
             root.set_spike_train(parent_sorting.getUnitSpikeTrain(unit_id))
             self._roots.append(root)
-
+        '''
+        Copies over properties and spike features from parent_sorting.
+        Only spike features will be preserved with merges and splits, properties
+        cannot be resolved in these cases.
+        '''
         self.copyUnitProperties(parent_sorting)
         self.copyUnitSpikeFeatures(parent_sorting)
 
@@ -84,6 +88,7 @@ class CuratedSortingExtractor(SortingExtractor):
             for unit_id in unit_ids:
                 root_index = root_ids.index(unit_id)
                 indices_to_be_deleted.append(root_index)
+                del self._unit_features[unit_id]
             self._roots = [self._roots[i] for i,_ in enumerate(root_ids) if i not in indices_to_be_deleted]
         else:
             raise ValueError(str(unit_ids) + " has one or more invalid unit ids")
@@ -104,6 +109,20 @@ class CuratedSortingExtractor(SortingExtractor):
 
         indices_to_be_deleted = []
         if(set(unit_ids).issubset(set(root_ids)) and len(unit_ids) > 1):
+            #Find all unique feature names and create all feature lists
+            all_feature_names = []
+            for unit_id in unit_ids:
+                feature_names = self.getUnitSpikeFeatureNames(unit_id)
+                all_feature_names.append(feature_names)
+
+            shared_feature_names = set(all_feature_names[0])
+            for feature_names in all_feature_names[1:]:
+                shared_feature_names.intersection_update(feature_names)
+            shared_feature_names = list(shared_feature_names)
+            shared_features = []
+            for i in range(len(shared_feature_names)):
+                shared_features.append([])
+
             new_root_id = max(self._all_ids)+1
             self._all_ids.append(new_root_id)
             new_root = Unit(new_root_id)
@@ -112,13 +131,21 @@ class CuratedSortingExtractor(SortingExtractor):
                 root_index = root_ids.index(unit_id)
                 new_root.add_child(self._roots[root_index])
                 all_spike_trains.append(self._roots[root_index].get_spike_train())
+                for i, feature_name in enumerate(shared_feature_names):
+                    features = self.getUnitSpikeFeatures(unit_id, feature_name)
+                    shared_features[i].append(features)
+                del self._unit_features[unit_id]
                 self._roots[root_index].set_spike_train(np.asarray([])) #clear spiketrain
                 indices_to_be_deleted.append(root_index)
 
-            new_root.set_spike_train(np.asarray(np.sort(np.concatenate(all_spike_trains))))
+            all_spike_trains = np.concatenate(all_spike_trains)
+            sort_indices = np.argsort(all_spike_trains)
+            new_root.set_spike_train(np.asarray(all_spike_trains)[sort_indices])
             del all_spike_trains
             self._roots = [self._roots[i] for i,_ in enumerate(root_ids) if i not in indices_to_be_deleted]
             self._roots.append(new_root)
+            for i, feature_name in enumerate(shared_feature_names):
+                self.setUnitSpikeFeatures(new_root_id, feature_name, np.concatenate(shared_features[i])[sort_indices])
         else:
             raise ValueError(str(unit_ids) + " has one or more invalid unit ids")
 
@@ -166,9 +193,15 @@ class CuratedSortingExtractor(SortingExtractor):
             new_root_2.add_child(new_child)
             new_root_2.set_spike_train(spike_train_2)
 
-            del self._roots[root_index]
             self._roots.append(new_root_1)
             self._roots.append(new_root_2)
+
+            for feature_name in self.getUnitSpikeFeatureNames(unit_id):
+                full_features = self.getUnitSpikeFeatures(unit_id, feature_name)
+                self.setUnitSpikeFeatures(new_root_1_id, feature_name, full_features[indices_1])
+                self.setUnitSpikeFeatures(new_root_2_id, feature_name, full_features[indices_2])
+            del self._unit_features[unit_id]
+            del self._roots[root_index]
         else:
             raise ValueError(str(unit_id) + " non-valid unit id")
 
@@ -183,7 +216,8 @@ class Unit(object):
     def set_spike_train(self, spike_train):
         self.spike_train = spike_train
 
-    def get_spike_train(self):        return self.spike_train
+    def get_spike_train(self):
+        return self.spike_train
 
     def add_child(self, child):
         self.children.append(child)
