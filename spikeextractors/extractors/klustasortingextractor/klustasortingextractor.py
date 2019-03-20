@@ -24,6 +24,11 @@ class KlustaSortingExtractor(SortingExtractor):
         self._unit_ids = []
         for cgroup in channel_groups:
             group_id = int(cgroup)
+            try:
+                cluster_ids = channel_groups[cgroup]['clusters']['main']
+            except Exception as e:
+                print('Unable to extract clusters from', kwikfile)
+                continue
             for cluster_id in channel_groups[cgroup]['clusters']['main']:
                 clusters = np.array(channel_groups[cgroup]['spikes']['clusters']['main'])
                 idx = np.nonzero(clusters == int(cluster_id))
