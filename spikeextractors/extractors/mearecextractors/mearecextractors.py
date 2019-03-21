@@ -30,39 +30,27 @@ class MEArecRecordingExtractor(RecordingExtractor):
             for chan, pos in enumerate(self._locations):
                 self.setChannelProperty(chan, 'location', pos)
 
-    def __del__(self):
-        if self._filehandle is not None:
-            self._filehandle.close()
-
     def _initialize(self):
         mr, pq, neo = _load_required_modules()
-        recgen, fh = mr.load_recordings(recordings=self._recording_path, return_h5file=True)
-
-        self._filehandle = fh
+        recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True)
         self._fs = recgen.info['recordings']['fs']
         self._recordings = recgen.recordings
-        if len(recgen.channel_positions) == len(recgen.recordings):
-            self._locations = recgen.channel_positions
+        self._num_channels, self._num_frames = np.array(self._recordings).shape
+        if len(np.array(recgen.channel_positions)) == self._num_channels:
+            self._locations = np.array(recgen.channel_positions)
         else:
             self._locations = None
 
-
     def getChannelIds(self):
-        return list(range(self._recordings.shape[0]))
+        return list(range(self._num_channels))
 
     def getNumFrames(self):
-        if self._recordings is None:
-            self._initialize()
-        return self._recordings.shape[1]
+        return self._num_frames
 
     def getSamplingFrequency(self):
-        if self._fs is None:
-            self._initialize()
         return self._fs
 
     def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
-        if self._recordings is None:
-            self._initialize()
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
