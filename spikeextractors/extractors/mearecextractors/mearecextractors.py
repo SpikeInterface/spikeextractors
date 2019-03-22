@@ -35,7 +35,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True)
         self._fs = recgen.info['recordings']['fs']
         self._recordings = recgen.recordings
-        self._num_channels, self._num_frames = np.array(self._recordings).shape
+        self._num_channels, self._num_frames = self._recordings.shape
         if len(np.array(recgen.channel_positions)) == self._num_channels:
             self._locations = np.array(recgen.channel_positions)
         else:
@@ -170,4 +170,3 @@ class MEArecSortingExtractor(SortingExtractor):
             mr.save_recording_generator(recgen, str(save_path), verbose=False)
         else:
             raise Exception("Provide a folder or an .h5/.hdf5 as 'save_path'")
-
