@@ -100,7 +100,7 @@ class MEArecSortingExtractor(SortingExtractor):
 
     def _initialize(self):
         mr, pq, neo = _load_required_modules()
-        recgen = mr.load_recordings(recordings=self._recording_path)
+        recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True)
         self._num_units = len(recgen.spiketrains)
         if 'unit_id' in recgen.spiketrains[0].annotations:
             self._unit_ids = [int(st.annotations['unit_id']) for st in recgen.spiketrains]
