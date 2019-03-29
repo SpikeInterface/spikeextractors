@@ -34,33 +34,33 @@ class TestNumpyExtractors(unittest.TestCase):
         pass
 
     def test_recording_extractor(self):
-        # getChannelIds
-        self.assertEqual(self.RX.getChannelIds(), [i for i in range(self._X.shape[0])])
-        # getNumChannels
-        self.assertEqual(self.RX.getNumChannels(), self._X.shape[0])
-        # getNumFrames
-        self.assertEqual(self.RX.getNumFrames(), self._X.shape[1])
-        # getSamplingFrequency
-        self.assertEqual(self.RX.getSamplingFrequency(), self._samplerate)
-        # getTraces
-        self.assertTrue(np.allclose(self.RX.getTraces(), self._X))
+        # get_channel_ids
+        self.assertEqual(self.RX.get_channel_ids(), [i for i in range(self._X.shape[0])])
+        # get_num_channels
+        self.assertEqual(self.RX.get_num_channels(), self._X.shape[0])
+        # get_num_frames
+        self.assertEqual(self.RX.get_num_frames(), self._X.shape[1])
+        # get_sampling_frequency
+        self.assertEqual(self.RX.get_sampling_frequency(), self._samplerate)
+        # get_traces
+        self.assertTrue(np.allclose(self.RX.get_traces(), self._X))
         self.assertTrue(
-            np.allclose(self.RX.getTraces(channel_ids=[0, 3], start_frame=0, end_frame=12), self._X[[0, 3], 0:12]))
-        # getChannelProperty - location
-        self.assertTrue(np.allclose(np.array(self.RX.getChannelProperty(1, 'location')), self._geom[1, :]))
-        # timeToFrame / frameToTime
-        self.assertEqual(self.RX.timeToFrame(12), 12 * self.RX.getSamplingFrequency())
-        self.assertEqual(self.RX.frameToTime(12), 12 / self.RX.getSamplingFrequency())
-        # getSnippets
-        snippets = self.RX.getSnippets(reference_frames=[0, 30, 50], snippet_len=20)
+            np.allclose(self.RX.get_traces(channel_ids=[0, 3], start_frame=0, end_frame=12), self._X[[0, 3], 0:12]))
+        # get_channel_property - location
+        self.assertTrue(np.allclose(np.array(self.RX.get_channel_property(1, 'location')), self._geom[1, :]))
+        # time_to_frame / frame_to_time
+        self.assertEqual(self.RX.time_to_frame(12), 12 * self.RX.get_sampling_frequency())
+        self.assertEqual(self.RX.frame_to_time(12), 12 / self.RX.get_sampling_frequency())
+        # get_snippets
+        snippets = self.RX.get_snippets(reference_frames=[0, 30, 50], snippet_len=20)
         self.assertTrue(np.allclose(snippets[1], self._X[:, 20:40]))
 
     def test_sorting_extractor(self):
         unit_ids = [1, 2, 3]
-        # getUnitIds
-        self.assertEqual(self.SX.getUnitIds(), unit_ids)
-        # getUnitSpikeTrain
-        st = self.SX.getUnitSpikeTrain(unit_id=1)
+        # get_unit_ids
+        self.assertEqual(self.SX.get_unit_ids(), unit_ids)
+        # get_unit_spike_train
+        st = self.SX.get_unit_spike_train(unit_id=1)
         self.assertTrue(np.allclose(st, self._train1))
 
 

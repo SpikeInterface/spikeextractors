@@ -33,40 +33,40 @@ class PhySortingExtractor(SortingExtractor):
             self._pc_features.append(pc_features[idx])
 
         # set features
-        for u_i, unit in enumerate(self.getUnitIds()):
-            self.setUnitSpikeFeatures(unit, 'amplitudes', self._amps[u_i])
-            self.setUnitSpikeFeatures(unit, 'pc_features', self._pc_features[u_i])
+        for u_i, unit in enumerate(self.get_unit_ids()):
+            self.set_unit_spike_features(unit, 'amplitudes', self._amps[u_i])
+            self.set_unit_spike_features(unit, 'pc_features', self._pc_features[u_i])
 
-    def getUnitIds(self):
+    def get_unit_ids(self):
         return list(self._unit_ids)
 
-    def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        times = self._spiketrains[self.getUnitIds().index(unit_id)]
+        times = self._spiketrains[self.get_unit_ids().index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
 
     @staticmethod
-    def writeSorting(sorting, save_path):
+    def write_sorting(sorting, save_path):
         save_path = Path(save_path)
         spike_times = np.array([])
         spike_clusters = np.array([])
         amplitudes = np.array([])
         pc_features = np.array([])
 
-        for id in sorting.getUnitIds():
-            st = sorting.getUnitSpikeTrain(id)
-            cl = [id] * len(sorting.getUnitSpikeTrain(id))
+        for id in sorting.get_unit_ids():
+            st = sorting.get_unit_spike_train(id)
+            cl = [id] * len(sorting.get_unit_spike_train(id))
             spike_times = np.concatenate((spike_times, np.array(st)))
             spike_clusters = np.concatenate((spike_clusters, np.array(cl)))
-            if 'amplitudes' in sorting.getUnitSpikeFeatureNames():
-                amp = sorting.getUnitSpikeFeatures(id, 'amplitudes')
+            if 'amplitudes' in sorting.get_unit_spike_feature_names():
+                amp = sorting.get_unit_spike_features(id, 'amplitudes')
                 amplitudes = np.concatenate((amplitudes, np.array(amp)))
-            if 'pc_features' in sorting.getUnitSpikeFeatureNames():
-                pc_feat = sorting.getUnitSpikeFeatures(id, 'pc_features')
+            if 'pc_features' in sorting.get_unit_spike_feature_names():
+                pc_feat = sorting.get_unit_spike_features(id, 'pc_features')
                 if len(pc_features) == 0:
                     pc_features = pc_feat
                 else:
@@ -86,5 +86,5 @@ class PhySortingExtractor(SortingExtractor):
         if len(pc_features) > 0:
             pc_features = pc_features[sorting_idxs]
             np.save(save_path / 'pc_features.npy', pc_features)
-            pc_feature_ind = np.tile(np.arange(pc_features.shape[-1]), (len(sorting.getUnitIds()), 1))
+            pc_feature_ind = np.tile(np.arange(pc_features.shape[-1]), (len(sorting.get_unit_ids()), 1))
             np.save(save_path / 'pc_feature_ind.npy', pc_feature_ind)

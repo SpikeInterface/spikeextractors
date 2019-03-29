@@ -23,12 +23,12 @@ class TridesclousSortingExtractor(SortingExtractor):
         self.chan_grp = chan_grp
         self.catalogue = self.dataio.load_catalogue(name='initial', chan_grp=chan_grp)
 
-    def getUnitIds(self):
+    def get_unit_ids(self):
         labels = self.catalogue['clusters']['cluster_label']
         labels = labels[labels>=0]
         return list(labels)
 
-    def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         spikes = self.dataio.get_spikes(seg_num=0, chan_grp=self.chan_grp, i_start=None, i_stop=None)
         spikes = spikes[spikes['cluster_label'] == unit_id]
         spike_times = spikes['index']

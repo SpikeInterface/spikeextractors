@@ -28,7 +28,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
         if self._locations is not None:
             for chan, pos in enumerate(self._locations):
-                self.setChannelProperty(chan, 'location', pos)
+                self.set_channel_property(chan, 'location', pos)
 
     def _initialize(self):
         mr, pq, neo = _load_required_modules()
@@ -41,26 +41,26 @@ class MEArecRecordingExtractor(RecordingExtractor):
         else:
             self._locations = None
 
-    def getChannelIds(self):
+    def get_channel_ids(self):
         return list(range(self._num_channels))
 
-    def getNumFrames(self):
+    def get_num_frames(self):
         return self._num_frames
 
-    def getSamplingFrequency(self):
+    def get_sampling_frequency(self):
         return self._fs
 
-    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
-            end_frame = self.getNumFrames()
+            end_frame = self.get_num_frames()
         if channel_ids is None:
-            channel_ids = range(self.getNumChannels())
+            channel_ids = range(self.get_num_channels())
         return self._recordings[channel_ids, start_frame:end_frame]
 
     @staticmethod
-    def writeRecording(recording, save_path):
+    def write_recording(recording, save_path):
         '''
         Save recording extractor to MEArec format.
         Parameters
@@ -76,11 +76,11 @@ class MEArecRecordingExtractor(RecordingExtractor):
             print("The file will be saved as recording.h5 in the provided folder")
             save_path = save_path / 'recording.h5'
         if save_path.suffix == '.h5' or save_path.suffix == '.hdf5':
-            info = {'recordings': {'fs': recording.getSamplingFrequency()}}
-            rec_dict = {'recordings': recording.getTraces()}
-            if 'location' in recording.getChannelPropertyNames():
-                positions = np.array([recording.getChannelProperty(chan, 'location')
-                                      for chan in recording.getChannelIds()])
+            info = {'recordings': {'fs': recording.get_sampling_frequency()}}
+            rec_dict = {'recordings': recording.get_traces()}
+            if 'location' in recording.get_channel_property_names():
+                positions = np.array([recording.get_channel_property(chan, 'location')
+                                      for chan in recording.get_channel_ids()])
                 rec_dict['channel_positions'] = positions
             recgen = mr.RecordingGenerator(rec_dict=rec_dict, info=info)
             mr.save_recording_generator(recgen, str(save_path), verbose=False)
@@ -111,9 +111,9 @@ class MEArecSortingExtractor(SortingExtractor):
 
         if 'soma_position' in self._spike_trains[0].annotations:
             for u, st in zip(self._unit_ids, self._spike_trains):
-                self.setUnitProperty(u, 'soma_location', st.annotations['soma_position'])
+                self.set_unit_property(u, 'soma_location', st.annotations['soma_position'])
 
-    def getUnitIds(self):
+    def get_unit_ids(self):
         if self._unit_ids is None:
             self._initialize()
         return self._unit_ids
@@ -123,20 +123,20 @@ class MEArecSortingExtractor(SortingExtractor):
             self._initialize()
         return self._num_units
 
-    def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
         if self._spike_trains is None:
             self._initialize()
-        times = (self._spike_trains[self.getUnitIds().index(unit_id)].times.rescale('s') *
+        times = (self._spike_trains[self.get_unit_ids().index(unit_id)].times.rescale('s') *
                  self._fs.rescale('Hz')).magnitude
         inds = np.where((start_frame <= times) & (times < end_frame))
         return np.rint(times[inds]).astype(int)
 
     @staticmethod
-    def writeSorting(sorting, save_path, sampling_frequency):
+    def write_sorting(sorting, save_path, sampling_frequency):
         '''
         Save sorting extractor to MEArec format.
         Parameters
@@ -157,14 +157,15 @@ class MEArecSortingExtractor(SortingExtractor):
         if save_path.suffix == '.h5' or save_path.suffix == '.hdf5':
             # create neo spike trains
             spiketrains = []
-            for u in sorting.getUnitIds():
-                st = neo.SpikeTrain(times=sorting.getUnitSpikeTrain(u) / float(sampling_frequency) * pq.s,
-                                    t_start=np.min(sorting.getUnitSpikeTrain(u) / float(sampling_frequency)) * pq.s,
-                                    t_stop=np.max(sorting.getUnitSpikeTrain(u) / float(sampling_frequency)) * pq.s)
+            for u in sorting.get_unit_ids():
+                st = neo.SpikeTrain(times=sorting.get_unit_spike_train(u) / float(sampling_frequency) * pq.s,
+                                    t_start=np.min(sorting.get_unit_spike_train(u) / float(sampling_frequency)) * pq.s,
+                                    t_stop=np.max(sorting.get_unit_spike_train(u) / float(sampling_frequency)) * pq.s)
                 st.annotate(unit_id=u)
                 spiketrains.append(st)
 
-            info = {'recordings': {'fs': sampling_frequency}}
+            duration = np.max([st.t_stop.magnitude for st in spiketrains])
+            info = {'recordings': {'fs': sampling_frequency}, 'spiketrains': {'duration': duration}}
             rec_dict = {'spiketrains': spiketrains}
             recgen = mr.RecordingGenerator(rec_dict=rec_dict, info=info)
             mr.save_recording_generator(recgen, str(save_path), verbose=False)

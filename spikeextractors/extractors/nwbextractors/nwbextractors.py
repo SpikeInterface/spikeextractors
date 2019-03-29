@@ -9,19 +9,19 @@ class CopyRecordingExtractor(se.RecordingExtractor):
     def __init__(self, other):
         se.RecordingExtractor.__init__(self)
         self._other = other
-        self.copyChannelProperties(other)
+        self.copy_channel_properties(other)
 
-    def getChannelIds(self):
-        return list(range(self._other.getNumChannels()))
+    def get_channel_ids(self):
+        return list(range(self._other.get_num_channels()))
 
-    def getNumFrames(self):
-        return self._other.getNumFrames()
+    def get_num_frames(self):
+        return self._other.get_num_frames()
 
-    def getSamplingFrequency(self):
-        return self._other.getSamplingFrequency()
+    def get_sampling_frequency(self):
+        return self._other.get_sampling_frequency()
 
-    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
-        return self._other.getTraces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame)
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        return self._other.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame)
 
 
 class NwbRecordingExtractor(CopyRecordingExtractor):
@@ -62,7 +62,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             CopyRecordingExtractor.__init__(self, NRX)
 
     @staticmethod
-    def writeRecording(recording, save_path, acquisition_name):
+    def write_recording(recording, save_path, acquisition_name):
         try:
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
@@ -70,8 +70,8 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
-        M = recording.getNumChannels()
-        N = recording.getNumFrames()
+        M = recording.get_num_channels()
+        N = recording.get_num_frames()
 
         nwbfile = NWBFile(
             source='SpikeInterface::NwbRecordingExtractor',
@@ -100,7 +100,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
 
         for m in range(M):
             id = m
-            location = recording.getChannelProperty(m, 'location')
+            location = recording.get_channel_property(m, 'location')
             impedence = -1.0
             while len(location) < 3:
                 location = np.append(location, [0])
@@ -118,15 +118,15 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             'electrode_table_region'
         )
 
-        rate = recording.getSamplingFrequency() / 1000
-        ephys_data = recording.getTraces().T
+        rate = recording.get_sampling_frequency() / 1000
+        ephys_data = recording.get_traces().T
 
         ephys_ts = ElectricalSeries(
             name=acquisition_name,
             source='acquisition_source',
             data=ephys_data,
             electrodes=electrode_table_region,
-            starting_time=recording.frameToTime(0),
+            starting_time=recording.frame_to_time(0),
             rate=rate,
             resolution=1e-6,
             comments='Generated from SpikeInterface::NwbRecordingExtractor',

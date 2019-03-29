@@ -78,11 +78,11 @@ RX=se.NumpyRecordingExtractor(timeseries=timeseries,geom=geom,samplerate=sampler
 You can use the RecordingExtractor to retrieve data and information from the dataset with a variety of standard functions that are predefined in the RecordingExtractor base class.
 
 ```python
-print('Num. channels = {}'.format(len(RX.getChannelIds())))
-print('Sampling frequency = {} Hz'.format(RX.getSamplingFrequency()))
-print('Num. timepoints = {}'.format(RX.getNumFrames()))
-print('Stdev. on third channel = {}'.format(np.std(RX.getTraces(channel_ids=2))))
-print('Location of third electrode = {}'.format(RX.getChannelProperty(channel_id=2, property_name='location')))
+print('Num. channels = {}'.format(len(RX.get_channel_ids())))
+print('Sampling frequency = {} Hz'.format(RX.get_sampling_frequency()))
+print('Num. timepoints = {}'.format(RX.get_num_frames()))
+print('Stdev. on third channel = {}'.format(np.std(RX.get_traces(channel_ids=2))))
+print('Location of third electrode = {}'.format(RX.get_channel_property(channel_id=2, property_name='location')))
 ```
 ```output
 Num. channels = 7
@@ -98,7 +98,7 @@ We will now convert our numpy data into the MountainSort format and save it with
 
 ```python
 # Write this dataset in the MountainSort format
-si.MdaRecordingExtractor.writeRecording(recording=RX,save_path='sample_mountainsort_dataset')
+si.MdaRecordingExtractor.write_recording(recording=RX,save_path='sample_mountainsort_dataset')
 ```
 
 The modular design of RecordingExtractor allow them to be used in a variety of other tasks. For example, RecordingExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubRecordingExtractors and MultiRecordingExtractors. 
@@ -125,10 +125,10 @@ for k in range(1,num_units+1):
 Now, we will demonstrate the API for extracting information from the sorted data using standardized functions from the SortingExtractor.
 
 ```python
-print('Unit ids = {}'.format(SX.getUnitIds()))
-st=SX.getUnitSpikeTrain(unit_id=1)
+print('Unit ids = {}'.format(SX.get_unit_ids()))
+st=SX.get_unit_spike_train(unit_id=1)
 print('Num. events for unit 1 = {}'.format(len(st)))
-st1=SX.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
+st1=SX.get_unit_spike_train(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
 ```
 ```output
@@ -137,9 +137,9 @@ Num. events for unit 1 = 262
 Num. events for first second of unit 1 = 8
 ```
 
-Finally, we can write out our sorted file to the MountainSort format by using the built-in writeSorting method in the MountainSort SortingExtractor subclass.
+Finally, we can write out our sorted file to the MountainSort format by using the built-in write_sorting method in the MountainSort SortingExtractor subclass.
 ```python
-se.MdaSortingExtractor.writeSorting(sorting=SX,save_path='sample_mountainsort_dataset/firings_true.mda')
+se.MdaSortingExtractor.write_sorting(sorting=SX,save_path='sample_mountainsort_dataset/firings_true.mda')
 ```
 
 Now that we have written out our numpy recorded and sorted files in the the MountainSort format, we can easily use the MdaRecordingExtractor and MdaSortingExtractor for our new datasets and the functionality sould be the same.
@@ -150,10 +150,10 @@ RX2=se.MdaRecordingExtractor(dataset_directory='sample_mountainsort_dataset')
 SX2=se.MdaSortingExtractor(firings_file='sample_mountainsort_dataset/firings_true.mda')
 
 # We should get he same information as above
-print('Unit ids = {}'.format(SX2.getUnitIds()))
-st=SX2.getUnitSpikeTrain(unit_id=1)
+print('Unit ids = {}'.format(SX2.get_unit_ids()))
+st=SX2.get_unit_spike_train(unit_id=1)
 print('Num. events for unit 1 = {}'.format(len(st)))
-st1=SX2.getUnitSpikeTrain(unit_id=1,start_frame=0,end_frame=30000)
+st1=SX2.get_unit_spike_train(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
 ```
 ```output
@@ -186,13 +186,13 @@ class ExampleSortingExtractor(SortingExtractor):
         
         ## All file specific initialization code can go here.
         
-    def getUnitIds(self):
+    def get_unit_ids(self):
     
         #Fill code to get a unit_ids list containing all the ids (ints) of detected units in the recording
         
         return unit_ids
 
-    def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
     
         '''Code to extract spike frames from the specified unit.
         It will return spike frames from within three ranges:
@@ -221,7 +221,7 @@ class ExampleSortingExtractor(SortingExtractor):
     .
         
     @staticmethod
-    def writeSorting(sorting, save_path):
+    def write_sorting(sorting, save_path):
         '''
         This is an example of a function that is not abstract so it is optional if you want to override it. It allows other 
         SortingExtractors to use your new SortingExtractor to convert their sorted data into your 

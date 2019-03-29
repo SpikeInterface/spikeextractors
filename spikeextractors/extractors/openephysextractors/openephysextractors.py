@@ -15,22 +15,22 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         self._recording = pyopenephys.File(recording_file).experiments[experiment_id].recordings[recording_id]
         self._dtype = dtype
 
-    def getChannelIds(self):
+    def get_channel_ids(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))
 
-    def getNumFrames(self):
+    def get_num_frames(self):
         return self._recording.analog_signals[0].signal.shape[1]
 
-    def getSamplingFrequency(self):
+    def get_sampling_frequency(self):
         return float(self._recording.sample_rate.rescale('Hz').magnitude)
 
-    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
-            end_frame = self.getNumFrames()
+            end_frame = self.get_num_frames()
         if channel_ids is None:
-            channel_ids = self.getChannelIds()
+            channel_ids = self.get_channel_ids()
         if self._dtype == 'int16':
             return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
         elif self._dtype == 'float':
@@ -51,10 +51,10 @@ class OpenEphysSortingExtractor(SortingExtractor):
         self._spiketrains = self._recording.spiketrains
         self._unit_ids = list([np.unique(st.clusters)[0] for st in self._spiketrains])
 
-    def getUnitIds(self):
+    def get_unit_ids(self):
         return self._unit_ids
 
-    def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

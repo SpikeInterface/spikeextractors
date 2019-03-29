@@ -35,22 +35,22 @@ class KlustaSortingExtractor(SortingExtractor):
                 st = np.array(channel_groups[cgroup]['spikes']['time_samples'])[idx]
                 self._spiketrains.append(st)
                 self._unit_ids.append(int(cluster_id))
-                self.setUnitProperty(int(cluster_id), 'group', group_id)
+                self.set_unit_property(int(cluster_id), 'group', group_id)
 
-    def getUnitIds(self):
+    def get_unit_ids(self):
         return list(self._unit_ids)
 
-    def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        times = self._spiketrains[self.getUnitIds().index(unit_id)]
+        times = self._spiketrains[self.get_unit_ids().index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
 
     @staticmethod
-    def writeSorting(sorting, save_path):
+    def write_sorting(sorting, save_path):
         h5py = _load_required_modules()
         save_path = Path(save_path)
         if save_path.is_dir():
@@ -62,8 +62,8 @@ class KlustaSortingExtractor(SortingExtractor):
             save_path = save_path / 'klusta.kwik'
         F = h5py.File(save_path, 'w')
         F.attrs.create('kwik_version', data=2)
-        if 'group' in sorting.getUnitPropertyNames():
-            cgroups = np.unique([sorting.getUnitProperty(unit, 'group') for unit in sorting.getUnitIds()])
+        if 'group' in sorting.get_unit_property_names():
+            cgroups = np.unique([sorting.get_unit_property(unit, 'group') for unit in sorting.get_unit_ids()])
         else:
             cgroups = [0]
 
@@ -73,17 +73,17 @@ class KlustaSortingExtractor(SortingExtractor):
             channel_group = channel_groups.create_group(str(cgroup))
             time_samples = np.array([])
             cluster_main = np.array([])
-            if 'group' in sorting.getUnitPropertyNames():
-                idxs = [unit for unit in sorting.getUnitIds() if
-                        sorting.getUnitProperty(unit, 'group') == cgroup]
+            if 'group' in sorting.get_unit_property_names():
+                idxs = [unit for unit in sorting.get_unit_ids() if
+                        sorting.get_unit_property(unit, 'group') == cgroup]
             else:
-                idxs = sorting.getUnitIds()
+                idxs = sorting.get_unit_ids()
             clust = channel_group.create_group('clusters')
             clust.create_dataset('main', data=idxs)
             clust.create_dataset('original', data=idxs)
             for id in idxs:
-                st = sorting.getUnitSpikeTrain(id)
-                cl = [id] * len(sorting.getUnitSpikeTrain(id))
+                st = sorting.get_unit_spike_train(id)
+                cl = [id] * len(sorting.get_unit_spike_train(id))
                 time_samples = np.concatenate((time_samples, np.array(st)))
                 cluster_main = np.concatenate((cluster_main, np.array(cl)))
             sorting_idxs = np.argsort(time_samples)

@@ -9,30 +9,30 @@ class CurationSortingExtractor(SortingExtractor):
     def __init__(self, parent_sorting):
         SortingExtractor.__init__(self)
         self._parent_sorting = parent_sorting
-        self._original_unit_ids = list(np.copy(parent_sorting.getUnitIds()))
-        self._all_ids = list(np.copy(parent_sorting.getUnitIds()))
+        self._original_unit_ids = list(np.copy(parent_sorting.get_unit_ids()))
+        self._all_ids = list(np.copy(parent_sorting.get_unit_ids()))
 
         #Create and store roots with original unit ids and cached spiketrains
         self._roots = []
         for i, unit_id in enumerate(self._original_unit_ids):
             root = Unit(unit_id)
-            root.set_spike_train(parent_sorting.getUnitSpikeTrain(unit_id))
+            root.set_spike_train(parent_sorting.get_unit_spike_train(unit_id))
             self._roots.append(root)
         '''
         Copies over properties and spike features from parent_sorting.
         Only spike features will be preserved with merges and splits, properties
         cannot be resolved in these cases.
         '''
-        self.copyUnitProperties(parent_sorting)
-        self.copyUnitSpikeFeatures(parent_sorting)
+        self.copy_unit_properties(parent_sorting)
+        self.copy_unit_spike_features(parent_sorting)
 
-    def getUnitIds(self):
+    def get_unit_ids(self):
         unit_ids = []
         for root in self._roots:
             unit_ids.append(root.unit_id)
         return unit_ids
 
-    def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
@@ -51,7 +51,7 @@ class CurationSortingExtractor(SortingExtractor):
         else:
             raise ValueError(str(unit_id) + " is an invalid unit id")
 
-    def printCurationTree(self, unit_id):
+    def print_curation_tree(self, unit_id):
         '''This function prints the current curation tree for the unit_id (roots are current unit ids).
 
         Parameters
@@ -70,7 +70,7 @@ class CurationSortingExtractor(SortingExtractor):
             raise ValueError("invalid unit id")
 
 
-    def excludeUnits(self, unit_ids):
+    def exclude_units(self, unit_ids):
         '''This function deletes roots from the curation tree according to the given unit_ids
 
         Parameters
@@ -93,7 +93,7 @@ class CurationSortingExtractor(SortingExtractor):
         else:
             raise ValueError(str(unit_ids) + " has one or more invalid unit ids")
 
-    def mergeUnits(self, unit_ids):
+    def merge_units(self, unit_ids):
         '''This function merges two roots from the curation tree according to the given unit_ids. It creates a new unit_id and root
         that has the merged roots as children.
 
@@ -112,7 +112,7 @@ class CurationSortingExtractor(SortingExtractor):
             #Find all unique feature names and create all feature lists
             all_feature_names = []
             for unit_id in unit_ids:
-                feature_names = self.getUnitSpikeFeatureNames(unit_id)
+                feature_names = self.get_unit_spike_feature_names(unit_id)
                 all_feature_names.append(feature_names)
 
             shared_feature_names = set(all_feature_names[0])
@@ -132,7 +132,7 @@ class CurationSortingExtractor(SortingExtractor):
                 new_root.add_child(self._roots[root_index])
                 all_spike_trains.append(self._roots[root_index].get_spike_train())
                 for i, feature_name in enumerate(shared_feature_names):
-                    features = self.getUnitSpikeFeatures(unit_id, feature_name)
+                    features = self.get_unit_spike_features(unit_id, feature_name)
                     shared_features[i].append(features)
                 del self._unit_features[unit_id]
                 self._roots[root_index].set_spike_train(np.asarray([])) #clear spiketrain
@@ -145,11 +145,11 @@ class CurationSortingExtractor(SortingExtractor):
             self._roots = [self._roots[i] for i,_ in enumerate(root_ids) if i not in indices_to_be_deleted]
             self._roots.append(new_root)
             for i, feature_name in enumerate(shared_feature_names):
-                self.setUnitSpikeFeatures(new_root_id, feature_name, np.concatenate(shared_features[i])[sort_indices])
+                self.set_unit_spike_features(new_root_id, feature_name, np.concatenate(shared_features[i])[sort_indices])
         else:
             raise ValueError(str(unit_ids) + " has one or more invalid unit ids")
 
-    def splitUnit(self, unit_id, indices):
+    def split_unit(self, unit_id, indices):
         '''This function splits a root from the curation tree according to the given unit_id and indices. It creates two new unit_ids
         and roots that have the split root as a child. This function splits the spike train of the root by the given indices.
 
@@ -196,10 +196,10 @@ class CurationSortingExtractor(SortingExtractor):
             self._roots.append(new_root_1)
             self._roots.append(new_root_2)
 
-            for feature_name in self.getUnitSpikeFeatureNames(unit_id):
-                full_features = self.getUnitSpikeFeatures(unit_id, feature_name)
-                self.setUnitSpikeFeatures(new_root_1_id, feature_name, full_features[indices_1])
-                self.setUnitSpikeFeatures(new_root_2_id, feature_name, full_features[indices_2])
+            for feature_name in self.get_unit_spike_feature_names(unit_id):
+                full_features = self.get_unit_spike_features(unit_id, feature_name)
+                self.set_unit_spike_features(new_root_1_id, feature_name, full_features[indices_1])
+                self.set_unit_spike_features(new_root_2_id, feature_name, full_features[indices_2])
             del self._unit_features[unit_id]
             del self._roots[root_index]
         else:
