@@ -21,34 +21,34 @@ class BiocamRecordingExtractor(RecordingExtractor):
         self._file_format, self._signalInv, self._positions, self._read_function = openBiocamFile(
             self._recording_file, verbose=verbose)
         for m in range(self._nRecCh):
-            self.setChannelProperty(m, 'location', self._positions[m])
+            self.set_channel_property(m, 'location', self._positions[m])
 
     def __del__(self):
         self._rf.close()
 
-    def getChannelIds(self):
+    def get_channel_ids(self):
         return list(range(self._nRecCh))
 
-    def getNumFrames(self):
+    def get_num_frames(self):
         return self._nFrames
 
-    def getSamplingFrequency(self):
+    def get_sampling_frequency(self):
         return self._samplingRate
 
-    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
-            end_frame = self.getNumFrames()
+            end_frame = self.get_num_frames()
         if channel_ids is None:
-            channel_ids = range(self.getNumChannels())
+            channel_ids = range(self.get_num_channels())
         data = self._read_function(
-            self._rf, start_frame, end_frame, self.getNumChannels())
+            self._rf, start_frame, end_frame, self.get_num_channels())
         return data.reshape((end_frame - start_frame,
-                             self.getNumChannels())).T[channel_ids]
+                             self.get_num_channels())).T[channel_ids]
 
     @staticmethod
-    def writeRecording(recording, save_path):
+    def write_recording(recording, save_path):
         # Convert to uV:
         # AnalogValue = MVOffset + DigitalValue * ADCCountsToMV
         # Where ADCCountsToMV is defined as:
@@ -59,24 +59,24 @@ class BiocamRecordingExtractor(RecordingExtractor):
         # DigitalValue = (AnalogValue - MVOffset)/ADCCountsToMV
         # we center at 2048
         h5py = _load_required_modules()
-        M = recording.getNumChannels()
-        N = recording.getNumFrames()
+        M = recording.get_num_channels()
+        N = recording.get_num_frames()
         rf = h5py.File(save_path, 'w')
         g = rf.create_group('3BData')
         dr = rf.create_dataset('3BData/Raw', (M*N,), dtype=int)
         dt = 50000
         for i in range(N//dt):
-            dr[M*i*dt:M*(i+1)*dt] = recording.getTraces(slice(0, M), i*dt, (i+1)*dt).T.flatten()
-        dr[M*(N//dt)*dt:M*N] = recording.getTraces(slice(0, M), (N//dt)*dt, N).T.flatten()
+            dr[M*i*dt:M*(i+1)*dt] = recording.get_traces(slice(0, M), i*dt, (i+1)*dt).T.flatten()
+        dr[M*(N//dt)*dt:M*N] = recording.get_traces(slice(0, M), (N//dt)*dt, N).T.flatten()
         g.attrs['Version'] = 101
         rf.create_dataset('3BRecInfo/3BRecVars/MinVolt', data=[0])
         rf.create_dataset('3BRecInfo/3BRecVars/MaxVolt', data=[1])
         rf.create_dataset('3BRecInfo/3BRecVars/NRecFrames', data=[N])
-        rf.create_dataset('3BRecInfo/3BRecVars/SamplingRate', data=[recording.getSamplingFrequency()])
+        rf.create_dataset('3BRecInfo/3BRecVars/SamplingRate', data=[recording.get_sampling_frequency()])
         rf.create_dataset('3BRecInfo/3BRecVars/SignalInversion', data=[1])
         rf.create_dataset('3BRecInfo/3BMeaChip/NCols', data=[M])
-        r = [recording.getChannelProperty(i,'location')[-2] for i in range(recording.getNumChannels())]
-        c = [recording.getChannelProperty(i,'location')[-1] for i in range(recording.getNumChannels())]
+        r = [recording.get_channel_property(i,'location')[-2] for i in range(recording.get_num_channels())]
+        c = [recording.get_channel_property(i,'location')[-1] for i in range(recording.get_num_channels())]
         d = np.ndarray((1,len(r)),dtype=[('Row','<i2'),('Col','<i2')])
         d['Row'] = r
         d['Col'] = c

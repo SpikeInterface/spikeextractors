@@ -14,7 +14,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         self._geom = geom
         if geom is not None:
             for m in range(self._timeseries.shape[0]):
-                self.setChannelProperty(m, 'location', self._geom[m, :])
+                self.set_channel_property(m, 'location', self._geom[m, :])
         if recording_channels is not None:
             assert len(recording_channels) == self._timeseries.shape[0], \
                 'Provided recording channels have the wrong length'
@@ -22,20 +22,20 @@ class BinDatRecordingExtractor(RecordingExtractor):
         else:
             self._channels = list(range(self._timeseries.shape[0]))
 
-    def getChannelIds(self):
+    def get_channel_ids(self):
         return self._channels
 
-    def getNumFrames(self):
+    def get_num_frames(self):
         return self._timeseries.shape[1]
 
-    def getSamplingFrequency(self):
+    def get_sampling_frequency(self):
         return self._samplerate
 
-    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
-            end_frame = self.getNumFrames()
+            end_frame = self.get_num_frames()
         if channel_ids is None:
             channel_ids = list(range(self._timeseries.shape[0]))
         else:
@@ -44,16 +44,16 @@ class BinDatRecordingExtractor(RecordingExtractor):
         return recordings
 
     @staticmethod
-    def writeRecording(recording, save_path, dtype=None, transpose=False):
+    def write_recording(recording, save_path, dtype=None, transpose=False):
         save_path = Path(save_path)
         if dtype == None:
             dtype = np.float32
         if not transpose:
             with save_path.open('wb') as f:
-                np.transpose(np.array(recording.getTraces(), dtype=dtype)).tofile(f)
+                np.transpose(np.array(recording.get_traces(), dtype=dtype)).tofile(f)
         elif transpose:
             with save_path.open('wb') as f:
-                np.array(recording.getTraces(), dtype=dtype).tofile(f)
+                np.array(recording.get_traces(), dtype=dtype).tofile(f)
 
 
 def _read_binary(file, numchan, dtype, frames_first, offset):

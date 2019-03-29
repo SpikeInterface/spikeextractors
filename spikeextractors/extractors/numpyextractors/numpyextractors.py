@@ -18,31 +18,31 @@ class NumpyRecordingExtractor(RecordingExtractor):
         self._geom = geom
         if geom is not None:
             for m in range(self._timeseries.shape[0]):
-                self.setChannelProperty(m, 'location', self._geom[m, :])
+                self.set_channel_property(m, 'location', self._geom[m, :])
 
-    def getChannelIds(self):
+    def get_channel_ids(self):
         return list(range(self._timeseries.shape[0]))
 
-    def getNumFrames(self):
+    def get_num_frames(self):
         return self._timeseries.shape[1]
 
-    def getSamplingFrequency(self):
+    def get_sampling_frequency(self):
         return self._samplerate
 
-    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
-            end_frame = self.getNumFrames()
+            end_frame = self.get_num_frames()
         if channel_ids is None:
-            channel_ids = self.getChannelIds()
+            channel_ids = self.get_channel_ids()
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
         return recordings
 
     @staticmethod
-    def writeRecording(recording, save_path):
+    def write_recording(recording, save_path):
         save_path = Path(save_path)
-        np.save(save_path, recording.getTraces())
+        np.save(save_path, recording.get_traces())
 
 
 class NumpySortingExtractor(SortingExtractor):
@@ -53,9 +53,9 @@ class NumpySortingExtractor(SortingExtractor):
         # self._properties = {}
 
     def loadFromExtractor(self, sorting):
-        ids = sorting.getUnitIds()
+        ids = sorting.get_unit_ids()
         for id in ids:
-            self.addUnit(id, sorting.getUnitSpikeTrain(id))
+            self.addUnit(id, sorting.get_unit_spike_train(id))
 
     def setTimesLabels(self, times, labels):
         units = np.sort(np.unique(labels))
@@ -67,10 +67,10 @@ class NumpySortingExtractor(SortingExtractor):
         self._unit_ids.append(unit_id)
         self._units[unit_id] = dict(times=times)
 
-    def getUnitIds(self):
+    def get_unit_ids(self):
         return self._unit_ids
 
-    def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

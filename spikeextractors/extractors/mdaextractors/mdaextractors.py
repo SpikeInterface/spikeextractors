@@ -34,45 +34,45 @@ class MdaRecordingExtractor(RecordingExtractor):
         self._num_channels = X.N1()
         self._num_timepoints = X.N2()
         for m in range(self._num_channels):
-            self.setChannelProperty(m, 'location', self._geom[m, :])
+            self.set_channel_property(m, 'location', self._geom[m, :])
 
-    def getChannelIds(self):
+    def get_channel_ids(self):
         return list(range(self._num_channels))
 
-    def getNumFrames(self):
+    def get_num_frames(self):
         return self._num_timepoints
 
-    def getSamplingFrequency(self):
+    def get_sampling_frequency(self):
         return self._samplerate
 
-    def getTraces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
-            end_frame = self.getNumFrames()
+            end_frame = self.get_num_frames()
         if channel_ids is None:
-            channel_ids = self.getChannelIds()
+            channel_ids = self.get_channel_ids()
         X = DiskReadMda(self._timeseries_path)
         recordings = X.readChunk(i1=0, i2=start_frame, N1=X.N1(), N2=end_frame - start_frame)
         recordings = recordings[channel_ids, :]
         return recordings
 
     @staticmethod
-    def writeRecording(recording, save_path, params=dict()):
-        channel_ids = recording.getChannelIds()
+    def write_recording(recording, save_path, params=dict()):
+        channel_ids = recording.get_channel_ids()
         M = len(channel_ids)
-        N = recording.getNumFrames()
-        raw = recording.getTraces()
-        location0 = recording.getChannelProperty(channel_ids[0], 'location')
+        N = recording.get_num_frames()
+        raw = recording.get_traces()
+        location0 = recording.get_channel_property(channel_ids[0], 'location')
         nd = len(location0)
         geom = np.zeros((M, nd))
         for ii in range(len(channel_ids)):
-            location_ii = recording.getChannelProperty(channel_ids[ii], 'location')
+            location_ii = recording.get_channel_property(channel_ids[ii], 'location')
             geom[ii, :] = list(location_ii)
         if not os.path.isdir(save_path):
             os.mkdir(save_path)
         writemda32(raw, os.path.join(save_path, 'raw.mda'))
-        params["samplerate"] = recording.getSamplingFrequency()
+        params["samplerate"] = recording.get_sampling_frequency()
         with open(os.path.join(save_path, 'params.json'),'w') as f:
             json.dump(params, f)
         np.savetxt(os.path.join(save_path, 'geom.csv'), geom, delimiter=',')
@@ -101,10 +101,10 @@ class MdaSortingExtractor(SortingExtractor):
         self._labels = self._firings[2, :]
         self._unit_ids = np.unique(self._labels).astype(int)
 
-    def getUnitIds(self):
+    def get_unit_ids(self):
         return self._unit_ids
 
-    def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
@@ -113,8 +113,8 @@ class MdaSortingExtractor(SortingExtractor):
         return np.rint(self._times[inds]).astype(int)
 
     @staticmethod
-    def writeSorting(sorting, save_path):
-        unit_ids = sorting.getUnitIds()
+    def write_sorting(sorting, save_path):
+        unit_ids = sorting.get_unit_ids()
         if len(unit_ids) > 0:
             K = np.max(unit_ids)
         else:
@@ -123,7 +123,7 @@ class MdaSortingExtractor(SortingExtractor):
         labels_list = []
         for i in range(len(unit_ids)):
             unit = unit_ids[i]
-            times = sorting.getUnitSpikeTrain(unit_id=unit)
+            times = sorting.get_unit_spike_train(unit_id=unit)
             times_list.append(times)
             labels_list.append(np.ones(times.shape) * unit)
         all_times = _concatenate(times_list)

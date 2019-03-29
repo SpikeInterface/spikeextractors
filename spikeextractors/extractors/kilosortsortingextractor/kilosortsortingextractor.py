@@ -23,26 +23,26 @@ class KiloSortSortingExtractor(SortingExtractor):
             idx = np.where(spike_clusters == clust)[0]
             self._spiketrains.append(spike_times[idx])
 
-    def getUnitIds(self):
+    def get_unit_ids(self):
         return list(self._unit_ids)
 
-    def getUnitSpikeTrain(self, unit_id, start_frame=None, end_frame=None):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        times = self._spiketrains[self.getUnitIds().index(unit_id)]
+        times = self._spiketrains[self.get_unit_ids().index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
 
     @staticmethod
-    def writeSorting(sorting, save_path):
+    def write_sorting(sorting, save_path):
         save_path = Path(save_path)
         spike_times = np.array([])
         spike_templates = np.array([])
-        for id in sorting.getUnitIds():
-            st = sorting.getUnitSpikeTrain(id)
-            cl = [id] * len(sorting.getUnitSpikeTrain(id))
+        for id in sorting.get_unit_ids():
+            st = sorting.get_unit_spike_train(id)
+            cl = [id] * len(sorting.get_unit_spike_train(id))
             spike_times = np.concatenate((spike_times, np.array(st)))
             spike_templates = np.concatenate((spike_templates, np.array(cl)))
         sorting_idxs = np.argsort(spike_times)

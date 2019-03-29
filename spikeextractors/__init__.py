@@ -23,4 +23,4 @@ from .extractors.spykingcircussortingextractor.spykingcircussortingextractor imp
 from .extractors.tridesclousextractor.tridesclousextractor import TridesclousSortingExtractor
 
 from . import example_datasets
-from .tools import loadProbeFile, saveProbeFile, writeBinaryDatFormat, getSubExtractorsByProperty
+from .tools import load_probe_file, save_probe_file, write_binary_dat_format, get_sub_extractors_by_property

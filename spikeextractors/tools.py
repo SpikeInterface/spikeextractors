@@ -32,7 +32,7 @@ def read_python(path):
     return metadata
 
 
-def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
+def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None):
     '''Loads channel information into recording extractor. If a .prb file is given,
     then 'location' and 'group' information for each channel is stored. If a .csv
     file is given, then it will only store 'location'
@@ -58,13 +58,13 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
                 for key_prop, prop_val in cgroup.items():
                     if key_prop == 'channels':
                         ordered_channels = np.concatenate((ordered_channels, prop_val))
-            
-            if list(ordered_channels) == recording.getChannelIds():
+
+            if list(ordered_channels) == recording.get_channel_ids():
                 subrecording = recording
             else:
-                if not np.all([chan in recording.getChannelIds() for chan in ordered_channels]):
+                if not np.all([chan in recording.get_channel_ids() for chan in ordered_channels]):
                     print('Some channel in PRB file are in original recording')
-                present_ordered_channels = [chan for chan in ordered_channels if chan in recording.getChannelIds()]
+                present_ordered_channels = [chan for chan in ordered_channels if chan in recording.get_channel_ids()]
                 subrecording = SubRecordingExtractor(recording, channel_ids=present_ordered_channels)
             for cgroup_id in groups:
                 cgroup = probe_dict['channel_groups'][cgroup_id]
@@ -72,44 +72,44 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
                     raise Exception("If more than one 'channel_group' is in the probe file, the 'channels' field"
                                     "for each channel group is required")
                 elif 'channels' not in cgroup.keys():
-                    channels_in_group = subrecording.getNumChannels()
+                    channels_in_group = subrecording.get_num_channels()
                 else:
                     channels_in_group = len(cgroup['channels'])
                 for key_prop, prop_val in cgroup.items():
                     if key_prop == 'channels':
                         for i_ch, prop in enumerate(prop_val):
-                            if prop in subrecording.getChannelIds():
-                                subrecording.setChannelProperty(prop, 'group', int(cgroup_id))
+                            if prop in subrecording.get_channel_ids():
+                                subrecording.set_channel_property(prop, 'group', int(cgroup_id))
                     elif key_prop == 'geometry' or key_prop == 'location':
                         if isinstance(prop_val, dict):
                             if len(prop_val.keys()) == channels_in_group:
                                 print('geometry in PRB have not the same length as channel in group')
                             for (i_ch, prop) in prop_val.items():
-                                if i_ch in subrecording.getChannelIds():
-                                    subrecording.setChannelProperty(i_ch, 'location', prop)
+                                if i_ch in subrecording.get_channel_ids():
+                                    subrecording.set_channel_property(i_ch, 'location', prop)
                         elif isinstance(prop_val, (list, np.ndarray)) and len(prop_val) == channels_in_group:
-                            for (i_ch, prop) in zip(subrecording.getChannelIds(), prop_val):
-                                if i_ch in subrecording.getChannelIds():
-                                    subrecording.setChannelProperty(i_ch, 'location', prop)
+                            for (i_ch, prop) in zip(subrecording.get_channel_ids(), prop_val):
+                                if i_ch in subrecording.get_channel_ids():
+                                    subrecording.set_channel_property(i_ch, 'location', prop)
                     else:
                         if isinstance(prop_val, dict) and len(prop_val.keys()) == channels_in_group:
                             for (i_ch, prop) in prop_val.items():
-                                if i_ch in subrecording.getChannelIds():
-                                    subrecording.setChannelProperty(i_ch, key_prop, prop)
+                                if i_ch in subrecording.get_channel_ids():
+                                    subrecording.set_channel_property(i_ch, key_prop, prop)
                         elif isinstance(prop_val, (list, np.ndarray)) and len(prop_val) == channels_in_group:
-                            for (i_ch, prop) in zip(subrecording.getChannelIds(), prop_val):
-                                if i_ch in subrecording.getChannelIds():
-                                    subrecording.setChannelProperty(i_ch, key_prop, prop)
+                            for (i_ch, prop) in zip(subrecording.get_channel_ids(), prop_val):
+                                if i_ch in subrecording.get_channel_ids():
+                                    subrecording.set_channel_property(i_ch, key_prop, prop)
                 # create dummy locations
                 if 'geometry' not in cgroup.keys() and 'location' not in cgroup.keys():
-                    for i, chan in enumerate(subrecording.getChannelIds()):
-                        subrecording.setChannelProperty(chan, 'location', [i, 0])
+                    for i, chan in enumerate(subrecording.get_channel_ids()):
+                        subrecording.set_channel_property(chan, 'location', [i, 0])
         else:
             raise AttributeError("'.prb' file should contain the 'channel_groups' field")
 
     elif probe_file.suffix == '.csv':
         if channel_map is not None:
-            assert np.all([chan in channel_map for chan in recording.getChannelIds()]), \
+            assert np.all([chan in channel_map for chan in recording.get_channel_ids()]), \
                 "all channel_ids in 'channel_map' must be in the original recording channel ids"
             subrecording = SubRecordingExtractor(recording, channel_ids=channel_map)
         else:
@@ -121,22 +121,22 @@ def loadProbeFile(recording, probe_file, channel_map=None, channel_groups=None):
             for pos in (posreader):
                 row_count += 1
                 loaded_pos.append(pos)
-            assert len(subrecording.getChannelIds()) == row_count, "The .csv file must contain as many " \
+            assert len(subrecording.get_channel_ids()) == row_count, "The .csv file must contain as many " \
                                                                    "rows as the number of channels in the recordings"
-            for i_ch, pos in zip(subrecording.getChannelIds(), loaded_pos):
-                if i_ch in subrecording.getChannelIds():
-                    subrecording.setChannelProperty(i_ch, 'location', list(np.array(pos).astype(float)))
-            if channel_groups is not None and len(channel_groups) == len(subrecording.getChannelIds()):
-                for i_ch, chg in zip(subrecording.getChannelIds(), channel_groups):
-                    if i_ch in subrecording.getChannelIds():
-                        subrecording.setChannelProperty(i_ch, 'group', chg)
+            for i_ch, pos in zip(subrecording.get_channel_ids(), loaded_pos):
+                if i_ch in subrecording.get_channel_ids():
+                    subrecording.set_channel_property(i_ch, 'location', list(np.array(pos).astype(float)))
+            if channel_groups is not None and len(channel_groups) == len(subrecording.get_channel_ids()):
+                for i_ch, chg in zip(subrecording.get_channel_ids(), channel_groups):
+                    if i_ch in subrecording.get_channel_ids():
+                        subrecording.set_channel_property(i_ch, 'group', chg)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 
     return subrecording
 
 
-def saveProbeFile(recording, probe_file, format=None, radius=100, dimensions=None):
+def save_probe_file(recording, probe_file, format=None, radius=100, dimensions=None):
     '''Saves probe file from the channel information of the given recording
     extractor
 
@@ -156,9 +156,9 @@ def saveProbeFile(recording, probe_file, format=None, radius=100, dimensions=Non
     if probe_file.suffix == '.csv':
         # write csv probe file
         with probe_file.open('w') as f:
-            if 'location' in recording.getChannelPropertyNames():
-                for chan in recording.getChannelIds():
-                    loc = recording.getChannelProperty(chan, 'location')
+            if 'location' in recording.get_channel_property_names():
+                for chan in recording.get_channel_ids():
+                    loc = recording.get_channel_property(chan, 'location')
                     if len(loc) == 2:
                         f.write(str(loc[0]))
                         f.write(',')
@@ -180,7 +180,7 @@ def saveProbeFile(recording, probe_file, format=None, radius=100, dimensions=Non
         raise NotImplementedError("Only .csv and .prb probe files can be saved.")
 
 
-def writeBinaryDatFormat(recording, save_path, time_axis=0, dtype=None, chunksize=None):
+def write_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunksize=None):
     '''Saves the traces of a recording extractor in binary .dat format.
 
     Parameters
@@ -204,9 +204,9 @@ def writeBinaryDatFormat(recording, save_path, time_axis=0, dtype=None, chunksiz
     if save_path.suffix == '':
         # when suffix is already raw/bin/dat do not change it.
         save_path = save_path.parent / (save_path.name + '.dat')
-    
+
     if chunksize is None:
-        traces = recording.getTraces()
+        traces = recording.get_traces()
         if dtype is not None:
             traces = traces.astype(dtype)
         if time_axis == 0:
@@ -215,25 +215,25 @@ def writeBinaryDatFormat(recording, save_path, time_axis=0, dtype=None, chunksiz
             traces.tofile(f)
     else:
         assert time_axis ==0, 'chunked writting work only with time_axis 0'
-        n_sample = recording.getNumFrames()
-        n_chan = recording.getNumChannels()
+        n_sample = recording.get_num_frames()
+        n_chan = recording.get_num_channels()
         n_chunk = n_sample // chunksize
         if n_sample % chunksize > 0:
             n_chunk += 1
         with save_path.open('wb') as f:
             for i in range(n_chunk):
-                traces = recording.getTraces(start_frame=i*chunksize,
+                traces = recording.get_traces(start_frame=i*chunksize,
                                             end_frame=min((i+1)*chunksize, n_sample))
                 if dtype is not None:
                     traces = traces.astype(dtype)
                 if time_axis == 0:
                     traces = traces.T
                 f.write(traces.tobytes())
-    
+
     return save_path
 
 
-def getSubExtractorsByProperty(extractor, property_name, return_property_list=False):
+def get_sub_extractors_by_property(extractor, property_name, return_property_list=False):
     '''Divides Recording or Sorting Extractor based on the property_name (e.g. group)
 
     Parameters
@@ -251,34 +251,34 @@ def getSubExtractorsByProperty(extractor, property_name, return_property_list=Fa
 
     '''
     if isinstance(extractor, RecordingExtractor):
-        if property_name not in extractor.getChannelPropertyNames():
+        if property_name not in extractor.get_channel_property_names():
             raise ValueError("'property_name' must be must be a property of the recording channels")
         else:
             sub_list = []
             recording = extractor
-            properties = np.array([recording.getChannelProperty(chan, property_name)
-                                   for chan in recording.getChannelIds()])
+            properties = np.array([recording.get_channel_property(chan, property_name)
+                                   for chan in recording.get_channel_ids()])
             prop_list = np.unique(properties)
             for prop in prop_list:
                 prop_idx = np.where(prop == properties)
-                chan_idx = list(np.array(recording.getChannelIds())[prop_idx])
+                chan_idx = list(np.array(recording.get_channel_ids())[prop_idx])
                 sub_list.append(SubRecordingExtractor(recording, channel_ids=chan_idx))
             if return_property_list:
                 return sub_list, prop_list
             else:
                 return sub_list
     elif isinstance(extractor, SortingExtractor):
-        if property_name not in extractor.getUnitPropertyNames():
+        if property_name not in extractor.get_unit_property_names():
             raise ValueError("'property_name' must be must be a property of the units")
         else:
             sub_list = []
             sorting = extractor
-            properties = np.array([sorting.getUnitProperty(unit, property_name)
-                                   for unit in sorting.getUnitIds()])
+            properties = np.array([sorting.get_unit_property(unit, property_name)
+                                   for unit in sorting.get_unit_ids()])
             prop_list = np.unique(properties)
             for prop in prop_list:
                 prop_idx = np.where(prop == properties)
-                unit_idx = list(np.array(sorting.getUnitIds())[prop_idx])
+                unit_idx = list(np.array(sorting.get_unit_ids())[prop_idx])
                 sub_list.append(SubSortingExtractor(sorting, unit_ids=unit_idx))
             if return_property_list:
                 return sub_list, prop_list
@@ -324,9 +324,9 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
     abspath = file_name.absolute()
 
     if geometry:
-        if 'location' in recording.getChannelPropertyNames():
-            positions = np.array([recording.getChannelProperty(chan, 'location')
-                                  for chan in recording.getChannelIds()])
+        if 'location' in recording.get_channel_property_names():
+            positions = np.array([recording.get_channel_property(chan, 'location')
+                                  for chan in recording.get_channel_ids()])
             if dimensions is not None:
                 positions = positions[:, dimensions]
         else:
@@ -336,15 +336,15 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
     else:
         positions = None
 
-    if 'group' in recording.getChannelPropertyNames():
-        groups = np.array([recording.getChannelProperty(chan, 'group') for chan in recording.getChannelIds()])
+    if 'group' in recording.get_channel_property_names():
+        groups = np.array([recording.get_channel_property(chan, 'group') for chan in recording.get_channel_ids()])
         channel_groups = np.unique([groups])
     else:
         print("'group' property is not available and it will not be saved.")
         channel_groups = [0]
-        groups = np.array([0] * recording.getNumChannels())
+        groups = np.array([0] * recording.get_num_channels())
 
-    n_elec = recording.getNumChannels()
+    n_elec = recording.get_num_channels()
 
     # find adjacency graph
     if graph:
