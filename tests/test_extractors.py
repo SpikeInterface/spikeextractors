@@ -187,7 +187,7 @@ class TestExtractors(unittest.TestCase):
         CSX = se.CurationSortingExtractor(
             parent_sorting=self.SX
         )
-        CSX.mergeUnits(unit_ids=[1, 2])
+        CSX.merge_units(unit_ids=[1, 2])
         original_spike_train = np.concatenate((self.SX.get_unit_spike_train(1), self.SX.get_unit_spike_train(2)))
         indices_sort = np.argsort(original_spike_train)
         original_spike_train = original_spike_train[indices_sort]
@@ -197,7 +197,7 @@ class TestExtractors(unittest.TestCase):
         self.assertTrue(np.array_equal(CSX.get_unit_spike_features(4, 'f_int'), original_features))
         self.assertTrue(np.array_equal(np.asarray(CSX.get_unit_spike_feature_names(4)), np.asarray(['f_int'])))
 
-        CSX.splitUnit(unit_id=3, indices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        CSX.split_unit(unit_id=3, indices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         original_spike_train = self.SX.get_unit_spike_train(3)
         original_features = self.SX.get_unit_spike_features(3, 'f_int')
         split_spike_train_1 = CSX.get_unit_spike_train(5)
