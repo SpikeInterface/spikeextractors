@@ -164,7 +164,8 @@ class MEArecSortingExtractor(SortingExtractor):
                 st.annotate(unit_id=u)
                 spiketrains.append(st)
 
-            info = {'recordings': {'fs': sampling_frequency}}
+            duration = np.max([st.t_stop.magnitude for st in spiketrains])
+            info = {'recordings': {'fs': sampling_frequency}, 'spiketrains': {'duration': duration}}
             rec_dict = {'spiketrains': spiketrains}
             recgen = mr.RecordingGenerator(rec_dict=rec_dict, info=info)
             mr.save_recording_generator(recgen, str(save_path), verbose=False)
