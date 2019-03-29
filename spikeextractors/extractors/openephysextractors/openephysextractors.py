@@ -2,13 +2,27 @@ from spikeextractors import RecordingExtractor, SortingExtractor
 import numpy as np
 
 
+try:
+    import pyopenephys
+    HAVE_OE = True
+except ImportError:
+    HAVE_OE = False
+
 class OpenEphysRecordingExtractor(RecordingExtractor):
+
+    extractor_name = 'OpenEphysRecordingExtractor'
+    installed = HAVE_OE  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'recording_file', 'type': 'str', 'title': "str, Path to file"},
+        {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
+        {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
+        {'name': 'dtype', 'type': 'list',  'value':'float', 'default':'float', 'values':['float', 'int16']},
+    ]
+
+    installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
+
     def __init__(self, recording_file, *, experiment_id=0, recording_id=0, dtype='float'):
-        try:
-            import pyopenephys
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the OpenEphys extractor, install pyopenephys: \n\n"
-                                      "pip install pyopenephys\n\n")
+        assert HAVE_OE, installation_mesg
         assert dtype == 'int16' or 'float' in dtype, "'dtype' can be int16 (memory map) or 'float' (load into memory)"
         RecordingExtractor.__init__(self)
         self._recording_file = recording_file
@@ -39,12 +53,19 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
 
 
 class OpenEphysSortingExtractor(SortingExtractor):
+
+    extractor_name = 'OpenEphysSortingExtractor'
+    installed = HAVE_OE  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'recording_file', 'type': 'str', 'title': "str, Path to file"},
+        {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
+        {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
+    ]
+
+    installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
+
     def __init__(self, recording_file, *, experiment_id=0, recording_id=0):
-        try:
-            import pyopenephys
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the OpenEphys extractor, install pyopenephys: \n\n"
-                                      "pip install pyopenephys\n\n")
+        assert HAVE_OE, installation_mesg
         SortingExtractor.__init__(self)
         self._recording_file = recording_file
         self._recording = pyopenephys.File(recording_file).experiments[experiment_id].recordings[recording_id]

@@ -2,8 +2,15 @@ from spikeextractors import SortingExtractor
 import numpy as np
 from pathlib import Path
 
-
 class PhySortingExtractor(SortingExtractor):
+
+    extractor_name = 'PhySortingExtractor'
+    installed = True  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'phy_folder', 'type': 'str', 'title': "str, Path to folder"},
+    ]
+    installation_mesg = ""  # error message when not installed
+
     def __init__(self, phy_folder):
         SortingExtractor.__init__(self)
         phy_folder = Path(phy_folder)

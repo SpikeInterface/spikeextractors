@@ -1,19 +1,23 @@
 from spikeextractors import SortingExtractor
-
 import numpy as np
 
-def _load_required_modules():
-    try:
-        import h5py
-    except ModuleNotFoundError:
-        raise ModuleNotFoundError("To use the BiocamRecordingExtractor install h5py: \n\n"
-                                  "pip install h5py\n\n")
-    return h5py
-
+try:
+    import h5py
+    HAVE_HS2SX = True
+except ImportError:
+    HAVE_HS2SX = False
 
 class HS2SortingExtractor(SortingExtractor):
+
+    extractor_name = 'HS2SortingExtractor'
+    installed = HAVE_HS2SX  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'recording_file', 'type': 'str', 'title': "str, Path to file"},
+    ]
+    installation_mesg = "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
+
     def __init__(self, recording_file):
-        h5py = _load_required_modules()
+        assert HAVE_HS2SX, installation_mesg
         SortingExtractor.__init__(self)
         self._recording_file = recording_file
         self._rf = h5py.File(self._recording_file, mode='r')
@@ -46,7 +50,7 @@ class HS2SortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, save_path):
-        h5py = _load_required_modules()
+        assert HAVE_HS2SX, installation_mesg
         unit_ids = sorting.get_unit_ids()
         times_list = []
         labels_list = []

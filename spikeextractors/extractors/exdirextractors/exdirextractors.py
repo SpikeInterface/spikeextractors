@@ -2,20 +2,23 @@ from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 import numpy as np
 
-
-def _load_required_modules():
-    try:
-        import exdir, quantities
-    except ModuleNotFoundError:
-        raise ModuleNotFoundError("To use the ExdirExtractors run:\n\n"
-                                  "pip install exdir\n\n")
-    return exdir, quantities
-
+try:
+    import exdir, quantities
+    HAVE_EXDIR = True
+except ImportError:
+    HAVE_EXDIR = False
 
 class ExdirRecordingExtractor(RecordingExtractor):
-    def __init__(self, exdir_file):
-        exdir, pq = _load_required_modules()
 
+    extractor_name = 'ExdirRecordingExtractor'
+    installed = HAVE_EXDIR  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'exdir_file', 'type': 'str', 'title': "str, Path to file"},
+    ]
+    installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
+
+    def __init__(self, exdir_file):
+        assert HAVE_EXDIR, installation_mesg
         RecordingExtractor.__init__(self)
         self._exdir_file = exdir_file
         exdir_group = exdir.File(exdir_file)
@@ -46,8 +49,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
 
     @staticmethod
     def write_recording(recording, exdir_file, lfp=False, mua=False):
-        exdir, pq = _load_required_modules()
-
+        assert HAVE_EXDIR, installation_mesg
         channel_ids = recording.get_channel_ids()
         M = len(channel_ids)
         N = recording.get_num_frames()
@@ -180,9 +182,17 @@ class ExdirRecordingExtractor(RecordingExtractor):
 
 
 class ExdirSortingExtractor(SortingExtractor):
-    def __init__(self, exdir_file, sample_rate=None):
-        exdir, pq = _load_required_modules()
 
+    extractor_name = 'ExdirSortingExtractor'
+    installed = HAVE_EXDIR  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'exdir_file', 'type': 'str', 'title': "str, Path to file"},
+        {'name': 'sample_rate', 'type': 'float', 'title': "Sampling rate of recording. Will be overwritten if exdir_file contains this info."},
+    ]
+    installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
+
+    def __init__(self, exdir_file, sample_rate):
+        assert HAVE_EXDIR, installation_mesg
         SortingExtractor.__init__(self)
         self._exdir_file = exdir_file
         exdir_group = exdir.File(exdir_file, plugins=exdir.plugins.quantities)
@@ -190,13 +200,10 @@ class ExdirSortingExtractor(SortingExtractor):
         if 'acquisition' in exdir_group.keys():
             if 'timeseries' in exdir_group['acquisition'].keys():
                 sample_rate = exdir_group['acquisition']['timeseries'].attrs['sample_rate']
-            elif sample_rate is None:
-                raise Exception("Provide 'sample_rate' argument (Hz)")
-        else:
-            if sample_rate is None:
-                raise Exception("Provide 'sample_rate' argument (Hz)")
             else:
                 sample_rate = sample_rate * pq.Hz
+        else:
+            sample_rate = sample_rate * pq.Hz
 
         electrophysiology = exdir_group['processing']['electrophysiology']
         self._unit_ids = []
@@ -224,8 +231,7 @@ class ExdirSortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, exdir_file, recording=None, sample_rate=None):
-        exdir, pq = _load_required_modules()
-
+        assert HAVE_EXDIR, installation_mesg
         if sample_rate is None and recording is None:
             raise Exception("Provide 'sample_rate' argument (Hz)")
         else:

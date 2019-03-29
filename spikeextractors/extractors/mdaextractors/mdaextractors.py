@@ -7,6 +7,15 @@ from .mdaio import DiskReadMda, readmda, writemda32, writemda64
 import os
 
 class MdaRecordingExtractor(RecordingExtractor):
+
+    extractor_name = 'MdaRecordingExtractor'
+    installed = True  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'dataset_directory', 'type': 'str', 'title': "str, Path to folder"},
+        {'name': 'download', 'type': 'bool', 'value':True, 'default':True, 'title': "Download the folder if online"},
+    ]
+    installation_mesg = ""  # error message when not installed
+
     def __init__(self, dataset_directory, *, download=True):
         RecordingExtractor.__init__(self)
         self._dataset_directory = dataset_directory
@@ -79,6 +88,14 @@ class MdaRecordingExtractor(RecordingExtractor):
 
 
 class MdaSortingExtractor(SortingExtractor):
+
+    extractor_name = 'MdaSortingExtractor'
+    installed = True  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'firings_file', 'type': 'str', 'title': "str, Path to file"},
+    ]
+    installation_mesg = ""  # error message when not installed
+
     def __init__(self, firings_file):
 
         SortingExtractor.__init__(self)

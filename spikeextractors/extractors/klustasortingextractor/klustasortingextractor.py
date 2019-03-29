@@ -4,18 +4,23 @@ import numpy as np
 from pathlib import Path
 
 
-def _load_required_modules():
-    try:
-        import h5py
-    except ModuleNotFoundError:
-        raise ModuleNotFoundError("To use the KlustaSortingExtractor install h5py: \n\n"
-                                  "pip install h5py\n\n")
-    return h5py
-
+try:
+    import h5py
+    HAVE_KLSX = True
+except ImportError:
+    HAVE_KLSX = False
 
 class KlustaSortingExtractor(SortingExtractor):
+
+    extractor_name = 'KlustaSortingExtractor'
+    installed = HAVE_KLSX  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'kwikfile', 'type': 'str', 'title': "str, Path to file"},
+    ]
+    installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
+
     def __init__(self, kwikfile):
-        h5py = _load_required_modules()
+        assert HAVE_KLSX, installation_mesg
         SortingExtractor.__init__(self)
         kwikfile = Path(kwikfile).absolute()
         F = h5py.File(kwikfile)
@@ -51,7 +56,7 @@ class KlustaSortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, save_path):
-        h5py = _load_required_modules()
+        assert HAVE_KLSX, installation_mesg
         save_path = Path(save_path)
         if save_path.is_dir():
             save_path = save_path / 'klusta.kwik'

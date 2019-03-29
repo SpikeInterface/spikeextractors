@@ -3,6 +3,14 @@ import numpy as np
 from pathlib import Path
 
 class KiloSortSortingExtractor(SortingExtractor):
+
+    extractor_name = 'KiloSortSortingExtractor'
+    installed = True  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'kilosort_folder', 'type': 'str', 'title': "str, Path to folder"},
+    ]
+    installation_mesg = ""  # error message when not installed
+
     def __init__(self, kilosort_folder):
         SortingExtractor.__init__(self)
         kilosort_folder = Path(kilosort_folder)

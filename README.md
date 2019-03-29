@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/SpikeInterface/spikeextractors.svg?branch=master)](https://travis-ci.org/colehurwitz31/spikeextractors)
 
 Alpha Development
-Version 0.3.1
+Version 0.4.0
 
 
 # spikeextractors

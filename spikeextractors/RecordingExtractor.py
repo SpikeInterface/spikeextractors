@@ -11,6 +11,11 @@ class RecordingExtractor(ABC):
 
     '''
 
+    extractor_name = ''
+    installed = False  # check at class level if installed or not
+    _gui_params = {}
+    installation_mesg = ""  # error message when not installed
+
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
