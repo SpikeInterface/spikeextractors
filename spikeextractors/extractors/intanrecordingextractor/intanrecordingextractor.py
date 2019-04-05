@@ -2,14 +2,25 @@ from spikeextractors import RecordingExtractor, SortingExtractor
 import numpy as np
 from pathlib import Path
 
+try:
+    import pyintan
+    HAVE_INTAN = True
+except ImportError:
+    HAVE_INTAN = False
 
 class IntanRecordingExtractor(RecordingExtractor):
+
+    extractor_name = 'IntanRecordingExtractor'
+    installed = HAVE_INTAN  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'recording_file', 'type': 'str', 'title': "str, Path to file"},
+        {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
+        {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
+    ]
+    installation_mesg = "To use the Intan extractor, install pyintan: \n\n pip install pyintan\n\n"  # error message when not installed
+
     def __init__(self, recording_file, *, experiment_id=0, recording_id=0):
-        try:
-            import pyintan
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the Intan extractor, install pyintan: \n\n"
-                                      "pip install pyintan\n\n")
+        assert HAVE_INTAN, installation_mesg
         RecordingExtractor.__init__(self)
         assert Path(recording_file).suffix == '.rhs' or Path(recording_file).suffix == '.rhd', \
             "Only '.rhd' and '.rhs' files are supported"

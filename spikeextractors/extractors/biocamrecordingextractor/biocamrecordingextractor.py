@@ -4,17 +4,24 @@ import numpy as np
 import ctypes
 
 
-def _load_required_modules():
-    try:
-        import h5py
-    except ModuleNotFoundError:
-        raise ModuleNotFoundError("To use the BiocamRecordingExtractor install h5py: \n\n"
-                                  "pip install h5py\n\n")
-    return h5py
-
+try:
+    import h5py
+    HAVE_BIOCAM = True
+except ImportError:
+    HAVE_BIOCAM = False
 
 class BiocamRecordingExtractor(RecordingExtractor):
+
+    extractor_name = 'BiocamRecordingExtractor'
+    installed = HAVE_BIOCAM  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'recording_file', 'type': 'str', 'title': "str, Path to file"},
+        {'name': 'verbose', 'type': 'bool', 'value':False, 'default':False, 'title': "Verbose option"},
+    ]
+    installation_mesg = "To use the BiocamRecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
+
     def __init__(self, recording_file, verbose=False):
+        assert HAVE_BIOCAM, installation_mesg
         RecordingExtractor.__init__(self)
         self._recording_file = recording_file
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, self._chIndices, \
@@ -58,7 +65,8 @@ class BiocamRecordingExtractor(RecordingExtractor):
         # conversion back
         # DigitalValue = (AnalogValue - MVOffset)/ADCCountsToMV
         # we center at 2048
-        h5py = _load_required_modules()
+
+        assert HAVE_BIOCAM, installation_mesg
         M = recording.get_num_channels()
         N = recording.get_num_frames()
         rf = h5py.File(save_path, 'w')
@@ -86,7 +94,6 @@ class BiocamRecordingExtractor(RecordingExtractor):
 
 def openBiocamFile(filename, verbose=False):
     """Open a Biocam hdf5 file, read and return the recording info, pick te correct method to access raw data, and return this to the caller."""
-    h5py = _load_required_modules()
     rf = h5py.File(filename, 'r')
     # Read recording variables
     recVars = rf.require_group('3BRecInfo/3BRecVars/')

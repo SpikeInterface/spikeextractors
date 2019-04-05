@@ -4,19 +4,23 @@ from spikeextractors import SortingExtractor
 import numpy as np
 from pathlib import Path
 
-
-def _load_required_modules():
-    try:
-        import MEArec as mr
-        import quantities as pq
-        import neo
-    except ModuleNotFoundError:
-        raise ModuleNotFoundError("To use the MEArec extractors, install MEArec: \n\n"
-                                  "pip install MEArec\n\n")
-    return mr, pq, neo
-
+try:
+    import MEArec as mr
+    import quantities as pq
+    import neo
+    HAVE_MREX = True
+except ImportError:
+    HAVE_MREX = False
 
 class MEArecRecordingExtractor(RecordingExtractor):
+
+    extractor_name = 'MEArecRecordingExtractor'
+    installed = HAVE_MREX  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'recording_path', 'type': 'str', 'title': "str, Path to file"},
+    ]
+    installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
+
     def __init__(self, recording_path):
         RecordingExtractor.__init__(self)
         self._recording_path = recording_path
@@ -31,7 +35,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
                 self.set_channel_property(chan, 'location', pos)
 
     def _initialize(self):
-        mr, pq, neo = _load_required_modules()
+        assert HAVE_MREX, installation_mesg
         recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True)
         self._fs = recgen.info['recordings']['fs']
         self._recordings = recgen.recordings
@@ -70,7 +74,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         save_path: str
             .h5 or .hdf5 path
         '''
-        mr, pq, neo = _load_required_modules()
+        assert HAVE_MREX, installation_mesg
         save_path = Path(save_path)
         if save_path.is_dir():
             print("The file will be saved as recording.h5 in the provided folder")
@@ -89,6 +93,14 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
 
 class MEArecSortingExtractor(SortingExtractor):
+
+    extractor_name = 'MEArecSortingExtractor'
+    installed = HAVE_MREX  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'recording_path', 'type': 'str', 'title': "str, Path to file"},
+    ]
+    installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
+
     def __init__(self, recording_path):
         SortingExtractor.__init__(self)
         self._recording_path = recording_path
@@ -99,7 +111,7 @@ class MEArecSortingExtractor(SortingExtractor):
         self._initialize()
 
     def _initialize(self):
-        mr, pq, neo = _load_required_modules()
+        assert HAVE_MREX, installation_mesg
         recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True)
         self._num_units = len(recgen.spiketrains)
         if 'unit_id' in recgen.spiketrains[0].annotations:
@@ -149,7 +161,7 @@ class MEArecSortingExtractor(SortingExtractor):
             Sampling frequency in Hz
 
         '''
-        mr, pq, neo = _load_required_modules()
+        assert HAVE_MREX, installation_mesg
         save_path = Path(save_path)
         if save_path.is_dir():
             print("The file will be saved as sorting.h5 in the provided folder")

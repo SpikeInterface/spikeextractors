@@ -5,6 +5,21 @@ from pathlib import Path
 
 
 class BinDatRecordingExtractor(RecordingExtractor):
+
+    extractor_name = 'BinDatRecordingExtractor'
+    installed = True  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'datfile', 'type': 'str', 'title': "str, Path to file"},
+        {'name': 'samplerate', 'type': 'float', 'title': "Sampling rate in HZ"},
+        {'name': 'numchan', 'type': 'int', 'title': "Number of channels"},
+        {'name': 'dtype', 'type': 'str', 'title': "np.dtype, The dtype of underlying data"},
+        {'name': 'recording_channels', 'type': 'str', 'value':None, 'default':None, 'title': "list, of recording channels"},
+        {'name': 'frames_first', 'type': 'bool', 'value':True, 'default':True, 'title': "Frames first"},
+        {'name': 'geom', 'type': 'str', 'value':None, 'default':None, 'title': "np.ndarray, 2D Numpy array of channel geometry"},
+        {'name': 'offset', 'type': 'int', 'value':0, 'default':0, 'title': "Offset in binary file"},
+    ]
+    installation_mesg = ""  # error message when not installed
+
     def __init__(self, datfile, samplerate, numchan, dtype, recording_channels=None, frames_first=True, geom=None, offset=0):
         RecordingExtractor.__init__(self)
         self._datfile = Path(datfile)

@@ -2,18 +2,23 @@ from spikeextractors import SortingExtractor
 import numpy as np
 from pathlib import Path
 
-def _load_required_modules():
-    try:
-        import h5py
-    except ModuleNotFoundError:
-        raise ModuleNotFoundError("To use the BiocamRecordingExtractor install h5py: \n\n"
-                                  "pip install h5py\n\n")
-    return h5py
-
+try:
+    import h5py
+    HAVE_SCSX = True
+except ImportError:
+    HAVE_SCSX = False
 
 class SpykingCircusSortingExtractor(SortingExtractor):
+
+    extractor_name = 'SpykingCircusSortingExtractor'
+    installed = HAVE_SCSX  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'spykingcircus_folder', 'type': 'str', 'title': "str, Path to folder"},
+    ]
+    installation_mesg = "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
+                               # error message when not installed
     def __init__(self, spykingcircus_folder):
-        h5py = _load_required_modules()
+        assert HAVE_SCSX, installation_mesg
         SortingExtractor.__init__(self)
         spykingcircus_folder = Path(spykingcircus_folder)
         files = spykingcircus_folder.iterdir()
@@ -47,7 +52,7 @@ class SpykingCircusSortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, save_path):
-        h5py = _load_required_modules()
+        assert HAVE_SCSX, installation_mesg
         save_path = Path(save_path)
         if save_path.is_dir():
             save_path = save_path / 'data.result.hdf5'

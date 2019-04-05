@@ -9,8 +9,17 @@ except ImportError:
 
 
 class TridesclousSortingExtractor(SortingExtractor):
+
+    extractor_name = 'TridesclousSortingExtractor'
+    installed = HAVE_TDC  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'tdc_folder', 'type': 'str', 'title': "str, Path to folder"},
+        {'name': 'chan_grp', 'type': 'str', 'value':None, 'default':None, 'title': "list, List of channel groups"},
+    ]
+    installation_mesg = "must install tridesclous" # error message when not installed
+
     def __init__(self, tdc_folder, chan_grp=None):
-        assert HAVE_TDC, 'must install tridesclous'
+        assert HAVE_TDC, installation_mesg
         tdc_folder = Path(tdc_folder)
         SortingExtractor.__init__(self)
         self.dataio = tdc.DataIO(str(tdc_folder))
@@ -19,7 +28,7 @@ class TridesclousSortingExtractor(SortingExtractor):
             chan_grps = list(self.dataio.channel_groups.keys())
             assert len(chan_grps) == 1, 'There are several in the folder chan_grp, specify it'
             chan_grp = chan_grps[0]
-            
+
         self.chan_grp = chan_grp
         self.catalogue = self.dataio.load_catalogue(name='initial', chan_grp=chan_grp)
 
@@ -37,4 +46,3 @@ class TridesclousSortingExtractor(SortingExtractor):
         if end_frame is not None:
             spike_times = spike_times[spike_times < end_frame]
         return spike_times
-
