@@ -130,7 +130,7 @@ class MEArecSortingExtractor(SortingExtractor):
             self._initialize()
         return self._unit_ids
 
-    def getNumUnits(self):
+    def get_num_units(self):
         if self._num_units is None:
             self._initialize()
         return self._num_units
