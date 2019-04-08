@@ -17,7 +17,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
     extractor_name = 'MEArecRecordingExtractor'
     installed = HAVE_MREX  # check at class level if installed or not
     _gui_params = [
-        {'name': 'recording_path', 'type': 'str', 'title': "str, Path to file"},
+        {'name': 'recording_path', 'type': 'str', 'title': "Path to file"},
     ]
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
 

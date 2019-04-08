@@ -7,7 +7,7 @@ class PhySortingExtractor(SortingExtractor):
     extractor_name = 'PhySortingExtractor'
     installed = True  # check at class level if installed or not
     _gui_params = [
-        {'name': 'phy_folder', 'type': 'str', 'title': "str, Path to folder"},
+        {'name': 'phy_folder', 'type': 'str', 'title': "Path to folder"},
     ]
     installation_mesg = ""  # error message when not installed
 

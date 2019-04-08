@@ -16,7 +16,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         {'name': 'recording_file', 'type': 'str', 'title': "str, Path to file"},
         {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
         {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
-        {'name': 'dtype', 'type': 'list',  'value':'float', 'default':'float', 'values':['float', 'int16']},
+        {'name': 'dtype', 'type': 'str',  'value':'float', 'default':'float', 'title':"dtype ('float' or 'int')"},
     ]
 
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed

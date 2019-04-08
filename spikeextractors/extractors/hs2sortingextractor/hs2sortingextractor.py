@@ -12,7 +12,7 @@ class HS2SortingExtractor(SortingExtractor):
     extractor_name = 'HS2SortingExtractor'
     installed = HAVE_HS2SX  # check at class level if installed or not
     _gui_params = [
-        {'name': 'recording_file', 'type': 'str', 'title': "str, Path to file"},
+        {'name': 'recording_file', 'type': 'str', 'title': "Path to file"},
     ]
     installation_mesg = "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
