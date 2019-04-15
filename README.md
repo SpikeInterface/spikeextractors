@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/SpikeInterface/spikeextractors.svg?branch=master)](https://travis-ci.org/colehurwitz31/spikeextractors)
 
 Alpha Development
-Version 0.4.0
+Version 0.4.1
 
 
 # spikeextractors
@@ -118,7 +118,7 @@ labels=np.random.randint(1,num_units+1,size=num_events)
 SX=si.NumpySortingExtractor()
 for k in range(1,num_units+1):
     times_k=times[np.where(labels==k)[0]]
-    SX.addUnit(unit_id=k,times=times_k)
+    SX.add_unit(unit_id=k,times=times_k)
 ```
 <br/>
 

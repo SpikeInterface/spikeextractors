@@ -9,13 +9,13 @@ class BinDatRecordingExtractor(RecordingExtractor):
     extractor_name = 'BinDatRecordingExtractor'
     installed = True  # check at class level if installed or not
     _gui_params = [
-        {'name': 'datfile', 'type': 'str', 'title': "str, Path to file"},
+        {'name': 'datfile', 'type': 'str', 'title': "Path to file"},
         {'name': 'samplerate', 'type': 'float', 'title': "Sampling rate in HZ"},
         {'name': 'numchan', 'type': 'int', 'title': "Number of channels"},
-        {'name': 'dtype', 'type': 'str', 'title': "np.dtype, The dtype of underlying data"},
-        {'name': 'recording_channels', 'type': 'str', 'value':None, 'default':None, 'title': "list, of recording channels"},
+        {'name': 'dtype', 'type': 'np.dtype', 'title': "The dtype of underlying data"},
+        {'name': 'recording_channels', 'type': 'list', 'value':None, 'default':None, 'title': "List of recording channels"},
         {'name': 'frames_first', 'type': 'bool', 'value':True, 'default':True, 'title': "Frames first"},
-        {'name': 'geom', 'type': 'str', 'value':None, 'default':None, 'title': "np.ndarray, 2D Numpy array of channel geometry"},
+        {'name': 'geom', 'type': 'np.ndarray', 'value':None, 'default':None, 'title': "2D Numpy array of channel geometry"},
         {'name': 'offset', 'type': 'int', 'value':0, 'default':0, 'title': "Offset in binary file"},
     ]
     installation_mesg = ""  # error message when not installed

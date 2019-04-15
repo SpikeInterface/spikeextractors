@@ -13,7 +13,7 @@ def toy_example(duration=10, num_channels=4, samplerate=30000, K=10):
     times, labels = synthesize_random_firings(K=K, duration=duration, samplerate=samplerate)
     labels = labels.astype(np.int64)
     SX = se.NumpySortingExtractor()
-    SX.setTimesLabels(times, labels)
+    SX.set_times_labels(times, labels)
     X = synthesize_timeseries(sorting=SX, waveforms=waveforms, noise_level=10, samplerate=samplerate, duration=duration,
                               waveform_upsamplefac=upsamplefac)
 

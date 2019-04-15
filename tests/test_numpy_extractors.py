@@ -26,9 +26,9 @@ class TestNumpyExtractors(unittest.TestCase):
         self.SX = se.NumpySortingExtractor()
         L = 200
         self._train1 = np.rint(np.random.uniform(0, N, L)).astype(int)
-        self.SX.addUnit(unit_id=1, times=self._train1)
-        self.SX.addUnit(unit_id=2, times=np.random.uniform(0, N, L))
-        self.SX.addUnit(unit_id=3, times=np.random.uniform(0, N, L))
+        self.SX.add_unit(unit_id=1, times=self._train1)
+        self.SX.add_unit(unit_id=2, times=np.random.uniform(0, N, L))
+        self.SX.add_unit(unit_id=3, times=np.random.uniform(0, N, L))
 
     def tearDown(self):
         pass
