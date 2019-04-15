@@ -88,7 +88,8 @@ class CurationSortingExtractor(SortingExtractor):
             for unit_id in unit_ids:
                 root_index = root_ids.index(unit_id)
                 indices_to_be_deleted.append(root_index)
-                del self._unit_features[unit_id]
+                if unit_id in self._unit_features:
+                    del self._unit_features[unit_id]
             self._roots = [self._roots[i] for i,_ in enumerate(root_ids) if i not in indices_to_be_deleted]
         else:
             raise ValueError(str(unit_ids) + " has one or more invalid unit ids")
