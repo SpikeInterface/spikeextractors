@@ -52,18 +52,18 @@ class NumpySortingExtractor(SortingExtractor):
         self._units = {}
         # self._properties = {}
 
-    def loadFromExtractor(self, sorting):
+    def load_from_extractor(self, sorting):
         ids = sorting.get_unit_ids()
         for id in ids:
-            self.addUnit(id, sorting.get_unit_spike_train(id))
+            self.add_unit(id, sorting.get_unit_spike_train(id))
 
-    def setTimesLabels(self, times, labels):
+    def set_times_labels(self, times, labels):
         units = np.sort(np.unique(labels))
         for unit in units:
             times0 = times[np.where(labels == unit)[0]]
-            self.addUnit(unit_id=int(unit), times=times0)
+            self.add_unit(unit_id=int(unit), times=times0)
 
-    def addUnit(self, unit_id, times):
+    def add_unit(self, unit_id, times):
         self._unit_ids.append(unit_id)
         self._units[unit_id] = dict(times=times)
 
