@@ -22,7 +22,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
 
     def __init__(self, recording_file, *, experiment_id=0, recording_id=0, dtype='float'):
-        assert HAVE_OE, installation_mesg
+        assert HAVE_OE, "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"
         assert dtype == 'int16' or 'float' in dtype, "'dtype' can be int16 (memory map) or 'float' (load into memory)"
         RecordingExtractor.__init__(self)
         self._recording_file = recording_file
@@ -65,7 +65,7 @@ class OpenEphysSortingExtractor(SortingExtractor):
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
 
     def __init__(self, recording_file, *, experiment_id=0, recording_id=0):
-        assert HAVE_OE, installation_mesg
+        assert HAVE_OE, "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"
         SortingExtractor.__init__(self)
         self._recording_file = recording_file
         self._recording = pyopenephys.File(recording_file).experiments[experiment_id].recordings[recording_id]

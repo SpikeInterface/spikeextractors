@@ -18,7 +18,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
     def __init__(self, exdir_file):
-        assert HAVE_EXDIR, installation_mesg
+        assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         RecordingExtractor.__init__(self)
         self._exdir_file = exdir_file
         exdir_group = exdir.File(exdir_file)
@@ -49,7 +49,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
 
     @staticmethod
     def write_recording(recording, exdir_file, lfp=False, mua=False):
-        assert HAVE_EXDIR, installation_mesg
+        assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         channel_ids = recording.get_channel_ids()
         M = len(channel_ids)
         N = recording.get_num_frames()
@@ -192,7 +192,7 @@ class ExdirSortingExtractor(SortingExtractor):
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
     def __init__(self, exdir_file, sample_rate):
-        assert HAVE_EXDIR, installation_mesg
+        assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         SortingExtractor.__init__(self)
         self._exdir_file = exdir_file
         exdir_group = exdir.File(exdir_file, plugins=exdir.plugins.quantities)
@@ -231,7 +231,7 @@ class ExdirSortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, exdir_file, recording=None, sample_rate=None):
-        assert HAVE_EXDIR, installation_mesg
+        assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         if sample_rate is None and recording is None:
             raise Exception("Provide 'sample_rate' argument (Hz)")
         else:

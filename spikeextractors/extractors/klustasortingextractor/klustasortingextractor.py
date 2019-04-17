@@ -20,7 +20,7 @@ class KlustaSortingExtractor(SortingExtractor):
     installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, kwikfile):
-        assert HAVE_KLSX, installation_mesg
+        assert HAVE_KLSX, "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"
         SortingExtractor.__init__(self)
         kwikfile = Path(kwikfile).absolute()
         F = h5py.File(kwikfile)
@@ -56,7 +56,7 @@ class KlustaSortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, save_path):
-        assert HAVE_KLSX, installation_mesg
+        assert HAVE_KLSX, "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"
         save_path = Path(save_path)
         if save_path.is_dir():
             save_path = save_path / 'klusta.kwik'
