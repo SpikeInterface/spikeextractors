@@ -19,7 +19,7 @@ class TridesclousSortingExtractor(SortingExtractor):
     installation_mesg = "must install tridesclous" # error message when not installed
 
     def __init__(self, tdc_folder, chan_grp=None):
-        assert HAVE_TDC, installation_mesg
+        assert HAVE_TDC, "must install tridesclous"
         tdc_folder = Path(tdc_folder)
         SortingExtractor.__init__(self)
         self.dataio = tdc.DataIO(str(tdc_folder))

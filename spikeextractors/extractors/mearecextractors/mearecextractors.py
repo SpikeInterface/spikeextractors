@@ -35,7 +35,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
                 self.set_channel_property(chan, 'location', pos)
 
     def _initialize(self):
-        assert HAVE_MREX, installation_mesg
+        assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
         recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True)
         self._fs = recgen.info['recordings']['fs']
         self._recordings = recgen.recordings
@@ -74,7 +74,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         save_path: str
             .h5 or .hdf5 path
         '''
-        assert HAVE_MREX, installation_mesg
+        assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
         save_path = Path(save_path)
         if save_path.is_dir():
             print("The file will be saved as recording.h5 in the provided folder")
@@ -111,7 +111,7 @@ class MEArecSortingExtractor(SortingExtractor):
         self._initialize()
 
     def _initialize(self):
-        assert HAVE_MREX, installation_mesg
+        assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
         recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True)
         self._num_units = len(recgen.spiketrains)
         if 'unit_id' in recgen.spiketrains[0].annotations:
@@ -161,7 +161,7 @@ class MEArecSortingExtractor(SortingExtractor):
             Sampling frequency in Hz
 
         '''
-        assert HAVE_MREX, installation_mesg
+        assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
         save_path = Path(save_path)
         if save_path.is_dir():
             print("The file will be saved as sorting.h5 in the provided folder")
