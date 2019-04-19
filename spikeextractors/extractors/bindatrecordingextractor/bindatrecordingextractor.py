@@ -17,16 +17,21 @@ class BinDatRecordingExtractor(RecordingExtractor):
         {'name': 'frames_first', 'type': 'bool', 'value':True, 'default':True, 'title': "Frames first"},
         {'name': 'geom', 'type': 'np.ndarray', 'value':None, 'default':None, 'title': "2D Numpy array of channel geometry"},
         {'name': 'offset', 'type': 'int', 'value':0, 'default':0, 'title': "Offset in binary file"},
+        {'name': 'invert', 'type': 'bool', 'value':False, 'default':False, 'title': "Invert the raw signal"},
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, datfile, samplerate, numchan, dtype, recording_channels=None, frames_first=True, geom=None, offset=0):
+    def __init__(self, datfile, samplerate, numchan, dtype, recording_channels=None, frames_first=True, geom=None, offset=0, invert=False):
         RecordingExtractor.__init__(self)
         self._datfile = Path(datfile)
         self._frame_first = frames_first
         self._timeseries = _read_binary(self._datfile, numchan, dtype, frames_first, offset)
         self._samplerate = float(samplerate)
         self._geom = geom
+        if invert:
+            self._scaling = -1
+        else:
+            self._scaling = 1
         
         if recording_channels is not None:
             assert len(recording_channels) == self._timeseries.shape[0], \
@@ -58,7 +63,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         else:
             channel_ids = [self._channels.index(ch) for ch in channel_ids]
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
-        return recordings
+        return self._scaling*recordings
 
     @staticmethod
     def write_recording(recording, save_path, dtype=None, transpose=False):
