@@ -27,8 +27,9 @@ class HS2SortingExtractor(SortingExtractor):
             for unit_id in self._unit_ids:
                 self.set_unit_property(unit_id, 'unit_location', self._unit_locs[unit_id])
         if 'data' in self._rf.keys():
+            d = self._rf['data'][()] # cache for faster access
             for unit_id in self._unit_ids:
-                self.set_unit_spike_features(unit_id, 'spike_locations', self._rf['data'][:2, self.get_unit_indices(unit_id)].T)
+                self.set_unit_spike_features(unit_id, 'spike_locations', d[:2, self.get_unit_indices(unit_id)].T)
         if 'ch' in self._rf.keys():
             for unit_id in self._unit_ids:
                 self.set_unit_spike_features(unit_id, 'spike_max_channels', np.asarray(self._rf['ch'])[self.get_unit_indices(unit_id)])
