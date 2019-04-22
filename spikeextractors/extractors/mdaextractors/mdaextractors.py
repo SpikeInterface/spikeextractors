@@ -12,7 +12,6 @@ class MdaRecordingExtractor(RecordingExtractor):
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'dataset_directory', 'type': 'str', 'title': "Path to folder"},
-        {'name': 'download', 'type': 'bool', 'value':True, 'default':True, 'title': "Download the folder if online"},
     ]
     installation_mesg = ""  # error message when not installed
 
