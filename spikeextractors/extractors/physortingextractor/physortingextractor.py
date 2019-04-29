@@ -27,8 +27,6 @@ class PhySortingExtractor(SortingExtractor):
             spike_clusters = spike_templates
 
         self._spiketrains = []
-        self._amps = []
-        self._pc_features = []
         clust_id = np.unique(spike_clusters)
         self._unit_ids = list(clust_id)
         spike_times.astype(int)
