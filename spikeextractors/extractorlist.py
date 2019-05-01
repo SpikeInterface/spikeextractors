@@ -12,6 +12,7 @@ from .extractors.openephysextractors.openephysextractors import OpenEphysRecordi
 from .extractors.physortingextractor.physortingextractor import PhySortingExtractor
 from .extractors.bindatrecordingextractor import BinDatRecordingExtractor
 from .extractors.spykingcircussortingextractor.spykingcircussortingextractor import SpykingCircusSortingExtractor
+from .extractors.spikeglxextractor.spikeglxrecordingextractor import SpikeGLXRecordingExtractor
 from .extractors.tridesclousextractor.tridesclousextractor import TridesclousSortingExtractor
 
 
@@ -22,7 +23,8 @@ recording_extractor_full_list = [
     ExdirRecordingExtractor,
     OpenEphysRecordingExtractor,
     IntanRecordingExtractor,
-    BinDatRecordingExtractor
+    BinDatRecordingExtractor,
+    SpikeGLXRecordingExtractor
 ]
 
 installed_recording_extractor_list = [rx for rx in recording_extractor_full_list if rx.installed]
