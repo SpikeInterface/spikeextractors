@@ -13,7 +13,7 @@ from .extractors.physortingextractor.physortingextractor import PhySortingExtrac
 from .extractors.bindatrecordingextractor import BinDatRecordingExtractor
 from .extractors.spykingcircussortingextractor.spykingcircussortingextractor import SpykingCircusSortingExtractor
 from .extractors.spikeglxrecordingextractor.spikeglxrecordingextractor import SpikeGLXRecordingExtractor
-from .extractors.tridesclousrecordingextractor.tridesclousextractor import TridesclousSortingExtractor
+from .extractors.tridescloussortingextractor.tridesclousextractor import TridesclousSortingExtractor
 
 
 recording_extractor_full_list = [
