@@ -13,7 +13,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     extractor_name = 'OpenEphysRecordingExtractor'
     installed = HAVE_OE  # check at class level if installed or not
     _gui_params = [
-        {'name': 'recording_file', 'type': 'str', 'title': "str, Path to file"},
+        {'name': 'recording_file', 'type': 'file_path', 'title': "str, Path to file"},
         {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
         {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
         {'name': 'dtype', 'type': 'str',  'value':'float', 'default':'float', 'title':"dtype ('float' or 'int')"},
@@ -57,7 +57,7 @@ class OpenEphysSortingExtractor(SortingExtractor):
     extractor_name = 'OpenEphysSortingExtractor'
     installed = HAVE_OE  # check at class level if installed or not
     _gui_params = [
-        {'name': 'recording_file', 'type': 'str', 'title': "str, Path to file"},
+        {'name': 'recording_file', 'type': 'file_path', 'title': "str, Path to file"},
         {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
         {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
     ]
