@@ -1,4 +1,5 @@
 from spikeextractors import RecordingExtractor
+from spikeextractors.tools import read_binary
 import os
 import numpy as np
 from pathlib import Path
@@ -34,7 +35,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             metafile = metafile[0]
         tot_chan, ap_chan, samplerate, locations = _parse_spikeglx_metafile(metafile)
         frames_first = True
-        self._timeseries = _read_binary(self._npxfile, tot_chan, dtype, frames_first, offset=0)
+        self._timeseries = read_binary(self._npxfile, tot_chan, dtype, frames_first, offset=0)
         self._samplerate = float(samplerate)
 
         if ap_chan < tot_chan:
@@ -77,20 +78,6 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         elif transpose:
             with save_path.open('wb') as f:
                 np.array(recording.get_traces(), dtype=dtype).tofile(f)
-
-
-def _read_binary(file, numchan, dtype, frames_first, offset):
-    numchan = int(numchan)
-    with Path(file).open() as f:
-        nsamples = (os.fstat(f.fileno()).st_size - offset) // (numchan * np.dtype(dtype).itemsize)
-        if frames_first:
-            samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
-                                shape=(nsamples, numchan))
-            samples = np.transpose(samples)
-        else:
-            samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
-                                shape=(numchan, nsamples))
-    return samples
 
 
 def _parse_spikeglx_metafile(metafile):
