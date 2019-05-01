@@ -10,17 +10,13 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     extractor_name = 'SpikeGLXRecordingExtractor'
     installed = True  # check at class level if installed or not
     _gui_params = [
-        {'name': 'datfile', 'type': 'str', 'title': "Path to file"},
-        {'name': 'samplerate', 'type': 'float', 'title': "Sampling rate in HZ"},
-        {'name': 'numchan', 'type': 'int', 'title': "Number of channels"},
-        {'name': 'dtype', 'type': 'np.dtype', 'title': "The dtype of underlying data"},
-        {'name': 'recording_channels', 'type': 'list', 'value':None, 'default':None, 'title': "List of recording channels"},
-        {'name': 'frames_first', 'type': 'bool', 'value':True, 'default':True, 'title': "Frames first"},
-        {'name': 'offset', 'type': 'int', 'value':0, 'default':0, 'title': "Offset in binary file"},
+        {'name': 'npx_file', 'type': 'str', 'title': "Path to file"},
+        {'name': 'x_pitch', 'type': 'float', 'title': "x pitch for Neuropixels probe (default 21)"},
+        {'name': 'x_pitch', 'type': 'float', 'title': "y pitch for Neuropixels probe (default 20)"},
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, npx_file):
+    def __init__(self, npx_file, x_pitch=None, y_pitch=None):
         RecordingExtractor.__init__(self)
         self._npxfile = Path(npx_file)
         numchan = 385
@@ -33,7 +29,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             raise Exception("'meta' file for ap traces should be in the same folder.")
         else:
             metafile = metafile[0]
-        tot_chan, ap_chan, samplerate, locations = _parse_spikeglx_metafile(metafile)
+        tot_chan, ap_chan, samplerate, locations = _parse_spikeglx_metafile(metafile, x_pitch, y_pitch)
         frames_first = True
         self._timeseries = read_binary(self._npxfile, tot_chan, dtype, frames_first, offset=0)
         self._samplerate = float(samplerate)
@@ -80,11 +76,13 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
                 np.array(recording.get_traces(), dtype=dtype).tofile(f)
 
 
-def _parse_spikeglx_metafile(metafile):
+def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch):
     tot_channels = None
     ap_channels = None
-    x_pitch = 21
-    y_pitch = 20
+    if x_pitch is None:
+        x_pitch = 21
+    if y_pitch is None:
+        y_pitch = 20
     locations = []
     with Path(metafile).open() as f:
         for line in f.readlines():
