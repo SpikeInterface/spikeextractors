@@ -19,7 +19,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, npx_file, geom=None):
+    def __init__(self, npx_file):
         RecordingExtractor.__init__(self)
         self._npxfile = Path(npx_file)
         numchan = 385
@@ -32,19 +32,18 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             raise Exception("'meta' file for ap traces should be in the same folder.")
         else:
             metafile = metafile[0]
-        tot_chan, ap_chan, samplerate = _parse_spikeglx_metafile(metafile)
+        tot_chan, ap_chan, samplerate, locations = _parse_spikeglx_metafile(metafile)
         frames_first = True
         self._timeseries = _read_binary(self._npxfile, tot_chan, dtype, frames_first, offset=0)
         self._samplerate = float(samplerate)
-        self._geom = geom
 
         if ap_chan < tot_chan:
             self._timeseries = self._timeseries[:ap_chan]
         self._channels = list(range(self._timeseries.shape[0]))
 
-        if geom is not None:
+        if len(locations) > 0:
             for m in range(self._timeseries.shape[0]):
-                self.set_channel_property(m, 'location', self._geom[m, :])
+                self.set_channel_property(m, 'location', locations[m])
 
     def get_channel_ids(self):
         return self._channels
@@ -97,6 +96,9 @@ def _read_binary(file, numchan, dtype, frames_first, offset):
 def _parse_spikeglx_metafile(metafile):
     tot_channels = None
     ap_channels = None
+    x_pitch = 21
+    y_pitch = 20
+    locations = []
     with Path(metafile).open() as f:
         for line in f.readlines():
             if 'nSavedChans' in line:
@@ -105,5 +107,13 @@ def _parse_spikeglx_metafile(metafile):
                 ap_channels = int(line.split('=')[-1].split(',')[0].strip())
             if 'imSampRate' in line:
                 fs = float(line.split('=')[-1])
-
-    return tot_channels, ap_channels, fs
+            if 'snsShankMap' in line:
+                map = line.split('=')[-1]
+                chans = map.split(')')[1:]
+                for chan in chans:
+                    chan = chan[1:]
+                    if len(chan) > 0:
+                        x_pos = int(chan.split(':')[1])
+                        y_pos = int(chan.split(':')[2])
+                        locations.append([x_pos*x_pitch, y_pos*y_pitch])
+    return tot_channels, ap_channels, fs, locations
