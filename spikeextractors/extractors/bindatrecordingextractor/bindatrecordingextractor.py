@@ -10,7 +10,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
     extractor_name = 'BinDatRecordingExtractor'
     installed = True  # check at class level if installed or not
     _gui_params = [
-        {'name': 'datfile', 'type': 'str', 'title': "Path to file"},
+        {'name': 'datfile', 'type': 'file_path', 'title': "Path to file"},
         {'name': 'samplerate', 'type': 'float', 'title': "Sampling rate in HZ"},
         {'name': 'numchan', 'type': 'int', 'title': "Number of channels"},
         {'name': 'dtype', 'type': 'np.dtype', 'title': "The dtype of underlying data"},

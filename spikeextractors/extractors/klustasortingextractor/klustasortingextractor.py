@@ -15,7 +15,7 @@ class KlustaSortingExtractor(SortingExtractor):
     extractor_name = 'KlustaSortingExtractor'
     installed = HAVE_KLSX  # check at class level if installed or not
     _gui_params = [
-        {'name': 'kwikfile', 'type': 'str', 'title': "Path to file"},
+        {'name': 'kwikfile', 'type': 'file_path', 'title': "Path to file"},
     ]
     installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
