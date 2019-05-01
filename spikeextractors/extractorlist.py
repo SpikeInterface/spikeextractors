@@ -12,8 +12,8 @@ from .extractors.openephysextractors.openephysextractors import OpenEphysRecordi
 from .extractors.physortingextractor.physortingextractor import PhySortingExtractor
 from .extractors.bindatrecordingextractor import BinDatRecordingExtractor
 from .extractors.spykingcircussortingextractor.spykingcircussortingextractor import SpykingCircusSortingExtractor
-from .extractors.spikeglxextractor.spikeglxrecordingextractor import SpikeGLXRecordingExtractor
-from .extractors.tridesclousextractor.tridesclousextractor import TridesclousSortingExtractor
+from .extractors.spikeglxrecordingextractor.spikeglxrecordingextractor import SpikeGLXRecordingExtractor
+from .extractors.tridesclousrecordingextractor.tridesclousextractor import TridesclousSortingExtractor
 
 
 recording_extractor_full_list = [
