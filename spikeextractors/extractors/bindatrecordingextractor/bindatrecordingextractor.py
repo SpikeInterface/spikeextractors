@@ -1,4 +1,5 @@
 from spikeextractors import RecordingExtractor
+from spikeextractors.tools import read_binary
 import os
 import numpy as np
 from pathlib import Path
@@ -23,7 +24,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         self._datfile = Path(datfile)
         self._frame_first = frames_first
-        self._timeseries = _read_binary(self._datfile, numchan, dtype, frames_first, offset)
+        self._timeseries = read_binary(self._datfile, numchan, dtype, frames_first, offset)
         self._samplerate = float(samplerate)
         self._geom = geom
 
@@ -70,17 +71,3 @@ class BinDatRecordingExtractor(RecordingExtractor):
         elif transpose:
             with save_path.open('wb') as f:
                 np.array(recording.get_traces(), dtype=dtype).tofile(f)
-
-
-def _read_binary(file, numchan, dtype, frames_first, offset):
-    numchan = int(numchan)
-    with Path(file).open() as f:
-        nsamples = (os.fstat(f.fileno()).st_size - offset) // (numchan * np.dtype(dtype).itemsize)
-        if frames_first:
-            samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
-                                shape=(nsamples, numchan))
-            samples = np.transpose(samples)
-        else:
-            samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
-                                shape=(numchan, nsamples))
-    return samples
