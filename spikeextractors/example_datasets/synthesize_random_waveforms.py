@@ -2,7 +2,10 @@ import numpy as np
 from .synthesize_single_waveform import synthesize_single_waveform
 
 
-def synthesize_random_waveforms(*, M=5, T=500, K=20, upsamplefac=13, timeshift_factor=3, average_peak_amplitude=-10):
+def synthesize_random_waveforms(*, M=5, T=500, K=20, upsamplefac=13, timeshift_factor=3, average_peak_amplitude=-10,
+                                seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     geometry = None
     avg_durations = [200, 10, 30, 200]
     avg_amps = [0.5, 10, -1, 0]
