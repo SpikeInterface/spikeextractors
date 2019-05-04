@@ -38,7 +38,6 @@ class PhySortingExtractor(SortingExtractor):
             self.set_unit_spike_features(clust, 'pc_features', pc_features[idx])
 
         # set unit quality properties
-        print(phy_folder)
         if (phy_folder / 'cluster_groups.csv').is_file():
             with open(phy_folder / 'cluster_groups.csv') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
@@ -49,6 +48,27 @@ class PhySortingExtractor(SortingExtractor):
                     else:
                         tokens = row[0].split("\t")
                         self.set_unit_property(int(tokens[0]), 'quality', tokens[1])
+                        line_count += 1
+        elif (phy_folder / 'cluster_group.csv').is_file():
+            with open(phy_folder / 'cluster_groups.csv') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',')
+                line_count = 0
+                for row in csv_reader:
+                    if line_count == 0:
+                        line_count += 1
+                    else:
+                        tokens = row[0].split("\t")
+                        self.set_unit_property(int(tokens[0]), 'quality', tokens[1])
+                        line_count += 1
+        elif (phy_folder / 'cluster_groups.tsv').is_file():
+            with open(phy_folder / 'cluster_group.tsv') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter='\t')
+                line_count = 0
+                for row in csv_reader:
+                    if line_count == 0:
+                        line_count += 1
+                    else:
+                        self.set_unit_property(int(row[0]), 'quality', row[1])
                         line_count += 1
         elif (phy_folder / 'cluster_group.tsv').is_file():
             with open(phy_folder / 'cluster_group.tsv') as csv_file:
