@@ -13,7 +13,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
     extractor_name = 'ExdirRecordingExtractor'
     installed = HAVE_EXDIR  # check at class level if installed or not
     _gui_params = [
-        {'name': 'exdir_file', 'type': 'str', 'title': "Path to file"},
+        {'name': 'exdir_file', 'type': 'file_path', 'title': "Path to file"},
     ]
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
@@ -186,7 +186,7 @@ class ExdirSortingExtractor(SortingExtractor):
     extractor_name = 'ExdirSortingExtractor'
     installed = HAVE_EXDIR  # check at class level if installed or not
     _gui_params = [
-        {'name': 'exdir_file', 'type': 'str', 'title': "str, Path to file"},
+        {'name': 'exdir_file', 'type': 'file_path', 'title': "str, Path to file"},
         {'name': 'sample_rate', 'type': 'float', 'title': "Sampling rate of recording. Will be overwritten if exdir_file contains this info."},
     ]
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed

@@ -10,9 +10,9 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     extractor_name = 'SpikeGLXRecordingExtractor'
     installed = True  # check at class level if installed or not
     _gui_params = [
-        {'name': 'npx_file', 'type': 'str', 'title': "Path to file"},
-        {'name': 'x_pitch', 'type': 'float', 'title': "x_pitch for Neuropixels probe (default 21)"},
-        {'name': 'x_pitch', 'type': 'float', 'title': "y_pitch for Neuropixels probe (default 20)"},
+        {'name': 'npx_file', 'type': 'file_path', 'title': "Path to file"},
+        {'name': 'x_pitch', 'type': 'float', 'value':21, 'default':21, 'title': "x_pitch for Neuropixels probe (default 21)"},
+        {'name': 'y_pitch', 'type': 'float', 'value':20, 'default':20, 'title': "y_pitch for Neuropixels probe (default 20)"},
     ]
     installation_mesg = ""  # error message when not installed
 

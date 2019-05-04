@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-
+import copy
 
 class RecordingExtractor(ABC):
     '''A class that contains functions for extracting important information
@@ -503,6 +503,10 @@ class RecordingExtractor(ABC):
         from .SubRecordingExtractor import SubRecordingExtractor
         return SubRecordingExtractor(parent_recording=self, start_frame=start_frame,
                                      end_frame=end_frame)
+
+    @classmethod
+    def gui_params(self):
+        return copy.deepcopy(self._gui_params)
 
     @staticmethod
     def write_recording(recording, save_path):

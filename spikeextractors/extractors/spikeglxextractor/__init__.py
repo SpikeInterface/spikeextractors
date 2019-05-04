@@ -1,1 +1,0 @@
-from .spikeglxrecordingextractor import SpikeGLXRecordingExtractor

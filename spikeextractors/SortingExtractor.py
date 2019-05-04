@@ -382,6 +382,10 @@ class SortingExtractor(ABC):
                     value = sorting.get_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name)
                     self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name, value=value)
 
+    @classmethod
+    def gui_params(self):
+        return copy.deepcopy(self._gui_params)
+
     @staticmethod
     def write_sorting(sorting, save_path):
         '''This function writes out the spike sorted data file of a given sorting
