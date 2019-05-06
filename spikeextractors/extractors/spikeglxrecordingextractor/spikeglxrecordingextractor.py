@@ -1,5 +1,5 @@
 from spikeextractors import RecordingExtractor
-from spikeextractors.tools import read_binary
+from spikeextractors.extraction_tools import read_binary
 import os
 import numpy as np
 from pathlib import Path

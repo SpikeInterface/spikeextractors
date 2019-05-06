@@ -1,5 +1,5 @@
 from spikeextractors import SortingExtractor
-from spikeextractors.tools import read_python
+from spikeextractors.extraction_tools import read_python
 import numpy as np
 from pathlib import Path
 
