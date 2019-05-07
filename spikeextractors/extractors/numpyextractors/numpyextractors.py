@@ -48,7 +48,6 @@ class NumpyRecordingExtractor(RecordingExtractor):
 class NumpySortingExtractor(SortingExtractor):
     def __init__(self):
         SortingExtractor.__init__(self)
-        self._unit_ids = []
         self._units = {}
         # self._properties = {}
 
@@ -64,11 +63,10 @@ class NumpySortingExtractor(SortingExtractor):
             self.add_unit(unit_id=int(unit), times=times0)
 
     def add_unit(self, unit_id, times):
-        self._unit_ids.append(unit_id)
         self._units[unit_id] = dict(times=times)
 
     def get_unit_ids(self):
-        return self._unit_ids
+        return list(self._units.keys())
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
