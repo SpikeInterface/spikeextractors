@@ -13,7 +13,7 @@ class TridesclousSortingExtractor(SortingExtractor):
     extractor_name = 'TridesclousSortingExtractor'
     installed = HAVE_TDC  # check at class level if installed or not
     _gui_params = [
-        {'name': 'tdc_folder', 'type': 'file_path', 'title': "Path to folder"},
+        {'name': 'tdc_folder', 'type': 'path', 'title': "Path to folder"},
         {'name': 'chan_grp', 'type': 'list', 'value':None, 'default':None, 'title': "List of channel groups"},
     ]
     installation_mesg = "must install tridesclous" # error message when not installed

@@ -13,7 +13,7 @@ class SpykingCircusSortingExtractor(SortingExtractor):
     extractor_name = 'SpykingCircusSortingExtractor'
     installed = HAVE_SCSX  # check at class level if installed or not
     _gui_params = [
-        {'name': 'spykingcircus_folder', 'type': 'file_path', 'title': "Path to folder"},
+        {'name': 'spykingcircus_folder', 'type': 'path', 'title': "Path to folder"},
     ]
     installation_mesg = "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
                                # error message when not installed

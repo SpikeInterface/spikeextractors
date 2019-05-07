@@ -11,7 +11,7 @@ class MdaRecordingExtractor(RecordingExtractor):
     extractor_name = 'MdaRecordingExtractor'
     installed = True  # check at class level if installed or not
     _gui_params = [
-        {'name': 'dataset_directory', 'type': 'file_path', 'title': "Path to folder"},
+        {'name': 'dataset_directory', 'type': 'path', 'title': "Path to folder"},
     ]
     installation_mesg = ""  # error message when not installed
 
