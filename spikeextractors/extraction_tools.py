@@ -4,6 +4,7 @@ from .SortingExtractor import SortingExtractor
 from .SubRecordingExtractor import SubRecordingExtractor
 from .SubSortingExtractor import SubSortingExtractor
 import csv
+import os
 from pathlib import Path
 
 
@@ -178,6 +179,40 @@ def save_probe_file(recording, probe_file, format=None, radius=100, dimensions=N
         _export_prb_file(recording, probe_file, format, radius=radius, dimensions=dimensions)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be saved.")
+
+
+def read_binary(file, numchan, dtype, frames_first=True, offset=0):
+    '''
+    Reads binary .bin or .dat file.
+
+    Parameters
+    ----------
+    file: str
+        File name
+    numchan: int
+        Number of channels
+    dtype: dtype
+        dtype of the file
+    frames_first: bool
+        If True frames are readed as the first dimension
+    offset: int
+        number of offset bytes
+
+    Returns
+    -------
+
+    '''
+    numchan = int(numchan)
+    with Path(file).open() as f:
+        nsamples = (os.fstat(f.fileno()).st_size - offset) // (numchan * np.dtype(dtype).itemsize)
+        if frames_first:
+            samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
+                                shape=(nsamples, numchan))
+            samples = np.transpose(samples)
+        else:
+            samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
+                                shape=(numchan, nsamples))
+    return samples
 
 
 def write_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunksize=None):

@@ -1,13 +1,14 @@
 from spikeextractors import SortingExtractor
 import numpy as np
 from pathlib import Path
+import csv
 
 class PhySortingExtractor(SortingExtractor):
 
     extractor_name = 'PhySortingExtractor'
     installed = True  # check at class level if installed or not
     _gui_params = [
-        {'name': 'phy_folder', 'type': 'str', 'title': "Path to folder"},
+        {'name': 'phy_folder', 'type': 'path', 'title': "Path to folder"},
     ]
     installation_mesg = ""  # error message when not installed
 
@@ -26,23 +27,63 @@ class PhySortingExtractor(SortingExtractor):
             spike_clusters = spike_templates
 
         self._spiketrains = []
-        self._amps = []
-        self._pc_features = []
         clust_id = np.unique(spike_clusters)
         self._unit_ids = list(clust_id)
         spike_times.astype(int)
-
-        self._spiketrais = []
+        # set features
         for clust in self._unit_ids:
             idx = np.where(spike_clusters == clust)[0]
             self._spiketrains.append(spike_times[idx])
-            self._amps.append(amplitudes[idx])
-            self._pc_features.append(pc_features[idx])
+            self.set_unit_spike_features(clust, 'amplitudes', amplitudes[idx])
+            self.set_unit_spike_features(clust, 'pc_features', pc_features[idx])
 
-        # set features
-        for u_i, unit in enumerate(self.get_unit_ids()):
-            self.set_unit_spike_features(unit, 'amplitudes', self._amps[u_i])
-            self.set_unit_spike_features(unit, 'pc_features', self._pc_features[u_i])
+        # set unit quality properties
+        if (phy_folder / 'cluster_groups.csv').is_file():
+            with open(phy_folder / 'cluster_groups.csv') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',')
+                line_count = 0
+                for row in csv_reader:
+                    if line_count == 0:
+                        line_count += 1
+                    else:
+                        tokens = row[0].split("\t")
+                        self.set_unit_property(int(tokens[0]), 'quality', tokens[1])
+                        line_count += 1
+        elif (phy_folder / 'cluster_group.csv').is_file():
+            with open(phy_folder / 'cluster_groups.csv') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',')
+                line_count = 0
+                for row in csv_reader:
+                    if line_count == 0:
+                        line_count += 1
+                    else:
+                        tokens = row[0].split("\t")
+                        self.set_unit_property(int(tokens[0]), 'quality', tokens[1])
+                        line_count += 1
+        elif (phy_folder / 'cluster_groups.tsv').is_file():
+            with open(phy_folder / 'cluster_group.tsv') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter='\t')
+                line_count = 0
+                for row in csv_reader:
+                    if line_count == 0:
+                        line_count += 1
+                    else:
+                        self.set_unit_property(int(row[0]), 'quality', row[1])
+                        line_count += 1
+        elif (phy_folder / 'cluster_group.tsv').is_file():
+            with open(phy_folder / 'cluster_group.tsv') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter='\t')
+                line_count = 0
+                for row in csv_reader:
+                    if line_count == 0:
+                        line_count += 1
+                    else:
+                        self.set_unit_property(int(row[0]), 'quality', row[1])
+                        line_count += 1
+        if 'quality' in self.get_unit_property_names():
+            for unit in self.get_unit_ids():
+                if 'quality' not in self.get_unit_property_names(unit):
+                    self.set_unit_property(unit, 'quality', 'unsorted')
 
     def get_unit_ids(self):
         return list(self._unit_ids)
