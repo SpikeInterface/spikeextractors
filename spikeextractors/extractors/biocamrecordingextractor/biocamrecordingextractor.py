@@ -162,24 +162,24 @@ def readHDF5t_100(rf, t0, t1, nch):
 
 def readHDF5t_100_i(rf, t0, t1, nch):
     if t0 <= t1:
-        d = rf['3BData/Raw'][t0:t1].flatten('C').astype(ctypes.c_short) #- 2048
+        d = rf['3BData/Raw'][t0:t1].flatten('C').astype(ctypes.c_short) - 2048
         d[np.where(np.abs(d) > 1500)[0]] = 0
         return d
     else:  # Reversed read
         raise Exception('Reading backwards? Not sure about this.')
-        return rf['3BData/Raw'][t1:t0].flatten('F').astype(ctypes.c_short) #- 2048
+        return rf['3BData/Raw'][t1:t0].flatten('F').astype(ctypes.c_short) - 2048
 
 
 def readHDF5t_101(rf, t0, t1, nch):
     if t0 <= t1:
         d = rf['3BData/Raw'][nch * t0:nch * t1].reshape(
-            (-1, nch), order='C').flatten('C').astype(ctypes.c_short) #- 2048
+            (-1, nch), order='C').flatten('C').astype(ctypes.c_short) - 2048
         d[np.abs(d) > 1500] = 0
         return d
     else:  # Reversed read
         raise Exception('Reading backwards? Not sure about this.')
         d = rf['3BData/Raw'][nch * t1:nch * t0].reshape(
-            (-1, nch), order='C').flatten('C').astype(ctypes.c_short) #- 2048
+            (-1, nch), order='C').flatten('C').astype(ctypes.c_short) - 2048
         d[np.where(np.abs(d) > 1500)[0]] = 0
         return d
 
