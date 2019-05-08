@@ -3,13 +3,13 @@ from spikeextractors import SortingExtractor
 import numpy as np
 
 try:
-    import exdir, quantities
+    import exdir
+    import quantities as pq
     HAVE_EXDIR = True
 except ImportError:
     HAVE_EXDIR = False
 
 class ExdirRecordingExtractor(RecordingExtractor):
-
     extractor_name = 'ExdirRecordingExtractor'
     installed = HAVE_EXDIR  # check at class level if installed or not
     _gui_params = [

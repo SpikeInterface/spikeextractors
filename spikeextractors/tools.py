@@ -63,7 +63,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                 subrecording = recording
             else:
                 if not np.all([chan in recording.get_channel_ids() for chan in ordered_channels]):
-                    print('Some channel in PRB file are in original recording')
+                    print('Some channel in PRB file are not in original recording')
                 present_ordered_channels = [chan for chan in ordered_channels if chan in recording.get_channel_ids()]
                 subrecording = SubRecordingExtractor(recording, channel_ids=present_ordered_channels)
             for cgroup_id in groups:
@@ -122,7 +122,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                 row_count += 1
                 loaded_pos.append(pos)
             assert len(subrecording.get_channel_ids()) == row_count, "The .csv file must contain as many " \
-                                                                   "rows as the number of channels in the recordings"
+                                                                     "rows as the number of channels in the recordings"
             for i_ch, pos in zip(subrecording.get_channel_ids(), loaded_pos):
                 if i_ch in subrecording.get_channel_ids():
                     subrecording.set_channel_property(i_ch, 'location', list(np.array(pos).astype(float)))
