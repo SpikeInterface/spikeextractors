@@ -78,6 +78,8 @@ class CurationSortingExtractor(SortingExtractor):
         unit_ids: list
             The unit ids to be excluded
         '''
+        if(len(unit_ids) == 0):
+            return
         root_ids = []
         for i in range(len(self._roots)):
             root_id = self._roots[i].unit_id
@@ -103,13 +105,16 @@ class CurationSortingExtractor(SortingExtractor):
         unit_ids: list
             The unit ids to be merged
         '''
+        if(len(unit_ids) <= 1):
+            return
+
         root_ids = []
         for i in range(len(self._roots)):
             root_id = self._roots[i].unit_id
             root_ids.append(root_id)
 
         indices_to_be_deleted = []
-        if(set(unit_ids).issubset(set(root_ids)) and len(unit_ids) > 1):
+        if(set(unit_ids).issubset(set(root_ids))):
             #Find all unique feature names and create all feature lists
             all_feature_names = []
             for unit_id in unit_ids:
@@ -205,6 +210,24 @@ class CurationSortingExtractor(SortingExtractor):
             del self._roots[root_index]
         else:
             raise ValueError(str(unit_id) + " non-valid unit id")
+
+    def printCurationTree(self, unit_id):
+        '''This function prints the current curation tree for the unit_id (roots are current unit ids).
+
+        Parameters
+        ----------
+        unit_id: in
+            The unit id whose curation history will be printed.
+        '''
+        root_ids = []
+        for i in range(len(self._roots)):
+            root_id = self._roots[i].unit_id
+            root_ids.append(root_id)
+        if(unit_id in root_ids):
+            root_index = root_ids.index(unit_id)
+            print(self._roots[root_index])
+        else:
+            raise ValueError("invalid unit id")
 
 
 # The Unit class is a node in the curation tree. Each Unit contains its unit_id, children, and spike_train.
