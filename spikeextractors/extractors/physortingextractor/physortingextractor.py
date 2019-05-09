@@ -1,4 +1,5 @@
-from spikeextractors import SortingExtractor, BinDatRecordingExtractor
+from spikeextractors import SortingExtractor
+from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 from spikeextractors.extraction_tools import read_python
 import numpy as np
 from pathlib import Path
