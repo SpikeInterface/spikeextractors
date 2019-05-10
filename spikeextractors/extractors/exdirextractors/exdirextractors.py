@@ -230,7 +230,7 @@ class ExdirSortingExtractor(SortingExtractor):
         return np.rint(times[inds]).astype(int)
 
     @staticmethod
-    def write_sorting(sorting, exdir_file, recording=None, sample_rate=None):
+    def write_sorting(sorting, exdir_file, recording=None, sample_rate=None, save_waveforms=False, verbose=False):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         if sample_rate is None and recording is None:
             raise Exception("Provide 'sample_rate' argument (Hz)")
@@ -250,8 +250,15 @@ class ExdirSortingExtractor(SortingExtractor):
 
         if len(channel_groups) == 1:
             chan = 0
-            print("Single group: ", chan)
+            if verbose:
+                print("Single group: ", chan)
             ch_group = ephys.require_group('channel_group_' + str(chan))
+            try:
+                del ch_group['UnitTimes']
+                del ch_group['EventWaveform']
+                del ch_group['Clustering']
+            except Exception as e:
+                pass
             unittimes = ch_group.require_group('UnitTimes')
             eventwaveform = ch_group.require_group('EventWaveform')
             unit_stop_time = np.max([(np.max(sorting.get_unit_spike_train(u).astype(float) / sample_rate).rescale('s'))
@@ -297,40 +304,51 @@ class ExdirSortingExtractor(SortingExtractor):
                     else:
                         waveforms = np.vstack((waveforms, sorting.get_unit_spike_features(unit, 'waveforms')))
 
-            print("Saving eventwaveforms and clustering")
-            if 'waveforms' in sorting.get_unit_spike_feature_names():
-                waveform_ts = eventwaveform.require_group('waveform_timeseries')
-                data = waveform_ts.require_dataset('data', data=waveforms)
-                data.attrs['num_samples'] = len(waveforms)
-                data.attrs['sample_rate'] = sample_rate
-                data.attrs['unit'] = pq.dimensionless
-                times = waveform_ts.require_dataset('timestamps', data=timestamps)
-                times.attrs['num_samples'] = len(timestamps)
-                times.attrs['unit'] = pq.s
-                waveform_ts.attrs['electrode_group_id'] = chan
-                if recording is not None:
-                    waveform_ts.attrs['electrode_identities'] = np.array([])
-                    waveform_ts.attrs['electrode_idx'] = np.arange(len(recording.get_channel_ids()))
-                    waveform_ts.attrs['start_time'] = 0 * pq.s
-                    if recording_stop_time is not None:
-                        waveform_ts.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
-                            else unit_stop_time
-                    waveform_ts.attrs['sample_rate'] = sample_rate
-                    waveform_ts.attrs['sample_length'] = waveforms.shape[1]
-                    waveform_ts.attrs['num_samples'] = len(waveforms)
-            clustering = ephys.require_group('channel_group_' + str(chan)).require_group('Clustering')
-            ts = clustering.require_dataset('timestamps', data=timestamps * pq.s)
-            ts.attrs['num_samples'] = len(timestamps)
-            ts.attrs['unit'] = pq.s
-            ns = clustering.require_dataset('nums', data=nums)
-            ns.attrs['num_samples'] = len(nums)
-            cn = clustering.require_dataset('cluster_nums', data=np.array(sorting.get_unit_ids()))
-            cn.attrs['num_samples'] = len(sorting.get_unit_ids())
+            if save_waveforms:
+                if verbose:
+                    print("Saving EventWaveforms")
+                if 'waveforms' in sorting.get_unit_spike_feature_names():
+                    waveform_ts = eventwaveform.require_group('waveform_timeseries')
+                    data = waveform_ts.require_dataset('data', data=waveforms)
+                    waveform_ts.attrs['electrode_group_id'] = chan
+                    data.attrs['num_samples'] = len(waveforms)
+                    data.attrs['sample_rate'] = sample_rate
+                    data.attrs['unit'] = pq.dimensionless
+                    times = waveform_ts.require_dataset('timestamps', data=timestamps)
+                    times.attrs['num_samples'] = len(timestamps)
+                    times.attrs['unit'] = pq.s
+                    if recording is not None:
+                        waveform_ts.attrs['electrode_identities'] = np.array([])
+                        waveform_ts.attrs['electrode_idx'] = np.arange(len(recording.get_channel_ids()))
+                        waveform_ts.attrs['start_time'] = 0 * pq.s
+                        if recording_stop_time is not None:
+                            waveform_ts.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
+                                else unit_stop_time
+                        waveform_ts.attrs['sample_rate'] = sample_rate
+                        waveform_ts.attrs['sample_length'] = waveforms.shape[1]
+                        waveform_ts.attrs['num_samples'] = len(waveforms)
+                if verbose:
+                    print("Saving Clustering")
+                clustering = ch_group.require_group('Clustering')
+                ts = clustering.require_dataset('timestamps', data=timestamps * pq.s)
+                ts.attrs['num_samples'] = len(timestamps)
+                ts.attrs['unit'] = pq.s
+                ns = clustering.require_dataset('nums', data=nums)
+                ns.attrs['num_samples'] = len(nums)
+                cn = clustering.require_dataset('cluster_nums', data=np.array(sorting.get_unit_ids()))
+                cn.attrs['num_samples'] = len(sorting.get_unit_ids())
         else:
             channel_groups = np.unique([sorting.get_unit_property(unit, 'group') for unit in sorting.get_unit_ids()])
             for chan in channel_groups:
-                print("Group: ", chan)
+                if verbose:
+                    print("Group: ", chan)
                 ch_group = ephys.require_group('channel_group_' + str(chan))
+                try:
+                    del ch_group['UnitTimes']
+                    del ch_group['EventWaveform']
+                    del ch_group['Clustering']
+                except Exception as e:
+                    pass
                 unittimes = ch_group.require_group('UnitTimes')
                 eventwaveform = ch_group.require_group('EventWaveform')
                 unit_stop_time = np.max([(np.max(sorting.get_unit_spike_train(u).astype(float) / sample_rate).rescale('s'))
@@ -361,7 +379,8 @@ class ExdirSortingExtractor(SortingExtractor):
                 waveforms = np.array([])
                 for unit in sorting.get_unit_ids():
                     if sorting.get_unit_property(unit, 'group') == chan:
-                        print("Unit: ", unit)
+                        if verbose:
+                            print("Unit: ", unit)
                         unit_group = unittimes.require_group(str(unit))
                         unit_group.require_dataset('times',
                                                    data=(sorting.get_unit_spike_train(unit).astype(float)
@@ -379,30 +398,33 @@ class ExdirSortingExtractor(SortingExtractor):
                                 waveforms = sorting.get_unit_spike_features(unit, 'waveforms')
                             else:
                                 waveforms = np.vstack((waveforms, sorting.get_unit_spike_features(unit, 'waveforms')))
-                print(timestamps.shape, waveforms.shape)
-                print("Saving eventwaveforms and clustering")
-                if 'waveforms' in sorting.get_unit_spike_feature_names():
-                    waveform_ts = eventwaveform.require_group('waveform_timeseries')
-                    data = waveform_ts.require_dataset('data', data=waveforms)
-                    data.attrs['num_samples'] = len(waveforms)
-                    data.attrs['sample_rate'] = sample_rate
-                    data.attrs['unit'] = pq.dimensionless
-                    times = waveform_ts.require_dataset('timestamps', data=timestamps)
-                    times.attrs['num_samples'] = len(timestamps)
-                    times.attrs['unit'] = pq.s
-                    waveform_ts.attrs['electrode_group_id'] = chan
-                    if recording is not None:
-                        waveform_ts.attrs['electrode_identities'] = np.array([])
-                        waveform_ts.attrs['electrode_idx'] = np.array([ch for i_c, ch in
-                                                                       enumerate(recording.get_channel_ids())
-                                                                       if recording.get_channel_property(ch, 'group') == chan])
-                        waveform_ts.attrs['start_time'] = 0 * pq.s
-                        if recording_stop_time is not None:
-                            waveform_ts.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
-                                else unit_stop_time
-                        waveform_ts.attrs['sample_rate'] = sample_rate
-                        waveform_ts.attrs['sample_length'] = waveforms.shape[1]
-                        waveform_ts.attrs['num_samples'] = len(waveforms)
+                if save_waveforms:
+                    if verbose:
+                        print("Saving EventWaveforms")
+                    if 'waveforms' in sorting.get_unit_spike_feature_names():
+                        waveform_ts = eventwaveform.require_group('waveform_timeseries')
+                        data = waveform_ts.require_dataset('data', data=waveforms)
+                        data.attrs['num_samples'] = len(waveforms)
+                        data.attrs['sample_rate'] = sample_rate
+                        data.attrs['unit'] = pq.dimensionless
+                        times = waveform_ts.require_dataset('timestamps', data=timestamps)
+                        times.attrs['num_samples'] = len(timestamps)
+                        times.attrs['unit'] = pq.s
+                        waveform_ts.attrs['electrode_group_id'] = chan
+                        if recording is not None:
+                            waveform_ts.attrs['electrode_identities'] = np.array([])
+                            waveform_ts.attrs['electrode_idx'] = np.array([ch for i_c, ch in
+                                                                           enumerate(recording.get_channel_ids())
+                                                                           if recording.get_channel_property(ch, 'group') == chan])
+                            waveform_ts.attrs['start_time'] = 0 * pq.s
+                            if recording_stop_time is not None:
+                                waveform_ts.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
+                                    else unit_stop_time
+                            waveform_ts.attrs['sample_rate'] = sample_rate
+                            waveform_ts.attrs['sample_length'] = waveforms.shape[1]
+                            waveform_ts.attrs['num_samples'] = len(waveforms)
+                if verbose:
+                    print("Saving Clustering")
                 clustering = ephys.require_group('channel_group_' + str(chan)).require_group('Clustering')
                 ts = clustering.require_dataset('timestamps', data=timestamps*pq.s)
                 ts.attrs['num_samples'] = len(timestamps)
