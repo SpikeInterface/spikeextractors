@@ -253,6 +253,12 @@ class ExdirSortingExtractor(SortingExtractor):
             if verbose:
                 print("Single group: ", chan)
             ch_group = ephys.require_group('channel_group_' + str(chan))
+            try:
+                del ch_group['UnitTimes']
+                del ch_group['EventWaveform']
+                del ch_group['Clustering']
+            except Exception as e:
+                pass
             unittimes = ch_group.require_group('UnitTimes')
             eventwaveform = ch_group.require_group('EventWaveform')
             unit_stop_time = np.max([(np.max(sorting.get_unit_spike_train(u).astype(float) / sample_rate).rescale('s'))
@@ -323,7 +329,7 @@ class ExdirSortingExtractor(SortingExtractor):
                         waveform_ts.attrs['num_samples'] = len(waveforms)
                 if verbose:
                     print("Saving Clustering")
-                clustering = ephys.require_group('channel_group_' + str(chan)).require_group('Clustering')
+                clustering = ch_group.require_group('Clustering')
                 ts = clustering.require_dataset('timestamps', data=timestamps * pq.s)
                 ts.attrs['num_samples'] = len(timestamps)
                 ts.attrs['unit'] = pq.s
@@ -337,6 +343,12 @@ class ExdirSortingExtractor(SortingExtractor):
                 if verbose:
                     print("Group: ", chan)
                 ch_group = ephys.require_group('channel_group_' + str(chan))
+                try:
+                    del ch_group['UnitTimes']
+                    del ch_group['EventWaveform']
+                    del ch_group['Clustering']
+                except Exception as e:
+                    pass
                 unittimes = ch_group.require_group('UnitTimes')
                 eventwaveform = ch_group.require_group('EventWaveform')
                 unit_stop_time = np.max([(np.max(sorting.get_unit_spike_train(u).astype(float) / sample_rate).rescale('s'))
