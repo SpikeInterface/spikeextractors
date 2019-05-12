@@ -9,7 +9,7 @@ import os
 class MdaRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'MdaRecordingExtractor'
-    has_locations = True
+    has_default_locations = True
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'dataset_directory', 'type': 'path', 'title': "Path to folder"},

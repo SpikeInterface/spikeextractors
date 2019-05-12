@@ -12,7 +12,7 @@ class RecordingExtractor(ABC):
     '''
 
     extractor_name = ''
-    has_locations = False
+    has_default_locations = False
     installed = False  # check at class level if installed or not
     _gui_params = []
     installation_mesg = ""  # error message when not installed
