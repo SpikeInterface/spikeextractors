@@ -8,6 +8,7 @@ from pathlib import Path
 class SpikeGLXRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'SpikeGLXRecordingExtractor'
+    has_locations = True
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'npx_file', 'type': 'path', 'title': "Path to file"},

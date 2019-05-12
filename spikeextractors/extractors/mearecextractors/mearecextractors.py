@@ -15,6 +15,7 @@ except ImportError:
 class MEArecRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'MEArecRecordingExtractor'
+    has_locations = True
     installed = HAVE_MREX  # check at class level if installed or not
     _gui_params = [
         {'name': 'recording_path', 'type': 'path', 'title': "Path to file"},
