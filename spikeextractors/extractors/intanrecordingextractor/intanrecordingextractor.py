@@ -12,7 +12,7 @@ class IntanRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'IntanRecordingExtractor'
     installed = HAVE_INTAN  # check at class level if installed or not
-    has_locations = False
+    has_default_locations = False
     _gui_params = [
         {'name': 'recording_file', 'type': 'path', 'title': "Path to file"},
         {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
