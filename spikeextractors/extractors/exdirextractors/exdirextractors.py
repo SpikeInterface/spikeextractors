@@ -14,6 +14,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
     installed = HAVE_EXDIR  # check at class level if installed or not
     _gui_params = [
         {'name': 'exdir_file', 'type': 'path', 'title': "Path to file"},
+        {'name': 'probe_path', 'type': 'str', 'title': "Path to probe file (csv or prb)"},
     ]
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
