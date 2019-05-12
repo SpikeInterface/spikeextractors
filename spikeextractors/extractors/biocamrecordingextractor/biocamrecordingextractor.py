@@ -13,6 +13,7 @@ except ImportError:
 class BiocamRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'BiocamRecordingExtractor'
+    has_locations = True
     installed = HAVE_BIOCAM  # check at class level if installed or not
     _gui_params = [
         {'name': 'recording_file', 'type': 'path', 'title': "Path to file"},
