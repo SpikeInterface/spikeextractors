@@ -64,7 +64,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                 subrecording = recording
             else:
                 if not np.all([chan in recording.get_channel_ids() for chan in ordered_channels]):
-                    print('Some channel in PRB file are in original recording')
+                    print('Some channel in PRB file are not in original recording')
                 present_ordered_channels = [chan for chan in ordered_channels if chan in recording.get_channel_ids()]
                 subrecording = SubRecordingExtractor(recording, channel_ids=present_ordered_channels)
             for cgroup_id in groups:
@@ -83,13 +83,19 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                 subrecording.set_channel_property(prop, 'group', int(cgroup_id))
                     elif key_prop == 'geometry' or key_prop == 'location':
                         if isinstance(prop_val, dict):
-                            if len(prop_val.keys()) == channels_in_group:
-                                print('geometry in PRB have not the same length as channel in group')
+                            if len(prop_val.keys()) != channels_in_group:
+                                print('geometry in PRB does not have the same length as channel in group')
                             for (i_ch, prop) in prop_val.items():
                                 if i_ch in subrecording.get_channel_ids():
                                     subrecording.set_channel_property(i_ch, 'location', prop)
                         elif isinstance(prop_val, (list, np.ndarray)) and len(prop_val) == channels_in_group:
-                            for (i_ch, prop) in zip(subrecording.get_channel_ids(), prop_val):
+                            if 'channels' not in cgroup.keys():
+                                raise Exception("'geometry'/'location' in the .prb file can be a list only if "
+                                                "'channels' field is specified.")
+                            channels_id_in_group = cgroup['channels']
+                            if len(prop_val) != channels_in_group:
+                                print('geometry in PRB does not have the same length as channel in group')
+                            for (i_ch, prop) in zip(channels_id_in_group, prop_val):
                                 if i_ch in subrecording.get_channel_ids():
                                     subrecording.set_channel_property(i_ch, 'location', prop)
                     else:
@@ -104,7 +110,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                 # create dummy locations
                 if 'geometry' not in cgroup.keys() and 'location' not in cgroup.keys():
                     for i, chan in enumerate(subrecording.get_channel_ids()):
-                        subrecording.set_channel_property(chan, 'location', [i, 0])
+                        subrecording.set_channel_property(chan, 'location', [0, i])
         else:
             raise AttributeError("'.prb' file should contain the 'channel_groups' field")
 
@@ -123,7 +129,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                 row_count += 1
                 loaded_pos.append(pos)
             assert len(subrecording.get_channel_ids()) == row_count, "The .csv file must contain as many " \
-                                                                   "rows as the number of channels in the recordings"
+                                                                     "rows as the number of channels in the recordings"
             for i_ch, pos in zip(subrecording.get_channel_ids(), loaded_pos):
                 if i_ch in subrecording.get_channel_ids():
                     subrecording.set_channel_property(i_ch, 'location', list(np.array(pos).astype(float)))

@@ -1,4 +1,6 @@
 from spikeextractors import SortingExtractor
+from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
+from spikeextractors.extraction_tools import read_python
 import numpy as np
 from pathlib import Path
 import csv
@@ -12,7 +14,7 @@ class PhySortingExtractor(SortingExtractor):
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, phy_folder):
+    def __init__(self, phy_folder, exclude_groups=None, verbose=False):
         SortingExtractor.__init__(self)
         phy_folder = Path(phy_folder)
 
@@ -26,64 +28,120 @@ class PhySortingExtractor(SortingExtractor):
         else:
             spike_clusters = spike_templates
 
-        self._spiketrains = []
         clust_id = np.unique(spike_clusters)
         self._unit_ids = list(clust_id)
         spike_times.astype(int)
+        self.params = read_python(str(phy_folder / 'params.py'))
+
+        # set unit quality properties
+        csv_tsv_files = [x for x in phy_folder.iterdir() if x.suffix == '.csv' or x.suffix == '.tsv']
+        for f in csv_tsv_files:
+            if f.suffix == '.csv':
+                with f.open() as csv_file:
+                    csv_reader = csv.reader(csv_file, delimiter=',')
+                    line_count = 0
+                    for row in csv_reader:
+                        if line_count == 0:
+                            tokens = row[0].split("\t")
+                            property = tokens[1]
+                        else:
+                            tokens = row[0].split("\t")
+                            if int(tokens[0]) in self.get_unit_ids():
+                                if 'cluster_group' in str(f):
+                                    self.set_unit_property(int(tokens[0]), 'quality', tokens[1])
+                                elif property == 'ch_group':
+                                    self.set_unit_property(int(tokens[0]), 'group', tokens[1])
+                                else:
+                                    if isinstance(tokens[1], (int, np.int, float, np.float, str)):
+                                        self.set_unit_property(int(tokens[0]), property, tokens[1])
+                            line_count += 1
+            elif f.suffix == '.tsv':
+                with f.open() as csv_file:
+                    csv_reader = csv.reader(csv_file, delimiter='\t')
+                    line_count = 0
+                    for row in csv_reader:
+                        if line_count == 0:
+                            property = row[1]
+                        else:
+                            if int(row[0]) in self.get_unit_ids():
+                                if 'cluster_group' in str(f):
+                                    self.set_unit_property(int(row[0]), 'quality', row[1])
+                                elif property == 'ch_group':
+                                    self.set_unit_property(int(row[0]), 'group', row[1])
+                                else:
+                                    if isinstance(row[1], (int, np.int, float, np.float, str)):
+                                        self.set_unit_property(int(row[0]), property, row[1])
+                        line_count += 1
+
+        if 'quality' in self.get_unit_property_names():
+            for unit in self.get_unit_ids():
+                if 'quality' not in self.get_unit_property_names(unit):
+                    self.set_unit_property(unit, 'quality', 'unsorted')
+        else:
+            for unit in self.get_unit_ids():
+                self.set_unit_property(unit, 'quality', 'unsorted')
+
+        if exclude_groups is not None:
+            if len(exclude_groups) > 0:
+                included_units = []
+                for u in self.get_unit_ids():
+                    if self.get_unit_property(u, 'quality') not in exclude_groups:
+                        included_units.append(u)
+            else:
+                included_units = self._unit_ids
+        else:
+            included_units = self._unit_ids
+
+        original_units = self._unit_ids
+        self._unit_ids = included_units
         # set features
+        self._spiketrains = []
         for clust in self._unit_ids:
             idx = np.where(spike_clusters == clust)[0]
             self._spiketrains.append(spike_times[idx])
             self.set_unit_spike_features(clust, 'amplitudes', amplitudes[idx])
             self.set_unit_spike_features(clust, 'pc_features', pc_features[idx])
 
-        # set unit quality properties
-        if (phy_folder / 'cluster_groups.csv').is_file():
-            with open(phy_folder / 'cluster_groups.csv') as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter=',')
-                line_count = 0
-                for row in csv_reader:
-                    if line_count == 0:
-                        line_count += 1
+        if (phy_folder / 'waveforms.npy').is_file():
+            datfile = [x for x in phy_folder.iterdir() if x.suffix == '.dat' or x.suffix == '.bin']
+
+            recording = BinDatRecordingExtractor(datfile[0], samplerate=float(self.params['sample_rate']),
+                                                 dtype=self.params['dtype'], numchan=self.params['n_channels_dat'])
+            if (phy_folder / 'channel_groups.npy').is_file() and 'group' in self.get_unit_property_names():
+                channel_groups = np.load(phy_folder / 'channel_groups.npy')
+                assert len(channel_groups) == recording.get_num_channels()
+                for (ch, cg) in zip(recording.get_channel_ids(), channel_groups):
+                    recording.set_channel_property(ch, 'group', cg)
+                for u_i, u in enumerate(self.get_unit_ids()):
+                    if verbose:
+                        print('Computing waveform by group for unit', u)
+                    frames_before = int(0.5 / 1000. * recording.get_sampling_frequency())
+                    frames_after = int(2 / 1000. * recording.get_sampling_frequency())
+                    spiketrain = self.get_unit_spike_train(u)
+                    if 'group' in self.get_unit_property_names(u):
+                        group_idx = np.where(channel_groups == int(self.get_unit_property(u, 'group')))[0]
+                        wf = recording.get_snippets(reference_frames=spiketrain,
+                                                    snippet_len=[frames_before, frames_after],
+                                                    channel_ids=group_idx)
                     else:
-                        tokens = row[0].split("\t")
-                        self.set_unit_property(int(tokens[0]), 'quality', tokens[1])
-                        line_count += 1
-        elif (phy_folder / 'cluster_group.csv').is_file():
-            with open(phy_folder / 'cluster_groups.csv') as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter=',')
-                line_count = 0
-                for row in csv_reader:
-                    if line_count == 0:
-                        line_count += 1
-                    else:
-                        tokens = row[0].split("\t")
-                        self.set_unit_property(int(tokens[0]), 'quality', tokens[1])
-                        line_count += 1
-        elif (phy_folder / 'cluster_groups.tsv').is_file():
-            with open(phy_folder / 'cluster_group.tsv') as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter='\t')
-                line_count = 0
-                for row in csv_reader:
-                    if line_count == 0:
-                        line_count += 1
-                    else:
-                        self.set_unit_property(int(row[0]), 'quality', row[1])
-                        line_count += 1
-        elif (phy_folder / 'cluster_group.tsv').is_file():
-            with open(phy_folder / 'cluster_group.tsv') as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter='\t')
-                line_count = 0
-                for row in csv_reader:
-                    if line_count == 0:
-                        line_count += 1
-                    else:
-                        self.set_unit_property(int(row[0]), 'quality', row[1])
-                        line_count += 1
-        if 'quality' in self.get_unit_property_names():
-            for unit in self.get_unit_ids():
-                if 'quality' not in self.get_unit_property_names(unit):
-                    self.set_unit_property(unit, 'quality', 'unsorted')
+                        wf = recording.get_snippets(reference_frames=spiketrain,
+                                                    snippet_len=[frames_before, frames_after])
+                        max_chan = np.unravel_index(np.argmin(np.mean(wf, axis=0)), np.mean(wf, axis=0).shape)[0]
+                        group = recording.get_channel_property(int(max_chan), 'group')
+                        self.set_unit_property(u, 'group', group)
+                        group_idx = np.where(channel_groups == group)[0]
+                        wf = wf[:, group_idx]
+                    self.set_unit_spike_features(u, 'waveforms', wf)
+            else:
+                for u_i, u in enumerate(self.get_unit_ids()):
+                    if verbose:
+                        print('Computing full waveform for unit', u)
+                    frames_before = 0.5 * recording.get_sampling_frequency()
+                    frames_after = 2 * recording.get_sampling_frequency()
+                    spiketrain = self.get_unit_spike_train(u)
+                    wf = recording.get_snippets(reference_frames=spiketrain,
+                                                snippet_len=[int(frames_before), int(frames_after)])
+                    self.set_unit_spike_features(u, 'waveforms', wf)
 
     def get_unit_ids(self):
         return list(self._unit_ids)

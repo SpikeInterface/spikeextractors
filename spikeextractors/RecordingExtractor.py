@@ -225,7 +225,7 @@ class RecordingExtractor(ABC):
         else:
             raise ValueError("channel_ids and locations must have same length")
 
-    def get_channel_locations(self, channel_ids):
+    def get_channel_locations(self, channel_ids=None):
         '''This function returns the location of each channel specifed by
         channel_ids
 
@@ -240,6 +240,8 @@ class RecordingExtractor(ABC):
             Returns a list of corresonding locations (floats) for the given
             channel_ids
         '''
+        if channel_ids is None:
+            channel_ids = self.get_channel_ids()
         locations = []
         for channel_id in channel_ids:
             location = self.get_channel_property(channel_id, 'location')
@@ -266,7 +268,7 @@ class RecordingExtractor(ABC):
         else:
             raise ValueError("channel_ids and groups must have same length")
 
-    def get_channel_groups(self, channel_ids):
+    def get_channel_groups(self, channel_ids=None):
         '''This function returns the group of each channel specifed by
         channel_ids
 
@@ -281,6 +283,8 @@ class RecordingExtractor(ABC):
             Returns a list of corresonding groups (ints) for the given
             channel_ids
         '''
+        if channel_ids is None:
+            channel_ids = self.get_channel_ids()
         groups = []
         for channel_id in channel_ids:
             group = self.get_channel_property(channel_id, 'group')
