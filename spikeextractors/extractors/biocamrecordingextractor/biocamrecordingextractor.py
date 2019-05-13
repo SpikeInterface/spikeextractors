@@ -74,8 +74,8 @@ class BiocamRecordingExtractor(RecordingExtractor):
         dr = rf.create_dataset('3BData/Raw', (M*N,), dtype=int)
         dt = 50000
         for i in range(N//dt):
-            dr[M*i*dt:M*(i+1)*dt] = recording.get_traces(slice(0, M), i*dt, (i+1)*dt).T.flatten()
-        dr[M*(N//dt)*dt:M*N] = recording.get_traces(slice(0, M), (N//dt)*dt, N).T.flatten()
+            dr[M*i*dt:M*(i+1)*dt] = recording.get_traces(slice(0, M), i*dt, (i+1)*dt).flatten()
+        dr[M*(N//dt)*dt:M*N] = recording.get_traces(slice(0, M), (N//dt)*dt, N).flatten()
         g.attrs['Version'] = 101
         rf.create_dataset('3BRecInfo/3BRecVars/MinVolt', data=[0])
         rf.create_dataset('3BRecInfo/3BRecVars/MaxVolt', data=[1])
@@ -85,7 +85,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
         rf.create_dataset('3BRecInfo/3BMeaChip/NCols', data=[M])
         r = [recording.get_channel_property(i,'location')[-2] for i in range(recording.get_num_channels())]
         c = [recording.get_channel_property(i,'location')[-1] for i in range(recording.get_num_channels())]
-        d = np.ndarray((1,len(r)),dtype=[('Row','<i2'),('Col','<i2')])
+        d = np.ndarray((1,len(r)),dtype=[('Row', '<i2'), ('Col', '<i2')])
         d['Row'] = r
         d['Col'] = c
         rf.create_dataset('3BRecInfo/3BMeaStreams/Raw/Chs', data=d)
@@ -165,7 +165,6 @@ def readHDF5t_100_i(rf, t0, t1, nch):
 
 
 def readHDF5t_101(rf, t0, t1, nch):
-    print('101')
     if t0 <= t1:
         d = rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1-t0, nch), order='C')
         return d
