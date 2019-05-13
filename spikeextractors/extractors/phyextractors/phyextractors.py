@@ -1,9 +1,46 @@
-from spikeextractors import SortingExtractor
+from spikeextractors import SortingExtractor, RecordingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 from spikeextractors.extraction_tools import read_python
 import numpy as np
 from pathlib import Path
 import csv
+
+
+class PhyRecordingExtractor(BinDatRecordingExtractor):
+
+    extractor_name = 'PhyRecordingExtractor'
+    installed = True  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'phy_folder', 'type': 'path', 'title': "Path to folder"},
+    ]
+    installation_mesg = ""  # error message when not installed
+
+    def __init__(self, phy_folder):
+        RecordingExtractor.__init__(self)
+        phy_folder = Path(phy_folder)
+
+        self.params = read_python(str(phy_folder / 'params.py'))
+        datfile = [x for x in phy_folder.iterdir() if x.suffix == '.dat' or x.suffix == '.bin']
+
+        if (phy_folder / 'channel_map_si.npy').is_file():
+            channel_map = np.load(phy_folder / 'channel_map_si.npy')
+            assert len(channel_map) == self.params['n_channels_dat']
+        elif (phy_folder / 'channel_map.npy').is_file():
+            channel_map = np.load(phy_folder / 'channel_map.npy')
+            assert len(channel_map) == self.params['n_channels_dat']
+        else:
+            channel_map = list(range(self.params['n_channels_dat']))
+
+        BinDatRecordingExtractor.__init__(self, datfile[0], samplerate=float(self.params['sample_rate']),
+                                          dtype=self.params['dtype'], numchan=self.params['n_channels_dat'],
+                                          recording_channels=list(channel_map))
+
+        if (phy_folder / 'channel_groups.npy').is_file():
+            channel_groups = np.load(phy_folder / 'channel_groups.npy')
+            assert len(channel_groups) == self.get_num_channels()
+            for (ch, cg) in zip(self.get_channel_ids(), channel_groups):
+                self.set_channel_property(ch, 'group', cg)
+
 
 class PhySortingExtractor(SortingExtractor):
 
@@ -11,10 +48,15 @@ class PhySortingExtractor(SortingExtractor):
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'phy_folder', 'type': 'path', 'title': "Path to folder"},
+        {'name': 'exclude_groups', 'type': 'list', 'title': "List of groups to exclude from loading (e.g. ['noise])"},
+        {'name': 'load_waveforms', 'type': 'bool', 'title': "if True, waveforms are computed and "
+                                                            "loaded in the sorting extractor"},
+        {'name': 'verbose', 'type': 'bool', 'title': "if True, output is verbose"},
+
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, phy_folder, exclude_groups=None, verbose=False):
+    def __init__(self, phy_folder, exclude_groups=None, load_waveforms=False, verbose=False):
         SortingExtractor.__init__(self)
         phy_folder = Path(phy_folder)
 
@@ -102,7 +144,7 @@ class PhySortingExtractor(SortingExtractor):
             self.set_unit_spike_features(clust, 'amplitudes', amplitudes[idx])
             self.set_unit_spike_features(clust, 'pc_features', pc_features[idx])
 
-        if (phy_folder / 'waveforms.npy').is_file():
+        if load_waveforms:
             datfile = [x for x in phy_folder.iterdir() if x.suffix == '.dat' or x.suffix == '.bin']
 
             recording = BinDatRecordingExtractor(datfile[0], samplerate=float(self.params['sample_rate']),
