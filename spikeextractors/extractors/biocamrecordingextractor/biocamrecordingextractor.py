@@ -52,7 +52,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
             channel_ids = range(self.get_num_channels())
         data = self._read_function(
             self._rf, start_frame, end_frame, self.get_num_channels())
-        return data[:, channel_ids]
+        return data[:, channel_ids].T
 
     @staticmethod
     def write_recording(recording, save_path):
@@ -129,34 +129,16 @@ def openBiocamFile(filename,  mea_pitch, verbose=False):
     chIndices = np.array([(x - 1) + (y - 1) * nCols for (y, x) in rawIndices])
     # determine correct function to read data
     if verbose:
-        print("# Signal inversion looks like " + str(signalInv) + ", guessing correct method for data access.")
-        print("# If your results look wrong, signal polarity is may be wrong.")
+        print("# Signal inversion is " + str(signalInv) + ".")
+        print("# If your spike sorting results look wrong, invert the signal.")
     if file_format == 100:
-        if signalInv == -1:
-            read_function = readHDF5t_100
-        else:
-            read_function = readHDF5t_100_i
+        read_function = readHDF5t_100
     else:
-        if signalInv == -1:
-            read_function = readHDF5t_101_i
-        else:
-            read_function = readHDF5t_101
+        read_function = readHDF5t_101
     return (rf, nFrames, samplingRate, nRecCh, chIndices, file_format, signalInv, rawIndices, read_function)
 
 
-def readHDF5(rf, t0, t1):
-    return rf['3BData/Raw'][t0:t1]
-
-
 def readHDF5t_100(rf, t0, t1, nch):
-    if t0 <= t1:
-        return 4096-rf['3BData/Raw'][t0:t1]
-    else:  # Reversed read
-        raise Exception('Reading backwards? Not sure about this.')
-        return 4096-rf['3BData/Raw'][t1:t0]
-
-
-def readHDF5t_100_i(rf, t0, t1, nch):
     if t0 <= t1:
         return rf['3BData/Raw'][t0:t1]
     else:  # Reversed read
@@ -171,14 +153,4 @@ def readHDF5t_101(rf, t0, t1, nch):
     else:  # Reversed read
         raise Exception('Reading backwards? Not sure about this.')
         d = rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1-t0, nch), order='C')
-        return d
-
-
-def readHDF5t_101_i(rf, t0, t1, nch):
-    if t0 <= t1:
-        d = 4096-rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1-t0, nch), order='C')
-        return d
-    else:  # Reversed read
-        raise Exception('Reading backwards? Not sure about this.')
-        d = 4096-rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1-t0, nch), order='C')
         return d
