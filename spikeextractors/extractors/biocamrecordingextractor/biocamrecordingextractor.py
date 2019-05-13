@@ -149,19 +149,16 @@ def readHDF5(rf, t0, t1):
 
 
 def readHDF5t_100(rf, t0, t1, nch):
-    print('100')
     if t0 <= t1:
-        d = rf['3BData/Raw'][t0:t1]
-        return d
+        return 4096-rf['3BData/Raw'][t0:t1]
     else:  # Reversed read
         raise Exception('Reading backwards? Not sure about this.')
-        return rf['3BData/Raw'][t1:t0]
+        return 4096-rf['3BData/Raw'][t1:t0]
 
 
 def readHDF5t_100_i(rf, t0, t1, nch):
     if t0 <= t1:
-        d = rf['3BData/Raw'][t0:t1]
-        return d
+        return rf['3BData/Raw'][t0:t1]
     else:  # Reversed read
         raise Exception('Reading backwards? Not sure about this.')
         return rf['3BData/Raw'][t1:t0]
@@ -170,19 +167,19 @@ def readHDF5t_100_i(rf, t0, t1, nch):
 def readHDF5t_101(rf, t0, t1, nch):
     print('101')
     if t0 <= t1:
-        d = rf['3BData/Raw'][nch * t0:nch * t1].reshape((-1, nch), order='C')
+        d = rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1-t0, nch), order='C')
         return d
     else:  # Reversed read
         raise Exception('Reading backwards? Not sure about this.')
-        d = rf['3BData/Raw'][nch * t1:nch * t0].reshape((-1, nch), order='C')
+        d = rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1-t0, nch), order='C')
         return d
 
 
 def readHDF5t_101_i(rf, t0, t1, nch):
     if t0 <= t1:
-        d = rf['3BData/Raw'][nch * t0:nch * t1].reshape((-1, nch), order='C')
+        d = 4096-rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1-t0, nch), order='C')
         return d
     else:  # Reversed read
         raise Exception('Reading backwards? Not sure about this.')
-        d = rf['3BData/Raw'][nch * t1:nch * t0].reshape((-1, nch), order='C')
+        d = 4096-rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1-t0, nch), order='C')
         return d
