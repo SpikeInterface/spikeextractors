@@ -74,8 +74,8 @@ class BiocamRecordingExtractor(RecordingExtractor):
         dr = rf.create_dataset('3BData/Raw', (M*N,), dtype=int)
         dt = 50000
         for i in range(N//dt):
-            dr[M*i*dt:M*(i+1)*dt] = recording.get_traces(slice(0, M), i*dt, (i+1)*dt).flatten()
-        dr[M*(N//dt)*dt:M*N] = recording.get_traces(slice(0, M), (N//dt)*dt, N).flatten()
+            dr[M*i*dt:M*(i+1)*dt] = recording.get_traces(slice(0, M), i*dt, (i+1)*dt).T.flatten()
+        dr[M*(N//dt)*dt:] = recording.get_traces(slice(0, M), (N//dt)*dt, N).T.flatten()
         g.attrs['Version'] = 101
         rf.create_dataset('3BRecInfo/3BRecVars/MinVolt', data=[0])
         rf.create_dataset('3BRecInfo/3BRecVars/MaxVolt', data=[1])
