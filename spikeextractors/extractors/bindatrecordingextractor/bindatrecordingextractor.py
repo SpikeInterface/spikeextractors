@@ -60,7 +60,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         else:
             channel_ids = [self._channels.index(ch) for ch in channel_ids]
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
-        return self._scaling*recordings
+        return recordings
 
     @staticmethod
     def write_recording(recording, save_path, dtype=None, transpose=False):
