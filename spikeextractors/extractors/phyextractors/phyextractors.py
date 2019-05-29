@@ -150,7 +150,8 @@ class PhySortingExtractor(SortingExtractor):
 
             recording = BinDatRecordingExtractor(datfile[0], samplerate=float(self.params['sample_rate']),
                                                  dtype=self.params['dtype'], numchan=self.params['n_channels_dat'])
-            if (phy_folder / 'channel_groups.npy').is_file() and 'group' in self.get_unit_property_names():
+            # if channel groups are present, compute waveforms by group
+            if (phy_folder / 'channel_groups.npy').is_file():
                 channel_groups = np.load(phy_folder / 'channel_groups.npy')
                 assert len(channel_groups) == recording.get_num_channels()
                 for (ch, cg) in zip(recording.get_channel_ids(), channel_groups):
