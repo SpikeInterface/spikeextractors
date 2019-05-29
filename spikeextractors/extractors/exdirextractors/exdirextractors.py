@@ -364,17 +364,24 @@ class ExdirSortingExtractor(SortingExtractor):
                 cn = clustering.require_dataset('cluster_nums', data=np.array(sorting.get_unit_ids()))
                 cn.attrs['num_samples'] = len(sorting.get_unit_ids())
         else:
+            # remove preexisten spike sorting data
+            max_group = 10
+            for chan in np.arange(max_group):
+                if 'channel_group_' + str(chan) in ephys.keys():
+                    if verbose:
+                        print('Removing channel', chan, 'info')
+                    ch_group = ephys.require_group('channel_group_' + str(chan))
+                    try:
+                        del ch_group['UnitTimes']
+                        del ch_group['EventWaveform']
+                        del ch_group['Clustering']
+                    except Exception as e:
+                        pass
             channel_groups = np.unique([sorting.get_unit_property(unit, 'group') for unit in sorting.get_unit_ids()])
             for chan in channel_groups:
                 if verbose:
                     print("Group: ", chan)
                 ch_group = ephys.require_group('channel_group_' + str(chan))
-                try:
-                    del ch_group['UnitTimes']
-                    del ch_group['EventWaveform']
-                    del ch_group['Clustering']
-                except Exception as e:
-                    pass
                 unittimes = ch_group.require_group('UnitTimes')
                 unit_stop_time = np.max([(np.max(sorting.get_unit_spike_train(u).astype(float) / sample_rate).rescale('s'))
                                          for u in sorting.get_unit_ids()]) * pq.s
