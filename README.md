@@ -9,13 +9,13 @@ Version 0.5.0
 SpikeExtractors provides tools for extracting, converting between, and curating raw or spike sorted extracellular data from any file format. Its design goals are as follows:
 
 1. To facilitate standardized analysis and visualization for both raw and sorted extracellular data.
-2. To promote straightfoward reuse of extracellular datasets.
-3. To increase reproducibility of electrophysiological studies using spike sorting software.
+2. To promote straightforward reuse of extracellular datasets.
+3. To increase the reproducibility of electrophysiological studies using spike sorting software.
 4. To address issues of file format compatibility within electrophysiology research without creating yet another file format.
 
 SpikeExtractors attempts to standardize *data retrieval* rather than data storage. This eliminates the need for shared file formats and allows for the creation of new tools built off of our data retrieval guidelines.
 
-In addition to implementing multi-format I/O for various formats, the framework makes it possible to develop software tools that are agnostic to the underlying formats by working with the standardized python objects (recording and sorting extractors). These include processing routines (filters, sorting algorithms, downstream processing) and visualization widgets. It also provides mechanisms for lazy manipulation of recordings and sortings (concatenation, combination, subset extraction).
+In addition to implementing multi-format I/O for various formats, the framework makes it possible to develop software tools that are agnostic to the underlying formats by working with the standardized python objects (recording and sorting extractors). These include processing routines (filters, sorting algorithms, downstream processing), and visualization widgets. It also provides mechanisms for lazy manipulation of recordings and sortings (concatenation, combination, subset extraction).
 
 ## Installation
 
@@ -42,37 +42,38 @@ pip install -e .
 
 ## Getting Started with Preexisting Code
 
-There are two typies of spike extractors: recording extractors (inherited from RecordingExtractor) and sorting extractors (inherited from SortingExtractor). These allow the user to represent data from multi-channel raw extracellular traces (recordings) and the results of spike sorting (sortings).
+There are two types of spike extractors: recording extractors (inherited from RecordingExtractor) and sorting extractors (inherited from SortingExtractor). These allow the user to represent data from multi-channel raw extracellular traces (recordings) and the results of spike sorting (sortings).
 
 
 **RecordingExtractor**
 
 To work with raw extracellular data, import the subclass of RecordingExtractor coinciding with your specific file format. Then, you can use an instance of that class to extract data snippets and information from your raw data file. 
 
-In this [example](https://github.com/SpikeInterface/spikeextractors/blob/master/examples/getting_started_with_recording_extractors.ipynb) we show how to use a RecordingExtractor subclass on a generated, pure-noise timeseries dataset and a linear probe geometry.
+In this [example](https://github.com/SpikeInterface/spikeextractors/blob/master/examples/1_recording_extractors.ipynb), we show how to use a RecordingExtractor subclass on a generated, pure-noise time series dataset and a linear probe geometry.
 
-First we will generate the properties, data, and probe geometry for this pure-noise dataset. 
+First, we will generate the properties, data, and probe geometry for this pure-noise dataset. 
 
 ```python
+import numpy as np
 # Properties of the in-memory dataset
-num_channels=7
-samplerate=30000
-duration=20
-num_timepoints=int(samplerate*duration)
+num_channels = 7
+samplerate = 30000
+duration = 20
+num_timepoints = int(samplerate*duration)
 
-# Generate a pure-noise timeseries dataset and a linear geometry
-timeseries=np.random.normal(0,10,(num_channels,num_timepoints))
-geom=np.zeros((num_channels,2))
-geom[:,0]=range(num_channels)
+# Generate a pure-noise time series dataset and a linear geometry
+timeseries = np.random.normal(0,10,(num_channels,num_timepoints))
+geom = np.zeros((num_channels,2))
+geom[:,0] = range(num_channels)
 ```
 
 Now we can import spikeextractors and use the NumpyRecordingExtractor since the raw data was stored in the numpy array format. (Typically the data would originate from a file on disk, but we are using an in-memory dataset for illustration.)
 
 ```python
-from spikeextractors import se
+import spikeextractors as se
 
 # Define the in-memory recording extractor
-RX=se.NumpyRecordingExtractor(timeseries=timeseries,geom=geom,samplerate=samplerate)
+RX = se.NumpyRecordingExtractor(timeseries=timeseries,geom=geom,samplerate=samplerate)
 ```
 
 You can use the RecordingExtractor to retrieve data and information from the dataset with a variety of standard functions that are predefined in the RecordingExtractor base class.
@@ -84,6 +85,7 @@ print('Num. timepoints = {}'.format(RX.get_num_frames()))
 print('Stdev. on third channel = {}'.format(np.std(RX.get_traces(channel_ids=2))))
 print('Location of third electrode = {}'.format(RX.get_channel_property(channel_id=2, property_name='location')))
 ```
+It will return:
 ```output
 Num. channels = 7
 Sampling frequency = 30000 Hz
@@ -101,23 +103,23 @@ We will now convert our numpy data into the MountainSort format and save it with
 si.MdaRecordingExtractor.write_recording(recording=RX,save_path='sample_mountainsort_dataset')
 ```
 
-The modular design of RecordingExtractor allow them to be used in a variety of other tasks. For example, RecordingExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubRecordingExtractors and MultiRecordingExtractors. 
+The modular design of RecordingExtractor allows them to be used in a variety of other tasks. For example, RecordingExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubRecordingExtractors and MultiRecordingExtractors. 
 
 **SortingExtractor**
 
 To run our standardized data retrieval functions for your sorted extracellular data, import the subclass SortingExtractor coinciding with your specific file format/spike sorter. Then, you can use that subclass of SortingExtractor to extract data and information from your spike sorted data file. We will show the functionality of the SortingExtractor by continuing our previous example. 
 
-First, we will add some random events and then use the NumpySortingExtractor to extract data about these events. Generally, SortingExtractors would be instantiated with a path the file containing information about the spike sorted units, but since this is a self-contained [example](https://github.com/SpikeInterface/spikeextractors/blob/master/examples/getting_started_with_sorting_extractors.ipynb), we will add the units manually to the SortingExtractor and show how to use it afterwards.
+First, we will add some random events and then use the NumpySortingExtractor to extract data about these events. Generally, SortingExtractors would be instantiated with a path the file containing information about the spike sorted units, but since this is a self-contained [example](https://github.com/SpikeInterface/spikeextractors/blob/master/examples/1_sorting_extractors.ipynb), we will add the units manually to the SortingExtractor and show how to use it afterward.
 
 ```python
 # Generate some random events
-times=np.sort(np.random.uniform(0,num_timepoints,num_events))
-labels=np.random.randint(1,num_units+1,size=num_events)
+times = np.sort(np.random.uniform(0,num_timepoints,num_events))
+labels = np.random.randint(1,num_units+1,size=num_events)
     
 # Define the in-memory output extractor
-SX=si.NumpySortingExtractor()
+SX = se.NumpySortingExtractor()
 for k in range(1,num_units+1):
-    times_k=times[np.where(labels==k)[0]]
+    times_k = times[np.where(labels==k)[0]]
     SX.add_unit(unit_id=k,times=times_k)
 ```
 <br/>
@@ -126,11 +128,12 @@ Now, we will demonstrate the API for extracting information from the sorted data
 
 ```python
 print('Unit ids = {}'.format(SX.get_unit_ids()))
-st=SX.get_unit_spike_train(unit_id=1)
+st = SX.get_unit_spike_train(unit_id=1)
 print('Num. events for unit 1 = {}'.format(len(st)))
-st1=SX.get_unit_spike_train(unit_id=1,start_frame=0,end_frame=30000)
+st1 = SX.get_unit_spike_train(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
 ```
+It will return:
 ```output
 Unit ids = [1, 2, 3, 4]
 Num. events for unit 1 = 262
@@ -142,20 +145,21 @@ Finally, we can write out our sorted file to the MountainSort format by using th
 se.MdaSortingExtractor.write_sorting(sorting=SX,save_path='sample_mountainsort_dataset/firings_true.mda')
 ```
 
-Now that we have written out our numpy recorded and sorted files in the the MountainSort format, we can easily use the MdaRecordingExtractor and MdaSortingExtractor for our new datasets and the functionality sould be the same.
+Now that we have written out our numpy recorded and sorted files in the MountainSort format, we can easily use the MdaRecordingExtractor and MdaSortingExtractor for our new datasets and the functionality should be the same.
 
 ```python
 # Read the raw and sorted datasets with the Mda recording and sorting extractor static methods
-RX2=se.MdaRecordingExtractor(dataset_directory='sample_mountainsort_dataset')
-SX2=se.MdaSortingExtractor(firings_file='sample_mountainsort_dataset/firings_true.mda')
+RX2 = se.MdaRecordingExtractor(dataset_directory='sample_mountainsort_dataset')
+SX2 = se.MdaSortingExtractor(firings_file='sample_mountainsort_dataset/firings_true.mda')
 
 # We should get he same information as above
 print('Unit ids = {}'.format(SX2.get_unit_ids()))
-st=SX2.get_unit_spike_train(unit_id=1)
+st = SX2.get_unit_spike_train(unit_id=1)
 print('Num. events for unit 1 = {}'.format(len(st)))
-st1=SX2.get_unit_spike_train(unit_id=1,start_frame=0,end_frame=30000)
+st1 = SX2.get_unit_spike_train(unit_id=1,start_frame=0,end_frame=30000)
 print('Num. events for first second of unit 1 = {}'.format(len(st1)))
 ```
+It will return:
 ```output
 Unit ids = [1 2 3 4]
 Num. events for unit 1 = 262
@@ -171,7 +175,7 @@ We have also implemented a variety of tools which use RecordingExtractors and So
 
 ## Building a new RecordingExtractor/SortingExtractor
 
-Building a new RecordingExtractors or SortingExtractors for specific file format is as simple as creating a new subclass based on the predefined base classes provided in spikeextractors.
+Building a new RecordingExtractors or SortingExtractors for a specific file format is as simple as creating a new subclass based on the predefined base classes provided in spikeextractors.
 
 To enable standardization among subclasses, RecordingExtractor and SortingExtractor are abstract base classes which require a new subclass to override all methods which are decorated with @abstractmethod.
 
