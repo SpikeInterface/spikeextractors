@@ -5,14 +5,14 @@ Curation
 In this tutorial, we will go over what CurationSortingExtractors are and
 how they can be used to curate the results in a SortingExtractor.
 
-.. code:: ipython3
+.. code:: python
 
     import numpy as np
     import spikeextractors as se
 
 Here, we define the properties of the in-memory dataset.
 
-.. code:: ipython3
+.. code:: python
 
     num_channels=7
     samplerate=30000
@@ -35,7 +35,7 @@ Unit properties will automatically be removed from the
 CurationSortingExtractor when splitting and mergin as they are not
 well-defined for those operations.
 
-.. code:: ipython3
+.. code:: python
 
     # Generate a pure-noise timeseries dataset and a linear geometry
     np.random.seed(0)
@@ -72,7 +72,7 @@ well-defined for those operations.
     SX.set_unit_spike_features(2, feature_name='bad_feature', value=np.repeat(2, len(SX.get_unit_spike_train(2))))
     SX.set_unit_spike_features(3, feature_name='bad_feature', value=np.repeat(3, len(SX.get_unit_spike_train(3))))
 
-.. code:: ipython3
+.. code:: python
 
     print('Unit ids = {}'.format(SX.get_unit_ids()))
     st=SX.get_unit_spike_train(unit_id=1)
@@ -87,11 +87,11 @@ well-defined for those operations.
 
 Now we can curate the results using a CurationSortingExtractor.
 
-.. code:: ipython3
+.. code:: python
 
     CSX = se.CurationSortingExtractor(parent_sorting=SX)
 
-.. code:: ipython3
+.. code:: python
 
     print("Curated Unit Ids: " + str(CSX.get_unit_ids()))
     print("Original Unit Ids: " + str(SX.get_unit_ids()))
@@ -111,7 +111,7 @@ Now we can curate the results using a CurationSortingExtractor.
 Lets split one unit from the sorting result (this could be two units
 incorrectly clustered as one)
 
-.. code:: ipython3
+.. code:: python
 
     CSX.split_unit(unit_id=1, indices=[0, 1])
     print("Curated Unit Ids: " + str(CSX.get_unit_ids()))
@@ -147,7 +147,7 @@ incorrectly clustered as one)
 If the split was incorrect, we can always merge the two units back
 together.
 
-.. code:: ipython3
+.. code:: python
 
     CSX.merge_units(unit_ids=[6, 7])
     print("Curated Spike Train: " + str(CSX.get_unit_spike_train(8)))
@@ -179,7 +179,7 @@ together.
 We can also exclude units, so let’s get rid of 8 since we are seem to be
 confused about this unit.
 
-.. code:: ipython3
+.. code:: python
 
     CSX.exclude_units(unit_ids=[8])
     for unit_id in CSX.get_unit_ids():
@@ -201,7 +201,7 @@ confused about this unit.
 Now let’s merge 3 and 4 together (This will create a new unit which
 encapsulates both previous units).
 
-.. code:: ipython3
+.. code:: python
 
     CSX.merge_units(unit_ids=[3, 4])
     print("Curated Unit Ids: " + str(CSX.get_unit_ids()))
@@ -231,7 +231,7 @@ encapsulates both previous units).
 
 Now let’s merge units 2 and 6 together.
 
-.. code:: ipython3
+.. code:: python
 
     CSX.merge_units(unit_ids=[2, 9])
     print("Curated Unit Ids: " + str(CSX.get_unit_ids()))
@@ -267,7 +267,7 @@ Now let’s merge units 2 and 6 together.
 
 Now let’s split unit 5 with given indices.
 
-.. code:: ipython3
+.. code:: python
 
     CSX.split_unit(unit_id=5, indices=[0, 1])
     print("Curated Unit Ids: " + str(CSX.get_unit_ids()))
@@ -303,7 +303,7 @@ Now let’s split unit 5 with given indices.
 
 Finally, we can merge units 10 and 11.
 
-.. code:: ipython3
+.. code:: python
 
     CSX.merge_units(unit_ids=[10, 11])
     print("Curated Unit Ids: " + str(CSX.get_unit_ids()))
@@ -340,7 +340,7 @@ Finally, we can merge units 10 and 11.
 
 We will now write the input/output in the MountainSort format.
 
-.. code:: ipython3
+.. code:: python
 
     se.MdaRecordingExtractor.write_recording(recording=RX,save_path='sample_mountainsort_dataset')
     se.MdaSortingExtractor.write_sorting(sorting=CSX,save_path='sample_mountainsort_dataset/firings_true.mda')
@@ -348,12 +348,12 @@ We will now write the input/output in the MountainSort format.
 We can read this dataset with the Mda input extractor (we can now have a
 normal sorting extractor with our curations).
 
-.. code:: ipython3
+.. code:: python
 
     RX2=se.MdaRecordingExtractor(dataset_directory='sample_mountainsort_dataset')
     SX2=se.MdaSortingExtractor(firings_file='sample_mountainsort_dataset/firings_true.mda')
 
-.. code:: ipython3
+.. code:: python
 
     print("New Unit Ids: " + str(SX2.get_unit_ids()))
     print("New Unit Spike Train: " + str(SX2.get_unit_spike_train(13)))

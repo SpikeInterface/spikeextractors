@@ -5,14 +5,14 @@ Recording Extractors
 In this tutorial, we will go over what RecordingExtractors are and how
 they can be used.
 
-.. code:: ipython3
+.. code:: python
 
     import numpy as np
     import spikeextractors as se
 
 Here, we define the properties of the in-memory dataset.
 
-.. code:: ipython3
+.. code:: python
 
     num_channels=7
     samplerate=30000
@@ -22,7 +22,7 @@ Here, we define the properties of the in-memory dataset.
 We generate a pure-noise timeseries dataset recorded by a linear probe
 geometry
 
-.. code:: ipython3
+.. code:: python
 
     timeseries=np.random.normal(0,10,(num_channels,num_timepoints))
     geom=np.zeros((num_channels,2))
@@ -30,14 +30,14 @@ geometry
 
 Define the in-memory recording extractor
 
-.. code:: ipython3
+.. code:: python
 
     RX=se.NumpyRecordingExtractor(timeseries=timeseries,geom=geom,samplerate=samplerate)
 
 We can now print properties that the RecordingExtractor retrieves from
 the underlying recording.
 
-.. code:: ipython3
+.. code:: python
 
     print('Num. channels = {}'.format(len(RX.get_channel_ids())))
     print('Sampling frequency = {} Hz'.format(RX.get_sampling_frequency()))
@@ -57,17 +57,17 @@ the underlying recording.
 
 Write this dataset in the MountainSort format.
 
-.. code:: ipython3
+.. code:: python
 
     se.MdaRecordingExtractor.write_recording(recording=RX,save_path='sample_mountainsort_dataset')
 
 Read this dataset with the Mda recording extractor.
 
-.. code:: ipython3
+.. code:: python
 
     RX2=se.MdaRecordingExtractor(dataset_directory='sample_mountainsort_dataset')
 
-.. code:: ipython3
+.. code:: python
 
     print('Num. channels = {}'.format(len(RX2.get_channel_ids())))
     print('Sampling frequency = {} Hz'.format(RX2.get_sampling_frequency()))
@@ -88,7 +88,7 @@ Read this dataset with the Mda recording extractor.
 Putting Epochs into our recording (Adding a name to a time period in the
 recording).
 
-.. code:: ipython3
+.. code:: python
 
     RX2.add_epoch(epoch_name='stimulation', start_frame=1000, end_frame=6000)
     RX2.add_epoch(epoch_name='post_stimulation', start_frame=6000, end_frame=10000)
@@ -107,7 +107,7 @@ recording).
 Return a SubRecordingExtractor that is a view to our epoch. Can view
 info about it in parent extractor.
 
-.. code:: ipython3
+.. code:: python
 
     RX3 = RX2.get_epoch(epoch_name='stimulation')
     epoch_info = RX2.get_epoch_info('stimulation')
@@ -133,14 +133,14 @@ info about it in parent extractor.
 Can extract an arbitrary subset of your data/channels manually without
 epoch functionality.
 
-.. code:: ipython3
+.. code:: python
 
     RX4=se.SubRecordingExtractor(parent_recording=RX2,channel_ids=[2,3,4,5],start_frame=14000,
                                  end_frame=16000)
 
 Show the information for this sub-dataset.
 
-.. code:: ipython3
+.. code:: python
 
     print('Num. channels = {}'.format(len(RX4.get_channel_ids())))
     print('Sampling frequency = {} Hz'.format(RX4.get_sampling_frequency()))
@@ -161,7 +161,7 @@ Show the information for this sub-dataset.
 Can rename the sub-dataset channel ids (Channel id mapping: 0–>2, 1–>3,
 2–>4, 3–>5).
 
-.. code:: ipython3
+.. code:: python
 
     RX5=se.SubRecordingExtractor(parent_recording=RX2,channel_ids=[2,3,4,5], 
                                  renamed_channel_ids = [0,1,2,3],
@@ -176,7 +176,7 @@ Can rename the sub-dataset channel ids (Channel id mapping: 0–>2, 1–>3,
     Original ids = [2, 3, 4, 5]
 
 
-.. code:: ipython3
+.. code:: python
 
     print('Num. channels = {}'.format(len(RX5.get_channel_ids())))
     print('Sampling frequency = {} Hz'.format(RX5.get_sampling_frequency()))

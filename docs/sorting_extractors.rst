@@ -5,14 +5,14 @@ Sorting Extractors
 In this tutorial, we will go over what SortingExtractors are and how
 they can be used.
 
-.. code:: ipython3
+.. code:: python
 
     import numpy as np
     import spikeextractors as se
 
 Here, we define the properties of the in-memory dataset.
 
-.. code:: ipython3
+.. code:: python
 
     num_channels=7
     samplerate=30000
@@ -25,7 +25,7 @@ We generate a pure-noise timeseries dataset recorded by a linear probe
 geometry, generate some random events, and then define in-memory sorting
 and recording extractors.
 
-.. code:: ipython3
+.. code:: python
 
     # Generate a pure-noise timeseries dataset and a linear geometry
     timeseries=np.random.normal(0,10,(num_channels,num_timepoints))
@@ -48,7 +48,7 @@ and recording extractors.
 We can now print properties that the SortingExtractor retrieves from the
 underlying sorted dataset.
 
-.. code:: ipython3
+.. code:: python
 
     print('Unit ids = {}'.format(SX.get_unit_ids()))
     st=SX.get_unit_spike_train(unit_id=1)
@@ -66,21 +66,21 @@ underlying sorted dataset.
 
 Write the recording and sorting in the MountainSort format.
 
-.. code:: ipython3
+.. code:: python
 
     se.MdaRecordingExtractor.write_recording(recording=RX,save_path='sample_mountainsort_dataset')
     se.MdaSortingExtractor.write_sorting(sorting=SX,save_path='sample_mountainsort_dataset/firings_true.mda')
 
 Read these new datasets with the Mda recording and sorting extractor.
 
-.. code:: ipython3
+.. code:: python
 
     RX2=se.MdaRecordingExtractor(dataset_directory='sample_mountainsort_dataset')
     SX2=se.MdaSortingExtractor(firings_file='sample_mountainsort_dataset/firings_true.mda')
 
 We should get he same information as above.
 
-.. code:: ipython3
+.. code:: python
 
     print('Unit ids = {}'.format(SX2.get_unit_ids()))
     st=SX2.get_unit_spike_train(unit_id=1)
@@ -99,7 +99,7 @@ We should get he same information as above.
 Unit properties are name value pairs that we can store for any unit. We
 will now calculate a unit property and store it in the SortingExtractor.
 
-.. code:: ipython3
+.. code:: python
 
     full_spike_train = SX2.get_unit_spike_train(unit_id=1)
     firing_rate = float(len(full_spike_train))/RX2.get_num_frames()
@@ -116,12 +116,12 @@ will now calculate a unit property and store it in the SortingExtractor.
 
 We can get a the sub-dataset from the sorting.
 
-.. code:: ipython3
+.. code:: python
 
     SX3=se.SubSortingExtractor(parent_sorting=SX2,unit_ids=[1, 2],
                                start_frame=10000,end_frame=20000)
 
-.. code:: ipython3
+.. code:: python
 
     print('Num. units = {}'.format(len(SX3.get_unit_ids())))
     print('Average firing rate of units1 during frames 14000-16000 = {}'.format(
@@ -136,7 +136,7 @@ We can get a the sub-dataset from the sorting.
 
 We can add features to spikes contained in any unit as shown below
 
-.. code:: ipython3
+.. code:: python
 
     SX3.set_unit_spike_features(unit_id=1, feature_name='amplitude',
                                 value=[55, 60, 64, 50, 54, 60])
