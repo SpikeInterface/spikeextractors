@@ -40,7 +40,11 @@ cd spikeextractors
 pip install -e .
 ```
 
-## Getting Started with Preexisting Code
+## Documentation
+
+The documentation page can be found here: https://spikeextractors.readthedocs.io/en/latest/
+
+## Basic usage
 
 There are two types of spike extractors: recording extractors (inherited from RecordingExtractor) and sorting extractors (inherited from SortingExtractor). These allow the user to represent data from multi-channel raw extracellular traces (recordings) and the results of spike sorting (sortings).
 
