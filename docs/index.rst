@@ -17,9 +17,6 @@ SpikeExtractors attempts to standardize data retrieval rather than data storage.
 
 In addition to implementing multi-format I/O for various formats, the framework makes it possible to develop software tools that are agnostic to the underlying formats by working with the standardized python objects (recording and sorting extractors). These include processing routines (filters, sorting algorithms, downstream processing), and visualization widgets. It also provides mechanisms for lazy manipulation of recordings and sortings (concatenation, combination, subset extraction).
 
-Contents
-========
-
 The following sections will guide you through the basic usage and API for recording extractors, sorting extractors,
 available extractors, using a probe file, and curating a sorting output.
 
@@ -31,6 +28,13 @@ available extractors, using a probe file, and curating a sorting output.
    available_extractors
    probe
    curation
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
 
 Contact
 =======
