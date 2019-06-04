@@ -92,7 +92,7 @@ class PhySortingExtractor(SortingExtractor):
                             if int(tokens[0]) in self.get_unit_ids():
                                 if 'cluster_group' in str(f):
                                     self.set_unit_property(int(tokens[0]), 'quality', tokens[1])
-                                elif property == 'ch_group':
+                                elif property == 'chan_grp':
                                     self.set_unit_property(int(tokens[0]), 'group', tokens[1])
                                 else:
                                     if isinstance(tokens[1], (int, np.int, float, np.float, str)):
