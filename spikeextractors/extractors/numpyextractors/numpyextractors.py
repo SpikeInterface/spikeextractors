@@ -5,7 +5,6 @@ import numpy as np
 
 
 class NumpyRecordingExtractor(RecordingExtractor):
-    has_default_locations = False
     def __init__(self, timeseries, samplerate, geom=None):
         RecordingExtractor.__init__(self)
         if isinstance(timeseries, str):
