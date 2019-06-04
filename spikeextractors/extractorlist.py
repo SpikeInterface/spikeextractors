@@ -8,6 +8,7 @@ from .extractors.klustasortingextractor.klustasortingextractor import KlustaSort
 from .extractors.kilosortsortingextractor.kilosortsortingextractor import KiloSortSortingExtractor
 from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor, NumpySortingExtractor
 from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor
+from .extractors.maxonerecordingextractor import MaxOneRecordingExtractor
 from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
 from .extractors.phyextractors.phyextractors import PhyRecordingExtractor, PhySortingExtractor
 from .extractors.bindatrecordingextractor.bindatrecordingextractor import BinDatRecordingExtractor
@@ -25,7 +26,8 @@ recording_extractor_full_list = [
     IntanRecordingExtractor,
     BinDatRecordingExtractor,
     SpikeGLXRecordingExtractor,
-    PhyRecordingExtractor
+    PhyRecordingExtractor,
+    MaxOneRecordingExtractor
 ]
 
 installed_recording_extractor_list = [rx for rx in recording_extractor_full_list if rx.installed]
