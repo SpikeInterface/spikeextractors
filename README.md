@@ -251,7 +251,7 @@ To experiment with RecordingExtractors and SortingExtractors in a pre-installed 
 
 - [spiketoolkit](https://github.com/SpikeInterface/spiketoolkit) - A repository containing tools for analysis and evaluation of extracellular recordings built with spikeextractors.  It also contains wrapped spike sorting algorithms that take in recording extractors and output sorting extractors, allowing for standardized evaluation and quality control.
 - [spikewidgets](https://github.com/SpikeInterface/spikewidgets) - A repository containing graphical widgets built with spikeextractors to visualize both the raw and sorted extracellular data along with sorting results. 
-- [spikeforest](https://github.com/flatironinstitute/spikeforest) - SpikeForest is a continuously updating platform which benchmarks the performance of spike sorting codes across a large curated database of electrophysiological recordings with ground truth
+- [spikeforest](https://github.com/flatironinstitute/spikeforest) - SpikeForest is a continuously updating platform which benchmarks the performance of spike sorting codes across a large curated database of electrophysiological recordings with ground truth.
 - [spikely](https://github.com/rogerhurwitz/spikely) - An application for processing extracellular data that utilizes both spikeextractors and spiketoolkit. This application can run any supported spike sorting algorithm on extracellular data that is stored in any supported file format.
 
 ## Authors
