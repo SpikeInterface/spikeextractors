@@ -42,6 +42,12 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
             for (ch, cg) in zip(self.get_channel_ids(), channel_groups):
                 self.set_channel_property(ch, 'group', cg)
 
+        if (phy_folder / 'channel_positions.npy').is_file():
+            channel_locations = np.load(phy_folder / 'channel_positions.npy')
+            assert len(channel_locations) == self.get_num_channels()
+            for (ch, loc) in zip(self.get_channel_ids(), channel_locations):
+                self.set_channel_property(ch, 'location', loc)
+
 
 class PhySortingExtractor(SortingExtractor):
 
