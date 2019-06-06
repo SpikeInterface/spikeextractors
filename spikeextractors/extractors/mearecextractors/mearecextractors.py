@@ -30,6 +30,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._positions = None
         self._recordings = None
         self._locs_2d = locs_2d
+        self._locations = None
         self._initialize()
 
         if self._locations is not None:
@@ -45,15 +46,14 @@ class MEArecRecordingExtractor(RecordingExtractor):
         if len(np.array(recgen.channel_positions)) == self._num_channels:
             self._locations = np.array(recgen.channel_positions)
             if self._locs_2d:
-                probe_plane = recgen.info['electrodes']['plane']
-                if probe_plane == 'xy':
-                    self._locations = self._locations[:, :2]
-                elif probe_plane == 'yz':
-                    self._locations = self._locations[:, 1:]
-                elif probe_plane == 'xz':
-                    self._locations = self._locations[:, [0, 2]]
-        else:
-            self._locations = None
+                if 'electrodes' in recgen.info.keys():
+                    probe_plane = recgen.info['electrodes']['plane']
+                    if probe_plane == 'xy':
+                        self._locations = self._locations[:, :2]
+                    elif probe_plane == 'yz':
+                        self._locations = self._locations[:, 1:]
+                    elif probe_plane == 'xz':
+                        self._locations = self._locations[:, [0, 2]]
 
     def get_channel_ids(self):
         return list(range(self._num_channels))
