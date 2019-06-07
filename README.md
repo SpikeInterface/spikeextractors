@@ -104,7 +104,7 @@ We will now convert our numpy data into the MountainSort format and save it with
 
 ```python
 # Write this dataset in the MountainSort format
-si.MdaRecordingExtractor.write_recording(recording=RX,save_path='sample_mountainsort_dataset')
+se.MdaRecordingExtractor.write_recording(recording=RX,save_path='sample_mountainsort_dataset')
 ```
 
 The modular design of RecordingExtractor allows them to be used in a variety of other tasks. For example, RecordingExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubRecordingExtractors and MultiRecordingExtractors. 
@@ -117,6 +117,8 @@ First, we will add some random events and then use the NumpySortingExtractor to 
 
 ```python
 # Generate some random events
+num_events=1000
+num_units=4
 times = np.sort(np.random.uniform(0,num_timepoints,num_events))
 labels = np.random.randint(1,num_units+1,size=num_events)
     
