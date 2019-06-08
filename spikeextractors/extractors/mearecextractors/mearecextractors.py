@@ -19,16 +19,18 @@ class MEArecRecordingExtractor(RecordingExtractor):
     installed = HAVE_MREX  # check at class level if installed or not
     _gui_params = [
         {'name': 'recording_path', 'type': 'path', 'title': "Path to file"},
+        {'name': 'locs_2d', 'type': 'bool', 'title': "If True 3D locations are converted to 2D"},
     ]
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
 
-    def __init__(self, recording_path):
+    def __init__(self, recording_path, locs_2d=True):
         RecordingExtractor.__init__(self)
         self._recording_path = recording_path
         self._fs = None
         self._positions = None
         self._recordings = None
-        self._filehandle = None
+        self._locs_2d = locs_2d
+        self._locations = None
         self._initialize()
 
         if self._locations is not None:
@@ -43,8 +45,15 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._num_channels, self._num_frames = self._recordings.shape
         if len(np.array(recgen.channel_positions)) == self._num_channels:
             self._locations = np.array(recgen.channel_positions)
-        else:
-            self._locations = None
+            if self._locs_2d:
+                if 'electrodes' in recgen.info.keys():
+                    probe_plane = recgen.info['electrodes']['plane']
+                    if probe_plane == 'xy':
+                        self._locations = self._locations[:, :2]
+                    elif probe_plane == 'yz':
+                        self._locations = self._locations[:, 1:]
+                    elif probe_plane == 'xz':
+                        self._locations = self._locations[:, [0, 2]]
 
     def get_channel_ids(self):
         return list(range(self._num_channels))

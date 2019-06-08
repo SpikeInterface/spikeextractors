@@ -15,6 +15,7 @@ from .extractors.bindatrecordingextractor.bindatrecordingextractor import BinDat
 from .extractors.spykingcircussortingextractor.spykingcircussortingextractor import SpykingCircusSortingExtractor
 from .extractors.spikeglxrecordingextractor.spikeglxrecordingextractor import SpikeGLXRecordingExtractor
 from .extractors.tridescloussortingextractor.tridescloussortingextractor import TridesclousSortingExtractor
+from .extractors.npzsortingextractor.npzsortingextractor import NpzSortingExtractor
 
 
 recording_extractor_full_list = [
@@ -42,7 +43,8 @@ sorting_extractor_full_list = [
     OpenEphysSortingExtractor,
     PhySortingExtractor,
     SpykingCircusSortingExtractor,
-    TridesclousSortingExtractor
+    TridesclousSortingExtractor,
+    NpzSortingExtractor,
 ]
 
 installed_sorting_extractor_list = [sx for sx in sorting_extractor_full_list if sx.installed]

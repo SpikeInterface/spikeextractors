@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import copy
 
 
 class SortingExtractor(ABC):
@@ -18,6 +19,7 @@ class SortingExtractor(ABC):
     def __init__(self):
         self._unit_properties = {}
         self._unit_features = {}
+        self._sampling_frequency = None
 
     @abstractmethod
     def get_unit_ids(self):
@@ -405,3 +407,6 @@ class SortingExtractor(ABC):
         '''
         raise NotImplementedError("The write_sorting function is not \
                                   implemented for this extractor")
+
+    def get_sampling_frequency(self):
+        return self._sampling_frequency
