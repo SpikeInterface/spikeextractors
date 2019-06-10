@@ -231,8 +231,9 @@ class ExdirSortingExtractor(SortingExtractor):
                     for unit, unit_times in channel['UnitTimes'].items():
                         self._unit_ids.append(current_unit)
                         self._spike_trains.append((unit_times['times'].data.rescale('s')*sample_rate).magnitude)
-                        self.set_unit_property(current_unit, 'group', group)
-                        self.set_unit_property(current_unit, 'exdir_unit', unit)
+                        attrs = unit_times.attrs
+                        for k, v in attrs.items():
+                            self.set_unit_property(current_unit, k, v)
 
                         if load_waveforms:
                             unit_idxs = np.where(nums == int(unit))
