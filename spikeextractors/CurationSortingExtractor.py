@@ -30,7 +30,7 @@ class CurationSortingExtractor(SortingExtractor):
         unit_ids = []
         for root in self._roots:
             unit_ids.append(root.unit_id)
-        return unit_ids
+        return np.asarray(unit_ids)
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
