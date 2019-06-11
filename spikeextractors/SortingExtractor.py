@@ -23,12 +23,12 @@ class SortingExtractor(ABC):
 
     @abstractmethod
     def get_unit_ids(self):
-        '''This function returns a list of ids (ints) for each unit in the recording.
+        '''This function returns a list of ids (ints) for each unit in the sorsted result.
 
         Returns
         ----------
         unit_ids: array_like
-            A list or 1D array of the unit ids in recording (ints).
+            A list of the unit ids in the sorted result (ints).
         '''
         pass
 
