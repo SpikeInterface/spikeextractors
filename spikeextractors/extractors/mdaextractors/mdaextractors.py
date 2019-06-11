@@ -119,7 +119,7 @@ class MdaSortingExtractor(SortingExtractor):
         self._unit_ids = np.unique(self._labels).astype(int)
 
     def get_unit_ids(self):
-        return self._unit_ids
+        return list(self._unit_ids)
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
