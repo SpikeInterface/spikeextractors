@@ -22,6 +22,10 @@ class TestNpzSortingExtractors(unittest.TestCase):
         npz = np.load('test_NpzSortingExtractors.npz')
         units_ids = npz['unit_ids']
         self.assertEqual(list(units_ids), list(sorting_gt.get_unit_ids()))
+    
+    def test_empty_write(self):
+        sorting_empty = se.NumpySortingExtractor()
+        se.NpzSortingExtractor.write_sorting(sorting_empty, 'test_NpzSortingExtractors_empty.npz')
         
         
         

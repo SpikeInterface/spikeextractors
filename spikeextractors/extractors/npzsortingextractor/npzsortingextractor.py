@@ -54,12 +54,18 @@ class NpzSortingExtractor(SortingExtractor):
             spike_labels.append(np.ones(sp_ind.size, dtype='int64')*unit_id)
         
         # order times
-        spike_indexes = np.concatenate(spike_indexes)
-        spike_labels = np.concatenate(spike_labels)
-        order = np.argsort(spike_indexes)
+        if len(spike_indexes) > 0:
+            spike_indexes = np.concatenate(spike_indexes)
+            spike_labels = np.concatenate(spike_labels)
+            order = np.argsort(spike_indexes)
+            spike_indexes = spike_indexes[order]
+            spike_labels = spike_labels[order]
+        else:
+            spike_indexes = np.array([], dtype='int64')
+            spike_labels = np.array([], dtype='int64')
         
-        d['spike_indexes'] = spike_indexes[order]
-        d['spike_labels'] = spike_labels[order]
+        d['spike_indexes'] = spike_indexes
+        d['spike_labels'] = spike_labels
         
         #~ if sorting._sampling_frequency is not None:
             #~ d['sampling_frequency'] = np.array([self._sampling_frequency], dtype='float64')
