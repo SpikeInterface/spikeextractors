@@ -55,6 +55,9 @@ class MEArecRecordingExtractor(RecordingExtractor):
                             self._locations = self._locations[:, 1:]
                         elif probe_plane == 'xz':
                             self._locations = self._locations[:, [0, 2]]
+                if self._locations.shape[1] == 3:
+                    print("Could not load plane information. Assuming probe is in yz plane")
+                    self._locations = self._locations[:, 1:]
 
     def get_channel_ids(self):
         return list(range(self._num_channels))
