@@ -1,6 +1,6 @@
 from spikeextractors import SortingExtractor, RecordingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
-from spikeextractors.extraction_tools import read_python
+from spikeextractors.extraction_tools import read_python, write_python
 import numpy as np
 from pathlib import Path
 import csv
@@ -24,10 +24,10 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
         datfile = [x for x in phy_folder.iterdir() if x.suffix == '.dat' or x.suffix == '.bin']
 
         if (phy_folder / 'channel_map_si.npy').is_file():
-            channel_map = np.load(phy_folder / 'channel_map_si.npy')
+            channel_map = list(np.squeeze(np.load(phy_folder / 'channel_map_si.npy')))
             assert len(channel_map) == self.params['n_channels_dat']
         elif (phy_folder / 'channel_map.npy').is_file():
-            channel_map = np.load(phy_folder / 'channel_map.npy')
+            channel_map = list(np.squeeze(np.load(phy_folder / 'channel_map.npy')))
             assert len(channel_map) == self.params['n_channels_dat']
         else:
             channel_map = list(range(self.params['n_channels_dat']))
@@ -69,18 +69,27 @@ class PhySortingExtractor(SortingExtractor):
 
         spike_times = np.load(phy_folder / 'spike_times.npy')
         spike_templates = np.load(phy_folder / 'spike_templates.npy')
-        amplitudes = np.load(phy_folder / 'amplitudes.npy')
-        pc_features = np.load(phy_folder / 'pc_features.npy')
 
         if (phy_folder /'spike_clusters.npy').is_file():
             spike_clusters = np.load(phy_folder / 'spike_clusters.npy')
         else:
             spike_clusters = spike_templates
 
+        if (phy_folder / 'amplitudes.npy').is_file():
+            amplitudes = np.load(phy_folder / 'amplitudes.npy')
+        else:
+            amplitudes = np.ones(len(spike_times))
+
+        if (phy_folder /'pc_features.npy').is_file():
+            pc_features = np.load(phy_folder / 'pc_features.npy')
+        else:
+            pc_features = None
+
         clust_id = np.unique(spike_clusters)
         self._unit_ids = list(clust_id)
         spike_times.astype(int)
         self.params = read_python(str(phy_folder / 'params.py'))
+        self._sampling_frequency = self.params['sample_rate']
 
         # set unit quality properties
         csv_tsv_files = [x for x in phy_folder.iterdir() if x.suffix == '.csv' or x.suffix == '.tsv']
@@ -149,7 +158,8 @@ class PhySortingExtractor(SortingExtractor):
             idx = np.where(spike_clusters == clust)[0]
             self._spiketrains.append(spike_times[idx])
             self.set_unit_spike_features(clust, 'amplitudes', amplitudes[idx])
-            self.set_unit_spike_features(clust, 'pc_features', pc_features[idx])
+            if pc_features is not None:
+                self.set_unit_spike_features(clust, 'pc_features', pc_features[idx])
 
         if load_waveforms:
             datfile = [x for x in phy_folder.iterdir() if x.suffix == '.dat' or x.suffix == '.bin']
@@ -232,10 +242,13 @@ class PhySortingExtractor(SortingExtractor):
         spike_times = spike_times[sorting_idxs]
         spike_clusters = spike_clusters[sorting_idxs]
 
+        params = {'sample_rate': sorting.get_sampling_frequency()}
         if not save_path.is_dir():
-            save_path.mkdirs()
-        np.save(save_path /'spike_times.npy', spike_times[:, np.newaxis].astype(int))
+            save_path.mkdir(parents=True)
+        write_python(save_path / 'params.py', params)
+        np.save(save_path / 'spike_times.npy', spike_times[:, np.newaxis].astype(int))
         np.save(save_path / 'spike_clusters.npy', spike_clusters[:, np.newaxis].astype(int))
+        np.save(save_path / 'spike_templates.npy', spike_clusters[:, np.newaxis].astype(int))
         if len(amplitudes) > 0:
             amplitudes = amplitudes[sorting_idxs]
             np.save(save_path / 'amplitudes.npy', amplitudes[:, np.newaxis].astype(int))

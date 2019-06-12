@@ -4,15 +4,16 @@ from .extractors.biocamrecordingextractor.biocamrecordingextractor import Biocam
 from .extractors.exdirextractors.exdirextractors import ExdirRecordingExtractor, ExdirSortingExtractor
 from .extractors.intanrecordingextractor.intanrecordingextractor import IntanRecordingExtractor
 from .extractors.hs2sortingextractor.hs2sortingextractor import HS2SortingExtractor
-from .extractors.klustasortingextractor.klustasortingextractor import KlustaSortingExtractor
-from .extractors.kilosortsortingextractor.kilosortsortingextractor import KiloSortSortingExtractor
+from .extractors.klustaextractors.klustaextractors import KlustaSortingExtractor, KlustaRecordingExtractor
+from .extractors.kilosortextractors.kilosortextractors import KiloSortSortingExtractor, KiloSortRecordingExtractor
 from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor, NumpySortingExtractor
 from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor
 from .extractors.maxonerecordingextractor import MaxOneRecordingExtractor
 from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
 from .extractors.phyextractors.phyextractors import PhyRecordingExtractor, PhySortingExtractor
 from .extractors.bindatrecordingextractor.bindatrecordingextractor import BinDatRecordingExtractor
-from .extractors.spykingcircussortingextractor.spykingcircussortingextractor import SpykingCircusSortingExtractor
+from .extractors.spykingcircusextractors.spykingcircusextractors import SpykingCircusSortingExtractor, \
+    SpykingCircusRecordingExtractor
 from .extractors.spikeglxrecordingextractor.spikeglxrecordingextractor import SpikeGLXRecordingExtractor
 from .extractors.tridescloussortingextractor.tridescloussortingextractor import TridesclousSortingExtractor
 from .extractors.npzsortingextractor.npzsortingextractor import NpzSortingExtractor
@@ -26,6 +27,9 @@ recording_extractor_full_list = [
     OpenEphysRecordingExtractor,
     IntanRecordingExtractor,
     BinDatRecordingExtractor,
+    KlustaRecordingExtractor,
+    KiloSortRecordingExtractor,
+    SpykingCircusRecordingExtractor,
     SpikeGLXRecordingExtractor,
     PhyRecordingExtractor,
     MaxOneRecordingExtractor

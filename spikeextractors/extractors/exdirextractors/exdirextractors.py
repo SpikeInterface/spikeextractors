@@ -4,6 +4,7 @@ import numpy as np
 
 try:
     import exdir
+    import exdir.plugins.quantities
     import quantities as pq
     HAVE_EXDIR = True
 except ImportError:
@@ -24,10 +25,10 @@ class ExdirRecordingExtractor(RecordingExtractor):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         RecordingExtractor.__init__(self)
         self._exdir_file = exdir_file
-        exdir_group = exdir.File(exdir_file)
+        exdir_group = exdir.File(exdir_file, plugins=[exdir.plugins.quantities])
 
         self._recordings = exdir_group['acquisition']['timeseries']
-        self._samplerate = self._recordings.attrs['sample_rate']
+        self._samplerate = float(self._recordings.attrs['sample_rate'].rescale('Hz').magnitude)
 
         self._num_channels = self._recordings.shape[0]
         self._num_timepoints = self._recordings.shape[1]
@@ -48,20 +49,21 @@ class ExdirRecordingExtractor(RecordingExtractor):
             end_frame = self.get_num_frames()
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
-        return self._recordings[channel_ids, start_frame:end_frame]
+        return self._recordings.data[np.array(channel_ids), start_frame:end_frame]
 
     @staticmethod
     def write_recording(recording, exdir_file, lfp=False, mua=False):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         channel_ids = recording.get_channel_ids()
-        M = len(channel_ids)
-        N = recording.get_num_frames()
         raw = recording.get_traces()
-        exdir_group = exdir.File(exdir_file, plugins=exdir.plugins.quantities)
+        exdir_group = exdir.File(exdir_file, plugins=[exdir.plugins.quantities])
 
         if not lfp and not mua:
-            timeseries = exdir_group.require_group('acquisition').require_dataset('timeseries', data=raw)
+            acq = exdir_group.require_group('acquisition')
+            print(raw)
+            timeseries = acq.require_dataset('timeseries', data=raw)
             timeseries.attrs['sample_rate'] = recording.get_sampling_frequency() * pq.Hz
+            timeseries.attrs['electrode_identities'] = np.array(channel_ids)
             return
         elif lfp:
             ephys = exdir_group.require_group('processing').require_group('electrophysiology')
@@ -70,7 +72,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
                 channel_groups = np.unique([recording.get_channel_property(ch, 'group')
                                             for ch in recording.get_channel_ids()])
             else:
-                channel_groups  =[0]
+                channel_groups = [0]
 
             if len(channel_groups) == 1:
                 chan = 0
@@ -192,25 +194,36 @@ class ExdirSortingExtractor(SortingExtractor):
     installed = HAVE_EXDIR  # check at class level if installed or not
     _gui_params = [
         {'name': 'exdir_file', 'type': 'file_path', 'title': "str, Path to file"},
-        {'name': 'sample_rate', 'type': 'float', 'title': "Sampling rate of recording. Will be overwritten if exdir_file contains this info."},
+        {'name': 'sample_rate', 'type': 'float', 'title': "Sampling rate of recording. "
+                                                          "It will be overwritten if exdir_file contains this info."},
+        {'name': 'channel_group', 'type': 'int', 'title': "Channel group to load spike trains from."},
+        {'name': 'load_waveforms', 'type': 'bool', 'title': "if True, waveforms are loaded."},
     ]
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
-    def __init__(self, exdir_file, sample_rate, channel_group=None, load_waveforms=False):
+    def __init__(self, exdir_file, sample_rate=None, channel_group=None, load_waveforms=False):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         SortingExtractor.__init__(self)
         self._exdir_file = exdir_file
         exdir_group = exdir.File(exdir_file, plugins=exdir.plugins.quantities)
 
-        if 'acquisition' in exdir_group.keys():
-            if 'timeseries' in exdir_group['acquisition'].keys():
-                sample_rate = exdir_group['acquisition']['timeseries'].attrs['sample_rate']
+        electrophysiology = None
+        if 'processing' in exdir_group.keys():
+            if 'electrophysiology' in exdir_group['processing']:
+                electrophysiology = exdir_group['processing']['electrophysiology']
+                ephys_attrs = electrophysiology.attrs
+                if 'sample_rate' in ephys_attrs:
+                    sample_rate = ephys_attrs['sample_rate']
+        else:
+            if sample_rate is None:
+                raise Exception("Sampling rate information not found. Please provide it wiht the 'sample_rate' "
+                                "argument")
             else:
                 sample_rate = sample_rate * pq.Hz
-        else:
-            sample_rate = sample_rate * pq.Hz
+        self._sampling_frequency = float(sample_rate.rescale('Hz').magnitude)
 
-        electrophysiology = exdir_group['processing']['electrophysiology']
+        if electrophysiology is None:
+            raise Exception("'electrophysiology' group not found!")
 
         self._unit_ids = []
         current_unit = 1
@@ -234,12 +247,10 @@ class ExdirSortingExtractor(SortingExtractor):
                         attrs = unit_times.attrs
                         for k, v in attrs.items():
                             self.set_unit_property(current_unit, k, v)
-
                         if load_waveforms:
                             unit_idxs = np.where(nums == int(unit))
                             wf = waveforms[unit_idxs]
                             self.set_unit_spike_features(current_unit, 'waveforms', wf)
-
                         current_unit += 1
 
     def get_unit_ids(self):
