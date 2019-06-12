@@ -2,8 +2,7 @@
 Recording Extractors
 ~~~~~~~~~~~~~~~~~~~~
 
-In this tutorial, we will go over what RecordingExtractors are and how
-they can be used.
+RecordingExtractors are python objects that can extract data and information from raw file formats in a standardized and straightfoward way. In the tutorial below, we will go over what RecordingExtractors are and how they can be used.
 
 .. code:: python
 
