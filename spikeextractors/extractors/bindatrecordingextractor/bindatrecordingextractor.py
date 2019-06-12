@@ -22,7 +22,8 @@ class BinDatRecordingExtractor(RecordingExtractor):
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, datfile, samplerate, numchan, dtype, recording_channels=None, frames_first=True, geom=None, offset=0, invert=False):
+    def __init__(self, datfile, samplerate, numchan, dtype, recording_channels=None,
+                 frames_first=True, geom=None, offset=0, invert=False):
         RecordingExtractor.__init__(self)
         self._datfile = Path(datfile)
         self._frame_first = frames_first

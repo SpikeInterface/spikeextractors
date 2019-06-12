@@ -13,7 +13,7 @@ def read_python(path):
 
     Parameters
     ----------
-    path: str
+    path: str or Path
         Path to file to parse
 
     Returns
@@ -31,6 +31,27 @@ def read_python(path):
     exec_(contents, {}, metadata)
     metadata = {k.lower(): v for (k, v) in metadata.items()}
     return metadata
+
+
+def write_python(path, dict):
+    '''Saves python dictionary to file
+
+    Parameters
+    ----------
+    path: str or Path
+        Path to save file
+    dict: dict
+        dictionary to save
+    '''
+    with Path(path).open('w') as f:
+        for k, v in dict.items():
+            if isinstance(v ,str) and not v.startswith("'"):
+                if 'path' in k and 'win' in sys.platform:
+                    f.write(str(k) + " = r'" + str(v) + "'\n")
+                else:
+                    f.write(str(k) + " = '" + str(v) + "'\n")
+            else:
+                f.write(str(k) + " = " + str(v) + "\n")
 
 
 def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None):

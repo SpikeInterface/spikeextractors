@@ -1,4 +1,5 @@
 from spikeextractors import SortingExtractor
+from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 from spikeextractors.extraction_tools import read_python
 import numpy as np
 from pathlib import Path
@@ -10,8 +11,31 @@ try:
 except ImportError:
     HAVE_KLSX = False
 
-class KlustaSortingExtractor(SortingExtractor):
 
+class KlustaRecordingExtractor(BinDatRecordingExtractor):
+    extractor_name = 'KlustaRecordingExtractor'
+    installed = HAVE_KLSX  # check at class level if installed or not
+    _gui_params = [
+        {'name': 'kwikfile', 'type': 'path', 'title': "Path to file"},
+    ]
+    installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
+
+    def __init__(self, klustafolder):
+        assert HAVE_KLSX, "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"
+        klustafolder = Path(klustafolder).absolute()
+        config_file = [f for f in klustafolder.iterdir() if f.suffix == '.prm'][0]
+        dat_file = [f for f in klustafolder.iterdir() if f.suffix == '.dat'][0]
+        assert config_file.is_file() and dat_file.is_file(), "Not a valid klusta folder"
+        config = read_python(str(config_file))
+        sample_rate = config['traces']['sample_rate']
+        n_channels = config['traces']['n_channels']
+        dtype = config['traces']['dtype']
+
+        BinDatRecordingExtractor.__init__(self, datfile=dat_file, samplerate=sample_rate, numchan=n_channels,
+                                          dtype=dtype)
+
+
+class KlustaSortingExtractor(SortingExtractor):
     extractor_name = 'KlustaSortingExtractor'
     installed = HAVE_KLSX  # check at class level if installed or not
     _gui_params = [
@@ -19,10 +43,31 @@ class KlustaSortingExtractor(SortingExtractor):
     ]
     installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
-    def __init__(self, kwikfile):
+    def __init__(self, kwik_file_or_folder):
         assert HAVE_KLSX, "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"
         SortingExtractor.__init__(self)
-        kwikfile = Path(kwikfile).absolute()
+        kwik_file_or_folder = Path(kwik_file_or_folder)
+        kwikfile = None
+        klustafolder = None
+        if kwik_file_or_folder.is_file():
+            assert kwik_file_or_folder.suffix == '.kwik', "Not a '.kwik' file"
+            kwikfile = Path(kwik_file_or_folder).absolute()
+            klustafolder = kwikfile.parent
+        elif kwik_file_or_folder.is_dir():
+            klustafolder = kwik_file_or_folder
+            kwikfiles = [f for f in kwik_file_or_folder.iterdir() if f.suffix == '.kwik']
+            if len(kwikfiles) == 1:
+                kwikfile = kwikfiles[0]
+        assert kwikfile is not None, "Could not load '.kwik' file"
+
+        try:
+            config_file = [f for f in klustafolder.iterdir() if f.suffix == '.prm'][0]
+            config = read_python(str(config_file))
+            sample_rate = config['traces']['sample_rate']
+            self._sampling_frequency = sample_rate
+        except Exception as e:
+            print("Could not load sampling frequency info")
+
         F = h5py.File(kwikfile)
         channel_groups = F.get('channel_groups')
         self._spiketrains = []

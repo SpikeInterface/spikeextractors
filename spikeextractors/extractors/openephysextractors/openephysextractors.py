@@ -72,6 +72,7 @@ class OpenEphysSortingExtractor(SortingExtractor):
         self._recording = pyopenephys.File(recording_file).experiments[experiment_id].recordings[recording_id]
         self._spiketrains = self._recording.spiketrains
         self._unit_ids = list([np.unique(st.clusters)[0] for st in self._spiketrains])
+        self._sampling_frequency = float(self._recording.sample_rate.rescale('Hz').magnitude)
 
     def get_unit_ids(self):
         return self._unit_ids
