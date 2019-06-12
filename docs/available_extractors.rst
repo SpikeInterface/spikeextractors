@@ -49,7 +49,7 @@ First, import the spikeextractors package,
 
   import spikeextractors as se
 
-Then you can check the installed extractors lists,
+Then you can check the installed RecordingExtractor list,
 
 .. code:: python
 
@@ -64,6 +64,8 @@ which outputs,
    spikeextractors.extractors.spikeglxrecordingextractor.spikeglxrecordingextractor.SpikeGLXRecordingExtractor,
    spikeextractors.extractors.phyextractors.phyextractors.PhyRecordingExtractor,
    spikeextractors.extractors.maxonerecordingextractor.maxonerecordingextractor.MaxOneRecordingExtractor]
+   
+and the installed SortingExtractors list,
 
 .. code:: python
 
