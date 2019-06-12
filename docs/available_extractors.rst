@@ -97,11 +97,7 @@ throws the error,
 
   pip install exdir
 
-So to use either of the Exdir extractors, you must install the python package exdir. The python packages that need to be installed to run all of the extractors are below,
+So to use either of the Exdir extractors, you must install the python package exdir. The python packages that are required to use of all the extractors can be installed as below,
 
-* exdir
-* h5py
-* pyintan
-* MEArec
-* pyopenephys
-* tridesclous
+.. parsed-literal::
+  pip install exdir h5py pyintan MEArec pyopenephys tridesclous
