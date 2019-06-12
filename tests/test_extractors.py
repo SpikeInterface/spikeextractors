@@ -39,7 +39,7 @@ class TestExtractors(unittest.TestCase):
         SX.add_unit(unit_id=2, times=np.sort(np.random.uniform(0, num_frames, spike_times[1])))
         SX.add_unit(unit_id=3, times=np.sort(np.random.uniform(0, num_frames, spike_times[2])))
         SX.set_unit_property(unit_id=1, property_name='stablility', value=80)
-        SX.set_samping_frequency(samplerate)
+        SX.set_sampling_frequency(samplerate)
         SX2 = se.NumpySortingExtractor()
         spike_times2 = [100, 150, 450]
         train2 = np.rint(np.random.uniform(0, num_frames, spike_times[0])).astype(int)
