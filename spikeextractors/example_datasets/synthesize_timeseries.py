@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def synthesize_timeseries(*, sorting, waveforms, noise_level=1, samplerate=30000, duration=60, waveform_upsamplefac=13):
+def synthesize_timeseries(*, sorting, waveforms, noise_level=1, samplerate=30000.0, duration=60, waveform_upsamplefac=13):
     num_timepoints = np.int64(samplerate * duration)
     waveform_upsamplefac = int(waveform_upsamplefac)
     W = waveforms
