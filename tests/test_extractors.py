@@ -137,18 +137,18 @@ class TestExtractors(unittest.TestCase):
         self._check_sortings_equal(self.SX, SX_hs2)
         self.assertEqual(SX_hs2.get_sampling_frequency(), self.SX.get_sampling_frequency())
 
-    # def test_exdir_extractors(self):
-    #     path1 = self.test_dir + '/raw.exdir'
-    #     se.ExdirRecordingExtractor.write_recording(self.RX, path1)
-    #     RX_exdir = se.ExdirRecordingExtractor(path1)
-    #     self._check_recording_return_types(RX_exdir)
-    #     self._check_recordings_equal(self.RX, RX_exdir)
-    #
-    #     path2 = self.test_dir + '/firings.exdir'
-    #     se.ExdirSortingExtractor.write_sorting(self.SX, path2, self.RX)
-    #     SX_exdir = se.ExdirSortingExtractor(path2)
-    #     self._check_sorting_return_types(SX_exdir)
-    #     self._check_sortings_equal(self.SX, SX_exdir)
+    def test_exdir_extractors(self):
+        path1 = self.test_dir + '/raw.exdir'
+        se.ExdirRecordingExtractor.write_recording(self.RX, path1)
+        RX_exdir = se.ExdirRecordingExtractor(path1)
+        self._check_recording_return_types(RX_exdir)
+        self._check_recordings_equal(self.RX, RX_exdir)
+
+        path2 = self.test_dir + '/firings.exdir'
+        se.ExdirSortingExtractor.write_sorting(self.SX, path2, self.RX)
+        SX_exdir = se.ExdirSortingExtractor(path2)
+        self._check_sorting_return_types(SX_exdir)
+        self._check_sortings_equal(self.SX, SX_exdir)
 
     def test_kilosort_extractor(self):
         path1 = self.test_dir + '/ks'

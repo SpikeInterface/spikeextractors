@@ -3,7 +3,6 @@ import numpy as np
 import spikeextractors as se
 
 
-
 class TestNpzSortingExtractors(unittest.TestCase):
     def setUp(self):
         pass
@@ -15,7 +14,6 @@ class TestNpzSortingExtractors(unittest.TestCase):
 
 
         recording, sorting_gt = se.example_datasets.toy_example(num_channels=4, duration=10, seed=0)
-        print(sorting_gt)
 
         se.NpzSortingExtractor.write_sorting(sorting_gt, 'test_NpzSortingExtractors.npz')
 
@@ -29,9 +27,6 @@ class TestNpzSortingExtractors(unittest.TestCase):
     def test_empty_write(self):
         sorting_empty = se.NumpySortingExtractor()
         se.NpzSortingExtractor.write_sorting(sorting_empty, 'test_NpzSortingExtractors_empty.npz')
-
-
-
 
 
 if __name__ == '__main__':

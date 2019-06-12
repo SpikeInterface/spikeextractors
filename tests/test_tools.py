@@ -59,6 +59,5 @@ class TestTools(unittest.TestCase):
             se.write_binary_dat_format(self.RX, self.test_dir + 'rec.dat', time_axis=1, dtype='float32', chunksize=99)
 
 
-
 if __name__ == '__main__':
     unittest.main()

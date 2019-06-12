@@ -60,7 +60,6 @@ class ExdirRecordingExtractor(RecordingExtractor):
 
         if not lfp and not mua:
             acq = exdir_group.require_group('acquisition')
-            print(raw)
             timeseries = acq.require_dataset('timeseries', data=raw)
             timeseries.attrs['sample_rate'] = recording.get_sampling_frequency() * pq.Hz
             timeseries.attrs['electrode_identities'] = np.array(channel_ids)
