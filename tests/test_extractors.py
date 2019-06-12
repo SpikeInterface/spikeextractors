@@ -41,6 +41,7 @@ class TestExtractors(unittest.TestCase):
         SX.add_unit(unit_id=2, times=np.sort(np.random.uniform(0, num_frames, spike_times[1])))
         SX.add_unit(unit_id=3, times=np.sort(np.random.uniform(0, num_frames, spike_times[2])))
         SX.set_unit_property(unit_id=1, property_name='stablility', value=80)
+        SX.set_sampling_frequency(samplerate)
         SX2 = se.NumpySortingExtractor()
         spike_times2 = [100, 150, 450]
         train2 = np.rint(np.random.uniform(0, num_frames, spike_times[0])).astype(int)
@@ -134,6 +135,7 @@ class TestExtractors(unittest.TestCase):
         SX_hs2 = se.HS2SortingExtractor(path1)
         self._check_sorting_return_types(SX_hs2)
         self._check_sortings_equal(self.SX, SX_hs2)
+        self.assertEqual(SX_hs2.get_sampling_frequency(), self.SX.get_sampling_frequency())
 
     # def test_exdir_extractors(self):
     #     path1 = self.test_dir + '/raw.exdir'
@@ -196,6 +198,7 @@ class TestExtractors(unittest.TestCase):
         self.assertTrue(np.array_equal(CSX.get_unit_spike_train(4), original_spike_train))
         self.assertTrue(np.array_equal(CSX.get_unit_spike_features(4, 'f_int'), original_features))
         self.assertTrue(np.array_equal(np.asarray(CSX.get_unit_spike_feature_names(4)), np.asarray(['f_int'])))
+        self.assertEqual(CSX.get_sampling_frequency(), self.SX.get_sampling_frequency())
 
         CSX.split_unit(unit_id=3, indices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         original_spike_train = self.SX.get_unit_spike_train(3)
@@ -217,6 +220,8 @@ class TestExtractors(unittest.TestCase):
         )
         SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2 * N)
         self._check_sortings_equal(self.SX, SX_sub)
+        self.assertEqual(SX_multi.get_sampling_frequency(), self.SX.get_sampling_frequency())
+        self.assertEqual(SX_sub.get_sampling_frequency(), self.SX.get_sampling_frequency())
 
         N = self.RX.get_num_frames()
         SX_multi = se.MultiSortingExtractor(

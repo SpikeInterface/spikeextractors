@@ -63,6 +63,9 @@ class SortingExtractor(ABC):
             specified unit given the range of start and end frames.
         '''
         pass
+    
+    def get_sampling_frequency(self):
+        return self._sampling_frequency
 
     def set_unit_spike_features(self, unit_id, feature_name, value):
         '''This function adds a unit features data set under the given features
@@ -408,5 +411,3 @@ class SortingExtractor(ABC):
         raise NotImplementedError("The write_sorting function is not \
                                   implemented for this extractor")
 
-    def get_sampling_frequency(self):
-        return self._sampling_frequency

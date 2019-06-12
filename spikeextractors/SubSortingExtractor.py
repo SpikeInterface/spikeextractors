@@ -28,7 +28,7 @@ class SubSortingExtractor(SortingExtractor):
         self.copy_unit_spike_features(parent_sorting, unit_ids=self._renamed_unit_ids)
 
     def get_unit_ids(self):
-        return self._renamed_unit_ids
+        return list(self._renamed_unit_ids)
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
@@ -50,6 +50,9 @@ class SubSortingExtractor(SortingExtractor):
             ef = self._end_frame
         return self._parent_sorting.get_unit_spike_train(unit_id=original_unit_id, start_frame=sf,
                                                          end_frame=ef) - self._start_frame
+
+    def get_sampling_frequency(self):
+        return self._parent_sorting.get_sampling_frequency()
 
     def copy_unit_properties(self, sorting, unit_ids=None):
         if unit_ids is None:

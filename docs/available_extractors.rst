@@ -43,9 +43,16 @@ Installed Extractors
 
 To check which extractors are useable in a given python environment, one can print the installed recording extractor list and the installed sorting extractor list. An example from a newly installed miniconda3 environment is shown below,
 
+First, import the spikeextractors package,
+
 .. code:: python
 
   import spikeextractors as se
+
+Then you can check the installed RecordingExtractor list,
+
+.. code:: python
+
   se.installed_recording_extractor_list
   
 which outputs,
@@ -57,6 +64,8 @@ which outputs,
    spikeextractors.extractors.spikeglxrecordingextractor.spikeglxrecordingextractor.SpikeGLXRecordingExtractor,
    spikeextractors.extractors.phyextractors.phyextractors.PhyRecordingExtractor,
    spikeextractors.extractors.maxonerecordingextractor.maxonerecordingextractor.MaxOneRecordingExtractor]
+   
+and the installed SortingExtractors list,
 
 .. code:: python
 
