@@ -77,7 +77,7 @@ When trying to use an extractor that has not been installed in your environment,
   exdir_file = 'path_to_exdir_file'
   recording = se.ExdirRecordingExtractor(exdir_file)
 
-throwing the error,
+throws the error,
 
 .. parsed-literal::
   ----> 1 se.ExdirRecordingExtractor(exdir_file)
@@ -93,6 +93,6 @@ throwing the error,
 
   pip install exdir
 
-So to use either Exdir extractor, you must install the python package exdir. 
+So to use either of the Exdir extractors, you must install the python package exdir. 
 
  
