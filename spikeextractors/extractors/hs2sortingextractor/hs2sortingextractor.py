@@ -66,6 +66,8 @@ class HS2SortingExtractor(SortingExtractor):
         all_labels = np.concatenate(labels_list)
         rf = h5py.File(save_path, mode='w')
         # for now only create the entries required by any RecordingExtractor
+        if sorting.get_sampling_frequency() is not None:
+            rf.create_dataset("Sampling", data=sorting.get_sampling_frequency())
         rf.create_dataset("times", data=all_times)
         rf.create_dataset("cluster_id", data=all_labels)
         rf.close()

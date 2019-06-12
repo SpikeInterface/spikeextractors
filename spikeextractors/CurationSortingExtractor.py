@@ -51,6 +51,9 @@ class CurationSortingExtractor(SortingExtractor):
         else:
             raise ValueError(str(unit_id) + " is an invalid unit id")
 
+    def get_sampling_frequency(self):
+        return self._parent_sorting.get_sampling_frequency()
+
     def print_curation_tree(self, unit_id):
         '''This function prints the current curation tree for the unit_id (roots are current unit ids).
 
