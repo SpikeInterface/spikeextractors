@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/SpikeInterface/spikeextractors.svg?branch=master)](https://travis-ci.org/SpikeInterface/spikeextractors)
+[![Build Status](https://travis-ci.org/SpikeInterface/spikeextractors.svg?branch=master)](https://travis-ci.org/SpikeInterface/spikeextractors) [![PyPI version](https://badge.fury.io/py/spikeextractors.svg)](https://badge.fury.io/py/spikeextractors)
 
 Alpha Development
 Version 0.5.1
