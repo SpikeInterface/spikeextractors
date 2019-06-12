@@ -132,7 +132,7 @@ class TestExtractors(unittest.TestCase):
         SX_hs2 = se.HS2SortingExtractor(path1)
         self._check_sorting_return_types(SX_hs2)
         self._check_sortings_equal(self.SX, SX_hs2)
-
+        self.assertTrue(SX_hs2.get_sampling_frequency(), self.example_info['samplerate']))
 
     # def test_exdir_extractors(self):
     #     path1 = self.test_dir + '/raw'
