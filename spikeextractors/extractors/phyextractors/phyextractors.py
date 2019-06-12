@@ -246,12 +246,12 @@ class PhySortingExtractor(SortingExtractor):
         if not save_path.is_dir():
             save_path.mkdir(parents=True)
         write_python(save_path / 'params.py', params)
-        np.save(save_path / 'spike_times.npy', spike_times[:, np.newaxis].astype(int))
-        np.save(save_path / 'spike_clusters.npy', spike_clusters[:, np.newaxis].astype(int))
-        np.save(save_path / 'spike_templates.npy', spike_clusters[:, np.newaxis].astype(int))
+        np.save(save_path / 'spike_times.npy', spike_times[:, np.newaxis].astype('int64'))
+        np.save(save_path / 'spike_clusters.npy', spike_clusters[:, np.newaxis].astype('int64'))
+        np.save(save_path / 'spike_templates.npy', spike_clusters[:, np.newaxis].astype('int64'))
         if len(amplitudes) > 0:
             amplitudes = amplitudes[sorting_idxs]
-            np.save(save_path / 'amplitudes.npy', amplitudes[:, np.newaxis].astype(int))
+            np.save(save_path / 'amplitudes.npy', amplitudes[:, np.newaxis].astype('int64'))
         if len(pc_features) > 0:
             pc_features = pc_features[sorting_idxs]
             np.save(save_path / 'pc_features.npy', pc_features)
