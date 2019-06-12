@@ -41,7 +41,7 @@ class MultiSortingExtractor(SortingExtractor):
             self._all_unit_ids = list(set(self._all_unit_ids))
 
     def get_unit_ids(self):
-        return self._all_unit_ids
+        return list(self._all_unit_ids)
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         if start_frame is None:
@@ -69,6 +69,9 @@ class MultiSortingExtractor(SortingExtractor):
                 return np.asarray(spike_train)
             else:
                 return np.asarray(np.sort(np.concatenate(spike_train)))
+
+    def get_sampling_frequency(self):
+        return self._SXs[0].get_sampling_frequency()
 
     def get_unit_property(self, unit_id, property_name):
         if self._allzeros:

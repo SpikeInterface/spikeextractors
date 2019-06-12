@@ -49,12 +49,16 @@ class NumpySortingExtractor(SortingExtractor):
     def __init__(self):
         SortingExtractor.__init__(self)
         self._units = {}
-        # self._properties = {}
 
     def load_from_extractor(self, sorting):
         ids = sorting.get_unit_ids()
         for id in ids:
             self.add_unit(id, sorting.get_unit_spike_train(id))
+        if sorting.get_sampling_frequency() is not None:
+            self.set_sampling_frequency(sorting.get_sampling_frequency())
+
+    def set_sampling_frequency(self, sampling_frequency):
+        self._sampling_frequency = sampling_frequency
 
     def set_times_labels(self, times, labels):
         units = np.sort(np.unique(labels))
