@@ -68,6 +68,6 @@ class NpzSortingExtractor(SortingExtractor):
         d['spike_labels'] = spike_labels
 
         if sorting.get_sampling_frequency() is not None:
-            d['sampling_frequency'] = np.array([self._sampling_frequency], dtype='float64')
+            d['sampling_frequency'] = np.array([sorting.get_sampling_frequency()], dtype='float64')
 
         np.savez(save_file, **d)
