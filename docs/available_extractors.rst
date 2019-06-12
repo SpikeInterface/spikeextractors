@@ -55,8 +55,9 @@ which outputs,
    spikeextractors.extractors.biocamrecordingextractor.biocamrecordingextractor.BiocamRecordingExtractor,
    spikeextractors.extractors.bindatrecordingextractor.bindatrecordingextractor.BinDatRecordingExtractor,
    spikeextractors.extractors.spikeglxrecordingextractor.spikeglxrecordingextractor.SpikeGLXRecordingExtractor,
-   spikeextractors.extractors.phyextractors.phyextractors.PhyRecordingExtractor]
- 
+   spikeextractors.extractors.phyextractors.phyextractors.PhyRecordingExtractor,
+   spikeextractors.extractors.maxonerecordingextractor.maxonerecordingextractor.MaxOneRecordingExtractor]
+
 .. code:: python
 
   se.installed_sorting_extractor_list
@@ -64,11 +65,14 @@ which outputs,
 which outputs,
 
 .. parsed-literal::
-  [spikeextractors.extractors.mdaextractors.mdaextractors.MdaRecordingExtractor,
-   spikeextractors.extractors.biocamrecordingextractor.biocamrecordingextractor.BiocamRecordingExtractor,
-   spikeextractors.extractors.bindatrecordingextractor.bindatrecordingextractor.BinDatRecordingExtractor,
-   spikeextractors.extractors.spikeglxrecordingextractor.spikeglxrecordingextractor.SpikeGLXRecordingExtractor,
-   spikeextractors.extractors.phyextractors.phyextractors.PhyRecordingExtractor]
+  [spikeextractors.extractors.mdaextractors.mdaextractors.MdaSortingExtractor,
+   spikeextractors.extractors.hs2sortingextractor.hs2sortingextractor.HS2SortingExtractor,
+   spikeextractors.extractors.klustasortingextractor.klustasortingextractor.KlustaSortingExtractor,
+   spikeextractors.extractors.kilosortsortingextractor.kilosortsortingextractor.KiloSortSortingExtractor,
+   spikeextractors.extractors.phyextractors.phyextractors.PhySortingExtractor,
+   spikeextractors.extractors.spykingcircussortingextractor.spykingcircussortingextractor.SpykingCircusSortingExtractor,
+   spikeextractors.extractors.npzsortingextractor.npzsortingextractor.NpzSortingExtractor]
+
  
 When trying to use an extractor that has not been installed in your environment, an installation message will appear indicating which python packages must be installed as a prerequisite to using the extractor,
 
@@ -93,6 +97,11 @@ throws the error,
 
   pip install exdir
 
-So to use either of the Exdir extractors, you must install the python package exdir. 
+So to use either of the Exdir extractors, you must install the python package exdir. The python packages that need to be installed to run all of the extractors are below,
 
- 
+* exdir
+* h5py
+* pyintan
+* MEArec
+* pyopenephys
+* tridesclous
