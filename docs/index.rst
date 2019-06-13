@@ -23,9 +23,7 @@ The two most import classes in SpikeExtractors are the RecordingExtractor and th
 
 * **SortingExtractors** are python objects that can extract data and information from *sorted* data file formats in a standardized and straightfoward way.
 
-For each file format supported by SpikeExtractors, there is a specific RecordingExtractor/SortingExtractor that has been built to access and extract the relevant information.
-
-The following sections will guide you through the installation of SpikeExtractors, supported file formats, API for RecordingExtractors and SortingExtractors, how to load probe files, and how to curate a sorting output.
+For each file format supported by SpikeExtractors, there is a specific RecordingExtractor/SortingExtractor that has been built to access and extract the relevant information. The following sections will guide you through the installation of SpikeExtractors, supported file formats, API for RecordingExtractors and SortingExtractors, how to load probe files, and how to curate a sorting output.
 
 Contents:
 
