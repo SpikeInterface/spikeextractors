@@ -19,13 +19,18 @@ In addition to implementing multi-format I/O for various formats, the framework 
 
 The two most import classes in SpikeExtractors are the RecordingExtractor and the SortingExtractor.
 
-- **RecordingExtractors** are python objects that can extract data and information from *raw* data file formats in a standardized and straightfoward way. 
+* **RecordingExtractors** are python objects that can extract data and information from *raw* data file formats in a standardized and straightfoward way. 
 
-- **SortingExtractors** are python objects that can extract data and information from *sorted* data file formats in a standardized and straightfoward way.
+.. role:: raw-html(raw)
+    :format: html
+    
+:raw-html:`<br />`
+
+* **SortingExtractors** are python objects that can extract data and information from *sorted* data file formats in a standardized and straightfoward way.
 
 For each file format supported by SpikeExtractors, there is a specific RecordingExtractor/SortingExtractor that has been built to access and extract the relevant information.
 
-The following sections will guide you through the installation of SpikeExtractors, supported file formats, API for recording extractors and sorting extractors, how to load probe files, and how to curate a sorting output.
+The following sections will guide you through the installation of SpikeExtractors, supported file formats, API for RecordingExtractors and SortingExtractors, how to load probe files, and how to curate a sorting output.
 
 Contents:
 
