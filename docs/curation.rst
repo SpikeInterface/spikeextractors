@@ -1,5 +1,5 @@
 
-Curated with Extractors
+Curating with Extractors
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 In this tutorial, we will go over what CurationSortingExtractors are and
