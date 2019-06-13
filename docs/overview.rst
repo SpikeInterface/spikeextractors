@@ -1,19 +1,24 @@
 Overview
 ========
 
-SpikeExtractors provides tools for extracting, converting between, and curating raw or spike sorted extracellular data from any file format. Its design goals are as follows:
+Installation
+------------
 
-1. To facilitate standardized analysis and visualization for both raw and sorted extracellular data.
-2. To promote straightforward reuse of extracellular datasets.
-3. To increase the reproducibility of electrophysiological studies using spike sorting software.
-4. To address issues of file format compatibility within electrophysiology research without creating yet another file format.
+To get started with spikeextractors, you can install it with pip:
 
-SpikeExtractors attempts to standardize data retrieval rather than data storage. This eliminates the need for shared file formats and allows for the creation of new tools built off of our data retrieval guidelines.
+.. parsed-literal::
+  pip install spikeextractors
 
-In addition to implementing multi-format I/O for various formats, the framework makes it possible to develop software tools that are agnostic to the underlying formats by working with the standardized python objects (recording and sorting extractors). These include processing routines (filters, sorting algorithms, downstream processing), and visualization widgets. It also provides mechanisms for lazy manipulation of recordings and sortings (concatenation, combination, subset extraction).
+To get updated versions, periodically run:
 
-The following sections will guide you through the basic usage and API for recording extractors, sorting extractors,
-available extractors, using a probe file, and curating a sorting output.
+.. parsed-literal::
+  pip install --upgrade spikeextractors
+
+You can also install spikeextractors locally in development mode by cloning the repo to your local machine and then installing in editable mode.
+
+.. parsed-literal::
+  git clone https://github.com/SpikeInterface/spikeextractors.git
+  pip install -e .
 
 Tools using SpikeExtractors
 ---------------------------
@@ -33,3 +38,8 @@ Tools using SpikeExtractors
 `spikely 
 <https://github.com/rogerhurwitz/spikely>`_
 - An application for processing extracellular data that utilizes both spikeextractors and spiketoolkit. This application can run any supported spike sorting algorithm on extracellular data that is stored in any supported file format.
+
+Contact
+-------
+
+If you have questions or comments, please contact Cole Hurwitz: colehurwitz@gmail.com
