@@ -1,3 +1,3 @@
 
-Loading probe information with probe files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Loading Probe Files
+~~~~~~~~~~~~~~~~~~~
