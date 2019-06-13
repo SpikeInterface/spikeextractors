@@ -28,7 +28,10 @@ class NpzSortingExtractor(SortingExtractor):
         self.spike_indexes = npz['spike_indexes']
         self.spike_labels = npz['spike_labels']
 
-        self._sampling_frequency = float(npz['sampling_frequency'][0])
+        if 'sampling_frequency' in npz:
+            self._sampling_frequency = float(npz['sampling_frequency'][0])
+        else:
+            self._sampling_frequency = None
 
     def get_unit_ids(self):
         return list(self.unit_ids)
