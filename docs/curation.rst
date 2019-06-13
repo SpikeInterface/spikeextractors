@@ -1,6 +1,6 @@
 
-Curating with Extractors
-~~~~~~~~~~~~~~~~~~~~~~~
+Curation Tutorial
+~~~~~~~~~~~~~~~~~
 
 In this tutorial, we will go over what CurationSortingExtractors are and
 how they can be used to curate the results in a SortingExtractor.
