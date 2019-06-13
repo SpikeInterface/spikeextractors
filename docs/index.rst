@@ -22,7 +22,8 @@ available extractors, using a probe file, and curating a sorting output.
 
 .. toctree::
    :maxdepth: 3
-
+   
+   overview
    recording_extractors
    sorting_extractors
    available_extractors
