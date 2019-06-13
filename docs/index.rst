@@ -32,8 +32,3 @@ Contents:
    probe
    curation  
 
-Contact
-=======
-
-If you have questions or comments, please contact Cole Hurwitz: colehurwitz@gmail.com
-
