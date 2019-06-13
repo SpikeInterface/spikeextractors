@@ -1,8 +1,8 @@
 
-Sorting Extractors
-~~~~~~~~~~~~~~~~~~
+Sorting Extractors Tutorial
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SortingExtractors are python objects that can extract data and information from sorted data file formats in a standardized and straightfoward way. In the tutorial below, we will go over what SortingExtractors are and how they can be used.they can be used.
+In the tutorial below, we will go over what SortingExtractors are and how they can be used.they can be used.
 
 .. code:: python
 
