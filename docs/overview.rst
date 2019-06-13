@@ -1,10 +1,5 @@
-.. spikeextractors documentation master file, created by
-   sphinx-quickstart on Sun Jun  2 12:08:48 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to SpikeExtractors's documentation!
-===========================================
+Overview
+========
 
 SpikeExtractors provides tools for extracting, converting between, and curating raw or spike sorted extracellular data from any file format. Its design goals are as follows:
 
@@ -20,17 +15,21 @@ In addition to implementing multi-format I/O for various formats, the framework 
 The following sections will guide you through the basic usage and API for recording extractors, sorting extractors,
 available extractors, using a probe file, and curating a sorting output.
 
-.. toctree::
-   :maxdepth: 3
+Tools using SpikeExtractors
+---------------------------
 
-   recording_extractors
-   sorting_extractors
-   available_extractors
-   probe
-   curation  
+`spiketoolkit 
+<https://github.com/SpikeInterface/spiketoolkit>`_
+- A repository containing tools for analysis and evaluation of extracellular recordings built with spikeextractors.  It also contains wrapped spike sorting algorithms that take in recording extractors and output sorting extractors, allowing for standardized evaluation and quality control.
 
-Contact
-=======
+`spikewidgets 
+<https://github.com/SpikeInterface/spikewidgets>`_
+- A repository containing graphical widgets built with spikeextractors to visualize both the raw and sorted extracellular data along with sorting results. 
 
-If you have questions or comments, please contact Cole Hurwitz: colehurwitz@gmail.com
+`spikeforest 
+<https://github.com/flatironinstitute/spikeforest>`_
+- SpikeForest is a continuously updating platform which benchmarks the performance of spike sorting codes across a large curated database of electrophysiological recordings with ground truth.
 
+`spikely 
+<https://github.com/rogerhurwitz/spikely>`_
+- An application for processing extracellular data that utilizes both spikeextractors and spiketoolkit. This application can run any supported spike sorting algorithm on extracellular data that is stored in any supported file format.
