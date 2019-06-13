@@ -27,17 +27,10 @@ available extractors, using a probe file, and curating a sorting output.
    sorting_extractors
    available_extractors
    probe
-   curation
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   curation  
 
 Contact
 =======
 
-If you have questions or comments, contact Cole Hurwitz: colehurwitz@gmail.com
+If you have questions or comments, please contact Cole Hurwitz: colehurwitz@gmail.com
 
