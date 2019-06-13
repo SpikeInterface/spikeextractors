@@ -31,13 +31,13 @@ To get updated versions, periodically run:
 pip install --upgrade spikeextractors
 ```
 
-You can also install spikeextractors locally in development mode by cloning the repo to your local machine and then installing in editable mode.
+You can also install spikeextractors locally by cloning the repo to your local machine and then installing with setup.py,
 
 ```shell
 git clone https://github.com/SpikeInterface/spikeextractors.git
 
 cd spikeextractors
-pip install -e .
+pip setup.py install
 ```
 
 ## Documentation
