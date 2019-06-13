@@ -20,6 +20,8 @@ In addition to implementing multi-format I/O for various formats, the framework 
 The following sections will guide you through the basic usage and API for recording extractors, sorting extractors,
 available extractors, using a probe file, and curating a sorting output.
 
+Contents:
+
 .. toctree::
    :maxdepth: 3
    
