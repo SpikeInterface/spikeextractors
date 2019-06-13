@@ -26,9 +26,9 @@ Contents:
    :maxdepth: 3
    
    overview
+   available_extractors
    recording_extractors
    sorting_extractors
-   available_extractors
    probe
    curation  
 
