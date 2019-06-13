@@ -22,7 +22,10 @@ class HS2SortingExtractor(SortingExtractor):
         self._recording_file = recording_file
         self._rf = h5py.File(self._recording_file, mode='r')
         self._unit_ids = set(self._rf['cluster_id'][()])
-        self._sampling_frequency = self._rf['Sampling'][()]
+        if 'Sampling' in self._rf:
+            self._sampling_frequency = self._rf['Sampling'][()]
+        else:
+            self._sampling_frequency = None
 
         if 'centres' in self._rf.keys():
             self._unit_locs = self._rf['centres'][()]  # cache for faster access
