@@ -37,7 +37,7 @@ You can also install spikeextractors locally by cloning the repo to your local m
 git clone https://github.com/SpikeInterface/spikeextractors.git
 
 cd spikeextractors
-pip setup.py install
+python setup.py install
 ```
 
 ## Documentation
