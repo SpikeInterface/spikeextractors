@@ -23,10 +23,12 @@ def read_python(path):
 
     '''
     from six import exec_
+    import re
     path = Path(path).absolute()
     assert path.is_file()
     with path.open('r') as f:
         contents = f.read()
+    contents = re.sub(r'range\(([\d,]*)\)',r'list(range(\1))',contents)
     metadata = {}
     exec_(contents, {}, metadata)
     metadata = {k.lower(): v for (k, v) in metadata.items()}
