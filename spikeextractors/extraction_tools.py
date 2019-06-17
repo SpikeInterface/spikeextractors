@@ -287,13 +287,12 @@ def write_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunk
         with save_path.open('wb') as f:
             for i in range(n_chunk):
                 traces = recording.get_traces(start_frame=i*chunksize,
-                                            end_frame=min((i+1)*chunksize, n_sample))
+                                              end_frame=min((i+1)*chunksize, n_sample))
                 if dtype is not None:
                     traces = traces.astype(dtype)
                 if time_axis == 0:
                     traces = traces.T
                 f.write(traces.tobytes())
-
     return save_path
 
 
