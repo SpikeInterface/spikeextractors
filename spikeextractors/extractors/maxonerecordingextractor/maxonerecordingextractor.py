@@ -1,7 +1,11 @@
 from spikeextractors import RecordingExtractor
 
-import h5py
-HAVE_MAX = True
+try:
+    import h5py
+    HAVE_MAX = True
+except ImportError:
+    HAVE_MAX = False
+
 
 class MaxOneRecordingExtractor(RecordingExtractor):
 
