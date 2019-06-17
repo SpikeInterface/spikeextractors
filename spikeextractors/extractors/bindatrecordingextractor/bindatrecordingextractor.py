@@ -64,7 +64,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         else:
             channel_ids = [self._channels.index(ch) for ch in channel_ids]
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
-        if 'int' in self._dtype and self._dtype.startswith('u'):
+        if self._dtype.startswith('uint'):
             exp_idx = self._dtype.find('int') + 3
             exp = int(self._dtype[exp_idx:])
             recordings = recordings.astype('float32') - 2**(exp - 1) - 1
