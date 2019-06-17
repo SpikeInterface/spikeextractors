@@ -15,20 +15,23 @@ class BinDatRecordingExtractor(RecordingExtractor):
         {'name': 'samplerate', 'type': 'float', 'title': "Sampling rate in HZ"},
         {'name': 'numchan', 'type': 'int', 'title': "Number of channels"},
         {'name': 'dtype', 'type': 'np.dtype', 'title': "The dtype of underlying data"},
-        {'name': 'recording_channels', 'type': 'list', 'value':None, 'default':None, 'title': "List of recording channels"},
-        {'name': 'frames_first', 'type': 'bool', 'value':True, 'default':True, 'title': "Frames first"},
-        {'name': 'offset', 'type': 'int', 'value':0, 'default':0, 'title': "Offset in binary file"},
+        {'name': 'recording_channels', 'type': 'list', 'value': None, 'default': None, 'title': "List of recording channels"},
+        {'name': 'frames_first', 'type': 'bool', 'value': True, 'default': True, 'title': "Frames first"},
+        {'name': 'offset', 'type': 'int', 'value': 0, 'default': 0, 'title': "Offset in binary file"},
+        {'name': 'gain', 'type': 'float', 'title': "gain of the recordings"},
         {'name': 'probe_path', 'type': 'str', 'title': "Path to probe file (csv or prb)"},
     ]
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, datfile, samplerate, numchan, dtype, recording_channels=None,
-                 frames_first=True, geom=None, offset=0, invert=False):
+                 frames_first=True, geom=None, offset=0, gain=None):
         RecordingExtractor.__init__(self)
         self._datfile = Path(datfile)
         self._frame_first = frames_first
+        self._dtype = dtype
         self._timeseries = read_binary(self._datfile, numchan, dtype, frames_first, offset)
         self._samplerate = float(samplerate)
+        self._gain = gain
         self._geom = geom
 
         if recording_channels is not None:
@@ -61,6 +64,12 @@ class BinDatRecordingExtractor(RecordingExtractor):
         else:
             channel_ids = [self._channels.index(ch) for ch in channel_ids]
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
+        if self._dtype.startswith('uint'):
+            exp_idx = self._dtype.find('int') + 3
+            exp = int(self._dtype[exp_idx:])
+            recordings = recordings.astype('float32') - 2**(exp - 1) - 1
+        if self._gain is not None:
+            recordings = recordings * self._gain
         return recordings
 
     @staticmethod
