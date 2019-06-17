@@ -15,11 +15,11 @@ class BinDatRecordingExtractor(RecordingExtractor):
         {'name': 'samplerate', 'type': 'float', 'title': "Sampling rate in HZ"},
         {'name': 'numchan', 'type': 'int', 'title': "Number of channels"},
         {'name': 'dtype', 'type': 'np.dtype', 'title': "The dtype of underlying data"},
-        {'name': 'recording_channels', 'type': 'list', 'value':None, 'default':None, 'title': "List of recording channels"},
-        {'name': 'frames_first', 'type': 'bool', 'value':True, 'default':True, 'title': "Frames first"},
-        {'name': 'geom', 'type': 'list', 'title': "list or array with channel locations"},
+        {'name': 'recording_channels', 'type': 'list', 'value': None, 'default': None, 'title': "List of recording channels"},
+        {'name': 'frames_first', 'type': 'bool', 'value': True, 'default': True, 'title': "Frames first"},
         {'name': 'offset', 'type': 'int', 'value': 0, 'default': 0, 'title': "Offset in binary file"},
         {'name': 'gain', 'type': 'float', 'title': "gain of the recordings"},
+        {'name': 'probe_path', 'type': 'str', 'title': "Path to probe file (csv or prb)"},
     ]
     installation_mesg = ""  # error message when not installed
 
