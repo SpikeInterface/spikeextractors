@@ -21,11 +21,14 @@ class HS2SortingExtractor(SortingExtractor):
         SortingExtractor.__init__(self)
         self._recording_file = recording_file
         self._rf = h5py.File(self._recording_file, mode='r')
-        self._unit_ids = set(self._rf['cluster_id'][()])
         if 'Sampling' in self._rf:
-            self._sampling_frequency = self._rf['Sampling'][()]
-        else:
-            self._sampling_frequency = None
+            if(self._rf['Sampling'][()] == 0):
+                self._sampling_frequency = None
+            else:
+                self._sampling_frequency = self._rf['Sampling'][()]
+            
+        self._cluster_id = self._rf['cluster_id'][()]
+        self._unit_ids = set(self._cluster_id)
         
         if(load_unit_info):
             self.load_unit_info()
@@ -40,11 +43,12 @@ class HS2SortingExtractor(SortingExtractor):
             for unit_id in self._unit_ids:
                 self.set_unit_spike_features(unit_id, 'spike_locations', d[:2, self.get_unit_indices(unit_id)].T)
         if 'ch' in self._rf.keys():
+            d = self._rf['ch'][()]
             for unit_id in self._unit_ids:
-                self.set_unit_spike_features(unit_id, 'spike_max_channels', np.asarray(self._rf['ch'])[self.get_unit_indices(unit_id)])
-    
+                self.set_unit_spike_features(unit_id, 'spike_max_channels', d[self.get_unit_indices(unit_id)])
+
     def get_unit_indices(self, x):
-        return np.where(self._rf['cluster_id'][()] == x)[0]
+        return np.where(self._cluster_id == x)[0]
 
     def get_unit_ids(self):
         return list(self._unit_ids)
@@ -75,6 +79,8 @@ class HS2SortingExtractor(SortingExtractor):
         # for now only create the entries required by any RecordingExtractor
         if sorting.get_sampling_frequency() is not None:
             rf.create_dataset("Sampling", data=sorting.get_sampling_frequency())
+        else:
+            rf.create_dataset("Sampling", data=0)
         rf.create_dataset("times", data=all_times)
         rf.create_dataset("cluster_id", data=all_labels)
         rf.close()

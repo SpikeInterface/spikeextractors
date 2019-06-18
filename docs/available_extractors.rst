@@ -13,12 +13,14 @@ For raw data formats, we currently support:
 * **Biocam HDF5** - BiocamRecordingExtractor
 * **Experimental Directory Structure (Exdir)** - ExdirRecordingExtractor
 * **Intan** - IntanRecordingExtractor
+* **Klusta** - KlustaRecordingExtractor
 * **MaxOne** - MaxOneRecordingExtractor
 * **Mountainsort MDA** - MdaRecordingExtractor
 * **MEArec** - MEArecRecordingExtractor
 * **Open Ephys** - OpenEphysRecordingExtractor
-* **Phy** - PhyRecordingExtractor
+* **Phy/Kilosort** - PhyRecordingExtractor/KilosortRecordingExtractor
 * **SpikeGLX** - SpikeGLXRecordingExtractor
+* **Spyking Circus** - SpykingCircusRecordingExtractor
 
 Sorted Data Formats
 -------------------
@@ -31,7 +33,7 @@ For sorted data formats, we currently support:
 * **Klusta** - KlustaSortingExtractor
 * **Mountainsort MDA** - MdaSortingExtractor
 * **MEArec** - MEArecSortingExtractor
-* **NPZ Numpy (created by SpikeInterface)** - NpzSortingExtractor
+* **NPZ (created by SpikeInterface)** - NpzSortingExtractor
 * **Open Ephys** - OpenEphysSortingExtractor
 * **Spyking Circus** - SpykingCircusSortingExtractor
 * **Trideclous** - TridesclousSortingExtractor
