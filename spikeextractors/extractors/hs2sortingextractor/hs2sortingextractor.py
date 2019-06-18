@@ -16,7 +16,7 @@ class HS2SortingExtractor(SortingExtractor):
     ]
     installation_mesg = "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
-    def __init__(self, recording_file):
+    def __init__(self, recording_file, load_unit_info=False):
         assert HAVE_HS2SX, "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"
         SortingExtractor.__init__(self)
         self._recording_file = recording_file
@@ -26,7 +26,11 @@ class HS2SortingExtractor(SortingExtractor):
             self._sampling_frequency = self._rf['Sampling'][()]
         else:
             self._sampling_frequency = None
-
+        
+        if(load_unit_info):
+            self.load_unit_info()
+            
+    def load_unit_info(self):
         if 'centres' in self._rf.keys():
             self._unit_locs = self._rf['centres'][()]  # cache for faster access
             for unit_id in self._unit_ids:
@@ -38,7 +42,7 @@ class HS2SortingExtractor(SortingExtractor):
         if 'ch' in self._rf.keys():
             for unit_id in self._unit_ids:
                 self.set_unit_spike_features(unit_id, 'spike_max_channels', np.asarray(self._rf['ch'])[self.get_unit_indices(unit_id)])
-
+    
     def get_unit_indices(self, x):
         return np.where(self._rf['cluster_id'][()] == x)[0]
 
