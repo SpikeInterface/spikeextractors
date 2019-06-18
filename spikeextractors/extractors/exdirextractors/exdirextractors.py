@@ -78,7 +78,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
                 ch_group = ephys.require_group('channel_group_' + str(chan))
                 lfp_group = ch_group.require_group('LFP')
                 ch_group.attrs['electrode_group_id'] = chan
-                ch_group.attrs['electrode_identities'] = np.arange(len(recording.get_channel_ids()))
+                ch_group.attrs['electrode_identities'] = np.array(recording.get_channel_ids())
                 ch_group.attrs['electrode_idx'] = np.arange(len(recording.get_channel_ids()))
                 ch_group.attrs['start_time'] = 0 * pq.s
                 ch_group.attrs['stop_time'] = recording.get_num_frames() / \
@@ -103,10 +103,12 @@ class ExdirRecordingExtractor(RecordingExtractor):
                     ch_group = ephys.require_group('channel_group_' + str(chan))
                     lfp_group = ch_group.require_group('LFP')
                     ch_group.attrs['electrode_group_id'] = chan
-                    ch_group.attrs['electrode_identities'] = np.array([i_c for i_c, ch in enumerate(recording.get_channel_ids())
-                                                               if recording.get_channel_property(ch, 'group') == chan])
-                    ch_group.attrs['electrode_idx'] = np.array([i_c for i_c, ch in enumerate(recording.get_channel_ids())
-                                                        if recording.get_channel_property(ch, 'group') == chan])
+                    ch_group.attrs['electrode_identities'] = np.array([ch for ch in recording.get_channel_ids()
+                                                                       if recording.get_channel_property(ch, 'group')
+                                                                       == chan])
+                    ch_group.attrs['electrode_idx'] = np.array([i_c for i_c, ch in
+                                                                enumerate(recording.get_channel_ids())
+                                                                if recording.get_channel_property(ch, 'group') == chan])
                     ch_group.attrs['start_time'] = 0 * pq.s
                     ch_group.attrs['stop_time'] = recording.get_num_frames() / \
                                                    float(recording.get_sampling_frequency()) * pq.s
@@ -139,7 +141,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
                 ch_group = ephys.require_group('channel_group_' + str(chan))
                 mua_group = ch_group.require_group('MUA')
                 ch_group.attrs['electrode_group_id'] = chan
-                ch_group.attrs['electrode_identities'] = np.arange(len(recording.get_channel_ids()))
+                ch_group.attrs['electrode_identities'] = np.array(recording.get_channel_ids())
                 ch_group.attrs['electrode_idx'] = np.arange(len(recording.get_channel_ids()))
                 ch_group.attrs['start_time'] = 0 * pq.s
                 ch_group.attrs['stop_time'] = recording.get_num_frames() / \
@@ -164,10 +166,12 @@ class ExdirRecordingExtractor(RecordingExtractor):
                     ch_group = ephys.require_group('channel_group_' + str(chan))
                     mua_group = ch_group.require_group('MUA')
                     ch_group.attrs['electrode_group_id'] = chan
-                    ch_group.attrs['electrode_identities'] = np.array([i_c for i_c, ch in enumerate(recording.get_channel_ids())
-                                                               if recording.get_channel_property(ch, 'group') == chan])
-                    ch_group.attrs['electrode_idx'] = np.array([i_c for i_c, ch in enumerate(recording.get_channel_ids())
-                                                        if recording.get_channel_property(ch, 'group') == chan])
+                    ch_group.attrs['electrode_identities'] = np.array([ch for ch in recording.get_channel_ids()
+                                                                       if recording.get_channel_property(ch, 'group')
+                                                                       == chan])
+                    ch_group.attrs['electrode_idx'] = np.array([i_c for i_c, ch in
+                                                                enumerate(recording.get_channel_ids())
+                                                                if recording.get_channel_property(ch, 'group') == chan])
                     ch_group.attrs['start_time'] = 0 * pq.s
                     ch_group.attrs['stop_time'] = recording.get_num_frames() / \
                                                    float(recording.get_sampling_frequency()) * pq.s
