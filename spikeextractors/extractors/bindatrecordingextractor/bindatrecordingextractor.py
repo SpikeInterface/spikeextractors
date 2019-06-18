@@ -28,7 +28,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         self._datfile = Path(datfile)
         self._frame_first = frames_first
-        self._dtype = dtype
+        self._dtype = str(dtype)
         self._timeseries = read_binary(self._datfile, numchan, dtype, frames_first, offset)
         self._samplerate = float(samplerate)
         self._gain = gain
