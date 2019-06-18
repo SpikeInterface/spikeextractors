@@ -16,17 +16,24 @@ class HS2SortingExtractor(SortingExtractor):
     ]
     installation_mesg = "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
-    def __init__(self, recording_file):
+    def __init__(self, recording_file, load_unit_info=False):
         assert HAVE_HS2SX, "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"
         SortingExtractor.__init__(self)
         self._recording_file = recording_file
         self._rf = h5py.File(self._recording_file, mode='r')
         if 'Sampling' in self._rf:
-            self._sampling_frequency = self._rf['Sampling'][()]
-        else:
-            self._sampling_frequency = None
+            if(self._rf['Sampling'][()] == 0):
+                self._sampling_frequency = None
+            else:
+                self._sampling_frequency = self._rf['Sampling'][()]
+            
         self._cluster_id = self._rf['cluster_id'][()]
         self._unit_ids = set(self._cluster_id)
+        
+        if(load_unit_info):
+            self.load_unit_info()
+            
+    def load_unit_info(self):
         if 'centres' in self._rf.keys():
             self._unit_locs = self._rf['centres'][()]  # cache for faster access
             for unit_id in self._unit_ids:
@@ -72,6 +79,8 @@ class HS2SortingExtractor(SortingExtractor):
         # for now only create the entries required by any RecordingExtractor
         if sorting.get_sampling_frequency() is not None:
             rf.create_dataset("Sampling", data=sorting.get_sampling_frequency())
+        else:
+            rf.create_dataset("Sampling", data=0)
         rf.create_dataset("times", data=all_times)
         rf.create_dataset("cluster_id", data=all_labels)
         rf.close()
