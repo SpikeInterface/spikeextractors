@@ -26,26 +26,37 @@ class HS2SortingExtractor(SortingExtractor):
                 self._sampling_frequency = None
             else:
                 self._sampling_frequency = self._rf['Sampling'][()]
-            
+
         self._cluster_id = self._rf['cluster_id'][()]
         self._unit_ids = set(self._cluster_id)
-        
+        self._times = self._rf['times'][()]
+
         if(load_unit_info):
             self.load_unit_info()
-            
+
     def load_unit_info(self):
         if 'centres' in self._rf.keys():
             self._unit_locs = self._rf['centres'][()]  # cache for faster access
+            if self._unit_locs.shape[0] < 5:  # check if old, transposed format
+                self._unit_locs = self._unit_locs.T
             for unit_id in self._unit_ids:
-                self.set_unit_property(unit_id, 'unit_location', self._unit_locs[unit_id])
+                self._unit_properties[unit_id] = {}
+                self._unit_properties[unit_id]['unit_location'] = self._unit_locs[unit_id]
+        inds = []  # get these only once
+        for unit_id in self._unit_ids:
+            inds.append(np.where(self._cluster_id==unit_id)[0])
         if 'data' in self._rf.keys():
             d = self._rf['data'][()]
-            for unit_id in self._unit_ids:
-                self.set_unit_spike_features(unit_id, 'spike_locations', d[:2, self.get_unit_indices(unit_id)].T)
+            for i, unit_id in enumerate(self._unit_ids):
+                self._unit_features[unit_id] = {}
+                self._unit_features[unit_id]['spike_location'] = d[:, inds[i]].T
+        else:
+            for i, unit_id in enumerate(self._unit_ids):
+                self._unit_features[unit_id] = {}
         if 'ch' in self._rf.keys():
             d = self._rf['ch'][()]
-            for unit_id in self._unit_ids:
-                self.set_unit_spike_features(unit_id, 'spike_max_channels', d[self.get_unit_indices(unit_id)])
+            for i, unit_id in enumerate(self._unit_ids):
+                self._unit_features[unit_id]['spike_max_channels'] = d[inds[i]]
 
     def get_unit_indices(self, x):
         return np.where(self._cluster_id == x)[0]
@@ -58,7 +69,7 @@ class HS2SortingExtractor(SortingExtractor):
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        times = self._rf['times'][()][self.get_unit_indices(unit_id)]
+        times = self._times[self.get_unit_indices(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
 
