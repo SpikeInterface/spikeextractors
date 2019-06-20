@@ -72,6 +72,10 @@ class KlustaSortingExtractor(SortingExtractor):
         channel_groups = F.get('channel_groups')
         self._spiketrains = []
         self._unit_ids = []
+        unique_units = []
+        klusta_units = []
+        groups = []
+        unit = 0
         for cgroup in channel_groups:
             group_id = int(cgroup)
             try:
@@ -84,8 +88,17 @@ class KlustaSortingExtractor(SortingExtractor):
                 idx = np.nonzero(clusters == int(cluster_id))
                 st = np.array(channel_groups[cgroup]['spikes']['time_samples'])[idx]
                 self._spiketrains.append(st)
-                self._unit_ids.append(int(cluster_id))
-                self.set_unit_property(int(cluster_id), 'group', group_id)
+                klusta_units.append(int(cluster_id))
+                unique_units.append(unit)
+                unit += 1
+                groups.append(group_id)
+        if len(np.unique(klusta_units)) == len(np.unique(unique_units)):
+            self._unit_ids = klusta_units
+        else:
+            print('Klusta units are not unique! Using unique unit ids')
+            self._unit_ids = unique_units
+        for i, u in enumerate(self._unit_ids):
+            self.set_unit_property(u, 'group', groups[i])
 
     def get_unit_ids(self):
         return list(self._unit_ids)

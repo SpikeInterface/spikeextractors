@@ -81,7 +81,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
             return recordings[sorted_idx]
         else:
             return self._recordings[np.array(channel_ids), start_frame:end_frame]
-        
+
     @staticmethod
     def write_recording(recording, save_path):
         '''
