@@ -9,7 +9,7 @@ Raw Data Formats
 
 For raw data formats, we currently support:
 
-* **Raw Binary** - BinDatRecordingExtractor
+* **Binary** - BinDatRecordingExtractor
 * **Biocam HDF5** - BiocamRecordingExtractor
 * **Experimental Directory Structure (Exdir)** - ExdirRecordingExtractor
 * **Intan** - IntanRecordingExtractor
