@@ -77,11 +77,11 @@ class MEArecRecordingExtractor(RecordingExtractor):
             channel_ids = range(self.get_num_channels())
         if np.any(np.diff(channel_ids) < 0):
             sorted_idx = np.argsort(channel_ids)
-            print(np.sort(channel_ids))
             recordings = self._recordings[np.sort(channel_ids), start_frame:end_frame]
             return recordings[sorted_idx]
         else:
             return self._recordings[np.array(channel_ids), start_frame:end_frame]
+        
     @staticmethod
     def write_recording(recording, save_path):
         '''
