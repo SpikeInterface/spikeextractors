@@ -12,4 +12,4 @@ from . import example_datasets
 from .extraction_tools import load_probe_file, save_probe_file, read_binary, write_binary_dat_format, \
     get_sub_extractors_by_property
 
-__version__ = '0.5.1'
+__version__ = '0.5.2'
