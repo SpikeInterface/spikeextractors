@@ -146,7 +146,7 @@ class MdaSortingExtractor(SortingExtractor):
             if(write_primary_channels):
                 if('max_channel' in sorting.get_unit_spike_feature_names(unit_id=unit_id)):
                     primary_channels_list.append(sorting.get_unit_spike_features(unit_id=unit_id,
-                                                                            feature_name='max_channel')
+                                                                            feature_name='max_channel'))
                 else:
                     except ValueError:
                         print("Unable to write primary channels because 'max_channel' spike feature not set in unit " + str(unit_id))
