@@ -148,8 +148,7 @@ class MdaSortingExtractor(SortingExtractor):
                     primary_channels_list.append(sorting.get_unit_spike_features(unit_id=unit_id,
                                                                             feature_name='max_channel'))
                 else:
-                    except ValueError:
-                        print("Unable to write primary channels because 'max_channel' spike feature not set in unit " + str(unit_id))
+                    raise ValueError("Unable to write primary channels because 'max_channel' spike feature not set in unit " + str(unit_id))
             else:
                 primary_channels_list.append(np.zeros(times.shape))
         all_times = _concatenate(times_list)
