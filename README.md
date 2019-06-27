@@ -244,10 +244,9 @@ As you can see, our extractor base classes were designed to make implementing a 
 Once all abstract methods are overwritten in your RecordingExtractor or SortingExtractor, your subclass is ready for deployment and can be used with any pre-implemented tools (see **Tools that use RecordingExtractors and SortingExtractors**).
 <br/>
 
-## Interactive Example
+## Spike Tutorials
 
-To experiment with RecordingExtractors and SortingExtractors in a pre-installed environment, we have provided a [Collaborative environment](https://gist.github.com/magland/e43542fe2dfe856fd04903b9ff1f8e4e). If you click on the link and then click on "Open in Collab", you can run the notebook and try out the features of and tools for spikeextractors.
-<br/>
+For a complete tutorial of the SpikeInterface framework, refer to the [SpikeTutorials](https://github.com/SpikeInterface/spiketutorials) repo.
 
 ## Tools that use RecordingExtractors and SortingExtractors
 
