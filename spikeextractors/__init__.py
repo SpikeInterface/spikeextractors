@@ -4,7 +4,6 @@ from .SubSortingExtractor import SubSortingExtractor
 from .SubRecordingExtractor import SubRecordingExtractor
 from .MultiRecordingExtractor import MultiRecordingExtractor
 from .MultiSortingExtractor import MultiSortingExtractor
-from .CurationSortingExtractor import CurationSortingExtractor
 
 from .extractorlist import *
 
