@@ -117,6 +117,10 @@ class MdaSortingExtractor(SortingExtractor):
         self._times = self._firings[1, :]
         self._labels = self._firings[2, :]
         self._unit_ids = np.unique(self._labels).astype(int)
+        # 
+        # if load_primary_channels:
+        #     for unit in range(self._unit_ids):
+        #         self.set_unit_spike_features(m, 'location', self._geom[m, :])
 
     def get_unit_ids(self):
         return list(self._unit_ids)
