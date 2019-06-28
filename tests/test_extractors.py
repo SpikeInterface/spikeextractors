@@ -179,38 +179,38 @@ class TestExtractors(unittest.TestCase):
         RX_sub = RX_multi.get_epoch('C')
         self._check_recordings_equal(self.RX, RX_sub)
 
-    def test_curation_sorting_extractor(self):
-        #Dummy features for testing merging and splitting of features
-        self.SX.set_unit_spike_features(1, 'f_int', range(0 + 1, len(self.SX.get_unit_spike_train(1)) + 1))
-        self.SX.set_unit_spike_features(2, 'f_int', range(0, len(self.SX.get_unit_spike_train(2))))
-        self.SX.set_unit_spike_features(2, 'bad_features', np.repeat(1, len(self.SX.get_unit_spike_train(2))))
-        self.SX.set_unit_spike_features(3, 'f_int', range(0, len(self.SX.get_unit_spike_train(3))))
-
-        CSX = se.CurationSortingExtractor(
-            parent_sorting=self.SX
-        )
-        CSX.merge_units(unit_ids=[1, 2])
-        original_spike_train = np.concatenate((self.SX.get_unit_spike_train(1), self.SX.get_unit_spike_train(2)))
-        indices_sort = np.argsort(original_spike_train)
-        original_spike_train = original_spike_train[indices_sort]
-        original_features = np.concatenate((self.SX.get_unit_spike_features(1, 'f_int'), self.SX.get_unit_spike_features(2, 'f_int')))
-        original_features = original_features[indices_sort]
-        self.assertTrue(np.array_equal(CSX.get_unit_spike_train(4), original_spike_train))
-        self.assertTrue(np.array_equal(CSX.get_unit_spike_features(4, 'f_int'), original_features))
-        self.assertTrue(np.array_equal(np.asarray(CSX.get_unit_spike_feature_names(4)), np.asarray(['f_int'])))
-        self.assertEqual(CSX.get_sampling_frequency(), self.SX.get_sampling_frequency())
-
-        CSX.split_unit(unit_id=3, indices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-        original_spike_train = self.SX.get_unit_spike_train(3)
-        original_features = self.SX.get_unit_spike_features(3, 'f_int')
-        split_spike_train_1 = CSX.get_unit_spike_train(5)
-        split_spike_train_2 = CSX.get_unit_spike_train(6)
-        split_features_1 = CSX.get_unit_spike_features(5, 'f_int')
-        split_features_2 = CSX.get_unit_spike_features(6, 'f_int')
-        self.assertTrue(np.array_equal(original_spike_train[:10], split_spike_train_1))
-        self.assertTrue(np.array_equal(original_spike_train[10:], split_spike_train_2))
-        self.assertTrue(np.array_equal(original_features[:10], split_features_1))
-        self.assertTrue(np.array_equal(original_features[10:], split_features_2))
+    # def test_curation_sorting_extractor(self):
+    #     #Dummy features for testing merging and splitting of features
+    #     self.SX.set_unit_spike_features(1, 'f_int', range(0 + 1, len(self.SX.get_unit_spike_train(1)) + 1))
+    #     self.SX.set_unit_spike_features(2, 'f_int', range(0, len(self.SX.get_unit_spike_train(2))))
+    #     self.SX.set_unit_spike_features(2, 'bad_features', np.repeat(1, len(self.SX.get_unit_spike_train(2))))
+    #     self.SX.set_unit_spike_features(3, 'f_int', range(0, len(self.SX.get_unit_spike_train(3))))
+    # 
+    #     CSX = se.CurationSortingExtractor(
+    #         parent_sorting=self.SX
+    #     )
+    #     CSX.merge_units(unit_ids=[1, 2])
+    #     original_spike_train = np.concatenate((self.SX.get_unit_spike_train(1), self.SX.get_unit_spike_train(2)))
+    #     indices_sort = np.argsort(original_spike_train)
+    #     original_spike_train = original_spike_train[indices_sort]
+    #     original_features = np.concatenate((self.SX.get_unit_spike_features(1, 'f_int'), self.SX.get_unit_spike_features(2, 'f_int')))
+    #     original_features = original_features[indices_sort]
+    #     self.assertTrue(np.array_equal(CSX.get_unit_spike_train(4), original_spike_train))
+    #     self.assertTrue(np.array_equal(CSX.get_unit_spike_features(4, 'f_int'), original_features))
+    #     self.assertTrue(np.array_equal(np.asarray(CSX.get_unit_spike_feature_names(4)), np.asarray(['f_int'])))
+    #     self.assertEqual(CSX.get_sampling_frequency(), self.SX.get_sampling_frequency())
+    # 
+    #     CSX.split_unit(unit_id=3, indices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    #     original_spike_train = self.SX.get_unit_spike_train(3)
+    #     original_features = self.SX.get_unit_spike_features(3, 'f_int')
+    #     split_spike_train_1 = CSX.get_unit_spike_train(5)
+    #     split_spike_train_2 = CSX.get_unit_spike_train(6)
+    #     split_features_1 = CSX.get_unit_spike_features(5, 'f_int')
+    #     split_features_2 = CSX.get_unit_spike_features(6, 'f_int')
+    #     self.assertTrue(np.array_equal(original_spike_train[:10], split_spike_train_1))
+    #     self.assertTrue(np.array_equal(original_spike_train[10:], split_spike_train_2))
+    #     self.assertTrue(np.array_equal(original_features[:10], split_features_1))
+    #     self.assertTrue(np.array_equal(original_features[10:], split_features_2))
 
     def test_multi_sub_sorting_extractor(self):
         N = self.RX.get_num_frames()

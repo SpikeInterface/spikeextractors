@@ -117,6 +117,10 @@ class MdaSortingExtractor(SortingExtractor):
         self._times = self._firings[1, :]
         self._labels = self._firings[2, :]
         self._unit_ids = np.unique(self._labels).astype(int)
+        # 
+        # if load_primary_channels:
+        #     for unit in range(self._unit_ids):
+        #         self.set_unit_spike_features(m, 'location', self._geom[m, :])
 
     def get_unit_ids(self):
         return list(self._unit_ids)
@@ -130,7 +134,7 @@ class MdaSortingExtractor(SortingExtractor):
         return np.rint(self._times[inds]).astype(int)
 
     @staticmethod
-    def write_sorting(sorting, save_path):
+    def write_sorting(sorting, save_path, write_primary_channels=False):
         unit_ids = sorting.get_unit_ids()
         if len(unit_ids) > 0:
             K = np.max(unit_ids)
@@ -138,20 +142,32 @@ class MdaSortingExtractor(SortingExtractor):
             K = 0
         times_list = []
         labels_list = []
-        for i in range(len(unit_ids)):
-            unit = unit_ids[i]
+        primary_channels_list = []
+        for unit in unit_ids:
             times = sorting.get_unit_spike_train(unit_id=unit)
             times_list.append(times)
             labels_list.append(np.ones(times.shape) * unit)
+            if(write_primary_channels):
+                if('max_channel' in sorting.get_unit_spike_feature_names(unit_id=unit_id)):
+                    primary_channels_list.append(sorting.get_unit_spike_features(unit_id=unit_id,
+                                                                            feature_name='max_channel'))
+                else:
+                    raise ValueError("Unable to write primary channels because 'max_channel' spike feature not set in unit " + str(unit_id))
+            else:
+                primary_channels_list.append(np.zeros(times.shape))
         all_times = _concatenate(times_list)
         all_labels = _concatenate(labels_list)
+        all_primary_channels = _concatenate(primary_channels_list)
         sort_inds = np.argsort(all_times)
         all_times = all_times[sort_inds]
         all_labels = all_labels[sort_inds]
+        all_primary_channels = all_primary_channels[sort_inds]
         L = len(all_times)
         firings = np.zeros((3, L))
+        firings[0, :] = all_primary_channels
         firings[1, :] = all_times
         firings[2, :] = all_labels
+
         writemda64(firings, save_path)
 
 
