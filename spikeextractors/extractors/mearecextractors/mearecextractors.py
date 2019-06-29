@@ -139,6 +139,7 @@ class MEArecSortingExtractor(SortingExtractor):
             self._unit_ids = list(range(self._num_units))
         self._spike_trains = recgen.spiketrains
         self._fs = recgen.info['recordings']['fs'] * pq.Hz  # fs is in kHz
+        self._sampling_frequency = recgen.info['recordings']['fs']
 
         if 'soma_position' in self._spike_trains[0].annotations:
             for u, st in zip(self._unit_ids, self._spike_trains):
