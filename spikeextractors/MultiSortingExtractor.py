@@ -73,6 +73,17 @@ class MultiSortingExtractor(SortingExtractor):
     def get_sampling_frequency(self):
         return self._SXs[0].get_sampling_frequency()
 
+
+    def set_unit_property(self, unit_id, property_name, value):
+        if self._allzeros:
+            if unit_id not in self._unit_map.keys():
+                raise ValueError("Non-valid unit_id")
+            sx = self._unit_map[unit_id]['sx']
+            unit_id_sx = self._unit_map[unit_id]['unit']
+            self._SXs[sx].set_unit_property(unit_id_sx, property_name, value)
+        else:
+            raise NotImplementedError()
+
     def get_unit_property(self, unit_id, property_name):
         if self._allzeros:
             if unit_id not in self._unit_map.keys():
@@ -82,7 +93,23 @@ class MultiSortingExtractor(SortingExtractor):
             return self._SXs[sx].get_unit_property(unit_id_sx, property_name)
         else:
             raise NotImplementedError()
-
+    
+    def get_unit_property_names(self, unit_id=None):
+        if not self._allzeros:
+            property_names = []
+        else:
+            if(unit_id is None):
+                property_names = []
+                for sx in self._SXs:
+                    property_names_sx = sx.get_unit_property_names(unit_id)
+                    for property_name in property_names_sx:
+                        property_names.append(property_name)
+                property_names = list(set(property_names))
+            else:
+                sx = self._unit_map[unit_id]['sx']
+                unit_id_sx = self._unit_map[unit_id]['unit']
+                property_names = self._SXs[sx].get_unit_property_names(unit_id_sx)
+        return property_names
 
     def get_unit_spike_features(self, unit_id, feature_name, start_frame=None, end_frame=None):
         if self._allzeros:
@@ -93,7 +120,6 @@ class MultiSortingExtractor(SortingExtractor):
             return self._SXs[sx].get_unit_spike_features(unit_id_sx, feature_name, start_frame=start_frame, end_frame=end_frame)
         else:
             raise NotImplementedError()
-
 
     def get_unit_spike_feature_names(self, unit_id=None):
         if self._allzeros:
