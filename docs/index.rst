@@ -34,6 +34,5 @@ Contents:
    available_extractors
    recording_extractors
    sorting_extractors
-   probe
-   curation  
+   probe  
 
