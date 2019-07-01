@@ -183,33 +183,6 @@ class TestExtractors(unittest.TestCase):
         N = self.RX.get_num_frames()
         SX_multi = se.MultiSortingExtractor(
             sortings=[self.SX, self.SX, self.SX],
-            start_frames=[0, N, 2 * N]
-        )
-        SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2 * N)
-        self._check_sortings_equal(self.SX, SX_sub)
-        self.assertEqual(SX_multi.get_sampling_frequency(), self.SX.get_sampling_frequency())
-        self.assertEqual(SX_sub.get_sampling_frequency(), self.SX.get_sampling_frequency())
-
-        N = self.RX.get_num_frames()
-        SX_multi = se.MultiSortingExtractor(
-            sortings=[self.SX, self.SX, self.SX],
-            start_frames=[0, N, 2 * N]
-        )
-        SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0)
-        self._check_sortings_equal(SX_multi, SX_sub)
-
-        N = self.RX.get_num_frames()
-        SX_multi = se.MultiSortingExtractor(
-            sortings=[self.SX, self.SX, self.SX],
-            start_frames=[2 * N, 0, N]
-        )
-        SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2 * N)
-        self._check_sortings_equal(self.SX, SX_sub)
-        
-        N = self.RX.get_num_frames()
-        SX_multi = se.MultiSortingExtractor(
-            sortings=[self.SX, self.SX, self.SX],
-            start_frames=[0, 0, 0]
         )
         SX_multi.set_unit_property(unit_id=1, property_name='dummy', value=5)
         SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0)
@@ -219,7 +192,6 @@ class TestExtractors(unittest.TestCase):
         N = self.RX.get_num_frames()
         SX_multi = se.MultiSortingExtractor(
             sortings=[self.SX, self.SX2],
-            start_frames=[0, 0]
         )
         SX_sub1 = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0, end_frame=N)
         self._check_sortings_equal(SX_multi, SX_sub1)
