@@ -54,7 +54,7 @@ class MultiSortingExtractor(SortingExtractor):
         return self._SXs[sx].get_unit_property(unit_id_sx, property_name)
 
     def get_unit_property_names(self, unit_id=None):
-        if(unit_id is None):
+        if unit_id is None:
             property_names = []
             for sx in self._SXs:
                 property_names_sx = sx.get_unit_property_names(unit_id)
