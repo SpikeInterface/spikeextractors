@@ -3,11 +3,12 @@ from spikeextractors import SortingExtractor
 
 import json
 import numpy as np
+from pathlib import Path
 from .mdaio import DiskReadMda, readmda, writemda32, writemda64
 import os
 
-class MdaRecordingExtractor(RecordingExtractor):
 
+class MdaRecordingExtractor(RecordingExtractor):
     extractor_name = 'MdaRecordingExtractor'
     has_default_locations = True
     installed = True  # check at class level if installed or not
@@ -18,11 +19,12 @@ class MdaRecordingExtractor(RecordingExtractor):
 
     def __init__(self, dataset_directory, *, download=True):
         RecordingExtractor.__init__(self)
+        dataset_directory = Path(dataset_directory)
         self._dataset_directory = dataset_directory
-        timeseries0 = os.path.join(dataset_directory, 'raw.mda')
-        self._dataset_params = read_dataset_params(dataset_directory)
+        timeseries0 = dataset_directory / 'raw.mda'
+        self._dataset_params = read_dataset_params(str(dataset_directory))
         self._samplerate = self._dataset_params['samplerate'] * 1.0
-        if is_kbucket_url(timeseries0):
+        if is_kbucket_url(str(timeseries0)):
             download_needed = is_url(_find_file(path=timeseries0))
             if download and download_needed:
                 print('Downloading file: ' + timeseries0)
@@ -68,9 +70,15 @@ class MdaRecordingExtractor(RecordingExtractor):
 
     @staticmethod
     def write_recording(recording, save_path, params=dict()):
+        save_path = Path(save_path)
+        if not save_path.exists():
+            if not save_path.is_dir():
+                os.makedirs(str(save_path))
+        save_file_path = str(save_path / 'raw.mda')
+        parent_dir = save_path
+
         channel_ids = recording.get_channel_ids()
         M = len(channel_ids)
-        N = recording.get_num_frames()
         raw = recording.get_traces()
         location0 = recording.get_channel_property(channel_ids[0], 'location')
         nd = len(location0)
@@ -80,23 +88,23 @@ class MdaRecordingExtractor(RecordingExtractor):
             geom[ii, :] = list(location_ii)
         if not os.path.isdir(save_path):
             os.mkdir(save_path)
-        writemda32(raw, os.path.join(save_path, 'raw.mda'))
+        writemda32(raw, save_file_path)
         params["samplerate"] = recording.get_sampling_frequency()
-        with open(os.path.join(save_path, 'params.json'),'w') as f:
+        with (parent_dir / 'params.json').open('w') as f:
             json.dump(params, f)
-        np.savetxt(os.path.join(save_path, 'geom.csv'), geom, delimiter=',')
+        np.savetxt(str(parent_dir / 'geom.csv'), geom, delimiter=',')
 
 
 class MdaSortingExtractor(SortingExtractor):
-
     extractor_name = 'MdaSortingExtractor'
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'firings_file', 'type': 'file_path', 'title': "str, Path to file"},
+        {'name': 'sampling_frequency', 'type': 'float', 'title': "sampling frequency"}
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, firings_file):
+    def __init__(self, firings_file, sampling_frequency=None):
 
         SortingExtractor.__init__(self)
         if is_kbucket_url(firings_file):
@@ -117,10 +125,7 @@ class MdaSortingExtractor(SortingExtractor):
         self._times = self._firings[1, :]
         self._labels = self._firings[2, :]
         self._unit_ids = np.unique(self._labels).astype(int)
-        # 
-        # if load_primary_channels:
-        #     for unit in range(self._unit_ids):
-        #         self.set_unit_spike_features(m, 'location', self._geom[m, :])
+        self._sampling_frequency = sampling_frequency
 
     def get_unit_ids(self):
         return list(self._unit_ids)
@@ -136,10 +141,6 @@ class MdaSortingExtractor(SortingExtractor):
     @staticmethod
     def write_sorting(sorting, save_path, write_primary_channels=False):
         unit_ids = sorting.get_unit_ids()
-        if len(unit_ids) > 0:
-            K = np.max(unit_ids)
-        else:
-            K = 0
         times_list = []
         labels_list = []
         primary_channels_list = []
@@ -147,12 +148,14 @@ class MdaSortingExtractor(SortingExtractor):
             times = sorting.get_unit_spike_train(unit_id=unit)
             times_list.append(times)
             labels_list.append(np.ones(times.shape) * unit)
-            if(write_primary_channels):
-                if('max_channel' in sorting.get_unit_spike_feature_names(unit_id=unit_id)):
-                    primary_channels_list.append(sorting.get_unit_spike_features(unit_id=unit_id,
-                                                                            feature_name='max_channel'))
+            if write_primary_channels:
+                if 'max_channel' in sorting.get_unit_spike_feature_names(unit_id=unit):
+                    primary_channels_list.append(sorting.get_unit_spike_features(unit_id=unit,
+                                                                                 feature_name='max_channel'))
                 else:
-                    raise ValueError("Unable to write primary channels because 'max_channel' spike feature not set in unit " + str(unit_id))
+                    raise ValueError(
+                        "Unable to write primary channels because 'max_channel' spike feature not set in unit " + str(
+                            unit))
             else:
                 primary_channels_list.append(np.zeros(times.shape))
         all_times = _concatenate(times_list)
@@ -185,7 +188,8 @@ def is_url(path):
     return path.startswith('http://') or path.startswith('https://') or path.startswith(
         'kbucket://') or path.startswith('sha1://')
 
-def _realize_file(*,path):
+
+def _realize_file(*, path):
     if is_kbucket_url(path):
         try:
             from cairio import client as cairio
@@ -195,7 +199,8 @@ def _realize_file(*,path):
     else:
         return path
 
-def _find_file(*,path):
+
+def _find_file(*, path):
     if is_kbucket_url(path):
         try:
             from cairio import client as cairio
@@ -207,10 +212,10 @@ def _find_file(*,path):
 
 
 def read_dataset_params(dsdir):
-    fname1=os.path.join(dsdir, 'params.json')
-    fname2=_realize_file(path=fname1)
+    fname1 = os.path.join(dsdir, 'params.json')
+    fname2 = _realize_file(path=fname1)
     if not fname2:
-        raise Exception('Unable to find file: '+fname1)
+        raise Exception('Unable to find file: ' + fname1)
     if not os.path.exists(fname2):
         raise Exception('Dataset parameter file does not exist: ' + fname2)
     with open(fname2) as f:
