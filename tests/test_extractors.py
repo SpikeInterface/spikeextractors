@@ -180,32 +180,6 @@ class TestExtractors(unittest.TestCase):
         self._check_recordings_equal(self.RX, RX_sub)
 
     def test_multi_sub_sorting_extractor(self):
-        # N = self.RX.get_num_frames()
-        # SX_multi = se.MultiSortingExtractor(
-        #     sortings=[self.SX, self.SX, self.SX],
-        #     start_frames=[0, N, 2 * N]
-        # )
-        # SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2 * N)
-        # self._check_sortings_equal(self.SX, SX_sub)
-        # self.assertEqual(SX_multi.get_sampling_frequency(), self.SX.get_sampling_frequency())
-        # self.assertEqual(SX_sub.get_sampling_frequency(), self.SX.get_sampling_frequency())
-
-        # N = self.RX.get_num_frames()
-        # SX_multi = se.MultiSortingExtractor(
-        #     sortings=[self.SX, self.SX, self.SX],
-        #     start_frames=[0, N, 2 * N]
-        # )
-        # SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0)
-        # self._check_sortings_equal(SX_multi, SX_sub)
-
-        # N = self.RX.get_num_frames()
-        # SX_multi = se.MultiSortingExtractor(
-        #     sortings=[self.SX, self.SX, self.SX],
-        #     start_frames=[2 * N, 0, N]
-        # )
-        # SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2 * N)
-        # self._check_sortings_equal(self.SX, SX_sub)
-
         N = self.RX.get_num_frames()
         SX_multi = se.MultiSortingExtractor(
             sortings=[self.SX, self.SX, self.SX],
