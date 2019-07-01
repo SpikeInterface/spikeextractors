@@ -17,25 +17,16 @@ class MdaRecordingExtractor(RecordingExtractor):
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, dataset_directory, *, download=True):
+    def __init__(self, dataset_directory):
         RecordingExtractor.__init__(self)
         dataset_directory = Path(dataset_directory)
         self._dataset_directory = dataset_directory
         timeseries0 = dataset_directory / 'raw.mda'
         self._dataset_params = read_dataset_params(str(dataset_directory))
         self._samplerate = self._dataset_params['samplerate'] * 1.0
-        if is_kbucket_url(str(timeseries0)):
-            download_needed = is_url(_find_file(path=timeseries0))
-            if download and download_needed:
-                print('Downloading file: ' + timeseries0)
-                self._timeseries_path = _realize_file(path=timeseries0)
-                print('Done.')
-            else:
-                self._timeseries_path = _find_file(path=timeseries0)
-        else:
-            self._timeseries_path = os.path.abspath(timeseries0)
+        self._timeseries_path = os.path.abspath(timeseries0)
         geom0 = os.path.join(dataset_directory, 'geom.csv')
-        self._geom_fname = _realize_file(path=geom0)
+        self._geom_fname = geom0
         self._geom = np.genfromtxt(self._geom_fname, delimiter=',')
         X = DiskReadMda(self._timeseries_path)
         if self._geom.shape[0] != X.N1():
@@ -107,20 +98,7 @@ class MdaSortingExtractor(SortingExtractor):
     def __init__(self, firings_file, sampling_frequency=None):
 
         SortingExtractor.__init__(self)
-        if is_kbucket_url(firings_file):
-            try:
-                from cairio import client as cairio
-            except:
-                raise Exception('To use kbucket files, you need to install the cairio client')
-            download_needed = is_url(_find_file(path=firings_file))
-        else:
-            download_needed = is_url(firings_file)
-        if download_needed:
-            print('Downloading file: ' + firings_file)
-            self._firings_path = _realize_file(path=firings_file)
-            print('Done.')
-        else:
-            self._firings_path = _realize_file(path=firings_file)
+        self._firings_path = firings_file
         self._firings = readmda(self._firings_path)
         self._times = self._firings[1, :]
         self._labels = self._firings[2, :]
@@ -180,43 +158,9 @@ def _concatenate(list):
     return np.concatenate(list)
 
 
-def is_kbucket_url(path):
-    return path.startswith('kbucket://') or path.startswith('sha1://')
-
-
-def is_url(path):
-    return path.startswith('http://') or path.startswith('https://') or path.startswith(
-        'kbucket://') or path.startswith('sha1://')
-
-
-def _realize_file(*, path):
-    if is_kbucket_url(path):
-        try:
-            from cairio import client as cairio
-        except:
-            raise Exception('To use kbucket files, you need to install the cairio client')
-        return _realize_file(path=path)
-    else:
-        return path
-
-
-def _find_file(*, path):
-    if is_kbucket_url(path):
-        try:
-            from cairio import client as cairio
-        except:
-            raise Exception('To use kbucket files, you need to install the cairio client')
-        return _find_file(path=path)
-    else:
-        return path
-
-
 def read_dataset_params(dsdir):
     fname1 = os.path.join(dsdir, 'params.json')
-    fname2 = _realize_file(path=fname1)
-    if not fname2:
-        raise Exception('Unable to find file: ' + fname1)
-    if not os.path.exists(fname2):
-        raise Exception('Dataset parameter file does not exist: ' + fname2)
-    with open(fname2) as f:
+    if not os.path.exists(fname1):
+        raise Exception('Dataset parameter file does not exist: ' + fname1)
+    with open(fname1) as f:
         return json.load(f)
