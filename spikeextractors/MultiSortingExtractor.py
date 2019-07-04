@@ -38,7 +38,6 @@ class MultiSortingExtractor(SortingExtractor):
     def get_sampling_frequency(self):
         return self._SXs[0].get_sampling_frequency()
 
-
     def set_unit_property(self, unit_id, property_name, value):
         if unit_id not in self._unit_map.keys():
             raise ValueError("Non-valid unit_id")

@@ -1,8 +1,9 @@
 from .RecordingExtractor import RecordingExtractor
 import numpy as np
 
+# Concatenates the given recording channels in time
 
-class MultiRecordingExtractor(RecordingExtractor):
+class MultiRecordingTimeExtractor(RecordingExtractor):
     def __init__(self, recordings, epoch_names=None):
         RecordingExtractor.__init__(self)
         if epoch_names is None:
@@ -69,19 +70,19 @@ class MultiRecordingExtractor(RecordingExtractor):
         RX2, i_sec2, i_end_frame = self._find_section_for_frame(end_frame)
         if i_sec1 == i_sec2:
             return RX1.get_traces(channel_ids=channel_ids, start_frame=i_start_frame, end_frame=i_end_frame)
-        list = []
-        list.append(
+        traces = []
+        traces.append(
             self._RXs[i_sec1].get_traces(channel_ids=channel_ids, start_frame=i_start_frame,
                                          end_frame=self._RXs[i_sec1].get_num_frames())
         )
         for i_sec in range(i_sec1 + 1, i_sec2):
-            list.append(
+            traces.append(
                 self._RXs[i_sec].get_traces(channel_ids=channel_ids)
             )
-        list.append(
-            self._RXs[i_sec2].get_traces(channel_ids=channel_ids, start_frame=0, end_frame=i_end_frame)
+        traces.append(
+            traces._RXs[i_sec2].get_traces(channel_ids=channel_ids, start_frame=0, end_frame=i_end_frame)
         )
-        return np.concatenate(list, axis=1)
+        return np.concatenate(traces, axis=1)
 
     def get_channel_ids(self):
         return self._channel_ids
@@ -99,3 +100,25 @@ class MultiRecordingExtractor(RecordingExtractor):
     def time_to_frame(self, time):
         RX, i_epoch, rel_time = self._find_section_for_time(time)
         return RX.time_to_frame(rel_time) + self._start_frames[i_epoch]
+
+def concatenate_recordings_by_time(recordings, epoch_names=None):
+    '''
+    Concatenates recordings together by time. The order of the recordings
+    determines the order of the concatenation.
+
+    Parameters
+    ----------
+    recordings: list
+        The list of RecordingExtractors to be concatenated by time
+    epoch_names: list
+        The list of strings corresponding to the names of recording epoch.
+    Returns
+    -------
+    recording: MultiRecordingTimeExtractor
+        The concatenated recording extractors enscapsulated in the
+        MultiRecordingTimeExtractor object (which is also a recording extractor)
+    '''
+    return MultiRecordingTimeExtractor(
+        recordings=recordings,
+        epoch_names=epoch_names,
+    )

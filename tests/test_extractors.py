@@ -172,12 +172,13 @@ class TestExtractors(unittest.TestCase):
         self._check_sortings_equal(self.SX, SX_spy)
 
     def test_multi_sub_recording_extractor(self):
-        RX_multi = se.MultiRecordingExtractor(
+        RX_multi = se.MultiRecordingTimeExtractor(
             recordings=[self.RX, self.RX, self.RX],
             epoch_names=['A', 'B', 'C']
         )
         RX_sub = RX_multi.get_epoch('C')
         self._check_recordings_equal(self.RX, RX_sub)
+        print(self.RX.get_traces(1))
 
     def test_multi_sub_sorting_extractor(self):
         N = self.RX.get_num_frames()
