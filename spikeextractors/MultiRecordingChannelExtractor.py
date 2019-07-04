@@ -1,91 +1,65 @@
 from .RecordingExtractor import RecordingExtractor
 import numpy as np
 
-# Concatenates the given recording channels in time
+# Concatenates the given recordings by channel
 
-class MultiRecordingTimeExtractor(RecordingExtractor):
-    def __init__(self, recordings, epoch_names=None):
+class MultiRecordingChannelExtractor(RecordingExtractor):
+    def __init__(self, recordings, groups=None):
         RecordingExtractor.__init__(self)
-        if epoch_names is None:
-            epoch_names = [str(i) for i in range(len(recordings))]
-
-        # Add all epochs to the epochs data structure
-        start_frames = 0
-        for i, epoch_name in enumerate(epoch_names):
-            num_frames = recordings[i].get_num_frames()
-            self.add_epoch(epoch_name, start_frames, start_frames + num_frames)
-            start_frames += num_frames
-
         self._RXs = recordings
+        self._all_channel_ids = []
+        self._channel_map = {}
 
-        # Num channels and sampling frequency based off the initial extractor
+        # Sampling frequency based off the initial extractor
         self._first_recording = recordings[0]
-        self._num_channels = self._first_recording.get_num_channels()
-        self._channel_ids = self._first_recording.get_channel_ids()
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
+        self._num_frames =  self._first_recording.get_num_frames()
 
-        # Test if all recording extractors have same num channels and sampling frequency
+        # Test if all recording extractors have same sampling frequency
         for i, recording in enumerate(recordings[1:]):
-            channel_ids = recording.get_channel_ids()
             sampling_frequency = recording.get_sampling_frequency()
-
-            if (self._channel_ids != channel_ids):
-                raise ValueError("Inconsistent channel ids between extractor 0 and extractor " + str(i + 1))
             if (self._sampling_frequency != sampling_frequency):
                 raise ValueError("Inconsistent sampling frequency between extractor 0 and extractor " + str(i + 1))
 
-        self._start_frames = []
-        self._start_times = []
-        ff = 0
-        tt = 0
-        for RX in self._RXs:
-            self._start_frames.append(ff)
-            ff = ff + RX.get_num_frames()
-            tt = tt + RX.frame_to_time(0)
-            self._start_times.append(tt)
-            tt = tt + RX.frame_to_time(RX.get_num_frames()) - RX.frame_to_time(0)
-        self._start_frames.append(ff)
-        self._start_times.append(tt)
-        self._num_frames = ff
-
-        # Set the channel properties based on the first recording extractor
-        self.copy_channel_properties(self._first_recording)
-
-    def _find_section_for_frame(self, frame):
-        inds = np.where(np.array(self._start_frames[:-1]) <= frame)[0]
-        ind = inds[-1]
-        return self._RXs[ind], ind, frame - self._start_frames[ind]
-
-    def _find_section_for_time(self, time):
-        inds = np.where(np.array(self._start_times[:-1]) <= time)[0]
-        ind = inds[-1]
-        return self._RXs[ind], ind, time - self._start_times[ind]
+        #set channel map for new channel ids to old channel ids
+        new_channel_id  = 0
+        for r_i, RX in enumerate(self._RXs):
+            channel_ids = RX.get_channel_ids()
+            for channel_id in channel_ids:
+                self._all_channel_ids.append(new_channel_id)
+                self._channel_map[new_channel_id] = {'rx': r_i, 'channel': channel_id}
+                new_channel_id += 1
+        
+        #set group information for channels if available
+        if groups is not None:
+            if len(groups) == len(recordings):
+                for i, group in enumerate(groups):
+                    recording = recordings[i]                    
+                    channel_ids = recording.get_channel_ids()
+                    recording.set_channel_groups(channel_ids, groups=np.repeat(group,len(channel_ids)))
+            else:
+                raise ValueError("recordings and groups must have same length")
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = self.get_num_frames()
-        RX1, i_sec1, i_start_frame = self._find_section_for_frame(start_frame)
-        RX2, i_sec2, i_end_frame = self._find_section_for_frame(end_frame)
-        if i_sec1 == i_sec2:
-            return RX1.get_traces(channel_ids=channel_ids, start_frame=i_start_frame, end_frame=i_end_frame)
         traces = []
-        traces.append(
-            self._RXs[i_sec1].get_traces(channel_ids=channel_ids, start_frame=i_start_frame,
-                                         end_frame=self._RXs[i_sec1].get_num_frames())
-        )
-        for i_sec in range(i_sec1 + 1, i_sec2):
-            traces.append(
-                self._RXs[i_sec].get_traces(channel_ids=channel_ids)
-            )
-        traces.append(
-            traces._RXs[i_sec2].get_traces(channel_ids=channel_ids, start_frame=0, end_frame=i_end_frame)
-        )
-        return np.concatenate(traces, axis=1)
+        if channel_ids is not None:
+            for channel_id in channel_ids:
+                rx = self._RXs[self._channel_map[channel_id]['rx']]
+                channel_id_rx = self._channel_map[channel_id]['channel']
+                traces_rx = rx.get_traces(channel_ids=[channel_id_rx], start_frame=start_frame, end_frame=end_frame)
+                traces.append(traces_rx)
+        else:
+            for rx in self._RXs:
+                traces_all_rx = rx.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame)
+                traces.append(traces_all_rx)
+        return np.concatenate(traces, axis=0)
 
     def get_channel_ids(self):
-        return self._channel_ids
+        return self._all_channel_ids
 
     def get_num_frames(self):
         return self._num_frames
@@ -93,10 +67,49 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._sampling_frequency
 
-    def frame_to_time(self, frame):
-        RX, i_epoch, rel_frame = self._find_section_for_frame(frame)
-        return RX.frame_to_time(rel_frame) + self._start_times[i_epoch]
+    def set_channel_property(self, channel_id, property_name, value):
+        rx = self._RXs[self._channel_map[channel_id]['rx']]
+        channel_id_rx = self._channel_map[channel_id]['channel']
+        rx.set_channel_property(channel_id_rx, property_name=property_name, value=value)
 
-    def time_to_frame(self, time):
-        RX, i_epoch, rel_time = self._find_section_for_time(time)
-        return RX.time_to_frame(rel_time) + self._start_frames[i_epoch]
+    def get_channel_property(self, channel_id, property_name):
+        rx = self._RXs[self._channel_map[channel_id]['rx']]
+        channel_id_rx = self._channel_map[channel_id]['channel']
+        return rx.get_channel_property(channel_id_rx, property_name=property_name)
+
+    def get_channel_property_names(self, channel_id=None):
+        if channel_id is None:
+            property_names = []
+            for rx in self._RXs:
+                property_names_rx = rx.get_channel_property_names()
+                for property_name_rx in property_names_rx:
+                    property_names.append(property_name_rx)
+            property_names = sorted(list(set(property_names)))
+        else:
+            rx = self._RXs[self._channel_map[channel_id]['rx']]
+            channel_id_rx = self._channel_map[channel_id]['channel']
+            property_names = rx.get_channel_property_names(channel_id_rx)
+        return property_names
+
+def concatenate_recordings_by_channel(recordings, groups=None):
+    '''
+    Concatenates recordings together by channel. The order of the recordings
+    determines the order of the channels in the concatenated recording.
+
+    Parameters
+    ----------
+    recordings: list
+        The list of RecordingExtractors to be concatenated by channel.
+    groups: list
+        A list of ints corresponding to the group identity of each recording's
+        channel ids.
+    Returns
+    -------
+    recording: MultiRecordingChannelExtractor
+        The concatenated recording extractors enscapsulated in the
+        MultiRecordingChannelExtractor object (which is also a recording extractor)
+    '''
+    return MultiRecordingChannelExtractor(
+        recordings=recordings,
+        groups=groups,
+    )

@@ -2,8 +2,9 @@ from .RecordingExtractor import RecordingExtractor
 from .SortingExtractor import SortingExtractor
 from .SubSortingExtractor import SubSortingExtractor
 from .SubRecordingExtractor import SubRecordingExtractor
+from .MultiRecordingChannelExtractor import concatenate_recordings_by_channel, MultiRecordingChannelExtractor
 from .MultiRecordingTimeExtractor import concatenate_recordings_by_time, MultiRecordingTimeExtractor
-from .MultiSortingExtractor import MultiSortingExtractor
+from .MultiSortingExtractor import concatenate_sortings, MultiSortingExtractor
 
 from .extractorlist import *
 

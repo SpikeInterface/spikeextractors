@@ -101,3 +101,21 @@ class MultiSortingExtractor(SortingExtractor):
         sx = self._unit_map[unit_id]['sx']
         unit_id_sx = self._unit_map[unit_id]['unit']
         self._SXs[sx].set_unit_spike_features(unit_id_sx, feature_name, value)
+
+def concatenate_sortings(sortings):
+    '''
+    Concatenates sortings together. The sortings should be non-continuous
+
+    Parameters
+    ----------
+    sortings: list
+        The list of SortingExtractors to be concatenated
+    Returns
+    -------
+    recording: MultiSortingExtractor
+        The concatenated sorting extractors enscapsulated in the
+        MultiSortingExtractor object (which is also a sorting extractor)
+    '''
+    return MultiSortingExtractor(
+        sortings=sortings,
+    )

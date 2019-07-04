@@ -1,7 +1,7 @@
 from .RecordingExtractor import RecordingExtractor
 import numpy as np
 
-# Concatenates the given recording channels in time
+# Concatenates the given recordings by time
 
 class MultiRecordingTimeExtractor(RecordingExtractor):
     def __init__(self, recordings, epoch_names=None):
@@ -67,7 +67,7 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         if end_frame is None:
             end_frame = self.get_num_frames()
         RX1, i_sec1, i_start_frame = self._find_section_for_frame(start_frame)
-        RX2, i_sec2, i_end_frame = self._find_section_for_frame(end_frame)
+        _, i_sec2, i_end_frame = self._find_section_for_frame(end_frame)
         if i_sec1 == i_sec2:
             return RX1.get_traces(channel_ids=channel_ids, start_frame=i_start_frame, end_frame=i_end_frame)
         traces = []
@@ -80,7 +80,7 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
                 self._RXs[i_sec].get_traces(channel_ids=channel_ids)
             )
         traces.append(
-            traces._RXs[i_sec2].get_traces(channel_ids=channel_ids, start_frame=0, end_frame=i_end_frame)
+            self._RXs[i_sec2].get_traces(channel_ids=channel_ids, start_frame=0, end_frame=i_end_frame)
         )
         return np.concatenate(traces, axis=1)
 
@@ -104,14 +104,14 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
 def concatenate_recordings_by_time(recordings, epoch_names=None):
     '''
     Concatenates recordings together by time. The order of the recordings
-    determines the order of the concatenation.
+    determines the order of the time series in the concatenated recording.
 
     Parameters
     ----------
     recordings: list
         The list of RecordingExtractors to be concatenated by time
     epoch_names: list
-        The list of strings corresponding to the names of recording epoch.
+        The list of strings corresponding to the names of recording time period.
     Returns
     -------
     recording: MultiRecordingTimeExtractor
