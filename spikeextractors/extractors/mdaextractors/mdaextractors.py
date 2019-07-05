@@ -10,10 +10,10 @@ import os
 
 class MdaRecordingExtractor(RecordingExtractor):
     extractor_name = 'MdaRecordingExtractor'
-    has_default_locations = True
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'dataset_directory', 'type': 'path', 'title': "Path to folder"},
+        {'name': 'probe_path', 'type': 'path', 'value':None, 'default':None, 'title': "Path to probe file (.csv or .prb)"}
     ]
     installation_mesg = ""  # error message when not installed
 
