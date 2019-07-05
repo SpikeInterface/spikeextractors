@@ -261,7 +261,7 @@ class RecordingExtractor(ABC):
         '''
         if len(channel_ids) == len(groups):
             for i in range(len(channel_ids)):
-                if isinstance(groups[i], int):
+                if isinstance(groups[i], (int, np.integer)):
                     self.set_channel_property(channel_ids[i], 'group', groups[i])
                 else:
                     raise ValueError(str(groups[i]) + " must be an int")

@@ -16,7 +16,7 @@ import spikeextractors as se
 
 class TestExtractors(unittest.TestCase):
     def setUp(self):
-        self.RX, self.SX, self.SX2, self.example_info = self._create_example()
+        self.RX, self.RX2, self.RX3, self.SX, self.SX2, self.example_info = self._create_example()
         self.test_dir = tempfile.mkdtemp()
         # self.test_dir = '.'
 
@@ -34,6 +34,8 @@ class TestExtractors(unittest.TestCase):
         geom = np.random.normal(0, 1, (num_channels, 2))
         X = (X * 100).astype(int)
         RX = se.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate, geom=geom)
+        RX2 = se.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate, geom=geom)
+        RX3 = se.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate, geom=geom)
         SX = se.NumpySortingExtractor()
         spike_times = [200, 300, 400]
         train1 = np.sort(np.rint(np.random.uniform(0, num_frames, spike_times[0])).astype(int))
@@ -61,7 +63,7 @@ class TestExtractors(unittest.TestCase):
             channel_prop=(0, 0)
         )
 
-        return (RX, SX, SX2, example_info)
+        return (RX, RX2, RX3, SX, SX2, example_info)
 
     def test_example(self):
         self.assertEqual(self.RX.get_channel_ids(), self.example_info['channel_ids'])
@@ -172,12 +174,23 @@ class TestExtractors(unittest.TestCase):
         self._check_sortings_equal(self.SX, SX_spy)
 
     def test_multi_sub_recording_extractor(self):
-        RX_multi = se.MultiRecordingExtractor(
+        RX_multi = se.MultiRecordingTimeExtractor(
             recordings=[self.RX, self.RX, self.RX],
             epoch_names=['A', 'B', 'C']
         )
         RX_sub = RX_multi.get_epoch('C')
         self._check_recordings_equal(self.RX, RX_sub)
+        self.assertEqual(4, len(RX_sub.get_channel_ids()))
+        
+        RX_multi = se.MultiRecordingChannelExtractor(
+            recordings=[self.RX, self.RX2, self.RX3],
+            groups=[1, 2, 3]
+        )
+        print(RX_multi.get_channel_groups())
+        RX_sub = se.SubRecordingExtractor(RX_multi, channel_ids=[4,5,6,7], renamed_channel_ids=[0,1,2,3])
+        self._check_recordings_equal(self.RX2, RX_sub)
+        self.assertEqual([2,2,2,2], RX_sub.get_channel_groups())
+        self.assertEqual(12, len(RX_multi.get_channel_ids()))
 
     def test_multi_sub_sorting_extractor(self):
         N = self.RX.get_num_frames()
