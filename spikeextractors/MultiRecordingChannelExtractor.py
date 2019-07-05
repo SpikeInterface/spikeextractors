@@ -6,7 +6,7 @@ import numpy as np
 class MultiRecordingChannelExtractor(RecordingExtractor):
     def __init__(self, recordings, groups=None):
         RecordingExtractor.__init__(self)
-        self._RXs = recordings
+        self._recordings = recordings
         self._all_channel_ids = []
         self._channel_map = {}
 
@@ -23,11 +23,11 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
 
         #set channel map for new channel ids to old channel ids
         new_channel_id  = 0
-        for r_i, RX in enumerate(self._RXs):
-            channel_ids = RX.get_channel_ids()
+        for r_i, recording in enumerate(self._recordings):
+            channel_ids = recording.get_channel_ids()
             for channel_id in channel_ids:
                 self._all_channel_ids.append(new_channel_id)
-                self._channel_map[new_channel_id] = {'rx': r_i, 'channel': channel_id}
+                self._channel_map[new_channel_id] = {'recording': r_i, 'channel_id': channel_id}
                 new_channel_id += 1
         
         #set group information for channels if available
@@ -48,14 +48,14 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         traces = []
         if channel_ids is not None:
             for channel_id in channel_ids:
-                rx = self._RXs[self._channel_map[channel_id]['rx']]
-                channel_id_rx = self._channel_map[channel_id]['channel']
-                traces_rx = rx.get_traces(channel_ids=[channel_id_rx], start_frame=start_frame, end_frame=end_frame)
-                traces.append(traces_rx)
+                recording = self._recordings[self._channel_map[channel_id]['recording']]
+                channel_id_recording = self._channel_map[channel_id]['channel_id']
+                traces_recording = recording.get_traces(channel_ids=[channel_id_recording], start_frame=start_frame, end_frame=end_frame)
+                traces.append(traces_recording)
         else:
-            for rx in self._RXs:
-                traces_all_rx = rx.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame)
-                traces.append(traces_all_rx)
+            for recording in self._recordings:
+                traces_all_recording = recording.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame)
+                traces.append(traces_all_recording)
         return np.concatenate(traces, axis=0)
 
     def get_channel_ids(self):
@@ -68,27 +68,27 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     def set_channel_property(self, channel_id, property_name, value):
-        rx = self._RXs[self._channel_map[channel_id]['rx']]
-        channel_id_rx = self._channel_map[channel_id]['channel']
-        rx.set_channel_property(channel_id_rx, property_name=property_name, value=value)
+        recording = self._recordings[self._channel_map[channel_id]['recording']]
+        channel_id_recording = self._channel_map[channel_id]['channel_id']
+        recording.set_channel_property(channel_id_recording, property_name=property_name, value=value)
 
     def get_channel_property(self, channel_id, property_name):
-        rx = self._RXs[self._channel_map[channel_id]['rx']]
-        channel_id_rx = self._channel_map[channel_id]['channel']
-        return rx.get_channel_property(channel_id_rx, property_name=property_name)
+        recording = self._recordings[self._channel_map[channel_id]['recording']]
+        channel_id_recording = self._channel_map[channel_id]['channel_id']
+        return recording.get_channel_property(channel_id_recording, property_name=property_name)
 
     def get_channel_property_names(self, channel_id=None):
         if channel_id is None:
             property_names = []
-            for rx in self._RXs:
-                property_names_rx = rx.get_channel_property_names()
-                for property_name_rx in property_names_rx:
-                    property_names.append(property_name_rx)
+            for recording in self._recordings:
+                property_names_recording = recording.get_channel_property_names()
+                for property_name_recording in property_names_recording:
+                    property_names.append(property_name_recording)
             property_names = sorted(list(set(property_names)))
         else:
-            rx = self._RXs[self._channel_map[channel_id]['rx']]
-            channel_id_rx = self._channel_map[channel_id]['channel']
-            property_names = rx.get_channel_property_names(channel_id_rx)
+            recording = self._recordings[self._channel_map[channel_id]['recording']]
+            channel_id_recording = self._channel_map[channel_id]['channel_id']
+            property_names = recording.get_channel_property_names(channel_id_recording)
         return property_names
 
 def concatenate_recordings_by_channel(recordings, groups=None):
