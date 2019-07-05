@@ -15,11 +15,11 @@ except ImportError:
 class MEArecRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'MEArecRecordingExtractor'
-    has_default_locations = True
     installed = HAVE_MREX  # check at class level if installed or not
     _gui_params = [
         {'name': 'recording_path', 'type': 'path', 'title': "Path to file"},
         {'name': 'locs_2d', 'type': 'bool', 'title': "If True 3D locations are converted to 2D"},
+        {'name': 'probe_path', 'type': 'path', 'value':None, 'default':None, 'title': "Path to probe file (.csv or .prb)"}
     ]
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
 

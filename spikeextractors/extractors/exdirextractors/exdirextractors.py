@@ -13,7 +13,6 @@ except ImportError:
 
 class ExdirRecordingExtractor(RecordingExtractor):
     extractor_name = 'ExdirRecordingExtractor'
-    has_default_locations = False
     installed = HAVE_EXDIR  # check at class level if installed or not
     _gui_params = [
         {'name': 'exdir_file', 'type': 'path', 'title': "Path to file"},
