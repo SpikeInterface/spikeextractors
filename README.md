@@ -264,8 +264,7 @@ For a complete tutorial of the SpikeInterface framework, refer to the [SpikeTuto
 [Matthias Hennig](http://homepages.inf.ed.ac.uk/mhennig/) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland
 <br/>
 <br/>
-For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com
-
-## Contributors
 
 [Samuel Garcia](https://github.com/samuelgarcia) - Centre de Recherche en Neuroscience de Lyon (CRNL), Lyon, France
+
+For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com
