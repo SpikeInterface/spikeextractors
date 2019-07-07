@@ -265,4 +265,4 @@ For a complete tutorial of the SpikeInterface framework, refer to the [SpikeTuto
 
 [Samuel Garcia](https://github.com/samuelgarcia) - Centre de Recherche en Neuroscience de Lyon (CRNL), Lyon, France
 
-For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com
+For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com or create a new issue above.
