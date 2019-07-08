@@ -17,8 +17,8 @@ import spikeextractors as se
 class TestExtractors(unittest.TestCase):
     def setUp(self):
         self.RX, self.RX2, self.RX3, self.SX, self.SX2, self.example_info = self._create_example()
-        # self.test_dir = tempfile.mkdtemp()
-        self.test_dir = '.'
+        self.test_dir = tempfile.mkdtemp()
+        # self.test_dir = '.'
 
     def tearDown(self):
         # Remove the directory after the test
