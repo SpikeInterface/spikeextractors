@@ -14,6 +14,7 @@ except ImportError:
 
 class KlustaRecordingExtractor(BinDatRecordingExtractor):
     extractor_name = 'KlustaRecordingExtractor'
+    has_default_locations = False
     installed = HAVE_KLSX  # check at class level if installed or not
     _gui_params = [
         {'name': 'kwikfile', 'type': 'path', 'title': "Path to file"},

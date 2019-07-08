@@ -11,13 +11,13 @@ except ImportError:
 class OpenEphysRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'OpenEphysRecordingExtractor'
+    has_default_locations = False
     installed = HAVE_OE  # check at class level if installed or not
     _gui_params = [
         {'name': 'recording_file', 'type': 'path', 'title': "str, Path to file"},
         {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
         {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
         {'name': 'dtype', 'type': 'str',  'value':'float', 'default':'float', 'title':"dtype ('float' or 'int')"},
-        {'name': 'probe_path', 'type': 'path', 'title': "Path to probe file (.csv or .prb)"}
     ]
 
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed

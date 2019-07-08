@@ -13,10 +13,10 @@ except ImportError:
 class BiocamRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'BiocamRecordingExtractor'
+    has_default_locations = True
     installed = HAVE_BIOCAM  # check at class level if installed or not
     _gui_params = [
         {'name': 'recording_file', 'type': 'path', 'title': "Path to file"},
-        {'name': 'probe_path', 'type': 'path', 'value':None, 'default':None, 'title': "Path to probe file (.csv or .prb)"}
     ]
     installation_mesg = "To use the BiocamRecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 

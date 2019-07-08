@@ -3,6 +3,7 @@ from spikeextractors.extractors.phyextractors import PhyRecordingExtractor, PhyS
 
 class KiloSortRecordingExtractor(PhyRecordingExtractor):
     extractor_name = 'KiloSortRecordingExtractor'
+    has_default_locations = False
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'kilosort_folder', 'type': 'path', 'title': "str, Path to folder"},
