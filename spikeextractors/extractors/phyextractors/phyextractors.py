@@ -9,7 +9,7 @@ import csv
 class PhyRecordingExtractor(BinDatRecordingExtractor):
 
     extractor_name = 'PhyRecordingExtractor'
-    has_default_locations = False
+    has_default_locations = True
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'phy_folder', 'type': 'path', 'title': "Path to folder"},

@@ -19,7 +19,6 @@ class MEArecRecordingExtractor(RecordingExtractor):
     installed = HAVE_MREX  # check at class level if installed or not
     _gui_params = [
         {'name': 'recording_path', 'type': 'path', 'title': "Path to file"},
-        {'name': 'locs_2d', 'type': 'bool', 'title': "If True 3D locations are converted to 2D"},
     ]
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
 

@@ -13,6 +13,7 @@ except ImportError:
 class SpykingCircusRecordingExtractor(NumpyRecordingExtractor):
 
     extractor_name = 'SpykingCircusRecordingExtractor'
+    has_default_locations = False
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'spykingcircus_folder', 'type': 'path', 'title': "Path to folder"},

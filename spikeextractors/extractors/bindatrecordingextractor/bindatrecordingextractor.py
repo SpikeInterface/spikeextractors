@@ -19,7 +19,6 @@ class BinDatRecordingExtractor(RecordingExtractor):
         {'name': 'frames_first', 'type': 'bool', 'value': True, 'default': True, 'title': "Frames first"},
         {'name': 'offset', 'type': 'int', 'value': 0, 'default': 0, 'title': "Offset in binary file"},
         {'name': 'gain', 'type': 'float', 'title': "gain of the recordings"},
-        {'name': 'probe_path', 'type': 'path', 'title': "Path to probe file (.csv or .prb)"},
     ]
     installation_mesg = ""  # error message when not installed
 
