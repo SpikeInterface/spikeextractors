@@ -38,16 +38,16 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
     def _initialize(self):
         assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
-        recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True, check_suffix=False)
-        self._fs = recgen.info['recordings']['fs']
-        self._recordings = recgen.recordings
+        self._recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True, check_suffix=False)
+        self._fs = self._recgen.info['recordings']['fs']
+        self._recordings = self._recgen.recordings
         self._num_channels, self._num_frames = self._recordings.shape
-        if len(np.array(recgen.channel_positions)) == self._num_channels:
-            self._locations = np.array(recgen.channel_positions)
+        if len(np.array(self._recgen.channel_positions)) == self._num_channels:
+            self._locations = np.array(self._recgen.channel_positions)
             if self._locs_2d:
-                if 'electrodes' in recgen.info.keys():
-                    if 'plane' in recgen.info['electrodes'].keys():
-                        probe_plane = recgen.info['electrodes']['plane']
+                if 'electrodes' in self._recgen.info.keys():
+                    if 'plane' in self._recgen.info['electrodes'].keys():
+                        probe_plane = self._recgen.info['electrodes']['plane']
                         if probe_plane == 'xy':
                             self._locations = self._locations[:, :2]
                         elif probe_plane == 'yz':
@@ -73,7 +73,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         if end_frame is None:
             end_frame = self.get_num_frames()
         if channel_ids is None:
-            channel_ids = range(self.get_num_channels())
+            channel_ids = list(range(self.get_num_channels()))
         if np.any(np.diff(channel_ids) < 0):
             sorted_idx = np.argsort(channel_ids)
             recordings = self._recordings[np.sort(channel_ids), start_frame:end_frame]
