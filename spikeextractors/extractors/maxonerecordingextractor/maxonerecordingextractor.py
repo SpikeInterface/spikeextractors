@@ -10,10 +10,10 @@ except ImportError:
 class MaxOneRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'MaxOneRecordingExtractor'
+    has_default_locations = True
     installed = HAVE_MAX  # check at class level if installed or not
     _gui_params = [
         {'name': 'recording_path', 'type': 'path', 'title': "Path to file"},
-        {'name': 'probe_path', 'type': 'path', 'value':None, 'default':None, 'title': "Path to probe file (.csv or .prb)"}
     ]
     installation_mesg = ""  # error message when not installed
 
