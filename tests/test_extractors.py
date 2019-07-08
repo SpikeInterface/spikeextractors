@@ -17,8 +17,8 @@ import spikeextractors as se
 class TestExtractors(unittest.TestCase):
     def setUp(self):
         self.RX, self.RX2, self.RX3, self.SX, self.SX2, self.example_info = self._create_example()
-        self.test_dir = tempfile.mkdtemp()
-        # self.test_dir = '.'
+        # self.test_dir = tempfile.mkdtemp()
+        self.test_dir = '.'
 
     def tearDown(self):
         # Remove the directory after the test
@@ -121,7 +121,7 @@ class TestExtractors(unittest.TestCase):
         path1 = self.test_dir + '/raw.h5'
         se.MEArecRecordingExtractor.write_recording(self.RX, path1)
         RX_mearec = se.MEArecRecordingExtractor(path1)
-        tr = RX_mearec.get_traces(channel_ids=[0,1], end_frame=1000)
+        tr = RX_mearec.get_traces(channel_ids=[0, 1], end_frame=1000)
         self._check_recording_return_types(RX_mearec)
         self._check_recordings_equal(self.RX, RX_mearec)
 
