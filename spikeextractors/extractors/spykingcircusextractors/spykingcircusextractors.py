@@ -17,7 +17,6 @@ class SpykingCircusRecordingExtractor(NumpyRecordingExtractor):
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'spykingcircus_folder', 'type': 'path', 'title': "Path to folder"},
-        {'name': 'probe_path', 'type': 'path', 'title': "Path to probe file (.csv or .prb)"}
     ]
     installation_mesg = ""  # error message when not installed
 

@@ -8,12 +8,12 @@ from pathlib import Path
 class SpikeGLXRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'SpikeGLXRecordingExtractor'
+    has_default_locations = True
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'npx_file', 'type': 'path', 'title': "Path to file"},
         {'name': 'x_pitch', 'type': 'float', 'value':21.0, 'default':21.0, 'title': "x_pitch for Neuropixels probe (default 21)"},
         {'name': 'y_pitch', 'type': 'float', 'value':20.0, 'default':20.0, 'title': "y_pitch for Neuropixels probe (default 20)"},
-        {'name': 'probe_path', 'type': 'path', 'value':None, 'default':None, 'title': "Path to probe file (.csv or .prb)"}
     ]
     installation_mesg = ""  # error message when not installed
 

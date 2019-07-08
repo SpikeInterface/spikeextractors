@@ -8,6 +8,7 @@ from pathlib import Path
 class BinDatRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'BinDatRecordingExtractor'
+    has_default_locations = False
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'datfile', 'type': 'path', 'title': "Path to file"},
