@@ -56,7 +56,7 @@ class HS2SortingExtractor(SortingExtractor):
         if 'ch' in self._rf.keys():
             d = self._rf['ch'][()]
             for i, unit_id in enumerate(self._unit_ids):
-                self._unit_features[unit_id]['spike_max_channels'] = d[inds[i]]
+                self._unit_features[unit_id]['max_channel'] = d[inds[i]]
 
     def get_unit_indices(self, x):
         return np.where(self._cluster_id == x)[0]

@@ -131,10 +131,16 @@ def openBiocamFile(filename,  mea_pitch, verbose=False):
     if verbose:
         print("# Signal inversion is " + str(signalInv) + ".")
         print("# If your spike sorting results look wrong, invert the signal.")
-    if file_format == 100:
+    if (file_format == 100)&(signalInv == 1):
         read_function = readHDF5t_100
-    else:
+    elif (file_format == 100)&(signalInv == -1):
+        read_function = readHDF5t_100_i
+    if (file_format == 101)&(signalInv == 1):
         read_function = readHDF5t_101
+    elif (file_format == 101)&(signalInv == -1):
+        read_function = readHDF5t_101_i
+    else:
+        raise RuntimeError("File format unknown.")
     return (rf, nFrames, samplingRate, nRecCh, chIndices, file_format, signalInv, rawIndices, read_function)
 
 
@@ -145,12 +151,23 @@ def readHDF5t_100(rf, t0, t1, nch):
         raise Exception('Reading backwards? Not sure about this.')
         return rf['3BData/Raw'][t1:t0]
 
+def readHDF5t_100_i(rf, t0, t1, nch):
+    if t0 <= t1:
+        return 4096-rf['3BData/Raw'][t0:t1]
+    else:  # Reversed read
+        raise Exception('Reading backwards? Not sure about this.')
+        return 4096-rf['3BData/Raw'][t1:t0]
 
 def readHDF5t_101(rf, t0, t1, nch):
     if t0 <= t1:
-        d = rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1-t0, nch), order='C')
-        return d
+        return rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1-t0, nch), order='C')
     else:  # Reversed read
         raise Exception('Reading backwards? Not sure about this.')
-        d = rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1-t0, nch), order='C')
-        return d
+        return rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1-t0, nch), order='C')
+
+def readHDF5t_101_i(rf, t0, t1, nch):
+    if t0 <= t1:
+        return 4096-rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1-t0, nch), order='C')
+    else:  # Reversed read
+        raise Exception('Reading backwards? Not sure about this.')
+        return 4096-rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1-t0, nch), order='C')

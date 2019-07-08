@@ -35,6 +35,8 @@ recording_extractor_full_list = [
     MaxOneRecordingExtractor
 ]
 
+recording_extractor_dict = {recording_class.extractor_name: recording_class for recording_class in recording_extractor_full_list}
+
 installed_recording_extractor_list = [rx for rx in recording_extractor_full_list if rx.installed]
 
 sorting_extractor_full_list = [
@@ -52,3 +54,5 @@ sorting_extractor_full_list = [
 ]
 
 installed_sorting_extractor_list = [sx for sx in sorting_extractor_full_list if sx.installed]
+
+sorting_extractor_dict = {sorting_class.extractor_name: sorting_class for sorting_class in sorting_extractor_full_list}

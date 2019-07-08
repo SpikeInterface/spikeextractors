@@ -5,6 +5,7 @@ from .SubRecordingExtractor import SubRecordingExtractor
 from .SubSortingExtractor import SubSortingExtractor
 import csv
 import os
+import sys
 from pathlib import Path
 
 

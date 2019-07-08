@@ -18,6 +18,7 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
     installed = HAVE_KLSX  # check at class level if installed or not
     _gui_params = [
         {'name': 'kwikfile', 'type': 'path', 'title': "Path to file"},
+        {'name': 'probe_path', 'type': 'path', 'title': "Path to probe file (.csv or .prb)"}
     ]
     installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
@@ -39,9 +40,6 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
 class KlustaSortingExtractor(SortingExtractor):
     extractor_name = 'KlustaSortingExtractor'
     installed = HAVE_KLSX  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'kwikfile', 'type': 'path', 'title': "Path to file"},
-    ]
     installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, kwik_file_or_folder):

@@ -65,7 +65,24 @@ class SortingExtractor(ABC):
         pass
     
     def get_sampling_frequency(self):
+        '''
+        It returns the sampling frequency.
+
+        Returns
+        -------
+        sampling_frequency: float
+            The sampling frequency
+        '''
         return self._sampling_frequency
+
+    def set_sampling_frequency(self, sampling_frequency):
+        '''
+        It sets the sorting extractor sampling frequency.
+
+        sampling_frequency: float
+            The sampling frequency
+        '''
+        self._sampling_frequency = sampling_frequency
 
     def set_unit_spike_features(self, unit_id, feature_name, value):
         '''This function adds a unit features data set under the given features

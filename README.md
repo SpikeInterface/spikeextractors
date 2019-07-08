@@ -1,8 +1,6 @@
 [![Build Status](https://travis-ci.org/SpikeInterface/spikeextractors.svg?branch=master)](https://travis-ci.org/SpikeInterface/spikeextractors) [![PyPI version](https://badge.fury.io/py/spikeextractors.svg)](https://badge.fury.io/py/spikeextractors)
 
 Alpha Development
-Version 0.5.2
-
 
 # spikeextractors
 
@@ -51,11 +49,11 @@ There are two types of spike extractors: recording extractors (inherited from Re
 
 **RecordingExtractor**
 
-To work with raw extracellular data, import the subclass of RecordingExtractor coinciding with your specific file format. Then, you can use an instance of that class to extract data snippets and information from your raw data file. 
+To work with raw extracellular data, import the subclass of RecordingExtractor coinciding with your specific file format. Then, you can use an instance of that class to extract data snippets and information from your raw data file.
 
 In this [example](https://github.com/SpikeInterface/spikeextractors/blob/master/examples/1_recording_extractors.ipynb), we show how to use a RecordingExtractor subclass on a generated, pure-noise time series dataset and a linear probe geometry.
 
-First, we will generate the properties, data, and probe geometry for this pure-noise dataset. 
+First, we will generate the properties, data, and probe geometry for this pure-noise dataset.
 
 ```python
 import numpy as np
@@ -98,7 +96,7 @@ Stdev. on third channel = 9.99206377601932
 Location of third electrode = [ 2.  0.]
 ```
 
-RecordingExtractor subclasses also provide functionality to save the raw data with the specific format for which the RecordingExtractor was implemented. 
+RecordingExtractor subclasses also provide functionality to save the raw data with the specific format for which the RecordingExtractor was implemented.
 
 We will now convert our numpy data into the MountainSort format and save it with a MountainSort RecordingExtractor and our previously defined RecordingExtractor.
 
@@ -107,11 +105,11 @@ We will now convert our numpy data into the MountainSort format and save it with
 se.MdaRecordingExtractor.write_recording(recording=RX,save_path='sample_mountainsort_dataset')
 ```
 
-The modular design of RecordingExtractor allows them to be used in a variety of other tasks. For example, RecordingExtractors can extract subsets of data from a raw data file or can extract data from multiple files with SubRecordingExtractors and MultiRecordingExtractors. 
+The modular design of RecordingExtractor allows them to be used in a variety of other tasks. For example, RecordingExtractors can extract subsets of data from a raw data file with SubRecordingExtractors.
 
 **SortingExtractor**
 
-To run our standardized data retrieval functions for your sorted extracellular data, import the subclass SortingExtractor coinciding with your specific file format/spike sorter. Then, you can use that subclass of SortingExtractor to extract data and information from your spike sorted data file. We will show the functionality of the SortingExtractor by continuing our previous example. 
+To run our standardized data retrieval functions for your sorted extracellular data, import the subclass SortingExtractor coinciding with your specific file format/spike sorter. Then, you can use that subclass of SortingExtractor to extract data and information from your spike sorted data file. We will show the functionality of the SortingExtractor by continuing our previous example.
 
 First, we will add some random events and then use the NumpySortingExtractor to extract data about these events. Generally, SortingExtractors would be instantiated with a path the file containing information about the spike sorted units, but since this is a self-contained [example](https://github.com/SpikeInterface/spikeextractors/blob/master/examples/1_sorting_extractors.ipynb), we will add the units manually to the SortingExtractor and show how to use it afterward.
 
@@ -121,7 +119,7 @@ num_events=1000
 num_units=4
 times = np.sort(np.random.uniform(0,num_timepoints,num_events))
 labels = np.random.randint(1,num_units+1,size=num_events)
-    
+
 # Define the in-memory output extractor
 SX = se.NumpySortingExtractor()
 for k in range(1,num_units+1):
@@ -173,7 +171,7 @@ Num. events for first second of unit 1 = 8
 ```
 SortingExtractors can also extract subsets of data from a sorted data file or can extract data from multiple files with SubSortingExtractor and MultiSortingExtractor, respectively.
 
-This concludes the basic tutorial about the Recording/Sorting Extractors. To see currently implemented extractor subclasses, please check the [extractors](https://github.com/SpikeInterface/spikeextractors/tree/master/spikeextractors/extractors) folder in our repo. 
+This concludes the basic tutorial about the Recording/Sorting Extractors. To see currently implemented extractor subclasses, please check the [extractors](https://github.com/SpikeInterface/spikeextractors/tree/master/spikeextractors/extractors) folder in our repo.
 
 We have also implemented a variety of tools which use RecordingExtractors and SortingExtractors. Links to these tools are contained in the **Tools that use RecordingExtractors and SortingExtractors** section of the README.
 
@@ -193,17 +191,17 @@ from spikeextractors import SortingExtractor
 class ExampleSortingExtractor(SortingExtractor):
     def __init__(self, ex_parameter_1, ex_parameter_2):
         SortingExtractor.__init__(self)
-        
+
         ## All file specific initialization code can go here.
-        
+
     def get_unit_ids(self):
-    
+
         #Fill code to get a unit_ids list containing all the ids (ints) of detected units in the recording
-        
+
         return unit_ids
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-    
+
         '''Code to extract spike frames from the specified unit.
         It will return spike frames from within three ranges:
             [start_frame, t_start+1, ..., end_frame-1]
@@ -215,26 +213,26 @@ class ExampleSortingExtractor(SortingExtractor):
         are given, respectively. Spike frames are returned in the form of an
         array_like of spike frames. In this implementation, start_frame is inclusive
         and end_frame is exclusive conforming to numpy standards.
-       
+
         '''
-        
+
         return spike_train
-    
+
     .
     .
     .
-    . 
+    .
     . #Optional functions and pre-implemented functions that a new SortingExtractor doesn't need to implement
     .
     .
     .
     .
-        
+
     @staticmethod
     def write_sorting(sorting, save_path):
         '''
-        This is an example of a function that is not abstract so it is optional if you want to override it. It allows other 
-        SortingExtractors to use your new SortingExtractor to convert their sorted data into your 
+        This is an example of a function that is not abstract so it is optional if you want to override it. It allows other
+        SortingExtractors to use your new SortingExtractor to convert their sorted data into your
         sorting file format.
         '''
 ```
@@ -244,31 +242,27 @@ As you can see, our extractor base classes were designed to make implementing a 
 Once all abstract methods are overwritten in your RecordingExtractor or SortingExtractor, your subclass is ready for deployment and can be used with any pre-implemented tools (see **Tools that use RecordingExtractors and SortingExtractors**).
 <br/>
 
-## Interactive Example
+## Spike Tutorials
 
-To experiment with RecordingExtractors and SortingExtractors in a pre-installed environment, we have provided a [Collaborative environment](https://gist.github.com/magland/e43542fe2dfe856fd04903b9ff1f8e4e). If you click on the link and then click on "Open in Collab", you can run the notebook and try out the features of and tools for spikeextractors.
-<br/>
+For a complete tutorial of the SpikeInterface framework, refer to the [SpikeTutorials](https://github.com/SpikeInterface/spiketutorials) repo.
 
 ## Tools that use RecordingExtractors and SortingExtractors
 
 - [spiketoolkit](https://github.com/SpikeInterface/spiketoolkit) - A repository containing tools for analysis and evaluation of extracellular recordings built with spikeextractors.  It also contains wrapped spike sorting algorithms that take in recording extractors and output sorting extractors, allowing for standardized evaluation and quality control.
-- [spikewidgets](https://github.com/SpikeInterface/spikewidgets) - A repository containing graphical widgets built with spikeextractors to visualize both the raw and sorted extracellular data along with sorting results. 
+- [spikewidgets](https://github.com/SpikeInterface/spikewidgets) - A repository containing graphical widgets built with spikeextractors to visualize both the raw and sorted extracellular data along with sorting results.
 - [spikeforest](https://github.com/flatironinstitute/spikeforest) - SpikeForest is a continuously updating platform which benchmarks the performance of spike sorting codes across a large curated database of electrophysiological recordings with ground truth.
 - [spikely](https://github.com/rogerhurwitz/spikely) - An application for processing extracellular data that utilizes both spikeextractors and spiketoolkit. This application can run any supported spike sorting algorithm on extracellular data that is stored in any supported file format.
 
 ## Authors
 
-[Cole Hurwitz](https://www.inf.ed.ac.uk/people/students/Cole_Hurwitz.html) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland 
+[Cole Hurwitz](https://www.inf.ed.ac.uk/people/students/Cole_Hurwitz.html) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland
 
 [Jeremy Magland](https://www.simonsfoundation.org/team/jeremy-magland/) - Center for Computational Mathematics (CCM), Flatiron Institute, New York, United States
 
 [Alessio Paolo Buccino](https://www.mn.uio.no/ifi/english/people/aca/alessiob/) - Center for Inegrative Neurolasticity (CINPLA), Department of Biosciences, Physics, and Informatics, University of Oslo, Oslo, Norway
 
 [Matthias Hennig](http://homepages.inf.ed.ac.uk/mhennig/) - The Institute for Adaptive and Neural Computation (ANC), University of Edinburgh, Edinburgh, Scotland
-<br/>
-<br/>
-For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com
-
-## Contributors
 
 [Samuel Garcia](https://github.com/samuelgarcia) - Centre de Recherche en Neuroscience de Lyon (CRNL), Lyon, France
+
+For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com or create a new issue above.

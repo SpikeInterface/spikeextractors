@@ -47,4 +47,4 @@ class TridesclousSortingExtractor(SortingExtractor):
             spike_times = spike_times[spike_times >= start_frame]
         if end_frame is not None:
             spike_times = spike_times[spike_times < end_frame]
-        return spike_times.copy()  # copy avoid reference to the unerlying memmap
+        return spike_times.copy()  #copy avoid reference to the unerlying memmap

@@ -7,6 +7,8 @@ class KiloSortRecordingExtractor(PhyRecordingExtractor):
     installed = True  # check at class level if installed or not
     _gui_params = [
         {'name': 'kilosort_folder', 'type': 'path', 'title': "str, Path to folder"},
+        {'name': 'probe_path', 'type': 'path', 'title': "Path to probe file (.csv or .prb)"}
+        
     ]
     installation_mesg = ""  # error message when not installed
 
@@ -18,9 +20,6 @@ class KiloSortSortingExtractor(PhySortingExtractor):
 
     extractor_name = 'KiloSortSortingExtractor'
     installed = True  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'kilosort_folder', 'type': 'path', 'title': "str, Path to folder"},
-    ]
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, kilosort_folder):

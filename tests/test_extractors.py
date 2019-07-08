@@ -16,7 +16,7 @@ import spikeextractors as se
 
 class TestExtractors(unittest.TestCase):
     def setUp(self):
-        self.RX, self.SX, self.SX2, self.example_info = self._create_example()
+        self.RX, self.RX2, self.RX3, self.SX, self.SX2, self.example_info = self._create_example()
         self.test_dir = tempfile.mkdtemp()
         # self.test_dir = '.'
 
@@ -34,6 +34,8 @@ class TestExtractors(unittest.TestCase):
         geom = np.random.normal(0, 1, (num_channels, 2))
         X = (X * 100).astype(int)
         RX = se.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate, geom=geom)
+        RX2 = se.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate, geom=geom)
+        RX3 = se.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate, geom=geom)
         SX = se.NumpySortingExtractor()
         spike_times = [200, 300, 400]
         train1 = np.sort(np.rint(np.random.uniform(0, num_frames, spike_times[0])).astype(int))
@@ -61,7 +63,7 @@ class TestExtractors(unittest.TestCase):
             channel_prop=(0, 0)
         )
 
-        return (RX, SX, SX2, example_info)
+        return (RX, RX2, RX3, SX, SX2, example_info)
 
     def test_example(self):
         self.assertEqual(self.RX.get_channel_ids(), self.example_info['channel_ids'])
@@ -172,85 +174,37 @@ class TestExtractors(unittest.TestCase):
         self._check_sortings_equal(self.SX, SX_spy)
 
     def test_multi_sub_recording_extractor(self):
-        RX_multi = se.MultiRecordingExtractor(
+        RX_multi = se.MultiRecordingTimeExtractor(
             recordings=[self.RX, self.RX, self.RX],
             epoch_names=['A', 'B', 'C']
         )
         RX_sub = RX_multi.get_epoch('C')
         self._check_recordings_equal(self.RX, RX_sub)
-
-    def test_curation_sorting_extractor(self):
-        #Dummy features for testing merging and splitting of features
-        self.SX.set_unit_spike_features(1, 'f_int', range(0 + 1, len(self.SX.get_unit_spike_train(1)) + 1))
-        self.SX.set_unit_spike_features(2, 'f_int', range(0, len(self.SX.get_unit_spike_train(2))))
-        self.SX.set_unit_spike_features(2, 'bad_features', np.repeat(1, len(self.SX.get_unit_spike_train(2))))
-        self.SX.set_unit_spike_features(3, 'f_int', range(0, len(self.SX.get_unit_spike_train(3))))
-
-        CSX = se.CurationSortingExtractor(
-            parent_sorting=self.SX
+        self.assertEqual(4, len(RX_sub.get_channel_ids()))
+        
+        RX_multi = se.MultiRecordingChannelExtractor(
+            recordings=[self.RX, self.RX2, self.RX3],
+            groups=[1, 2, 3]
         )
-        CSX.merge_units(unit_ids=[1, 2])
-        original_spike_train = np.concatenate((self.SX.get_unit_spike_train(1), self.SX.get_unit_spike_train(2)))
-        indices_sort = np.argsort(original_spike_train)
-        original_spike_train = original_spike_train[indices_sort]
-        original_features = np.concatenate((self.SX.get_unit_spike_features(1, 'f_int'), self.SX.get_unit_spike_features(2, 'f_int')))
-        original_features = original_features[indices_sort]
-        self.assertTrue(np.array_equal(CSX.get_unit_spike_train(4), original_spike_train))
-        self.assertTrue(np.array_equal(CSX.get_unit_spike_features(4, 'f_int'), original_features))
-        self.assertTrue(np.array_equal(np.asarray(CSX.get_unit_spike_feature_names(4)), np.asarray(['f_int'])))
-        self.assertEqual(CSX.get_sampling_frequency(), self.SX.get_sampling_frequency())
-
-        CSX.split_unit(unit_id=3, indices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-        original_spike_train = self.SX.get_unit_spike_train(3)
-        original_features = self.SX.get_unit_spike_features(3, 'f_int')
-        split_spike_train_1 = CSX.get_unit_spike_train(5)
-        split_spike_train_2 = CSX.get_unit_spike_train(6)
-        split_features_1 = CSX.get_unit_spike_features(5, 'f_int')
-        split_features_2 = CSX.get_unit_spike_features(6, 'f_int')
-        self.assertTrue(np.array_equal(original_spike_train[:10], split_spike_train_1))
-        self.assertTrue(np.array_equal(original_spike_train[10:], split_spike_train_2))
-        self.assertTrue(np.array_equal(original_features[:10], split_features_1))
-        self.assertTrue(np.array_equal(original_features[10:], split_features_2))
+        print(RX_multi.get_channel_groups())
+        RX_sub = se.SubRecordingExtractor(RX_multi, channel_ids=[4,5,6,7], renamed_channel_ids=[0,1,2,3])
+        self._check_recordings_equal(self.RX2, RX_sub)
+        self.assertEqual([2,2,2,2], RX_sub.get_channel_groups())
+        self.assertEqual(12, len(RX_multi.get_channel_ids()))
 
     def test_multi_sub_sorting_extractor(self):
         N = self.RX.get_num_frames()
         SX_multi = se.MultiSortingExtractor(
             sortings=[self.SX, self.SX, self.SX],
-            start_frames=[0, N, 2 * N]
         )
-        SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2 * N)
-        self._check_sortings_equal(self.SX, SX_sub)
-        self.assertEqual(SX_multi.get_sampling_frequency(), self.SX.get_sampling_frequency())
-        self.assertEqual(SX_sub.get_sampling_frequency(), self.SX.get_sampling_frequency())
-
-        N = self.RX.get_num_frames()
-        SX_multi = se.MultiSortingExtractor(
-            sortings=[self.SX, self.SX, self.SX],
-            start_frames=[0, N, 2 * N]
-        )
+        SX_multi.set_unit_property(unit_id=1, property_name='dummy', value=5)
         SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0)
         self._check_sortings_equal(SX_multi, SX_sub)
-
-        N = self.RX.get_num_frames()
-        SX_multi = se.MultiSortingExtractor(
-            sortings=[self.SX, self.SX, self.SX],
-            start_frames=[2 * N, 0, N]
-        )
-        SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=N, end_frame=2 * N)
-        self._check_sortings_equal(self.SX, SX_sub)
-
-        N = self.RX.get_num_frames()
-        SX_multi = se.MultiSortingExtractor(
-            sortings=[self.SX, self.SX, self.SX],
-            start_frames=[0, 0, 0]
-        )
-        SX_sub = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0)
-        self._check_sortings_equal(SX_multi, SX_sub)
+        self.assertEqual(SX_multi.get_unit_property(1, 'dummy'), SX_sub.get_unit_property(1, 'dummy'))
 
         N = self.RX.get_num_frames()
         SX_multi = se.MultiSortingExtractor(
             sortings=[self.SX, self.SX2],
-            start_frames=[0, 0]
         )
         SX_sub1 = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0, end_frame=N)
         self._check_sortings_equal(SX_multi, SX_sub1)

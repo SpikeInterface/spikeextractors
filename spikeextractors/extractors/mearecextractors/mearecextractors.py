@@ -38,7 +38,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
     def _initialize(self):
         assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
-        recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True)
+        recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True, check_suffix=False)
         self._fs = recgen.info['recordings']['fs']
         self._recordings = recgen.recordings
         self._num_channels, self._num_frames = self._recordings.shape
@@ -82,7 +82,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
             return self._recordings[np.array(channel_ids), start_frame:end_frame]
 
     @staticmethod
-    def write_recording(recording, save_path):
+    def write_recording(recording, save_path, check_suffix=True):
         '''
         Save recording extractor to MEArec format.
         Parameters
@@ -97,7 +97,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         if save_path.is_dir():
             print("The file will be saved as recording.h5 in the provided folder")
             save_path = save_path / 'recording.h5'
-        if save_path.suffix == '.h5' or save_path.suffix == '.hdf5':
+        if (save_path.suffix == '.h5' or save_path.suffix == '.hdf5') or (not check_suffix):
             info = {'recordings': {'fs': recording.get_sampling_frequency()}}
             rec_dict = {'recordings': recording.get_traces()}
             if 'location' in recording.get_channel_property_names():
@@ -130,7 +130,7 @@ class MEArecSortingExtractor(SortingExtractor):
 
     def _initialize(self):
         assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
-        recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True)
+        recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True, check_suffix=False)
         self._num_units = len(recgen.spiketrains)
         if 'unit_id' in recgen.spiketrains[0].annotations:
             self._unit_ids = [int(st.annotations['unit_id']) for st in recgen.spiketrains]
@@ -138,6 +138,7 @@ class MEArecSortingExtractor(SortingExtractor):
             self._unit_ids = list(range(self._num_units))
         self._spike_trains = recgen.spiketrains
         self._fs = recgen.info['recordings']['fs'] * pq.Hz  # fs is in kHz
+        self._sampling_frequency = recgen.info['recordings']['fs']
 
         if 'soma_position' in self._spike_trains[0].annotations:
             for u, st in zip(self._unit_ids, self._spike_trains):
@@ -166,7 +167,7 @@ class MEArecSortingExtractor(SortingExtractor):
         return np.rint(times[inds]).astype(int)
 
     @staticmethod
-    def write_sorting(sorting, save_path, sampling_frequency):
+    def write_sorting(sorting, save_path, sampling_frequency, check_suffix=True):
         '''
         Save sorting extractor to MEArec format.
         Parameters
@@ -184,7 +185,7 @@ class MEArecSortingExtractor(SortingExtractor):
         if save_path.is_dir():
             print("The file will be saved as sorting.h5 in the provided folder")
             save_path = save_path / 'sorting.h5'
-        if save_path.suffix == '.h5' or save_path.suffix == '.hdf5':
+        if (save_path.suffix == '.h5' or save_path.suffix == '.hdf5') or (not check_suffix):
             # create neo spike trains
             spiketrains = []
             for u in sorting.get_unit_ids():
