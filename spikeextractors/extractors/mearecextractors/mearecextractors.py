@@ -38,7 +38,8 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
     def _initialize(self):
         assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
-        self._recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True, check_suffix=False)
+        self._recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True, check_suffix=False,
+                                          load=['recordings', 'channel_positions'])
         self._fs = self._recgen.info['recordings']['fs']
         self._recordings = self._recgen.recordings
         self._num_channels, self._num_frames = self._recordings.shape
@@ -130,7 +131,8 @@ class MEArecSortingExtractor(SortingExtractor):
 
     def _initialize(self):
         assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
-        recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True, check_suffix=False)
+        recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True, check_suffix=False,
+                                    load=['spiketrains'])
         self._num_units = len(recgen.spiketrains)
         if 'unit_id' in recgen.spiketrains[0].annotations:
             self._unit_ids = [int(st.annotations['unit_id']) for st in recgen.spiketrains]
