@@ -14,7 +14,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         {'name': 'datfile', 'type': 'path', 'title': "Path to file"},
         {'name': 'samplerate', 'type': 'float', 'title': "Sampling rate in HZ"},
         {'name': 'numchan', 'type': 'int', 'title': "Number of channels"},
-        {'name': 'dtype', 'type': 'np.dtype', 'title': "The dtype of underlying data"},
+        {'name': 'dtype', 'type': 'np.dtype', 'title': "The dtype of underlying data (int16, float32, etc.)"},
         {'name': 'recording_channels', 'type': 'int_list', 'value': None, 'default': None, 'title': "List of recording channels"},
         {'name': 'frames_first', 'type': 'bool', 'value': True, 'default': True, 'title': "Frames first"},
         {'name': 'offset', 'type': 'int', 'value': 0, 'default': 0, 'title': "Offset in binary file"},
