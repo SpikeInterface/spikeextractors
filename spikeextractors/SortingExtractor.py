@@ -63,7 +63,7 @@ class SortingExtractor(ABC):
             specified unit given the range of start and end frames.
         '''
         pass
-    
+
     def get_sampling_frequency(self):
         '''
         It returns the sampling frequency.
@@ -164,6 +164,35 @@ class SortingExtractor(ABC):
                 raise ValueError(str(unit_id) + " is not a valid unit_id")
         else:
             raise ValueError(str(unit_id) + " must be an int")
+
+    def clear_unit_spike_features(self, unit_id, feature_name):
+        '''This function clears the unit spikes features for the given feature.
+
+        Parameters
+        ----------
+        unit_id: int
+            The id that specifies a unit in the recording.
+        feature_name: string
+            The name of the feature to be cleared.
+        '''
+        if unit_id in self._unit_features:
+            if feature_name in self._unit_features[unit_id]:
+                del self._unit_features[unit_id][feature_name]
+
+    def clear_units_spike_features(self, *, unit_ids=None, feature_name):
+        '''This function clears the units' spikes features for the given feature.
+
+        Parameters
+        ----------
+        unit_ids: list
+            A list of ids that specifies a set of units in the recording.
+        feature_name: string
+            The name of the feature to be cleared.
+        '''
+        if unit_ids is None:
+            unit_ids = self.get_unit_ids()
+        for unit_id in unit_ids:
+            self.clear_unit_spike_features(unit_id, feature_name)
 
     def get_unit_spike_feature_names(self, unit_id=None):
         '''This function returns the names of spike features for a single
@@ -378,6 +407,35 @@ class SortingExtractor(ABC):
                     value = sorting.get_unit_property(unit_id=unit_id, property_name=curr_property_name)
                     self.set_unit_property(unit_id=unit_id, property_name=curr_property_name, value=value)
 
+    def clear_unit_property(self, unit_id, property_name):
+        '''This function clears the unit property for the given property.
+
+        Parameters
+        ----------
+        unit_id: int
+            The id that specifies a unit in the recording.
+        property_name: string
+            The name of the property to be cleared.
+        '''
+        if unit_id in self._unit_properties:
+            if property_name in self._unit_properties[unit_id]:
+                del self._unit_properties[unit_id][property_name]
+
+    def clear_units_property(self, *, unit_ids=None, property_name):
+        '''This function clears the units' properties for the given property.
+
+        Parameters
+        ----------
+        unit_ids: list
+            A list of ids that specifies a set of units in the recording.
+        property_name: string
+            The name of the property to be cleared.
+        '''
+        if unit_ids is None:
+            unit_ids = self.get_unit_ids()
+        for unit_id in unit_ids:
+            self.clear_unit_property(unit_id, property_name)
+
     def copy_unit_spike_features(self, sorting, unit_ids=None):
         '''Copy unit spike features from another sorting extractor to the current
         sorting extractor.
@@ -427,4 +485,3 @@ class SortingExtractor(ABC):
         '''
         raise NotImplementedError("The write_sorting function is not \
                                   implemented for this extractor")
-
