@@ -54,7 +54,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             for m in range(M):
                 geom[m, :] = [ts.electrodes[m][1], ts.electrodes[m][2], ts.electrodes[m][3]]
             if hasattr(ts, 'timestamps') and ts.timestamps:
-                samplerate = 1 / (ts.timestamps[1] - ts.timestamps[0])  # there's probably a better way
+                samplerate = 1000. * len(timestamps) / (ts.timestamps[-1] - ts.timestamps[0])
             else:
                 samplerate = ts.rate * 1000
             data = np.copy(np.transpose(ts.data))
