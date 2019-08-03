@@ -17,7 +17,7 @@ class MultiSortingExtractor(SortingExtractor):
             unit_ids = sorting.get_unit_ids()
             for unit_id in unit_ids:
                 self._all_unit_ids.append(u_id)
-                self._unit_map[u_id] = {'sorting': s_i, 'unit_id': unit_id}
+                self._unit_map[u_id] = {'sorting_id': s_i, 'unit_id': unit_id}
                 u_id += 1
 
     def get_unit_ids(self):
@@ -31,9 +31,9 @@ class MultiSortingExtractor(SortingExtractor):
         if unit_id not in self.get_unit_ids():
             raise ValueError("Non-valid unit_id")
 
-        sorting = self._unit_map[unit_id]['sorting']
+        sorting_id = self._unit_map[unit_id]['sorting_id']
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
-        return self._sortings[sorting].get_unit_spike_train(unit_id_sorting)
+        return self._sortings[sorting_id].get_unit_spike_train(unit_id_sorting)
 
     def get_sampling_frequency(self):
         return self._sortings[0].get_sampling_frequency()
@@ -41,16 +41,16 @@ class MultiSortingExtractor(SortingExtractor):
     def set_unit_property(self, unit_id, property_name, value):
         if unit_id not in self._unit_map.keys():
             raise ValueError("Non-valid unit_id")
-        sorting = self._unit_map[unit_id]['sorting']
+        sorting_id = self._unit_map[unit_id]['sorting_id']
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
-        self._sortings[sorting].set_unit_property(unit_id_sorting, property_name, value)
+        self._sortings[sorting_id].set_unit_property(unit_id_sorting, property_name, value)
 
     def get_unit_property(self, unit_id, property_name):
         if unit_id not in self._unit_map.keys():
             raise ValueError("Non-valid unit_id")
-        sorting = self._unit_map[unit_id]['sorting']
+        sorting_id = self._unit_map[unit_id]['sorting_id']
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
-        return self._sortings[sorting].get_unit_property(unit_id_sorting, property_name)
+        return self._sortings[sorting_id].get_unit_property(unit_id_sorting, property_name)
 
     def get_unit_property_names(self, unit_id=None):
         if unit_id is None:
@@ -61,17 +61,24 @@ class MultiSortingExtractor(SortingExtractor):
                     property_names.append(property_name)
             property_names = list(set(property_names))
         else:
-            sorting = self._unit_map[unit_id]['sorting']
+            sorting_id = self._unit_map[unit_id]['sorting_id']
             unit_id_sorting = self._unit_map[unit_id]['unit_id']
-            property_names = self._sortings[sorting].get_unit_property_names(unit_id_sorting)
+            property_names = self._sortings[sorting_id].get_unit_property_names(unit_id_sorting)
         return property_names
+    
+    def clear_unit_property(self, unit_id, property_name):
+        if unit_id not in self._unit_map.keys():
+            raise ValueError("Non-valid unit_id")
+        sorting_id = self._unit_map[unit_id]['sorting_id']
+        unit_id_sorting = self._unit_map[unit_id]['unit_id']
+        self._sortings[sorting_id].clear_unit_property(unit_id_sorting, property_name)
 
     def get_unit_spike_features(self, unit_id, feature_name, start_frame=None, end_frame=None):
         if unit_id not in self._unit_map.keys():
             raise ValueError("Non-valid unit_id")
-        sorting = self._unit_map[unit_id]['sorting']
+        sorting_id = self._unit_map[unit_id]['sorting_id']
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
-        return self._sortings[sorting].get_unit_spike_features(unit_id_sorting, feature_name, start_frame=start_frame, end_frame=end_frame)
+        return self._sortings[sorting_id].get_unit_spike_features(unit_id_sorting, feature_name, start_frame=start_frame, end_frame=end_frame)
 
     def get_unit_spike_feature_names(self, unit_id=None):
         if unit_id is None:
@@ -86,9 +93,9 @@ class MultiSortingExtractor(SortingExtractor):
             if unit_id in self.get_unit_ids():
                 if unit_id not in self._unit_map.keys():
                     raise ValueError("Non-valid unit_id")
-                sorting = self._unit_map[unit_id]['sorting']
+                sorting_id = self._unit_map[unit_id]['sorting_id']
                 unit_id_sorting = self._unit_map[unit_id]['unit_id']
-                feature_names = sorted(self._sortings[sorting].get_unit_spike_feature_names(unit_id_sorting))
+                feature_names = sorted(self._sortings[sorting_id].get_unit_spike_feature_names(unit_id_sorting))
                 return feature_names
             else:
                 raise ValueError("Non-valid unit_id")
@@ -98,9 +105,16 @@ class MultiSortingExtractor(SortingExtractor):
     def set_unit_spike_features(self, unit_id, feature_name, value):
         if unit_id not in self._unit_map.keys():
             raise ValueError("Non-valid unit_id")
-        sorting = self._unit_map[unit_id]['sorting']
+        sorting_id = self._unit_map[unit_id]['sorting_id']
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
-        self._sortings[sorting].set_unit_spike_features(unit_id_sorting, feature_name, value)
+        self._sortings[sorting_id].set_unit_spike_features(unit_id_sorting, feature_name, value)
+        
+    def clear_unit_spike_features(self, unit_id, feature_name):
+        if unit_id not in self._unit_map.keys():
+            raise ValueError("Non-valid unit_id")
+        sorting_id = self._unit_map[unit_id]['sorting_id']
+        unit_id_sorting = self._unit_map[unit_id]['unit_id']
+        self._sortings[sorting_id].clear_unit_spike_features(unit_id_sorting, feature_name)        
 
 def concatenate_sortings(sortings):
     '''
