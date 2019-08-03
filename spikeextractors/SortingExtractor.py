@@ -17,6 +17,7 @@ class SortingExtractor(ABC):
     installation_mesg = ""  # error message when not installed
 
     def __init__(self):
+        self._epochs = {}
         self._unit_properties = {}
         self._unit_features = {}
         self._sampling_frequency = None
@@ -461,6 +462,108 @@ class SortingExtractor(ABC):
                 for curr_feature_name in curr_feature_names:
                     value = sorting.get_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name)
                     self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name, value=value)
+                    
+    def add_epoch(self, epoch_name, start_frame, end_frame):
+        '''This function adds an epoch to your sorting extractor that tracks
+        a certain time period in your recording. It is stored in an internal
+        dictionary of start and end frame tuples.
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be added
+        start_frame: int
+            The start frame of the epoch to be added (inclusive)
+        end_frame: int
+            The end frame of the epoch to be added (exclusive)
+
+        '''
+        # Default implementation only allows for frame info. Can override to put more info
+        if isinstance(epoch_name, str):
+            self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
+        else:
+            raise ValueError("epoch_name must be a string")
+
+    def remove_epoch(self, epoch_name):
+        '''This function removes an epoch from your sorting extractor.
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be removed
+        '''
+        if isinstance(epoch_name, str):
+            if epoch_name in list(self._epochs.keys()):
+                del self._epochs[epoch_name]
+            else:
+                raise ValueError("This epoch has not been added")
+        else:
+            raise ValueError("epoch_name must be a string")
+
+    def get_epoch_names(self):
+        '''This function returns a list of all the epoch names in your sorting
+
+        Returns
+        ----------
+        epoch_names: list
+            List of epoch names in the recording extractor
+        '''
+        epoch_names = list(self._epochs.keys())
+        if not epoch_names:
+            pass
+        else:
+            epoch_start_frames = []
+            for epoch_name in epoch_names:
+                epoch_info = self.get_epoch_info(epoch_name)
+                start_frame = epoch_info['start_frame']
+                epoch_start_frames.append(start_frame)
+            epoch_names = [epoch_name for _, epoch_name in sorted(zip(epoch_start_frames, epoch_names))]
+        return epoch_names
+
+    def get_epoch_info(self, epoch_name):
+        '''This function returns the start frame and end frame of the epoch
+        in a dict.
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be returned
+
+        Returns
+        ----------
+        epoch_info: dict
+            A dict containing the start frame and end frame of the epoch
+        '''
+        # Default (Can add more information into each epoch in subclass)
+        if isinstance(epoch_name, str):
+            if epoch_name in list(self._epochs.keys()):
+                epoch_info = self._epochs[epoch_name]
+                return epoch_info
+            else:
+                raise ValueError("This epoch has not been added")
+        else:
+            raise ValueError("epoch_name must be a string")
+
+    def get_epoch(self, epoch_name):
+        '''This function returns a SubSortingExtractor which is a view to the
+        given epoch
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be returned
+
+        Returns
+        ----------
+        epoch_extractor: SubRecordingExtractor
+            A SubRecordingExtractor which is a view to the given epoch
+        '''
+        epoch_info = self.get_epoch_info(epoch_name)
+        start_frame = epoch_info['start_frame']
+        end_frame = epoch_info['end_frame']
+        from .SubSortingExtractor import SubSortingExtractor
+        return SubSortingExtractor(parent_sorting=self, start_frame=start_frame,
+                                   end_frame=end_frame)
 
     @classmethod
     def gui_params(self):
