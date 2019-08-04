@@ -424,7 +424,10 @@ class RecordingExtractor(ABC):
         '''
         # Default implementation only allows for frame info. Can override to put more info
         if isinstance(epoch_name, str):
-            self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
+            if end_frame == np.inf:
+                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': end_frame}
+            else:
+                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
         else:
             raise ValueError("epoch_name must be a string")
 
