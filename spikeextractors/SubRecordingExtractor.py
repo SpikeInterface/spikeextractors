@@ -42,7 +42,11 @@ class SubRecordingExtractor(RecordingExtractor):
         return self._renamed_channel_ids
 
     def get_num_frames(self):
-        return self._end_frame - self._start_frame
+        if self._end_frame == np.inf:
+            end_frame = self._parent_recording.get_num_frames()
+        else:
+            end_frame = self._end_frame
+        return end_frame - self._start_frame
 
     def get_sampling_frequency(self):
         return self._parent_recording.get_sampling_frequency()

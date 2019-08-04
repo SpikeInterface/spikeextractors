@@ -462,7 +462,7 @@ class SortingExtractor(ABC):
                 for curr_feature_name in curr_feature_names:
                     value = sorting.get_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name)
                     self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name, value=value)
-                    
+
     def add_epoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to your sorting extractor that tracks
         a certain time period in your recording. It is stored in an internal
@@ -480,7 +480,10 @@ class SortingExtractor(ABC):
         '''
         # Default implementation only allows for frame info. Can override to put more info
         if isinstance(epoch_name, str):
-            self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
+            if end_frame == np.inf:
+                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': end_frame}
+            else:
+                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
         else:
             raise ValueError("epoch_name must be a string")
 
