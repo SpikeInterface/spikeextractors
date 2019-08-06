@@ -74,7 +74,6 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
         N = recording.get_num_frames()
 
         nwbfile = NWBFile(
-            source='SpikeInterface::NwbRecordingExtractor',
             session_description='',
             identifier='',
             session_start_time=datetime.now(),
@@ -84,15 +83,13 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             experiment_description='',
             session_id=''
         )
-        device = nwbfile.create_device(name='device_name', source="device_source")
+        device = nwbfile.create_device(name='device_name')
         eg_name = 'electrode_group_name'
-        eg_source = "electrode_group_source"
         eg_description = "electrode_group_description"
         eg_location = "electrode_group_location"
 
         electrode_group = nwbfile.create_electrode_group(
             name=eg_name,
-            source=eg_source,
             location=eg_location,
             device=device,
             description=eg_description
@@ -123,7 +120,6 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
 
         ephys_ts = ElectricalSeries(
             name=acquisition_name,
-            source='acquisition_source',
             data=ephys_data,
             electrodes=electrode_table_region,
             starting_time=recording.frame_to_time(0),
