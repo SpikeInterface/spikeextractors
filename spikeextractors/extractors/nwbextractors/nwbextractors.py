@@ -102,20 +102,19 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             while len(location) < 3:
                 location = np.append(location, [0])
             nwbfile.add_electrode(
-                id,
+                id=id,
                 x=float(location[0]), y=float(location[1]), z=float(location[2]),
                 imp=impedence,
                 location='electrode_location',
                 filtering='none',
                 group=electrode_group,
-                description='electrode_description'
             )
         electrode_table_region = nwbfile.create_electrode_table_region(
             list(range(M)),
             'electrode_table_region'
         )
 
-        rate = recording.get_sampling_frequency() / 1000
+        rate = recording.get_sampling_frequency() #/ 1000
         ephys_data = recording.get_traces().T
 
         ephys_ts = ElectricalSeries(
@@ -129,7 +128,88 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             description='acquisition_description'
         )
         nwbfile.add_acquisition(ephys_ts)
+
         if os.path.exists(save_path):
             os.remove(save_path)
         with NWBHDF5IO(save_path, 'w') as io:
             io.write(nwbfile)
+
+
+
+
+class NwbSortingExtractor(se.SortingExtractor):
+    def __init__(self, path):
+        try:
+            from pynwb import NWBHDF5IO
+            from pynwb import NWBFile
+            from pynwb.ecephys import ElectricalSeries
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        #self._path = path
+        #with NWBHDF5IO(path, 'r') as io:
+        #    nwbfile = io.read()
+        #    NSX = se.NumpySortingExtractor()
+        se.RecordingExtractor.__init__()
+
+    @staticmethod
+    def write_sorting(sorting, save_path):
+        try:
+            from pynwb import NWBHDF5IO
+            from pynwb import NWBFile
+            from pynwb.ecephys import ElectricalSeries
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        M = len(sorting.get_unit_ids())
+        fs = sorting.get_sampling_frequency()
+
+        #if NWB files already exists, just adds sorting data to it
+        if os.path.exists(save_path):
+            with NWBHDF5IO(save_path, 'r+') as io:
+                nwbfile = io.read()
+
+                #Stores spike times for each detected cell (unit)
+                for id in range(M):
+                    spkt = sorting.get_unit_spike_train(unit_id=id+1) / fs
+                    print('ID: ',id)
+                    print('Spkt: ', spkt)
+                    nwbfile.add_unit(
+                        id=id,
+                        spike_times=spkt,
+                        obs_intervals=None,
+                        electrodes=None,
+                        electrode_group=None,
+                        waveform_mean=None,
+                        waveform_sd=None
+                    )
+
+                io.write(nwbfile)
+
+        #if new NWB file does not exist, create it and add sorting data
+        else:
+            nwbfile = NWBFile(
+                session_description='',
+                identifier='',
+                session_start_time=datetime.now(),
+                experimenter='',
+                lab='',
+                institution='',
+                experiment_description='',
+                session_id=''
+            )
+
+            for id in range(M):
+                spkt = sorting.get_unit_spike_train(unit_id=id) / fs
+                nwbfile.add_unit(
+                    id=id,
+                    spike_times=spkt,
+                    obs_intervals=None,
+                    electrodes=None,
+                    electrode_group=None,
+                    waveform_mean=None,
+                    waveform_sd=None
+                )
+
+            with NWBHDF5IO(save_path, 'w') as io:
+                io.write(nwbfile)
