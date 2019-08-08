@@ -114,7 +114,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             'electrode_table_region'
         )
 
-        rate = recording.get_sampling_frequency() #/ 1000
+        rate = recording.get_sampling_frequency()
         ephys_data = recording.get_traces().T
 
         ephys_ts = ElectricalSeries(
@@ -164,52 +164,27 @@ class NwbSortingExtractor(se.SortingExtractor):
         M = len(sorting.get_unit_ids())
         fs = sorting.get_sampling_frequency()
 
-        #if NWB files already exists, just adds sorting data to it
-        if os.path.exists(save_path):
-            with NWBHDF5IO(save_path, 'r+') as io:
-                nwbfile = io.read()
-
-                #Stores spike times for each detected cell (unit)
-                for id in range(M):
-                    spkt = sorting.get_unit_spike_train(unit_id=id+1) / fs
-                    print('ID: ',id)
-                    print('Spkt: ', spkt)
-                    nwbfile.add_unit(
-                        id=id,
-                        spike_times=spkt,
-                        obs_intervals=None,
-                        electrodes=None,
-                        electrode_group=None,
-                        waveform_mean=None,
-                        waveform_sd=None
-                    )
-
-                io.write(nwbfile)
-
-        #if new NWB file does not exist, create it and add sorting data
-        else:
+        if os.path.exists(save_path): #if NWB files already exists
+            io = NWBHDF5IO(save_path, 'r+')
+            nwbfile = io.read()
+        else:  #if new NWB file does not exist
             nwbfile = NWBFile(
                 session_description='',
                 identifier='',
                 session_start_time=datetime.now(),
-                experimenter='',
-                lab='',
-                institution='',
-                experiment_description='',
-                session_id=''
             )
 
-            for id in range(M):
-                spkt = sorting.get_unit_spike_train(unit_id=id) / fs
-                nwbfile.add_unit(
-                    id=id,
-                    spike_times=spkt,
-                    obs_intervals=None,
-                    electrodes=None,
-                    electrode_group=None,
-                    waveform_mean=None,
-                    waveform_sd=None
-                )
+        #Stores spike times for each detected cell (unit)
+        for id in range(M):
+            spkt = sorting.get_unit_spike_train(unit_id=id+1) / fs
+            nwbfile.add_unit(
+                id=id,
+                spike_times=spkt,
+            )
+            #'waveform_mean' and 'waveform_sd' are interesting args to include later
 
-            with NWBHDF5IO(save_path, 'w') as io:
-                io.write(nwbfile)
+        if not os.path.exists(save_path): #if NWB files does not exist
+            io = NWBHDF5IO(save_path, mode='w')
+
+        io.write(nwbfile)
+        io.close()
