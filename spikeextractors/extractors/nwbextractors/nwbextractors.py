@@ -137,7 +137,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
-        se.SortingExtractor.__init__()
+        se.SortingExtractor.__init__(self)
 
     @staticmethod
     def write_sorting(sorting, save_path, nwbfile_kwargs=None):
