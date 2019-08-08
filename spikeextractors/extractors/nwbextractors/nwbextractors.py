@@ -62,7 +62,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             CopyRecordingExtractor.__init__(self, NRX)
 
     @staticmethod
-    def write_recording(recording, save_path, acquisition_name):
+    def write_recording(recording, save_path, acquisition_name='ElectricalSeries'):
         try:
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
