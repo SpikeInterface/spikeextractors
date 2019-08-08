@@ -96,13 +96,12 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
         )
 
         for m in range(M):
-            id = m
             location = recording.get_channel_property(m, 'location')
             impedence = -1.0
             while len(location) < 3:
                 location = np.append(location, [0])
             nwbfile.add_electrode(
-                id=id,
+                id=m,
                 x=float(location[0]), y=float(location[1]), z=float(location[2]),
                 imp=impedence,
                 location='electrode_location',
