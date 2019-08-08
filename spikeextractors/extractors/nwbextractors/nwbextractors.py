@@ -77,11 +77,6 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             session_description='',
             identifier='',
             session_start_time=datetime.now(),
-            experimenter='',
-            lab='',
-            institution='',
-            experiment_description='',
-            session_id=''
         )
         device = nwbfile.create_device(name='device_name')
         eg_name = 'electrode_group_name'
