@@ -160,7 +160,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
             
-        M = len(sorting.get_unit_ids())
+        ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
 
         if os.path.exists(save_path):
@@ -175,9 +175,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             )
 
         #Stores spike times for each detected cell (unit)
-        for _ in range(M):
+        for id in ids:
             spkt = sorting.get_unit_spike_train(unit_id=id+1) / fs
-            nwbfile.add_unit(spike_times=spkt)
+            nwbfile.add_unit(id=id, spike_times=spkt)
             # 'waveform_mean' and 'waveform_sd' are interesting args to include later            
 
         io.write(nwbfile)
