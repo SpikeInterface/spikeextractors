@@ -135,8 +135,6 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             io.write(nwbfile)
 
 
-
-
 class NwbSortingExtractor(se.SortingExtractor):
     def __init__(self, path):
         try:
@@ -158,16 +156,19 @@ class NwbSortingExtractor(se.SortingExtractor):
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
             from pynwb.ecephys import ElectricalSeries
+            
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
+            
         M = len(sorting.get_unit_ids())
         fs = sorting.get_sampling_frequency()
 
-        if os.path.exists(save_path): #if NWB files already exists
+        if os.path.exists(save_path):
             io = NWBHDF5IO(save_path, 'r+')
             nwbfile = io.read()
-        else:  #if new NWB file does not exist
+        else:
+            io = NWBHDF5IO(save_path, mode='w')
             nwbfile = NWBFile(
                 session_description='',
                 identifier='',
@@ -175,16 +176,10 @@ class NwbSortingExtractor(se.SortingExtractor):
             )
 
         #Stores spike times for each detected cell (unit)
-        for id in range(M):
+        for _ in range(M):
             spkt = sorting.get_unit_spike_train(unit_id=id+1) / fs
-            nwbfile.add_unit(
-                id=id,
-                spike_times=spkt,
-            )
-            #'waveform_mean' and 'waveform_sd' are interesting args to include later
-
-        if not os.path.exists(save_path): #if NWB files does not exist
-            io = NWBHDF5IO(save_path, mode='w')
+            nwbfile.add_unit(spike_times=spkt)
+            # 'waveform_mean' and 'waveform_sd' are interesting args to include later            
 
         io.write(nwbfile)
         io.close()
