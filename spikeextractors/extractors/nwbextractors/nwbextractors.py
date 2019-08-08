@@ -71,7 +71,6 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
         M = recording.get_num_channels()
-        N = recording.get_num_frames()
 
         nwbfile = NWBFile(
             session_description='',
@@ -141,7 +140,15 @@ class NwbSortingExtractor(se.SortingExtractor):
         se.SortingExtractor.__init__()
 
     @staticmethod
-    def write_sorting(sorting, save_path):
+    def write_sorting(sorting, save_path, nwbfile_kwargs=None):
+        """
+
+        Parameters
+        ----------
+        sorting: SortingExtractor
+        save_path: str
+        nwbfile_kwargs: optional, dict with optional args of pynwb.NWBFile
+        """
         try:
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
@@ -159,13 +166,15 @@ class NwbSortingExtractor(se.SortingExtractor):
             nwbfile = io.read()
         else:
             io = NWBHDF5IO(save_path, mode='w')
-            nwbfile = NWBFile(
-                session_description='',
-                identifier='',
-                session_start_time=datetime.now(),
-            )
+            input_nwbfile_kwargs = {
+                'session_start_time': datetime.now(),
+                'identifier': '',
+                'session_description': ''}
+            if nwbfile_kwargs is not None:
+                input_nwbfile_kwargs.update(nwbfile_kwargs)
+            nwbfile = NWBFile(**input_nwbfile_kwargs)
 
-        #Stores spike times for each detected cell (unit)
+        # Stores spike times for each detected cell (unit)
         for id in ids:
             spkt = sorting.get_unit_spike_train(unit_id=id+1) / fs
             nwbfile.add_unit(id=id, spike_times=spkt)
