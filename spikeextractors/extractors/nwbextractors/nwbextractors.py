@@ -147,7 +147,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         #with NWBHDF5IO(path, 'r') as io:
         #    nwbfile = io.read()
         #    NSX = se.NumpySortingExtractor()
-        se.RecordingExtractor.__init__()
+        se.SortingExtractor.__init__()
 
     @staticmethod
     def write_sorting(sorting, save_path):
