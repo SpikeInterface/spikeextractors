@@ -138,10 +138,6 @@ class NwbSortingExtractor(se.SortingExtractor):
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
-        #self._path = path
-        #with NWBHDF5IO(path, 'r') as io:
-        #    nwbfile = io.read()
-        #    NSX = se.NumpySortingExtractor()
         se.SortingExtractor.__init__()
 
     @staticmethod
