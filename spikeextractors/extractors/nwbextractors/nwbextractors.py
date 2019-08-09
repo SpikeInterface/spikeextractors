@@ -134,6 +134,9 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
         io.close()
 
 
+
+
+
 class NwbSortingExtractor(se.SortingExtractor):
     def __init__(self, path):
         try:
@@ -144,11 +147,28 @@ class NwbSortingExtractor(se.SortingExtractor):
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
 
-        #self._path = path
-        #with NWBHDF5IO(path, 'r') as io:
-    #        nwbfile = io.read()
-    #        self._nwb_sorting = ts
+        self._path = path
+        self._units = {}
+        with NWBHDF5IO(path, 'r') as io:
+            nwbfile = io.read()
+            all_units_ids = nwbfile.units.id[:]
+            for id in all_units_ids:
+                times = nwbfile.units['spike_times'][int(id-1)]
+                self._units[int(id)] = dict(times=times)
         se.SortingExtractor.__init__(self)
+
+    def get_unit_ids(self):
+        return list(self._units.keys())
+
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        if start_frame is None:
+            start_frame = 0
+        if end_frame is None:
+            end_frame = np.Inf
+        times = self._units[unit_id]['times']
+        inds = np.where((start_frame <= times) & (times < end_frame))[0]
+        #return np.rint(times[inds]).astype(int)
+        return times[inds]
 
     @staticmethod
     def write_sorting(sorting, save_path, nwbfile_kwargs=None):
