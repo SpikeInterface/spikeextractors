@@ -148,6 +148,13 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
 
 class NwbSortingExtractor(se.SortingExtractor):
     def __init__(self, path, electrical_series=None):
+        """
+
+        Parameters
+        ----------
+        path: path to NWB file
+        electrical_series: pynwb.ecephys.ElectricalSeries object
+        """
         try:
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
