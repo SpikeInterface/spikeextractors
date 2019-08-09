@@ -162,9 +162,8 @@ class NwbSortingExtractor(se.SortingExtractor):
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
-
+        se.SortingExtractor.__init__(self)
         self._path = path
-        self._units = {}
         with NWBHDF5IO(path, 'r') as io:
             nwbfile = io.read()
             #defines the electrical series from where the sorting came from
@@ -182,9 +181,9 @@ class NwbSortingExtractor(se.SortingExtractor):
 
             #get rate
             if es.rate is not None:
-                self._fs = es.rate
+                self._sampling_frequency = es.rate
             else:
-                self._fs = 1 / (es.timestamps[1] - es.timestamps[0])
+                self._sampling_frequency = 1 / (es.timestamps[1] - es.timestamps[0])
             #get t0
             if hasattr(es, 'starting_time'):
                 self._t0 = es.starting_time
@@ -193,24 +192,25 @@ class NwbSortingExtractor(se.SortingExtractor):
             else:
                 self._t0 = 0.
 
-            all_units_ids = nwbfile.units.id[:]
-            for id in all_units_ids:
-                #spike times are measured in samples
-                times = ((nwbfile.units['spike_times'][int(id-1)] - self._t0) * self._fs).astype('int')
-                self._units[int(id)] = dict(times=times)
-        se.SortingExtractor.__init__(self)
-
     def get_unit_ids(self):
-        return list(self._units.keys())
+        from pynwb import NWBHDF5IO
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+        return list(nwbfile.units.id[:])
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        from pynwb import NWBHDF5IO
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        times = self._units[unit_id]['times']
-        inds = np.where((start_frame <= times) & (times < end_frame))[0]
-        return np.rint(times[inds]).astype(int)
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+            #chosen unit and interval
+            times0 = nwbfile.units['spike_times'][int(unit_id-1)][start_frame:end_frame]
+            #spike times are measured in samples
+            times = (( times0 - self._t0) * self._sampling_frequency).astype('int')
+        return times
 
 
     @staticmethod
