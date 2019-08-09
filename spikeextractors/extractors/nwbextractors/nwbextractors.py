@@ -147,7 +147,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
 
 
 class NwbSortingExtractor(se.SortingExtractor):
-    def __init__(self, path, fs=1000, t0=0):
+    def __init__(self, path, electrical_series=None):
         try:
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
@@ -157,14 +157,39 @@ class NwbSortingExtractor(se.SortingExtractor):
                                       "pip install pynwb\n\n")
 
         self._path = path
-        self._fs = fs
-        self._t0 = t0
         self._units = {}
         with NWBHDF5IO(path, 'r') as io:
             nwbfile = io.read()
+            #defines the electrical series from where the sorting came from
+            #important to know the associated fs and t0
+            if electrical_series is None:
+                a_names = list(nwbfile.acquisition.keys())
+                if len(a_names) > 1:
+                    raise Exception('More than one acquisition found. You must specify electrical_series.')
+                if len(a_names) == 0:
+                    raise Exception('No acquisitions found in the .nwb file.')
+                acquisition_name = a_names[0]
+                es = nwbfile.acquisition[acquisition_name]
+            else:
+                es = electrical_series
+
+            #get rate
+            if es.rate is not None:
+                self._fs = es.rate
+            else:
+                self._fs = 1 / (es.timestamps[1] - es.timestamps[0])
+            #get t0
+            if hasattr(es, 'starting_time'):
+                self._t0 = es.starting_time
+            elif es.timestamps is not None:
+                self._t0 = es.timestamps[0]
+            else:
+                self._t0 = 0.
+
             all_units_ids = nwbfile.units.id[:]
             for id in all_units_ids:
-                times = nwbfile.units['spike_times'][int(id-1)]
+                #spike times are measured in samples
+                times = ((nwbfile.units['spike_times'][int(id-1)] - self._t0) * self._fs).astype('int')
                 self._units[int(id)] = dict(times=times)
         se.SortingExtractor.__init__(self)
 
