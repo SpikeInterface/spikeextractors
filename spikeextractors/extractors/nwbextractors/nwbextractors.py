@@ -25,7 +25,14 @@ class CopyRecordingExtractor(se.RecordingExtractor):
 
 
 class NwbRecordingExtractor(CopyRecordingExtractor):
-    def __init__(self, path, acquisition_name=None):
+    def __init__(self, path, electrical_series=None):
+        """
+
+        Parameters
+        ----------
+        path: path to NWB file
+        electrical_series: pynwb.ecephys.ElectricalSeries object
+        """
         try:
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
@@ -34,30 +41,32 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
         self._path = path
-        self._acquisition_name = acquisition_name
+        self._electrical_series = electrical_series
         with NWBHDF5IO(path, 'r') as io:
             nwbfile = io.read()
-            if acquisition_name is None:
+            if electrical_series is None:
                 a_names = list(nwbfile.acquisition.keys())
                 if len(a_names) > 1:
-                    raise Exception('More than one acquisition found. You must specify acquisition_name.')
+                    raise Exception('More than one acquisition found. You must specify electrical_series.')
                 if len(a_names) == 0:
                     raise Exception('No acquisitions found in the .nwb file.')
                 acquisition_name = a_names[0]
-            ts = nwbfile.acquisition[acquisition_name]
-            self._nwb_timeseries = ts
-            M = np.array(ts.data).shape[1]
-            if M != len(ts.electrodes):
+                es = nwbfile.acquisition[acquisition_name]
+            else:
+                es = electrical_series
+
+            M = np.array(es.data).shape[1]
+            if M != len(es.electrodes):
                 raise Exception(
-                    'Number of electrodes does not match the shape of the data {}<>{}'.format(M, len(ts.electrodes)))
+                    'Number of electrodes does not match the shape of the data {}<>{}'.format(M, len(es.electrodes)))
             geom = np.zeros((M, 3))
             for m in range(M):
-                geom[m, :] = [ts.electrodes[m][1], ts.electrodes[m][2], ts.electrodes[m][3]]
-            if hasattr(ts, 'timestamps') and ts.timestamps:
-                samplerate = 1 / (ts.timestamps[1] - ts.timestamps[0])  # there's probably a better way
+                geom[m, :] = [es.electrodes[m][1], es.electrodes[m][2], es.electrodes[m][3]]
+            if hasattr(es, 'timestamps') and es.timestamps:
+                samplerate = 1 / (es.timestamps[1] - es.timestamps[0])  # there's probably a better way
             else:
-                samplerate = ts.rate * 1000
-            data = np.copy(np.transpose(ts.data))
+                samplerate = es.rate
+            data = np.copy(np.transpose(es.data))
             NRX = se.NumpyRecordingExtractor(timeseries=data, samplerate=samplerate, geom=geom)
             CopyRecordingExtractor.__init__(self, NRX)
 
@@ -138,7 +147,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
 
 
 class NwbSortingExtractor(se.SortingExtractor):
-    def __init__(self, path):
+    def __init__(self, path, fs=1000, t0=0):
         try:
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
@@ -148,6 +157,8 @@ class NwbSortingExtractor(se.SortingExtractor):
                                       "pip install pynwb\n\n")
 
         self._path = path
+        self._fs = fs
+        self._t0 = t0
         self._units = {}
         with NWBHDF5IO(path, 'r') as io:
             nwbfile = io.read()
@@ -167,8 +178,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             end_frame = np.Inf
         times = self._units[unit_id]['times']
         inds = np.where((start_frame <= times) & (times < end_frame))[0]
-        #return np.rint(times[inds]).astype(int)
-        return times[inds]
+        return np.rint(times[inds]).astype(int)
+
 
     @staticmethod
     def write_sorting(sorting, save_path, nwbfile_kwargs=None):
