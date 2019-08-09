@@ -62,7 +62,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             CopyRecordingExtractor.__init__(self, NRX)
 
     @staticmethod
-    def write_recording(recording, save_path, acquisition_name='ElectricalSeries'):
+    def write_recording(recording, save_path, acquisition_name='ElectricalSeries', nwbfile_kwargs=None):
         try:
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
@@ -72,11 +72,19 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
                                       "pip install pynwb\n\n")
         M = recording.get_num_channels()
 
-        nwbfile = NWBFile(
-            session_description='',
-            identifier='',
-            session_start_time=datetime.now(),
-        )
+        if os.path.exists(save_path):
+            io = NWBHDF5IO(save_path, 'r+')
+            nwbfile = io.read()
+        else:
+            io = NWBHDF5IO(save_path, mode='w')
+            input_nwbfile_kwargs = {
+                'session_start_time': datetime.now(),
+                'identifier': '',
+                'session_description': ''}
+            if nwbfile_kwargs is not None:
+                input_nwbfile_kwargs.update(nwbfile_kwargs)
+            nwbfile = NWBFile(**input_nwbfile_kwargs)
+
         device = nwbfile.create_device(name='device_name')
         eg_name = 'electrode_group_name'
         eg_description = "electrode_group_description"
@@ -122,10 +130,8 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
         )
         nwbfile.add_acquisition(ephys_ts)
 
-        if os.path.exists(save_path):
-            os.remove(save_path)
-        with NWBHDF5IO(save_path, 'w') as io:
-            io.write(nwbfile)
+        io.write(nwbfile)
+        io.close()
 
 
 class NwbSortingExtractor(se.SortingExtractor):
@@ -137,6 +143,11 @@ class NwbSortingExtractor(se.SortingExtractor):
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
+
+        #self._path = path
+        #with NWBHDF5IO(path, 'r') as io:
+    #        nwbfile = io.read()
+    #        self._nwb_sorting = ts
         se.SortingExtractor.__init__(self)
 
     @staticmethod
@@ -153,11 +164,11 @@ class NwbSortingExtractor(se.SortingExtractor):
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
             from pynwb.ecephys import ElectricalSeries
-            
+
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
-            
+
         ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
 
@@ -176,9 +187,9 @@ class NwbSortingExtractor(se.SortingExtractor):
 
         # Stores spike times for each detected cell (unit)
         for id in ids:
-            spkt = sorting.get_unit_spike_train(unit_id=id+1) / fs
+            spkt = sorting.get_unit_spike_train(unit_id=id) / fs
             nwbfile.add_unit(id=id, spike_times=spkt)
-            # 'waveform_mean' and 'waveform_sd' are interesting args to include later            
+            # 'waveform_mean' and 'waveform_sd' are interesting args to include later
 
         io.write(nwbfile)
         io.close()
