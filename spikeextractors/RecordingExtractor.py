@@ -80,6 +80,17 @@ class RecordingExtractor(ABC):
         pass
 
     @abstractmethod
+    def get_conversion_factor(self):
+        '''Returns the number you multiply by to convert trace data into uV
+
+        Returns
+        -------
+        conversion_factor: float
+            number you multiply by to convert trace data into uV
+        '''
+        return
+
+    @abstractmethod
     def get_channel_ids(self):
         '''Returns the list of channel ids. If not specified, the range from 0 to num_channels - 1 is returned.
 

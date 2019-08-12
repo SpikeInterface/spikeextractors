@@ -46,6 +46,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
                 acquisition_name = a_names[0]
             ts = nwbfile.acquisition[acquisition_name]
             self._nwb_timeseries = ts
+            conversion_factor = ts.conversion * 10**-6  # convert from V to uV
             M = np.array(ts.data).shape[1]
             if M != len(ts.electrodes):
                 raise Exception(
@@ -58,7 +59,8 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             else:
                 samplerate = ts.rate * 1000
             data = np.copy(np.transpose(ts.data))
-            NRX = se.NumpyRecordingExtractor(timeseries=data, samplerate=samplerate, geom=geom)
+            NRX = se.NumpyRecordingExtractor(timeseries=data, samplerate=samplerate, geom=geom,
+                                             conversion_factor=conversion_factor)
             CopyRecordingExtractor.__init__(self, NRX)
 
     @staticmethod

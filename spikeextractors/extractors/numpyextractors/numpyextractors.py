@@ -5,7 +5,7 @@ import numpy as np
 
 
 class NumpyRecordingExtractor(RecordingExtractor):
-    def __init__(self, timeseries, samplerate, geom=None):
+    def __init__(self, timeseries, samplerate, geom=None, conversion_factor=None):
         RecordingExtractor.__init__(self)
         if isinstance(timeseries, str):
             if Path(timeseries).is_file():
@@ -19,6 +19,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
         if geom is not None:
             for m in range(self._timeseries.shape[0]):
                 self.set_channel_property(m, 'location', self._geom[m, :])
+        self._conversion_factor = conversion_factor
 
     def get_channel_ids(self):
         return list(range(self._timeseries.shape[0]))
@@ -38,6 +39,9 @@ class NumpyRecordingExtractor(RecordingExtractor):
             channel_ids = self.get_channel_ids()
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
         return recordings
+
+    def get_conversion_factor(self):
+        return self._conversion_factor
 
     @staticmethod
     def write_recording(recording, save_path):
