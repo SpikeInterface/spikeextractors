@@ -106,6 +106,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             description=eg_description
         )
 
+        #add electrodes with locations
         for m in range(M):
             location = recording.get_channel_property(m, 'location')
             impedence = -1.0
@@ -119,6 +120,18 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
                 filtering='none',
                 group=electrode_group,
             )
+
+        #add other existing electrode properties
+        properties = recording.get_channel_property_names()
+        properties.remove('location')
+        for pr in properties:
+            pr_data = [recording.get_channel_property(ind, pr) for ind in range(M)]
+            nwbfile.add_electrode_column(
+                name=pr,
+                description='',
+                data=pr_data,
+            )
+
         electrode_table_region = nwbfile.create_electrode_table_region(
             list(range(M)),
             'electrode_table_region'
