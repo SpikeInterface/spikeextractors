@@ -238,7 +238,7 @@ class RecordingExtractor(ABC):
         ----------
         locations: array_like
             Returns a list of corresonding locations (floats) for the given
-            channel_ids
+            channel_ids.
         '''
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
@@ -281,7 +281,7 @@ class RecordingExtractor(ABC):
         ----------
         groups: array_like
             Returns a list of corresonding groups (ints) for the given
-            channel_ids
+            channel_ids.
         '''
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
@@ -290,6 +290,57 @@ class RecordingExtractor(ABC):
             group = self.get_channel_property(channel_id, 'group')
             groups.append(group)
         return groups
+
+    def set_channel_gains(self, channel_ids, gains):
+        '''This function sets the gain property of each specified channel
+        id with the corresponding group of the passed in gains float/list.
+
+        Parameters
+        ----------
+        channel_ids: array_like
+            The channel ids (ints) for which the groups will be specified
+        gains: float/array_like
+            If a float, each channel will be assigned the corresponding gain.
+            If a list, each channel will be given a gain from the list.
+        '''
+        if isinstance(gains, (int, np.integer, float, np.float64)):
+            gain = float(gains)
+            for i in range(len(channel_ids)):
+                self.set_channel_property(channel_ids[i], 'gain', gain)
+        elif isinstance(gains, (list, np.ndarray)):
+            if len(channel_ids) == len(gains):
+                for i in range(len(channel_ids)):
+                    if isinstance(gains[i], (int, np.integer, float, np.float64)):
+                        self.set_channel_property(channel_ids[i], 'gain', float(gains[i]))
+                    else:
+                        raise ValueError(str(gains[i]) + " must be an float")
+            else:
+                raise ValueError("channel_ids and gains must have same length")
+        else:
+            raise ValueError("gains must be a list or 1D numpy array")
+
+    def get_channel_gains(self, channel_ids=None):
+        '''This function returns the gain of each channel specifed by
+        channel_ids.
+
+        Parameters
+        ----------
+        channel_ids: array_like
+            The channel ids (ints) for which the gains will be returned
+
+        Returns
+        ----------
+        gains: array_like
+            Returns a list of corresonding gains (floats) for the given
+            channel_ids.
+        '''
+        if channel_ids is None:
+            channel_ids = self.get_channel_ids()
+        gains = []
+        for channel_id in channel_ids:
+            gain = self.get_channel_property(channel_id, 'gain')
+            gains.append(gain)
+        return gains
 
     def set_channel_property(self, channel_id, property_name, value):
         '''This function adds a property dataset to the given channel under the
