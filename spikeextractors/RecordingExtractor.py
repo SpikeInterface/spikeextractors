@@ -439,9 +439,8 @@ class RecordingExtractor(ABC):
         '''
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
-
         property_names = []
-        curr_property_name_set = set(channel_ids[0])
+        curr_property_name_set = set(self.get_channel_property_names(channel_id=channel_ids[0]))
         for channel_id in channel_ids[1:]:
             curr_channel_property_name_set = set(self.get_channel_property_names(channel_id=channel_id))
             curr_property_name_set = curr_property_name_set.intersection(curr_channel_property_name_set)
