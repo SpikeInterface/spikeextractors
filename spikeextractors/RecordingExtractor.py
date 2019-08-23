@@ -20,6 +20,8 @@ class RecordingExtractor(ABC):
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
+        for channel_id in self.get_channel_ids():
+            self.set_channel_property(channel_id=channel_id, property_name='gain', value=None)
         
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
@@ -313,11 +315,11 @@ class RecordingExtractor(ABC):
                     if isinstance(gains[i], (int, np.integer, float, np.float64)):
                         self.set_channel_property(channel_ids[i], 'gain', float(gains[i]))
                     else:
-                        raise TypeError(str(gains[i]) + " must be an float")
+                        raise TypeError("all gains must be floats or ints")
             else:
                 raise ValueError("channel_ids and gains must have same length")
         else:
-            raise TypeError("gains must be a list or 1D numpy array")
+            raise TypeError("gains must be a int/float or a list of int/floats")
 
     def get_channel_gains(self, channel_ids=None):
         '''This function returns the gain of each channel specifed by
@@ -338,10 +340,7 @@ class RecordingExtractor(ABC):
             channel_ids = self.get_channel_ids()
         gains = []
         for channel_id in channel_ids:
-            try:
-                gain = self.get_channel_property(channel_id, 'gain')
-            except RuntimeError:
-                gain = None
+            gain = self.get_channel_property(channel_id, 'gain')
             gains.append(gain)
         return gains
 
