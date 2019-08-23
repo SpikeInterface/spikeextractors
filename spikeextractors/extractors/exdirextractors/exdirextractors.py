@@ -22,7 +22,6 @@ class ExdirRecordingExtractor(RecordingExtractor):
 
     def __init__(self, exdir_file):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
-        RecordingExtractor.__init__(self)
         self._exdir_file = exdir_file
         exdir_group = exdir.File(exdir_file, plugins=[exdir.plugins.quantities])
 
@@ -30,8 +29,9 @@ class ExdirRecordingExtractor(RecordingExtractor):
         self._samplerate = float(self._recordings.attrs['sample_rate'].rescale('Hz').magnitude)
 
         self._num_channels = self._recordings.shape[0]
-        self._num_timepoints = self._recordings.shape[1]
-
+        self._num_timepoints = self._recordings.shape[1]   
+        RecordingExtractor.__init__(self)
+        
     def get_channel_ids(self):
         return list(range(self._num_channels))
 
@@ -66,7 +66,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
         elif lfp:
             ephys = exdir_group.require_group('processing').require_group('electrophysiology')
             ephys.attrs['sample_rate'] = recording.get_sampling_frequency() * pq.Hz
-            if 'group' in recording.get_channel_property_names():
+            if 'group' in recording.get_shared_channel_property_names():
                 channel_groups = np.unique([recording.get_channel_property(ch, 'group')
                                             for ch in recording.get_channel_ids()])
             else:
@@ -129,7 +129,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
         elif mua:
             ephys = exdir_group.require_group('processing').require_group('electrophysiology')
             ephys.attrs['sample_rate'] = recording.get_sampling_frequency() * pq.Hz
-            if 'group' in recording.get_channel_property_names():
+            if 'group' in recording.get_shared_channel_property_names():
                 channel_groups = np.unique([recording.get_channel_property(ch, 'group')
                                             for ch in recording.get_channel_ids()])
             else:

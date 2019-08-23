@@ -23,7 +23,6 @@ class MEArecRecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
 
     def __init__(self, recording_path, locs_2d=True):
-        RecordingExtractor.__init__(self)
         self._recording_path = recording_path
         self._fs = None
         self._positions = None
@@ -31,6 +30,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._locs_2d = locs_2d
         self._locations = None
         self._initialize()
+        RecordingExtractor.__init__(self)
 
         if self._locations is not None:
             for chan, pos in enumerate(self._locations):
@@ -101,7 +101,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         if (save_path.suffix == '.h5' or save_path.suffix == '.hdf5') or (not check_suffix):
             info = {'recordings': {'fs': recording.get_sampling_frequency()}}
             rec_dict = {'recordings': recording.get_traces()}
-            if 'location' in recording.get_channel_property_names():
+            if 'location' in recording.get_shared_channel_property_names():
                 positions = np.array([recording.get_channel_property(chan, 'location')
                                       for chan in recording.get_channel_ids()])
                 rec_dict['channel_positions'] = positions

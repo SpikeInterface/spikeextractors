@@ -22,8 +22,8 @@ class TestTools(unittest.TestCase):
     def test_load_save_probes(self):
         SX = se.load_probe_file(self.RX, 'tests/probe_test.prb')
         # print(SX.get_channel_property_names())
-        assert 'location' in SX.get_channel_property_names()
-        assert 'group' in SX.get_channel_property_names()
+        assert 'location' in SX.get_shared_channel_property_names()
+        assert 'group' in SX.get_shared_channel_property_names()
         positions = [SX.get_channel_property(chan, 'location') for chan in range(self.RX.get_num_channels())]
         # save in csv
         se.save_probe_file(SX, Path(self.test_dir) / 'geom.csv')

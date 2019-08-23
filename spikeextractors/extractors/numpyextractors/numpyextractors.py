@@ -6,14 +6,14 @@ import numpy as np
 
 class NumpyRecordingExtractor(RecordingExtractor):
     def __init__(self, timeseries, samplerate, geom=None):
-        RecordingExtractor.__init__(self)
         if isinstance(timeseries, str):
             if Path(timeseries).is_file():
                 self._timeseries = np.load(timeseries)
         elif isinstance(timeseries, np.ndarray):
             self._timeseries = timeseries
         else:
-            raise ValueError("'timeseries must be a .npy file name or a numpy array")
+            raise TypeError("'timeseries must be a .npy file name or a numpy array")
+        RecordingExtractor.__init__(self)
         self._samplerate = float(samplerate)
         self._geom = geom
         if geom is not None:
