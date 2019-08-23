@@ -5,7 +5,6 @@ import numpy as np
 
 class MultiRecordingChannelExtractor(RecordingExtractor):
     def __init__(self, recordings, groups=None):
-        RecordingExtractor.__init__(self)
         self._recordings = recordings
         self._all_channel_ids = []
         self._channel_map = {}
@@ -14,6 +13,7 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         self._first_recording = recordings[0]
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
         self._num_frames =  self._first_recording.get_num_frames()
+
 
         # Test if all recording extractors have same sampling frequency
         for i, recording in enumerate(recordings[1:]):
@@ -29,6 +29,8 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
                 self._all_channel_ids.append(new_channel_id)
                 self._channel_map[new_channel_id] = {'recording': r_i, 'channel_id': channel_id}
                 new_channel_id += 1
+
+        RecordingExtractor.__init__(self)
         
         #set group information for channels if available
         if groups is not None:

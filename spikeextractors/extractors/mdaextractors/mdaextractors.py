@@ -18,7 +18,6 @@ class MdaRecordingExtractor(RecordingExtractor):
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, dataset_directory):
-        RecordingExtractor.__init__(self)
         dataset_directory = Path(dataset_directory)
         self._dataset_directory = dataset_directory
         timeseries0 = dataset_directory / 'raw.mda'
@@ -35,6 +34,7 @@ class MdaRecordingExtractor(RecordingExtractor):
                                                                                                X.N1()))
         self._num_channels = X.N1()
         self._num_timepoints = X.N2()
+        RecordingExtractor.__init__(self)
         for m in range(self._num_channels):
             self.set_channel_property(m, 'location', self._geom[m, :])
 

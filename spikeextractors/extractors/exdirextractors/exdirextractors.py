@@ -22,7 +22,6 @@ class ExdirRecordingExtractor(RecordingExtractor):
 
     def __init__(self, exdir_file):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
-        RecordingExtractor.__init__(self)
         self._exdir_file = exdir_file
         exdir_group = exdir.File(exdir_file, plugins=[exdir.plugins.quantities])
 
@@ -30,8 +29,9 @@ class ExdirRecordingExtractor(RecordingExtractor):
         self._samplerate = float(self._recordings.attrs['sample_rate'].rescale('Hz').magnitude)
 
         self._num_channels = self._recordings.shape[0]
-        self._num_timepoints = self._recordings.shape[1]
-
+        self._num_timepoints = self._recordings.shape[1]   
+        RecordingExtractor.__init__(self)
+        
     def get_channel_ids(self):
         return list(range(self._num_channels))
 
