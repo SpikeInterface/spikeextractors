@@ -20,7 +20,7 @@ class RecordingExtractor(ABC):
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
-
+        
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         '''This function extracts and returns a trace from the recorded data from the
@@ -221,7 +221,7 @@ class RecordingExtractor(ABC):
                     location = np.asarray(locations[i])
                     self.set_channel_property(channel_ids[i], 'location', location.astype(float))
                 else:
-                    raise ValueError(str(locations[i]) + " must be an array_like")
+                    raise TypeError(str(locations[i]) + " must be an array_like")
         else:
             raise ValueError("channel_ids and locations must have same length")
 
@@ -264,7 +264,7 @@ class RecordingExtractor(ABC):
                 if isinstance(groups[i], (int, np.integer)):
                     self.set_channel_property(channel_ids[i], 'group', groups[i])
                 else:
-                    raise ValueError(str(groups[i]) + " must be an int")
+                    raise TypeError(str(groups[i]) + " must be an int")
         else:
             raise ValueError("channel_ids and groups must have same length")
 
@@ -313,11 +313,11 @@ class RecordingExtractor(ABC):
                     if isinstance(gains[i], (int, np.integer, float, np.float64)):
                         self.set_channel_property(channel_ids[i], 'gain', float(gains[i]))
                     else:
-                        raise ValueError(str(gains[i]) + " must be an float")
+                        raise TypeError(str(gains[i]) + " must be an float")
             else:
                 raise ValueError("channel_ids and gains must have same length")
         else:
-            raise ValueError("gains must be a list or 1D numpy array")
+            raise TypeError("gains must be a list or 1D numpy array")
 
     def get_channel_gains(self, channel_ids=None):
         '''This function returns the gain of each channel specifed by
@@ -338,7 +338,10 @@ class RecordingExtractor(ABC):
             channel_ids = self.get_channel_ids()
         gains = []
         for channel_id in channel_ids:
-            gain = self.get_channel_property(channel_id, 'gain')
+            try:
+                gain = self.get_channel_property(channel_id, 'gain')
+            except RuntimeError:
+                gain = None
             gains.append(gain)
         return gains
 
@@ -363,11 +366,11 @@ class RecordingExtractor(ABC):
                 if isinstance(property_name, str):
                     self._channel_properties[channel_id][property_name] = value
                 else:
-                    raise ValueError(str(property_name) + " must be a string")
+                    raise TypeError(str(property_name) + " must be a string")
             else:
                 raise ValueError(str(channel_id) + " is not a valid channel_id")
         else:
-            raise ValueError(str(channel_id) + " must be an int")
+            raise TypeError(str(channel_id) + " must be an int")
 
     def get_channel_property(self, channel_id, property_name):
         '''This function returns the data stored under the property name from
@@ -394,13 +397,13 @@ class RecordingExtractor(ABC):
                     if property_name in list(self._channel_properties[channel_id].keys()):
                         return self._channel_properties[channel_id][property_name]
                     else:
-                        raise ValueError(str(property_name) + " has not been added to channel " + str(channel_id))
+                        raise RuntimeError(str(property_name) + " has not been added to channel " + str(channel_id))
                 else:
-                    raise ValueError(str(property_name) + " must be a string")
+                    raise TypeError(str(property_name) + " must be a string")
             else:
                 raise ValueError(str(channel_id) + " is not a valid channel_id")
         else:
-            raise ValueError(str(channel_id) + " must be an int")
+            raise TypeError(str(channel_id) + " must be an int")
 
     def get_channel_property_names(self, channel_id=None):
         '''Get a list of property names for a given channel, or for all channels if channel_id is None
@@ -431,7 +434,7 @@ class RecordingExtractor(ABC):
             else:
                 raise ValueError(str(channel_id) + " is not a valid channel_id")
         else:
-            raise ValueError(str(channel_id) + " must be an int")
+            raise TypeError(str(channel_id) + " must be an int")
 
     def copy_channel_properties(self, recording, channel_ids=None):
         '''Copy channel properties from another recording extractor to the current
@@ -480,7 +483,7 @@ class RecordingExtractor(ABC):
             else:
                 self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
         else:
-            raise ValueError("epoch_name must be a string")
+            raise TypeError("epoch_name must be a string")
 
     def remove_epoch(self, epoch_name):
         '''This function removes an epoch from your recording extractor.
@@ -494,9 +497,9 @@ class RecordingExtractor(ABC):
             if epoch_name in list(self._epochs.keys()):
                 del self._epochs[epoch_name]
             else:
-                raise ValueError("This epoch has not been added")
+                raise RuntimeError("This epoch has not been added")
         else:
-            raise ValueError("epoch_name must be a string")
+            raise TypeError("epoch_name must be a string")
 
     def get_epoch_names(self):
         '''This function returns a list of all the epoch names in your recording
@@ -538,9 +541,9 @@ class RecordingExtractor(ABC):
                 epoch_info = self._epochs[epoch_name]
                 return epoch_info
             else:
-                raise ValueError("This epoch has not been added")
+                raise RuntimeError("This epoch has not been added")
         else:
-            raise ValueError("epoch_name must be a string")
+            raise TypeError("epoch_name must be a string")
 
     def get_epoch(self, epoch_name):
         '''This function returns a SubRecordingExtractor which is a view to the
