@@ -20,9 +20,7 @@ class RecordingExtractor(ABC):
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
-        for channel_id in self.get_channel_ids():
-            self.set_channel_property(channel_id=channel_id, property_name='gain', value=None)
-        
+
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         '''This function extracts and returns a trace from the recorded data from the
@@ -404,8 +402,8 @@ class RecordingExtractor(ABC):
         else:
             raise TypeError(str(channel_id) + " must be an int")
 
-    def get_channel_property_names(self, channel_id=None):
-        '''Get a list of property names for a given channel, or for all channels if channel_id is None
+    def get_channel_property_names(self, channel_id):
+        '''Get a list of property names for a given channel.
          Parameters
         ----------
         channel_id: int
@@ -416,14 +414,6 @@ class RecordingExtractor(ABC):
         property_names
             The list of property names
         '''
-        if channel_id is None:
-            property_names = []
-            for channel_id in self.get_channel_ids():
-                curr_property_names = self.get_channel_property_names(channel_id=channel_id)
-                for curr_property_name in curr_property_names:
-                    property_names.append(curr_property_name)
-            property_names = sorted(list(set(property_names)))
-            return property_names
         if isinstance(channel_id, (int, np.integer)):
             if channel_id in self.get_channel_ids():
                 if channel_id not in self._channel_properties:
@@ -434,6 +424,29 @@ class RecordingExtractor(ABC):
                 raise ValueError(str(channel_id) + " is not a valid channel_id")
         else:
             raise TypeError(str(channel_id) + " must be an int")
+        
+    def get_shared_channel_property_names(self, channel_ids=None):
+        '''Get the intersection of channel property names for a given set of channels or for all channels if channel_ids is None.
+         Parameters
+        ----------
+        channel_ids: array_like
+            The channel ids for which the shared property names will be returned.
+            If None (default), will return shared property names for all channels
+        Returns
+        ----------
+        property_names
+            The list of shared property names
+        '''
+        if channel_ids is None:
+            channel_ids = self.get_channel_ids()
+
+        property_names = []
+        curr_property_name_set = set(channel_ids[0])
+        for channel_id in channel_ids[1:]:
+            curr_channel_property_name_set = set(self.get_channel_property_names(channel_id=channel_id))
+            curr_property_name_set = curr_property_name_set.intersection(curr_channel_property_name_set)
+        property_names = sorted(list(curr_property_name_set))
+        return property_names            
 
     def copy_channel_properties(self, recording, channel_ids=None):
         '''Copy channel properties from another recording extractor to the current

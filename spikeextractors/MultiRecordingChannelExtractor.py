@@ -79,20 +79,12 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         channel_id_recording = self._channel_map[channel_id]['channel_id']
         return recording.get_channel_property(channel_id_recording, property_name=property_name)
 
-    def get_channel_property_names(self, channel_id=None):
-        if channel_id is None:
-            property_names = []
-            for recording in self._recordings:
-                property_names_recording = recording.get_channel_property_names()
-                for property_name_recording in property_names_recording:
-                    property_names.append(property_name_recording)
-            property_names = sorted(list(set(property_names)))
-        else:
-            recording = self._recordings[self._channel_map[channel_id]['recording']]
-            channel_id_recording = self._channel_map[channel_id]['channel_id']
-            property_names = recording.get_channel_property_names(channel_id_recording)
+    def get_channel_property_names(self, channel_id):
+        recording = self._recordings[self._channel_map[channel_id]['recording']]
+        channel_id_recording = self._channel_map[channel_id]['channel_id']
+        property_names = recording.get_channel_property_names(channel_id_recording)
         return property_names
-
+    
 def concatenate_recordings_by_channel(recordings, groups=None):
     '''
     Concatenates recordings together by channel. The order of the recordings

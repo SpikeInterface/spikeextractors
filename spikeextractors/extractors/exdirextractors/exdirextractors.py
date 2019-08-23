@@ -66,7 +66,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
         elif lfp:
             ephys = exdir_group.require_group('processing').require_group('electrophysiology')
             ephys.attrs['sample_rate'] = recording.get_sampling_frequency() * pq.Hz
-            if 'group' in recording.get_channel_property_names():
+            if 'group' in recording.get_shared_channel_property_names():
                 channel_groups = np.unique([recording.get_channel_property(ch, 'group')
                                             for ch in recording.get_channel_ids()])
             else:
@@ -129,7 +129,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
         elif mua:
             ephys = exdir_group.require_group('processing').require_group('electrophysiology')
             ephys.attrs['sample_rate'] = recording.get_sampling_frequency() * pq.Hz
-            if 'group' in recording.get_channel_property_names():
+            if 'group' in recording.get_shared_channel_property_names():
                 channel_groups = np.unique([recording.get_channel_property(ch, 'group')
                                             for ch in recording.get_channel_ids()])
             else:

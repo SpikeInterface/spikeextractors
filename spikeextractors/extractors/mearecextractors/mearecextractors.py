@@ -101,7 +101,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         if (save_path.suffix == '.h5' or save_path.suffix == '.hdf5') or (not check_suffix):
             info = {'recordings': {'fs': recording.get_sampling_frequency()}}
             rec_dict = {'recordings': recording.get_traces()}
-            if 'location' in recording.get_channel_property_names():
+            if 'location' in recording.get_shared_channel_property_names():
                 positions = np.array([recording.get_channel_property(chan, 'location')
                                       for chan in recording.get_channel_ids()])
                 rec_dict['channel_positions'] = positions
