@@ -55,7 +55,7 @@ class MCSRecordingExtractor(RecordingExtractor):
         stream = self._rf.require_group('/Data/Recording_0/AnalogStream/Stream_0')
         data_V = np.array(stream.get('ChannelData'),dtype=np.int)*self._convFact.astype(float)*(10.0**(self._exponent))
 
-        return data_V[start_frame:end_frame, channel_ids].T
+        return data_V[channel_ids, start_frame:end_frame].T
 
     @staticmethod
     def write_recording(recording, save_path):
