@@ -24,7 +24,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         self._mea_pitch = mea_pitch
         self._recording_file = recording_file
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, \
-        self._channel_ids, self._electrodeLabels, self._exponent, self._convFact \
+        self._channel_ids, self._channel_ids_MCS, self._electrodeLabels, self._exponent, self._convFact \
         = openMCSH5File(
             self._recording_file, self._mea_pitch, verbose)
         RecordingExtractor.__init__(self)
@@ -37,6 +37,30 @@ class MCSH5RecordingExtractor(RecordingExtractor):
 
     def get_channel_ids(self):
         return self._channel_ids
+    
+    def get_channel_ids_MCS(self, channel_ids=None):
+        if channel_ids is None:
+            channel_ids = self._channel_ids
+        return self._channel_ids_MCS[channel_ids]
+    
+    def get_channel_ids_from_MCS_channel_ids(self, channel_ids_MCS):
+        if type(channel_ids_MCS) is int:
+            cid = np.where(self._channel_ids_MCS==channel_ids_MCS)[0]
+            if len(cid)>0:
+                return(cid[0])
+            else:
+                return(np.nan)
+#            return np.argwhere(self._channel_ids_MCS==channel_ids_MCS)[0][0]
+        else:
+            channel_ids = []
+            for cid_MCS in channel_ids_MCS:
+                cid = np.where(self._channel_ids_MCS==cid_MCS)[0]
+                if len(cid)>0:
+                    channel_ids.append(cid[0])
+                else:
+                    channel_ids.append(np.nan)
+#        channel_ids = self._channel_ids
+            return channel_ids
 
     def get_num_frames(self):
         return self._nFrames
@@ -81,8 +105,9 @@ def openMCSH5File(filename,  mea_pitch, verbose=False):
     convFact = info['ConversionFactor'][0]
     
     nRecCh = data.shape[0]
-    
-    channel_ids = info['ChannelID']
+    channel_ids_MCS = info['ChannelID']
+    assert len(np.unique(channel_ids_MCS)) == len(channel_ids_MCS), 'Duplicate MCS channel IDs found'
+    channel_ids = range(nRecCh)
     electrodeLabels = info['Label']
     
     TimeVals = np.arange(timestamps[0][0],timestamps[0][2]+1,1)*Tick
@@ -100,4 +125,4 @@ def openMCSH5File(filename,  mea_pitch, verbose=False):
         print('# Number of frames: {}'.format(data.shape[1]))
         print('# Sampling rate: {} Hz'.format(samplingRate))
 
-    return (rf, nFrames, samplingRate, nRecCh, channel_ids, electrodeLabels, exponent, convFact)
+    return (rf, nFrames, samplingRate, nRecCh, channel_ids, channel_ids_MCS, electrodeLabels, exponent, convFact)
