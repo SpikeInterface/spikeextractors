@@ -5,27 +5,27 @@ import numpy as np
 
 try:
     import h5py
-    HAVE_MCS = True
+    HAVE_MCSH5 = True
 except ImportError:
-    HAVE_MCS = False
+    HAVE_MCSH5 = False
 
-class MCSRecordingExtractor(RecordingExtractor):
+class MCSH5RecordingExtractor(RecordingExtractor):
 
-    extractor_name = 'MCSRecordingExtractor'
+    extractor_name = 'MCSH5RecordingExtractor'
     has_default_locations = False
-    installed = HAVE_MCS  # check at class level if installed or not
+    installed = HAVE_MCSH5  # check at class level if installed or not
 #    _gui_params = [
 #        {'name': 'recording_file', 'type': 'path', 'title': "Path to file"},
 #    ]
-    installation_mesg = "To use the MCSRecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
+    installation_mesg = "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, recording_file, verbose=False, mea_pitch=200):
-        assert HAVE_MCS, "To use the MCSRecordingExtractor install h5py: \n\n pip install h5py\n\n"
+        assert HAVE_MCSH5, "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"
         self._mea_pitch = mea_pitch
         self._recording_file = recording_file
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, \
         self._channel_ids, self._electrodeLabels, self._exponent, self._convFact \
-        = openMCSFile(
+        = openMCSH5File(
             self._recording_file, self._mea_pitch, verbose)
         RecordingExtractor.__init__(self)
         # for m in range(self._nRecCh):
@@ -62,12 +62,12 @@ class MCSRecordingExtractor(RecordingExtractor):
         # Not implemented
         # An informative example is in BiocamRecordingExtractor
 
-        assert HAVE_MCS, "To use the MCSRecordingExtractor install h5py: \n\n pip install h5py\n\n"
-        print('Method write_recording() not implemented in MCSRecordingExtractor.')
+        assert HAVE_MCSH5, "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"
+        print('Method write_recording() not implemented in MCSH5RecordingExtractor.')
 
 
-def openMCSFile(filename,  mea_pitch, verbose=False):
-    """Open a MCS hdf5 file, read and return the recording info."""
+def openMCSH5File(filename,  mea_pitch, verbose=False):
+    """Open an MCS hdf5 file, read and return the recording info."""
     rf = h5py.File(filename, 'r')
     
     stream = rf.require_group('/Data/Recording_0/AnalogStream/Stream_0')

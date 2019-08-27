@@ -17,7 +17,7 @@ from .extractors.spykingcircusextractors.spykingcircusextractors import SpykingC
 from .extractors.spikeglxrecordingextractor.spikeglxrecordingextractor import SpikeGLXRecordingExtractor
 from .extractors.tridescloussortingextractor.tridescloussortingextractor import TridesclousSortingExtractor
 from .extractors.npzsortingextractor.npzsortingextractor import NpzSortingExtractor
-from .extractors.mcsrecordingextractor.mcsrecordingextractor import MCSRecordingExtractor
+from .extractors.mcsh5recordingextractor.mcsh5recordingextractor import MCSH5RecordingExtractor
 
 
 recording_extractor_full_list = [
@@ -34,7 +34,7 @@ recording_extractor_full_list = [
     SpikeGLXRecordingExtractor,
     PhyRecordingExtractor,
     MaxOneRecordingExtractor,
-	MCSRecordingExtractor
+	MCSH5RecordingExtractor
 ]
 
 recording_extractor_dict = {recording_class.extractor_name: recording_class for recording_class in recording_extractor_full_list}
