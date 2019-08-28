@@ -1,1 +1,0 @@
-from .spykingcircussortingextractor import SpykingCircusSortingExtractor

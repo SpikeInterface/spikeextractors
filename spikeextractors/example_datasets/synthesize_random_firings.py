@@ -1,7 +1,9 @@
 import numpy as np
 
 
-def synthesize_random_firings(*, K=20, samplerate=30000, duration=60):
+def synthesize_random_firings(*, K=20, samplerate=30000.0, duration=60, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     firing_rates = 3 * np.ones((K))
     refr = 4
 

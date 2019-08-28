@@ -2,25 +2,14 @@ from .RecordingExtractor import RecordingExtractor
 from .SortingExtractor import SortingExtractor
 from .SubSortingExtractor import SubSortingExtractor
 from .SubRecordingExtractor import SubRecordingExtractor
-from .MultiRecordingExtractor import MultiRecordingExtractor
-from .MultiSortingExtractor import MultiSortingExtractor
-from .CuratedSortingExtractor import CuratedSortingExtractor
+from .MultiRecordingChannelExtractor import concatenate_recordings_by_channel, MultiRecordingChannelExtractor
+from .MultiRecordingTimeExtractor import concatenate_recordings_by_time, MultiRecordingTimeExtractor
+from .MultiSortingExtractor import concatenate_sortings, MultiSortingExtractor
 
-from .extractors.mdaextractors.mdaextractors import MdaRecordingExtractor, MdaSortingExtractor
-from .extractors.mearecextractors.mearecextractors import MEArecRecordingExtractor, MEArecSortingExtractor
-from .extractors.biocamrecordingextractor import BiocamRecordingExtractor
-from .extractors.exdirextractors import ExdirRecordingExtractor, ExdirSortingExtractor
-from .extractors.intanrecordingextractor import IntanRecordingExtractor
-from .extractors.hs2sortingextractor import HS2SortingExtractor
-from .extractors.klustasortingextractor import KlustaSortingExtractor
-from .extractors.kilosortsortingextractor import KiloSortSortingExtractor
-from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor, NumpySortingExtractor
-from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor
-from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
-from .extractors.physortingextractor.physortingextractor import PhySortingExtractor
-from .extractors.bindatrecordingextractor import BinDatRecordingExtractor
-from .extractors.spykingcircussortingextractor.spykingcircussortingextractor import SpykingCircusSortingExtractor
-from .extractors.tridesclousextractor.tridesclousextractor import TridesclousSortingExtractor
+from .extractorlist import *
 
 from . import example_datasets
-from .tools import loadProbeFile, saveProbeFile, writeBinaryDatFormat, getSubExtractorsByProperty
+from .extraction_tools import load_probe_file, save_probe_file, read_binary, write_binary_dat_format, \
+    get_sub_extractors_by_property
+
+from .version import version as __version__
