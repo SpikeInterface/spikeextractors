@@ -14,9 +14,9 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     extractor_name = 'MCSH5RecordingExtractor'
     has_default_locations = False
     installed = HAVE_MCSH5  # check at class level if installed or not
-#    _gui_params = [
-#        {'name': 'recording_file', 'type': 'path', 'title': "Path to file"},
-#    ]
+    _gui_params = [
+        {'name': 'recording_file', 'type': 'path', 'title': "Path to file"},
+    ]
     installation_mesg = "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, recording_file, verbose=False, mea_pitch=200):
@@ -24,7 +24,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         self._mea_pitch = mea_pitch
         self._recording_file = recording_file
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, \
-        self._channel_ids, self._channel_ids_MCS, self._electrodeLabels, self._exponent, self._convFact \
+        self._channel_ids, self._electrodeLabels, self._exponent, self._convFact \
         = openMCSH5File(
             self._recording_file, self._mea_pitch, verbose)
         RecordingExtractor.__init__(self)
@@ -38,30 +38,6 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     def get_channel_ids(self):
         return self._channel_ids
     
-    def get_channel_ids_MCS(self, channel_ids=None):
-        if channel_ids is None:
-            channel_ids = self._channel_ids
-        return self._channel_ids_MCS[channel_ids]
-    
-    def get_channel_ids_from_MCS_channel_ids(self, channel_ids_MCS):
-        if type(channel_ids_MCS) is int:
-            cid = np.where(self._channel_ids_MCS==channel_ids_MCS)[0]
-            if len(cid)>0:
-                return(cid[0])
-            else:
-                return(np.nan)
-#            return np.argwhere(self._channel_ids_MCS==channel_ids_MCS)[0][0]
-        else:
-            channel_ids = []
-            for cid_MCS in channel_ids_MCS:
-                cid = np.where(self._channel_ids_MCS==cid_MCS)[0]
-                if len(cid)>0:
-                    channel_ids.append(cid[0])
-                else:
-                    channel_ids.append(np.nan)
-#        channel_ids = self._channel_ids
-            return channel_ids
-
     def get_num_frames(self):
         return self._nFrames
 
@@ -75,11 +51,20 @@ class MCSH5RecordingExtractor(RecordingExtractor):
             end_frame = self.get_num_frames()
         if channel_ids is None:
             channel_ids = self._channel_ids
-        
+        else:
+            if type(channel_ids) is int:
+                assert channel_ids in self._channel_ids, 'channel_id {} not found'.format(channel_ids)
+                channel_indices = np.where(self._channel_ids==channel_ids)[0][0]
+            else:
+                channel_indices = []
+                for m in channel_ids:
+                    assert m in self._channel_ids, 'channel_id {} not found'.format(m)
+                    channel_indices.append(np.where(self._channel_ids==m)[0][0])
+                
         stream = self._rf.require_group('/Data/Recording_0/AnalogStream/Stream_0')
         data_V = np.array(stream.get('ChannelData'),dtype=np.int)*self._convFact.astype(float)*(10.0**(self._exponent))
 
-        return data_V[channel_ids, start_frame:end_frame]
+        return data_V[channel_indices, start_frame:end_frame]
 
     @staticmethod
     def write_recording(recording, save_path):
@@ -105,9 +90,8 @@ def openMCSH5File(filename,  mea_pitch, verbose=False):
     convFact = info['ConversionFactor'][0]
     
     nRecCh = data.shape[0]
-    channel_ids_MCS = info['ChannelID']
-    assert len(np.unique(channel_ids_MCS)) == len(channel_ids_MCS), 'Duplicate MCS channel IDs found'
-    channel_ids = range(nRecCh)
+    channel_ids = info['ChannelID']
+    assert len(np.unique(channel_ids)) == len(channel_ids), 'Duplicate MCS channel IDs found'
     electrodeLabels = info['Label']
     
     TimeVals = np.arange(timestamps[0][0],timestamps[0][2]+1,1)*Tick
@@ -125,4 +109,5 @@ def openMCSH5File(filename,  mea_pitch, verbose=False):
         print('# Number of frames: {}'.format(data.shape[1]))
         print('# Sampling rate: {} Hz'.format(samplingRate))
 
-    return (rf, nFrames, samplingRate, nRecCh, channel_ids, channel_ids_MCS, electrodeLabels, exponent, convFact)
+#    return (rf, nFrames, samplingRate, nRecCh, channel_ids, channel_ids_MCS, electrodeLabels, exponent, convFact)
+    return (rf, nFrames, samplingRate, nRecCh, channel_ids, electrodeLabels, exponent, convFact)
