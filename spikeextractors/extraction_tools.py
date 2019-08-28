@@ -1,8 +1,8 @@
 import numpy as np
-from .RecordingExtractor import RecordingExtractor
-from .SortingExtractor import SortingExtractor
-from .SubRecordingExtractor import SubRecordingExtractor
-from .SubSortingExtractor import SubSortingExtractor
+from .recordingextractor import RecordingExtractor
+from .sortingextractor import SortingExtractor
+from .subrecordingextractor import SubRecordingExtractor
+from .subsortingextractor import SubSortingExtractor
 import csv
 import os
 import sys

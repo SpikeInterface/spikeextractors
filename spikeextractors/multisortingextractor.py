@@ -1,5 +1,5 @@
-from .SortingExtractor import SortingExtractor
-from .RecordingExtractor import RecordingExtractor
+from .sortingextractor import SortingExtractor
+from .recordingextractor import RecordingExtractor
 import numpy as np
 
 
