@@ -89,7 +89,7 @@ def openMCSH5File(filename,  mea_pitch, verbose=False):
     exponent = info['Exponent'][0]
     convFact = info['ConversionFactor'][0]
     
-    nRecCh = data.shape[0]
+    nRecCh, nFrames = data.shape
     channel_ids = info['ChannelID']
     assert len(np.unique(channel_ids)) == len(channel_ids), 'Duplicate MCS channel IDs found'
     electrodeLabels = info['Label']
@@ -99,15 +99,28 @@ def openMCSH5File(filename,  mea_pitch, verbose=False):
     assert Unit==b'V', 'Unexpected units found, expected volts, found {}'.format(Unit.decode('UTF-8'))
     data_V = data*convFact.astype(float)*(10.0**(exponent))
     
-    nFrames = data.shape[1]
-    samplingRate = 1./np.mean(TimeVals[1:]-TimeVals[0:-1])
+    timestep_avg = np.mean(TimeVals[1:]-TimeVals[0:-1])
+    timestep_std = np.std(TimeVals[1:]-TimeVals[0:-1])
+    timestep_min = np.min(TimeVals[1:]-TimeVals[0:-1])
+    timestep_max = np.min(TimeVals[1:]-TimeVals[0:-1])
+    assert all(np.abs(np.array((timestep_min, timestep_max))-timestep_avg)/timestep_avg < 1e-6), 'Time steps vary by more than 1 ppm'
+    samplingRate = 1./timestep_avg
 
     if verbose:
         print('# MCS H5 data format')
-        print('# Signal range: {} to {} µV'.format(np.amin(data_V)*1e6,np.amax(data_V)*1e6))
+        print('#')
+        print('# File: {}'.format(rf.filename))
+        print('# File size: {:.2f} MB'.format(rf.id.get_filesize()/1024**2))
+        print('#')
+        for key in rf.attrs.keys():
+            print('# {}: {}'.format(key,rf.attrs[key]))
+        print('#')
+        print('# Signal range: {:.2f} to {:.2f} µV'.format(np.amin(data_V)*1e6,np.amax(data_V)*1e6))
         print('# Number of channels: {}'.format(nRecCh))
-        print('# Number of frames: {}'.format(data.shape[1]))
-        print('# Sampling rate: {} Hz'.format(samplingRate))
+        print('# Number of frames: {}'.format(nFrames))
+        print('# Time step: {:.2f} µs ± {:.5f} % (range {} to {})'.format(timestep_avg*1e6, timestep_std/timestep_avg*100, timestep_min*1e6, timestep_max*1e6))
+        print('# Sampling rate: {:.2f} Hz'.format(samplingRate))
+        print('#')
+        print('# MCSH5RecordingExtractor currently only reads /Data/Recording_0/AnalogStream/Stream_0')
 
-#    return (rf, nFrames, samplingRate, nRecCh, channel_ids, channel_ids_MCS, electrodeLabels, exponent, convFact)
     return (rf, nFrames, samplingRate, nRecCh, channel_ids, electrodeLabels, exponent, convFact)
