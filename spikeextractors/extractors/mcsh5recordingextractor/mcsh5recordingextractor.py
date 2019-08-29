@@ -72,7 +72,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         # An informative example is in BiocamRecordingExtractor
 
         assert HAVE_MCSH5, "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"
-        print('Method write_recording() not implemented in MCSH5RecordingExtractor.')
+        raise NotImplementedError
 
 
 def openMCSH5File(filename,  mea_pitch, verbose=False):
