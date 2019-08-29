@@ -86,9 +86,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     def get_num_frames(self):
         return self.num_frames
 
-    def get_num_channels(self):
-        return self.num_channels
-
     def get_channel_ids(self):
         return self.channel_ids
 
