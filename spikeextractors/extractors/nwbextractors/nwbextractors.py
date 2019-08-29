@@ -5,70 +5,99 @@ import numpy as np
 from datetime import datetime
 
 
-class CopyRecordingExtractor(se.RecordingExtractor):
-    def __init__(self, other):
-        se.RecordingExtractor.__init__(self)
-        self._other = other
-        self.copy_channel_properties(other)
-
-    def get_channel_ids(self):
-        return list(range(self._other.get_num_channels()))
-
-    def get_num_frames(self):
-        return self._other.get_num_frames()
-
-    def get_sampling_frequency(self):
-        return self._other.get_sampling_frequency()
-
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        return self._other.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame)
-
-
-class NwbRecordingExtractor(CopyRecordingExtractor):
-    def __init__(self, path, electrical_series=None):
+class NwbRecordingExtractor(se.RecordingExtractor):
+    def __init__(self, path, electrical_series_name='ElectricalSeries'):
         """
 
         Parameters
         ----------
         path: path to NWB file
-        electrical_series: pynwb.ecephys.ElectricalSeries object
+        electrical_series_name: str, optional
         """
         try:
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
-            from pynwb.ecephys import ElectricalSeries
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
         self._path = path
-        self._electrical_series = electrical_series
-        with NWBHDF5IO(path, 'r') as io:
+        se.RecordingExtractor.__init__(self)
+        with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            if electrical_series is None:
+            if electrical_series_name is not None:
+                self._electrical_series_name = electrical_series_name
+            else:
                 a_names = list(nwbfile.acquisition.keys())
                 if len(a_names) > 1:
                     raise Exception('More than one acquisition found. You must specify electrical_series.')
                 if len(a_names) == 0:
                     raise Exception('No acquisitions found in the .nwb file.')
-                acquisition_name = a_names[0]
-                es = nwbfile.acquisition[acquisition_name]
-            else:
-                es = electrical_series
-
-            M = np.array(es.data).shape[1]
-            if M != len(es.electrodes):
-                raise Exception(
-                    'Number of electrodes does not match the shape of the data {}<>{}'.format(M, len(es.electrodes)))
-            geom = np.zeros((M, 3))
-            for m in range(M):
-                geom[m, :] = [es.electrodes[m][1], es.electrodes[m][2], es.electrodes[m][3]]
+                self._electrical_series_name = a_names[0]
+            es = nwbfile.acquisition[self._electrical_series_name]
             if hasattr(es, 'timestamps') and es.timestamps:
-                samplerate = 1 / (es.timestamps[1] - es.timestamps[0])  # there's probably a better way
+                self.sampling_frequency = 1 / np.median(np.diff(es.timestamps))
             else:
-                samplerate = es.rate
-            data = np.copy(np.transpose(es.data))
-            NRX = se.NumpyRecordingExtractor(timeseries=data, samplerate=samplerate, geom=geom)
-            CopyRecordingExtractor.__init__(self, NRX)
+                self.sampling_frequency = es.rate
+
+            self.num_frames = len(es.data)
+            if len(es.data.shape) == 1:
+                self.num_channels = 1
+            else:
+                self.num_channels = es.data.shape[1]
+
+            self.channel_ids = es.electrodes.table.id[:]
+
+            self.geom = np.column_stack([es.electrodes.table[d][:] for d in ('x', 'y', 'z')])
+
+            self.channel_groups = es.electrodes.table['group_name'][:]
+
+            self.electrodes_df = es.electrodes.table.to_dataframe()
+
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+
+        with NWBHDF5IO(self._path, 'r') as io:
+            self._nwbfile = io.read()
+            es = self._nwbfile.acquisition[self._electrical_series_name]
+
+            if start_frame is None:
+                start_frame = 0
+            if end_frame is None:
+                end_frame = -1
+            if channel_ids is None:
+                return es.data[start_frame:end_frame].T
+            else:
+                return es.data[start_frame:end_frame, np.isin(self.channel_ids, channel_ids)].T
+
+    def get_sampling_frequency(self):
+        return self.sampling_frequency
+
+    def get_num_frames(self):
+        return self.num_frames
+
+    def get_num_channels(self):
+        return self.num_channels
+
+    def get_channel_ids(self):
+        return self.channel_ids
+
+    def get_channel_locations(self, channel_ids=None):
+        if channel_ids is None:
+            return self.geom
+        else:
+            return self.geom[np.isin(self.channel_ids, channel_ids), :]
+
+    def get_channel_groups(self, channel_ids=None):
+        if channel_ids is None:
+            return self.channel_groups
+        else:
+            return self.channel_groups[np.isin(self.channel_ids, channel_ids), :]
+
+    def get_channel_property_names(self, channel_id=None):
+        return list(self.electrodes_df.columns)
+
+    def get_channel_property(self, channel_id, property_name):
+        return self.electrodes_df[property_name][channel_id]
+
 
     @staticmethod
     def write_recording(recording, save_path, acquisition_name='ElectricalSeries', nwbfile_kwargs=None):
@@ -141,9 +170,6 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
 
         io.write(nwbfile)
         io.close()
-
-
-
 
 
 class NwbSortingExtractor(se.SortingExtractor):
