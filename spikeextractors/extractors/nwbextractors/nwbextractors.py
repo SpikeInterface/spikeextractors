@@ -36,8 +36,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             es = nwbfile.acquisition[self._electrical_series_name]
             if hasattr(es, 'timestamps') and es.timestamps:
                 self.sampling_frequency = 1 / np.median(np.diff(es.timestamps))
+                self.recording_start_time = es.timestamps[0]
             else:
                 self.sampling_frequency = es.rate
+                if hasattr(es, 'starting_time'):
+                    self.recording_start_time = es.starting_time
+                else:
+                    self.recording_start_time = 0.
 
             self.num_frames = len(es.data)
             if len(es.data.shape) == 1:
@@ -53,11 +58,18 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
             self.electrodes_df = es.electrodes.table.to_dataframe()
 
+            if hasattr(nwbfile, 'epochs'):
+                df_epochs = nwbfile.epochs.to_dataframe()
+                self._epochs = {row['label']:
+                                {'start_frame': self.time_to_frame(row['start_time']),
+                                 'end_frame': self.time_to_frame(row['stop_time'])}
+                                for _, row in df_epochs.iterrows()}
+
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
 
         with NWBHDF5IO(self._path, 'r') as io:
-            self._nwbfile = io.read()
-            es = self._nwbfile.acquisition[self._electrical_series_name]
+            nwbfile = io.read()
+            es = nwbfile.acquisition[self._electrical_series_name]
 
             if start_frame is None:
                 start_frame = 0
@@ -98,6 +110,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     def get_channel_property(self, channel_id, property_name):
         return self.electrodes_df[property_name][channel_id]
 
+    def time_to_frame(self, time):
+        return (time - self.recording_start_time) * self.get_sampling_frequency()
+
+    def frame_to_time(self, frame):
+        return frame / self.get_sampling_frequency() + self.recording_start_time
 
     @staticmethod
     def write_recording(recording, save_path, acquisition_name='ElectricalSeries', nwbfile_kwargs=None):
