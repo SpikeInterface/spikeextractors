@@ -1,4 +1,4 @@
-from .RecordingExtractor import RecordingExtractor
+from .recordingextractor import RecordingExtractor
 import numpy as np
 
 # Concatenates the given recordings by time

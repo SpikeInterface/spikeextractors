@@ -1,4 +1,4 @@
-from .SortingExtractor import SortingExtractor
+from .sortingextractor import SortingExtractor
 import numpy as np
 
 
