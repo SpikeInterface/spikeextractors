@@ -15,8 +15,10 @@ For raw data formats, we currently support:
 * **Intan** - IntanRecordingExtractor
 * **Klusta** - KlustaRecordingExtractor
 * **MaxOne** - MaxOneRecordingExtractor
-* **Mountainsort MDA** - MdaRecordingExtractor
+* **MCSH5** - MCSH5RecordingExtractor
 * **MEArec** - MEArecRecordingExtractor
+* **Mountainsort MDA** - MdaRecordingExtractor
+* **Neurodata Without Borders** - NwbRecordingExtractor
 * **Open Ephys** - OpenEphysRecordingExtractor
 * **Phy/Kilosort** - PhyRecordingExtractor/KilosortRecordingExtractor
 * **SpikeGLX** - SpikeGLXRecordingExtractor
@@ -31,14 +33,13 @@ For sorted data formats, we currently support:
 * **HerdingSpikes2** - HS2SortingExtractor
 * **Kilosort/Kilosort2** - KiloSortSortingExtractor
 * **Klusta** - KlustaSortingExtractor
-* **Mountainsort MDA** - MdaSortingExtractor
 * **MEArec** - MEArecSortingExtractor
+* **Mountainsort MDA** - MdaSortingExtractor
+* **Neurodata Without Borders** - NwbSortingExtractor
 * **NPZ (created by SpikeInterface)** - NpzSortingExtractor
 * **Open Ephys** - OpenEphysSortingExtractor
 * **Spyking Circus** - SpykingCircusSortingExtractor
 * **Trideclous** - TridesclousSortingExtractor
-
-We plan to add support for NWB 2.0 in future versions.
 
 Installed Extractors
 --------------------

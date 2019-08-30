@@ -19,19 +19,15 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     ]
     installation_mesg = "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
-    def __init__(self, recording_file, verbose=False, mea_pitch=200):
+    def __init__(self, recording_file, verbose=False):
         assert HAVE_MCSH5, "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"
-        self._mea_pitch = mea_pitch
         self._recording_file = recording_file
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, \
         self._channel_ids, self._electrodeLabels, self._exponent, self._convFact \
         = openMCSH5File(
-            self._recording_file, self._mea_pitch, verbose)
+            self._recording_file, verbose)
         RecordingExtractor.__init__(self)
-        # for m in range(self._nRecCh):
-        #     self.set_channel_property(m, 'location', self._positions[m])
-        # It would be useful to define electrode locations here.
-
+        
     def __del__(self):
         self._rf.close()
 
@@ -75,7 +71,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         raise NotImplementedError
 
 
-def openMCSH5File(filename,  mea_pitch, verbose=False):
+def openMCSH5File(filename, verbose=False):
     """Open an MCS hdf5 file, read and return the recording info."""
     rf = h5py.File(filename, 'r')
     
