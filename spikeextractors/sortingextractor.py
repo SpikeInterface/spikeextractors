@@ -564,7 +564,7 @@ class SortingExtractor(ABC):
         epoch_info = self.get_epoch_info(epoch_name)
         start_frame = epoch_info['start_frame']
         end_frame = epoch_info['end_frame']
-        from .subSortingextractor import SubSortingExtractor
+        from .subsortingextractor import SubSortingExtractor
         return SubSortingExtractor(parent_sorting=self, start_frame=start_frame,
                                    end_frame=end_frame)
 
