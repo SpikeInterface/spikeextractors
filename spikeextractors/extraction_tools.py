@@ -98,8 +98,10 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                     "for each channel group is required")
                 elif 'channels' not in cgroup.keys():
                     channels_in_group = subrecording.get_num_channels()
+                    channels_id_in_group = subrecording.get_channel_ids()
                 else:
                     channels_in_group = len(cgroup['channels'])
+                    channels_id_in_group = cgroup['channels']
                 for key_prop, prop_val in cgroup.items():
                     if key_prop == 'channels':
                         for i_ch, prop in enumerate(prop_val):
@@ -116,7 +118,6 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                             if 'channels' not in cgroup.keys():
                                 raise Exception("'geometry'/'location' in the .prb file can be a list only if "
                                                 "'channels' field is specified.")
-                            channels_id_in_group = cgroup['channels']
                             if len(prop_val) != channels_in_group:
                                 print('geometry in PRB does not have the same length as channel in group')
                             for (i_ch, prop) in zip(channels_id_in_group, prop_val):
@@ -128,7 +129,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                 if i_ch in subrecording.get_channel_ids():
                                     subrecording.set_channel_property(i_ch, key_prop, prop)
                         elif isinstance(prop_val, (list, np.ndarray)) and len(prop_val) == channels_in_group:
-                            for (i_ch, prop) in zip(subrecording.get_channel_ids(), prop_val):
+                            for (i_ch, prop) in zip(channels_id_in_group, prop_val):
                                 if i_ch in subrecording.get_channel_ids():
                                     subrecording.set_channel_property(i_ch, key_prop, prop)
                 # create dummy locations
