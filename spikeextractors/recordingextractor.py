@@ -8,7 +8,7 @@ class RecordingExtractor(ABC):
     functions with the @abstractmethod tag must be implemented for the
     initialization to work.
 
-
+ 
     '''
 
     extractor_name = ''
@@ -424,7 +424,7 @@ class RecordingExtractor(ABC):
                 raise ValueError(str(channel_id) + " is not a valid channel_id")
         else:
             raise TypeError(str(channel_id) + " must be an int")
-        
+
     def get_shared_channel_property_names(self, channel_ids=None):
         '''Get the intersection of channel property names for a given set of channels or for all channels if channel_ids is None.
          Parameters
@@ -445,7 +445,7 @@ class RecordingExtractor(ABC):
             curr_channel_property_name_set = set(self.get_channel_property_names(channel_id=channel_id))
             curr_property_name_set = curr_property_name_set.intersection(curr_channel_property_name_set)
         property_names = sorted(list(curr_property_name_set))
-        return property_names            
+        return property_names
 
     def copy_channel_properties(self, recording, channel_ids=None):
         '''Copy channel properties from another recording extractor to the current
