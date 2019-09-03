@@ -1,8 +1,8 @@
 import numpy as np
-from .RecordingExtractor import RecordingExtractor
-from .SortingExtractor import SortingExtractor
-from .SubRecordingExtractor import SubRecordingExtractor
-from .SubSortingExtractor import SubSortingExtractor
+from .recordingextractor import RecordingExtractor
+from .sortingextractor import SortingExtractor
+from .subrecordingextractor import SubRecordingExtractor
+from .subsortingextractor import SubSortingExtractor
 import csv
 import os
 import sys
@@ -98,8 +98,10 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                     "for each channel group is required")
                 elif 'channels' not in cgroup.keys():
                     channels_in_group = subrecording.get_num_channels()
+                    channels_id_in_group = subrecording.get_channel_ids()
                 else:
                     channels_in_group = len(cgroup['channels'])
+                    channels_id_in_group = cgroup['channels']
                 for key_prop, prop_val in cgroup.items():
                     if key_prop == 'channels':
                         for i_ch, prop in enumerate(prop_val):
@@ -116,7 +118,6 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                             if 'channels' not in cgroup.keys():
                                 raise Exception("'geometry'/'location' in the .prb file can be a list only if "
                                                 "'channels' field is specified.")
-                            channels_id_in_group = cgroup['channels']
                             if len(prop_val) != channels_in_group:
                                 print('geometry in PRB does not have the same length as channel in group')
                             for (i_ch, prop) in zip(channels_id_in_group, prop_val):
@@ -128,7 +129,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                 if i_ch in subrecording.get_channel_ids():
                                     subrecording.set_channel_property(i_ch, key_prop, prop)
                         elif isinstance(prop_val, (list, np.ndarray)) and len(prop_val) == channels_in_group:
-                            for (i_ch, prop) in zip(subrecording.get_channel_ids(), prop_val):
+                            for (i_ch, prop) in zip(channels_id_in_group, prop_val):
                                 if i_ch in subrecording.get_channel_ids():
                                     subrecording.set_channel_property(i_ch, key_prop, prop)
                 # create dummy locations
@@ -187,7 +188,7 @@ def save_probe_file(recording, probe_file, format=None, radius=100, dimensions=N
     if probe_file.suffix == '.csv':
         # write csv probe file
         with probe_file.open('w') as f:
-            if 'location' in recording.get_channel_property_names():
+            if 'location' in recording.get_shared_channel_property_names():
                 for chan in recording.get_channel_ids():
                     loc = recording.get_channel_property(chan, 'location')
                     if len(loc) == 2:
@@ -315,7 +316,7 @@ def get_sub_extractors_by_property(extractor, property_name, return_property_lis
 
     '''
     if isinstance(extractor, RecordingExtractor):
-        if property_name not in extractor.get_channel_property_names():
+        if property_name not in extractor.get_shared_channel_property_names():
             raise ValueError("'property_name' must be must be a property of the recording channels")
         else:
             sub_list = []
@@ -388,7 +389,7 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
     abspath = file_name.absolute()
 
     if geometry:
-        if 'location' in recording.get_channel_property_names():
+        if 'location' in recording.get_shared_channel_property_names():
             positions = np.array([recording.get_channel_property(chan, 'location')
                                   for chan in recording.get_channel_ids()])
             if dimensions is not None:
@@ -400,7 +401,7 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
     else:
         positions = None
 
-    if 'group' in recording.get_channel_property_names():
+    if 'group' in recording.get_shared_channel_property_names():
         groups = np.array([recording.get_channel_property(chan, 'group') for chan in recording.get_channel_ids()])
         channel_groups = np.unique([groups])
     else:

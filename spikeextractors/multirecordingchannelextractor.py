@@ -1,11 +1,10 @@
-from .RecordingExtractor import RecordingExtractor
+from .recordingextractor import RecordingExtractor
 import numpy as np
 
 # Concatenates the given recordings by channel
 
 class MultiRecordingChannelExtractor(RecordingExtractor):
     def __init__(self, recordings, groups=None):
-        RecordingExtractor.__init__(self)
         self._recordings = recordings
         self._all_channel_ids = []
         self._channel_map = {}
@@ -14,6 +13,7 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         self._first_recording = recordings[0]
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
         self._num_frames =  self._first_recording.get_num_frames()
+
 
         # Test if all recording extractors have same sampling frequency
         for i, recording in enumerate(recordings[1:]):
@@ -29,6 +29,8 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
                 self._all_channel_ids.append(new_channel_id)
                 self._channel_map[new_channel_id] = {'recording': r_i, 'channel_id': channel_id}
                 new_channel_id += 1
+
+        RecordingExtractor.__init__(self)
         
         #set group information for channels if available
         if groups is not None:
@@ -77,20 +79,12 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         channel_id_recording = self._channel_map[channel_id]['channel_id']
         return recording.get_channel_property(channel_id_recording, property_name=property_name)
 
-    def get_channel_property_names(self, channel_id=None):
-        if channel_id is None:
-            property_names = []
-            for recording in self._recordings:
-                property_names_recording = recording.get_channel_property_names()
-                for property_name_recording in property_names_recording:
-                    property_names.append(property_name_recording)
-            property_names = sorted(list(set(property_names)))
-        else:
-            recording = self._recordings[self._channel_map[channel_id]['recording']]
-            channel_id_recording = self._channel_map[channel_id]['channel_id']
-            property_names = recording.get_channel_property_names(channel_id_recording)
+    def get_channel_property_names(self, channel_id):
+        recording = self._recordings[self._channel_map[channel_id]['recording']]
+        channel_id_recording = self._channel_map[channel_id]['channel_id']
+        property_names = recording.get_channel_property_names(channel_id_recording)
         return property_names
-
+    
 def concatenate_recordings_by_channel(recordings, groups=None):
     '''
     Concatenates recordings together by channel. The order of the recordings

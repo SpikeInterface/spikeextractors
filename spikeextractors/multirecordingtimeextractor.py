@@ -1,21 +1,10 @@
-from .RecordingExtractor import RecordingExtractor
+from .recordingextractor import RecordingExtractor
 import numpy as np
 
 # Concatenates the given recordings by time
 
 class MultiRecordingTimeExtractor(RecordingExtractor):
     def __init__(self, recordings, epoch_names=None):
-        RecordingExtractor.__init__(self)
-        if epoch_names is None:
-            epoch_names = [str(i) for i in range(len(recordings))]
-
-        # Add all epochs to the epochs data structure
-        start_frames = 0
-        for i, epoch_name in enumerate(epoch_names):
-            num_frames = recordings[i].get_num_frames()
-            self.add_epoch(epoch_name, start_frames, start_frames + num_frames)
-            start_frames += num_frames
-
         self._recordings = recordings
 
         # Num channels and sampling frequency based off the initial extractor
@@ -23,6 +12,17 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         self._num_channels = self._first_recording.get_num_channels()
         self._channel_ids = self._first_recording.get_channel_ids()
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
+        if epoch_names is None:
+            epoch_names = [str(i) for i in range(len(recordings))]
+            
+        RecordingExtractor.__init__(self)
+
+        # Add all epochs to the epochs data structure
+        start_frames = 0
+        for i, epoch_name in enumerate(epoch_names):
+            num_frames = recordings[i].get_num_frames()
+            self.add_epoch(epoch_name, start_frames, start_frames + num_frames)
+            start_frames += num_frames
 
         # Test if all recording extractors have same num channels and sampling frequency
         for i, recording in enumerate(recordings[1:]):

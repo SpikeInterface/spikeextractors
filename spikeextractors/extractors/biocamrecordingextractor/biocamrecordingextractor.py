@@ -22,12 +22,12 @@ class BiocamRecordingExtractor(RecordingExtractor):
 
     def __init__(self, recording_file, verbose=False, mea_pitch=42):
         assert HAVE_BIOCAM, "To use the BiocamRecordingExtractor install h5py: \n\n pip install h5py\n\n"
-        RecordingExtractor.__init__(self)
         self._mea_pitch = mea_pitch
         self._recording_file = recording_file
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, self._chIndices, \
         self._file_format, self._signalInv, self._positions, self._read_function = openBiocamFile(
             self._recording_file, self._mea_pitch, verbose)
+        RecordingExtractor.__init__(self)
         for m in range(self._nRecCh):
             self.set_channel_property(m, 'location', self._positions[m])
 
