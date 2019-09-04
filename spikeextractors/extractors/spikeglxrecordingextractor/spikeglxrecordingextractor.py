@@ -21,8 +21,6 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
     def __init__(self, npx_file, x_pitch=None, y_pitch=None):
         RecordingExtractor.__init__(self)
-        dtype = 'int16'
-
         self._npxfile = Path(npx_file)
         self._basepath = self._npxfile.cwd()
 
@@ -47,21 +45,24 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # Traces in 16-bit format
         rawData = makeMemMapRaw(self._npxfile, meta)
-        selectData = rawData#[chanList, firstSamp:lastSamp+1]
+        self._timeseries = rawData#[chanList, firstSamp:lastSamp+1]
 
         # apply gain correction
         if meta['typeThis'] == 'imec':
-            convArray, gains = GainCorrectIM(selectData, self._channels, meta)
+            convArray, gains = GainCorrectIM(self._timeseries, self._channels, meta)
         elif meta['typeThis'] =='nidq':
-            convArray, gains = GainCorrectNI(selectData, self._channels, meta)
+            convArray, gains = GainCorrectNI(self._timeseries, self._channels, meta)
 
         # set gains
         self.set_channel_gains(self._channels, gains)
 
-        # convert to uV
-        self._timeseries = 1e6*convArray
+        # self._timeseries is by default in int16
+        # to convert it to Volts:
+        #self._timeseries = convArray
+        # convert it to uVolts
+        #self._timeseries = 1e6*convArray
 
-        
+
         ##------ OLD CODE - LEFT FOR REFERENCE ------##
         # frames_first = True
         # self._timeseries = read_binary(self._npxfile, tot_chan, dtype, frames_first, offset=0)
