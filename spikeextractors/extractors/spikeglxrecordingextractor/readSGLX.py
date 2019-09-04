@@ -177,12 +177,13 @@ def GainCorrectNI(dataArray, chanList, meta):
     # make array of floats to return. dataArray contains only the channels
     # in chanList, so output matches that shape
     convArray = np.zeros(dataArray.shape, dtype=float)
+    conv = np.zeros(len(chanList), dtype=float)
     for i in range(0, len(chanList)):
         j = chanList[i]             # index into timepoint
-        conv = fI2V/ChanGainNI(j, MN, MA, meta)
+        conv[i] = fI2V/ChanGainNI(j, MN, MA, meta)
         # dataArray contains only the channels in chanList
-        convArray[i, :] = dataArray[i, :] * conv
-    return(convArray)
+        convArray[i, :] = dataArray[i, :] * conv[i]
+    return (convArray, conv)
 
 
 # Having accessed a block of raw imec data using makeMemMapRaw, convert
@@ -208,18 +209,19 @@ def GainCorrectIM(dataArray, chanList, meta):
     # make array of floats to return. dataArray contains only the channels
     # in chanList, so output matches that shape
     convArray = np.zeros(dataArray.shape, dtype='float')
+    conv = np.zeros(len(chanList), dtype=float)
     for i in range(0, len(chanList)):
         j = chanList[i]     # index into timepoint
         k = chans[j]        # acquisition index
         if k < nAP:
-            conv = fI2V / APgain[k]
+            conv[i] = fI2V / APgain[k]
         elif k < nNu:
-            conv = fI2V / LFgain[k - nAP]
+            conv[i] = fI2V / LFgain[k - nAP]
         else:
-            conv = 1
+            conv[i] = 1
         # The dataArray contains only the channels in chList
-        convArray[i, :] = dataArray[i, :]*conv
-    return(convArray)
+        convArray[i, :] = dataArray[i, :]*conv[i]
+    return (convArray, conv)
 
 
 def makeMemMapRaw(binFullPath, meta):

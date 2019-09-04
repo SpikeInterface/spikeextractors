@@ -1,6 +1,7 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors.extraction_tools import read_binary
-from .readSGLX import readMeta, Int2Volts, SampRate, makeMemMapRaw, OriginalChans, GainCorrectNI, GainCorrectIM
+from .readSGLX import (readMeta, SampRate, makeMemMapRaw, Int2Volts,
+    GainCorrectIM, GainCorrectNI)
 import os
 import numpy as np
 from pathlib import Path
@@ -20,37 +21,22 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
     def __init__(self, npx_file, x_pitch=None, y_pitch=None):
         RecordingExtractor.__init__(self)
+        dtype = 'int16'
 
         self._npxfile = Path(npx_file)
         self._basepath = self._npxfile.cwd()
+
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
         aux = self._npxfile.stem.split('.')[-1]
         if aux == 'nidq':
             self._ftype = aux
         else:
             self._ftype = self._npxfile.stem.split('.')[-2] + '.' + aux
+
         # Metafile
         self._metafile = self._npxfile.cwd().joinpath(self._npxfile.stem+'.meta')
         if not self._metafile.exists():
-            print('  ')
             raise Exception("'meta' file for '"+self._ftype+"' traces should be in the same folder.")
-
-        # root = str(self._npxfile.stem).split('.')[0]
-        # # find metafile in same folder
-        # metafile = [x for x in self._npxfile.parent.iterdir() if 'meta' in str(x)
-        #             and root in str(x) and 'ap' in str(x)]
-        # if len(metafile) == 0:
-        #     raise Exception("'meta' file for ap traces should be in the same folder.")
-        # else:
-        #     metafile = metafile[0]
-        # frames_first = True
-        # self._timeseries = read_binary(self._npxfile, tot_chan, dtype, frames_first, offset=0)
-        # self._samplerate = float(samplerate)
-        #if ap_chan < tot_chan:
-        #    self._timeseries = self._timeseries[:ap_chan]
-        #self._channels = list(range(self._timeseries.shape[0]))
-
-        dtype = 'int16'
 
         # Read in metadata, returns a dictionary
         meta = readMeta(self._npxfile)
@@ -59,21 +45,35 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         self._samplerate = SampRate(meta)
         self._channels = list(range(int(meta['nSavedChans']))) #OriginalChans(meta).tolist()
 
+        # Traces in 16-bit format
         rawData = makeMemMapRaw(self._npxfile, meta)
         selectData = rawData#[chanList, firstSamp:lastSamp+1]
 
+        # apply gain correction
         if meta['typeThis'] == 'imec':
-            # apply gain correction and convert to uV
-            self._timeseries = 1e6*GainCorrectIM(selectData, self._channels, meta)
-        else:
-            # apply gain coorection and convert to uV
-            self._timeseries = 1e6*GainCorrectNI(selectData, self._channels, meta)
-        self._conversion_factor = 1e-6
+            convArray, gains = GainCorrectIM(selectData, self._channels, meta)
+        elif meta['typeThis'] =='nidq':
+            convArray, gains = GainCorrectNI(selectData, self._channels, meta)
 
-        # tot_chan, ap_chan, samplerate, locations = _parse_spikeglx_metafile(metafile, x_pitch, y_pitch)
+        # set gains
+        self.set_channel_gains(self._channels, gains)
+
+        # convert to uV
+        self._timeseries = 1e6*convArray
+
+        
+        ##------ OLD CODE - LEFT FOR REFERENCE ------##
+        # frames_first = True
+        # self._timeseries = read_binary(self._npxfile, tot_chan, dtype, frames_first, offset=0)
+        # self._samplerate = float(samplerate)
+        #if ap_chan < tot_chan:
+        #    self._timeseries = self._timeseries[:ap_chan]
+        #self._channels = list(range(self._timeseries.shape[0]))
+        # tot_chan, ap_chan, locations = _parse_spikeglx_metafile(self._metafile, x_pitch, y_pitch)
         # if len(locations) > 0:
         #    for m in range(len(self._channels)):
         #        self.set_channel_property(m, 'location', locations[m])
+        ##-------------------------------------------##
 
     def get_channel_ids(self):
         return self._channels
@@ -137,4 +137,4 @@ def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch):
                         x_pos = int(chan.split(':')[1])
                         y_pos = int(chan.split(':')[2])
                         locations.append([x_pos*x_pitch, y_pos*y_pitch])
-    return tot_channels, ap_channels, fs, locations
+    return tot_channels, ap_channels, locations
