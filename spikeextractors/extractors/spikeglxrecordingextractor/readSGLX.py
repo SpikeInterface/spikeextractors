@@ -187,8 +187,8 @@ def GainCorrectNI(dataArray, chanList, meta):
         j = chanList[i]             # index into timepoint
         conv[i] = fI2V/ChanGainNI(j, MN, MA, meta)
         # dataArray contains only the channels in chanList
-        convArray[i, :] = dataArray[i, :] * conv[i]
-    return (convArray, conv)
+        #convArray[i, :] = dataArray[i, :] * conv[i]
+    return conv
 
 
 # Having accessed a block of raw imec data using makeMemMapRaw, convert
@@ -225,8 +225,8 @@ def GainCorrectIM(dataArray, chanList, meta):
         else:
             conv[i] = 1
         # The dataArray contains only the channels in chList
-        convArray[i, :] = dataArray[i, :]*conv[i]
-    return (convArray, conv)
+        #convArray[i, :] = dataArray[i, :]*conv[i]
+    return conv
 
 
 def makeMemMapRaw(binFullPath, meta):

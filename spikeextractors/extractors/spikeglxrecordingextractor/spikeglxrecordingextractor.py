@@ -44,13 +44,13 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         rawData = makeMemMapRaw(self._npxfile, meta)
         self._timeseries = rawData  # [chanList, firstSamp:lastSamp+1]
 
-        # apply gain correction
+        # get gains
         if meta['typeThis'] == 'imec':
-            convArray, gains = GainCorrectIM(self._timeseries, self._channels, meta)
+            gains = GainCorrectIM(self._timeseries, self._channels, meta)
         elif meta['typeThis'] =='nidq':
-            convArray, gains = GainCorrectNI(self._timeseries, self._channels, meta)
+            gains = GainCorrectNI(self._timeseries, self._channels, meta)
 
-        # set gains - convert form int16 to uVolt
+        # set gains - convert from int16 to uVolt
         self.set_channel_gains(self._channels, gains*1e6)
 
 
@@ -87,9 +87,6 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             channel_ids = [self._channels.index(ch) for ch in channel_ids]
         recordings = self._timeseries[channel_ids, start_frame:end_frame]
         return recordings
-
-    def get_conversion_factor(self):
-        return self._conversion_factor
 
     @staticmethod
     def write_recording(recording, save_path, dtype=None, transpose=False):
