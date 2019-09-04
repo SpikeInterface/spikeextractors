@@ -1,8 +1,5 @@
 from spikeextractors import RecordingExtractor
-from spikeextractors.extraction_tools import read_binary
-from .readSGLX import (readMeta, SampRate, makeMemMapRaw, Int2Volts,
-    GainCorrectIM, GainCorrectNI)
-import os
+from .readSGLX import readMeta, SampRate, makeMemMapRaw, GainCorrectIM, GainCorrectNI
 import numpy as np
 from pathlib import Path
 
@@ -41,11 +38,11 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # parameters common to NI and imec data
         self._samplerate = SampRate(meta)
-        self._channels = list(range(int(meta['nSavedChans']))) #OriginalChans(meta).tolist()
+        self._channels = list(range(int(meta['nSavedChans'])))  # OriginalChans(meta).tolist()
 
         # Traces in 16-bit format
         rawData = makeMemMapRaw(self._npxfile, meta)
-        self._timeseries = rawData#[chanList, firstSamp:lastSamp+1]
+        self._timeseries = rawData  # [chanList, firstSamp:lastSamp+1]
 
         # apply gain correction
         if meta['typeThis'] == 'imec':
@@ -88,7 +85,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             channel_ids = list(range(self._timeseries.shape[0]))
         else:
             channel_ids = [self._channels.index(ch) for ch in channel_ids]
-        recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
+        recordings = self._timeseries[channel_ids, start_frame:end_frame]
         return recordings
 
     def get_conversion_factor(self):
@@ -97,7 +94,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     @staticmethod
     def write_recording(recording, save_path, dtype=None, transpose=False):
         save_path = Path(save_path)
-        if dtype == None:
+        if dtype is None:
             dtype = np.float32
         if not transpose:
             with save_path.open('wb') as f:
