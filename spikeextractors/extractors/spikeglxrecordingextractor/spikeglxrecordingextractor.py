@@ -44,7 +44,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         tot_chan, ap_chan, locations = _parse_spikeglx_metafile(self._metafile, x_pitch, y_pitch)
         if ap_chan < tot_chan:
             self._channels = list(range(int(ap_chan)))
-            self._timeseries = self._timeseries[:ap_chan]
+            self._timeseries = self._timeseries[0:ap_chan, :]
         else:
             self._channels = list(range(int(tot_chan)))  # OriginalChans(meta).tolist()
 
