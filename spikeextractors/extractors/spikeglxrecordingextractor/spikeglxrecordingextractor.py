@@ -32,17 +32,26 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         self._metafile = self._npxfile.cwd().joinpath(self._npxfile.stem+'.meta')
         if not self._metafile.exists():
             raise Exception("'meta' file for '"+self._ftype+"' traces should be in the same folder.")
-
         # Read in metadata, returns a dictionary
         meta = readMeta(self._npxfile)
-
-        # parameters common to NI and imec data
-        self._samplerate = SampRate(meta)
-        self._channels = list(range(int(meta['nSavedChans'])))  # OriginalChans(meta).tolist()
 
         # Traces in 16-bit format
         rawData = makeMemMapRaw(self._npxfile, meta)
         self._timeseries = rawData  # [chanList, firstSamp:lastSamp+1]
+
+        # sampling rate and ap channels
+        self._samplerate = SampRate(meta)
+        tot_chan, ap_chan, locations = _parse_spikeglx_metafile(self._metafile, x_pitch, y_pitch)
+        if ap_chan < tot_chan:
+            self._channels = list(range(int(ap_chan)))
+            self._timeseries = self._timeseries[:ap_chan]
+        else:
+            self._channels = list(range(int(tot_chan)))  # OriginalChans(meta).tolist()
+
+        # locations
+        if len(locations) > 0:
+           for m in range(len(self._channels)):
+               self.set_channel_property(m, 'location', locations[m])
 
         # get gains
         if meta['typeThis'] == 'imec':
