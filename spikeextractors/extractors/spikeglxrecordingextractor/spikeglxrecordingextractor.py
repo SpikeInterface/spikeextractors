@@ -20,25 +20,37 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
     def __init__(self, npx_file, x_pitch=None, y_pitch=None):
         RecordingExtractor.__init__(self)
+
         self._npxfile = Path(npx_file)
-        #numchan = 385
-        dtype = 'int16'
-        root = str(self._npxfile.stem).split('.')[0]
-        # find metafile in same folder
-        metafile = [x for x in self._npxfile.parent.iterdir() if 'meta' in str(x)
-                    and root in str(x) and 'ap' in str(x)]
-        if len(metafile) == 0:
-            raise Exception("'meta' file for ap traces should be in the same folder.")
+        self._basepath = self._npxfile.cwd()
+        # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
+        aux = self._npxfile.stem.split('.')[-1]
+        if aux == 'nidq':
+            self._ftype = aux
         else:
-            metafile = metafile[0]
-        tot_chan, ap_chan, samplerate, locations = _parse_spikeglx_metafile(metafile, x_pitch, y_pitch)
+            self._ftype = self._npxfile.stem.split('.')[-2] + '.' + aux
+        # Metafile
+        self._metafile = self._npxfile.cwd().joinpath(self._npxfile.stem+'.meta')
+        if not self._metafile.exists():
+            print('  ')
+            raise Exception("'meta' file for '"+self._ftype+"' traces should be in the same folder.")
+
+        # root = str(self._npxfile.stem).split('.')[0]
+        # # find metafile in same folder
+        # metafile = [x for x in self._npxfile.parent.iterdir() if 'meta' in str(x)
+        #             and root in str(x) and 'ap' in str(x)]
+        # if len(metafile) == 0:
+        #     raise Exception("'meta' file for ap traces should be in the same folder.")
+        # else:
+        #     metafile = metafile[0]
         # frames_first = True
         # self._timeseries = read_binary(self._npxfile, tot_chan, dtype, frames_first, offset=0)
         # self._samplerate = float(samplerate)
-
         #if ap_chan < tot_chan:
         #    self._timeseries = self._timeseries[:ap_chan]
         #self._channels = list(range(self._timeseries.shape[0]))
+
+        dtype = 'int16'
 
         # Read in metadata, returns a dictionary
         meta = readMeta(self._npxfile)
@@ -58,9 +70,10 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             self._timeseries = 1e6*GainCorrectNI(selectData, self._channels, meta)
         self._conversion_factor = 1e-6
 
-        if len(locations) > 0:
-           for m in range(len(self._channels)):
-               self.set_channel_property(m, 'location', locations[m])
+        # tot_chan, ap_chan, samplerate, locations = _parse_spikeglx_metafile(metafile, x_pitch, y_pitch)
+        # if len(locations) > 0:
+        #    for m in range(len(self._channels)):
+        #        self.set_channel_property(m, 'location', locations[m])
 
     def get_channel_ids(self):
         return self._channels
