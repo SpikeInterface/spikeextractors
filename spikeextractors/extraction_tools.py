@@ -57,7 +57,7 @@ def write_python(path, dict):
                 f.write(str(k) + " = " + str(v) + "\n")
 
 
-def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None):
+def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None, verbose=False):
     '''Loads channel information into recording extractor. If a .prb file is given,
     then 'location' and 'group' information for each channel is stored. If a .csv
     file is given, then it will only store 'location'
@@ -68,6 +68,9 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
         The recording extractor to channel information
     probe_file: str
         Path to probe file. Either .prb or .csv
+    verbose: bool
+        If True, output is verbose
+
     Returns
     ---------
     subRecordingExtractor
@@ -87,7 +90,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
             if list(ordered_channels) == recording.get_channel_ids():
                 subrecording = recording
             else:
-                if not np.all([chan in recording.get_channel_ids() for chan in ordered_channels]):
+                if not np.all([chan in recording.get_channel_ids() for chan in ordered_channels]) and verbose:
                     print('Some channel in PRB file are not in original recording')
                 present_ordered_channels = [chan for chan in ordered_channels if chan in recording.get_channel_ids()]
                 subrecording = SubRecordingExtractor(recording, channel_ids=present_ordered_channels)
@@ -109,7 +112,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                 subrecording.set_channel_property(prop, 'group', int(cgroup_id))
                     elif key_prop == 'geometry' or key_prop == 'location':
                         if isinstance(prop_val, dict):
-                            if len(prop_val.keys()) != channels_in_group:
+                            if len(prop_val.keys()) != channels_in_group and verbose:
                                 print('geometry in PRB does not have the same length as channel in group')
                             for (i_ch, prop) in prop_val.items():
                                 if i_ch in subrecording.get_channel_ids():
@@ -118,7 +121,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                             if 'channels' not in cgroup.keys():
                                 raise Exception("'geometry'/'location' in the .prb file can be a list only if "
                                                 "'channels' field is specified.")
-                            if len(prop_val) != channels_in_group:
+                            if len(prop_val) != channels_in_group and verbose:
                                 print('geometry in PRB does not have the same length as channel in group')
                             for (i_ch, prop) in zip(channels_id_in_group, prop_val):
                                 if i_ch in subrecording.get_channel_ids():
@@ -168,7 +171,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
     return subrecording
 
 
-def save_probe_file(recording, probe_file, format=None, radius=100, dimensions=None):
+def save_probe_file(recording, probe_file, format=None, radius=100, dimensions=None, verbose=False):
     '''Saves probe file from the channel information of the given recording
     extractor
 
@@ -180,6 +183,8 @@ def save_probe_file(recording, probe_file, format=None, radius=100, dimensions=N
         file name of .prb or .csv file to save probe information to
     format: str (optional)
         Format for .prb file. It can be either 'klusta' or 'spyking_circus'. Default is None.
+    verbose: bool
+        If True, output is verbose
     '''
     probe_file = Path(probe_file)
     if not probe_file.parent.is_dir():
@@ -207,7 +212,7 @@ def save_probe_file(recording, probe_file, format=None, radius=100, dimensions=N
                 raise AttributeError("Recording extractor needs to have "
                                      "'location' property to save .csv probe file")
     elif probe_file.suffix == '.prb':
-        _export_prb_file(recording, probe_file, format, radius=radius, dimensions=dimensions)
+        _export_prb_file(recording, probe_file, format, radius=radius, dimensions=dimensions, verbose=verbose)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be saved.")
 
@@ -354,7 +359,7 @@ def get_sub_extractors_by_property(extractor, property_name, return_property_lis
 
 
 def _export_prb_file(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100,
-                     dimensions='all'):
+                     dimensions='all', verbose=False):
     '''Exports .prb file
 
     Parameters
@@ -395,7 +400,8 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
             if dimensions is not None:
                 positions = positions[:, dimensions]
         else:
-            print("'location' property is not available and it will not be saved.")
+            if verbose:
+                print("'location' property is not available and it will not be saved.")
             positions = None
             geometry = False
     else:
@@ -405,7 +411,8 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
         groups = np.array([recording.get_channel_property(chan, 'group') for chan in recording.get_channel_ids()])
         channel_groups = np.unique([groups])
     else:
-        print("'group' property is not available and it will not be saved.")
+        if verbose:
+            print("'group' property is not available and it will not be saved.")
         channel_groups = [0]
         groups = np.array([0] * recording.get_num_channels())
 
