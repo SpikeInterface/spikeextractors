@@ -45,4 +45,4 @@ The documentation page for the SpikeInterface project can be found here: https:/
 
 <br/>
 <br/>
-For any correspondence, contact Alessio Buccino at alessiop.buccino@gmail.com
+For any correspondence, contact Cole Hurwitz at colehurwitz@gmail.com
