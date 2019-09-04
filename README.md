@@ -4,7 +4,7 @@
 
 The SpikeExtractors package is designed to address issues of file format compatibility within spike sorting pipelines without creating yet another file format. 
 
-SpikeExtractors provides functionality to extract data from, convert between, and interface with many common file formats in extracellular recording. File types that can be utilized with SpikeExtractors include recorded dataset files, sorted dataset files, probe files (.csv and .prb).
+SpikeExtractors provides functionality to extract data from, convert between, and interface with many common file formats in extracellular recording. File types that can be utilized with SpikeExtractors include recorded dataset files, sorted dataset files, and probe files (.csv and .prb).
 
 ## Getting Started
 
