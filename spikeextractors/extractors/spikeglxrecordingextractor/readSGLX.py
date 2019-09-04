@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 """
+----------------------------------------------------------------
+This is an adapted version of auxiliary functions to read from SpikeGLX data files.
+The original code can be found at:
+    https://billkarsh.github.io/SpikeGLX/#offline-analysis-tools
+----------------------------------------------------------------
 Requires python 3
 
 The main() function at the bottom of this file can run from an
