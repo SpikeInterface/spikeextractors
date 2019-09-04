@@ -2,8 +2,7 @@
 
 # SpikeExtractors
 
-SpikeExtractors is a package of the SpikeInterface project that was designed to extract and convert between several file
-formats for electrophysiology, and to handle probe information.
+The SpikeExtractors package is designed to address issues of file format compatibility within spike sorting pipelines without creating yet another file format. SpikeExtractors provides functionality to extract data from, convert between, and interface with many common file formats in extracellular recording. File types that can be utilized with SpikeExtractors include recorded dataset files, sorted dataset files, probe files (.csv and .prb).
 
 ## Getting Started
 
