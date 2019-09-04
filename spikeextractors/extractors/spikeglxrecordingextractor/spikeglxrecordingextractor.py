@@ -53,14 +53,8 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         elif meta['typeThis'] =='nidq':
             convArray, gains = GainCorrectNI(self._timeseries, self._channels, meta)
 
-        # set gains
-        self.set_channel_gains(self._channels, gains)
-
-        # self._timeseries is by default in int16
-        # to convert it to Volts:
-        #self._timeseries = convArray
-        # convert it to uVolts
-        #self._timeseries = 1e6*convArray
+        # set gains - convert form int16 to uVolt
+        self.set_channel_gains(self._channels, gains*1e6)
 
 
         ##------ OLD CODE - LEFT FOR REFERENCE ------##
