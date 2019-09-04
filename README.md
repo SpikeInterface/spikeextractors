@@ -23,7 +23,6 @@ You can also install SpikeExtractors locally by cloning the repo into your code 
 
 ```shell
 git clone https://github.com/SpikeInterface/spikeextractors.git
-
 cd spikeextractors
 python setup.py install
 ```
