@@ -7,7 +7,7 @@ from .extractors.hs2sortingextractor.hs2sortingextractor import HS2SortingExtrac
 from .extractors.klustaextractors.klustaextractors import KlustaSortingExtractor, KlustaRecordingExtractor
 from .extractors.kilosortextractors.kilosortextractors import KiloSortSortingExtractor, KiloSortRecordingExtractor
 from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor, NumpySortingExtractor
-from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor
+from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor, NwbSortingExtractor
 from .extractors.maxonerecordingextractor import MaxOneRecordingExtractor
 from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
 from .extractors.phyextractors.phyextractors import PhyRecordingExtractor, PhySortingExtractor
