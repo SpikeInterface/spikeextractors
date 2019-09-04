@@ -63,19 +63,6 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         self.set_channel_gains(self._channels, gains*1e6)
 
 
-        ##------ OLD CODE - LEFT FOR REFERENCE ------##
-        # frames_first = True
-        # self._timeseries = read_binary(self._npxfile, tot_chan, dtype, frames_first, offset=0)
-        # self._samplerate = float(samplerate)
-        #if ap_chan < tot_chan:
-        #    self._timeseries = self._timeseries[:ap_chan]
-        #self._channels = list(range(self._timeseries.shape[0]))
-        # tot_chan, ap_chan, locations = _parse_spikeglx_metafile(self._metafile, x_pitch, y_pitch)
-        # if len(locations) > 0:
-        #    for m in range(len(self._channels)):
-        #        self.set_channel_property(m, 'location', locations[m])
-        ##-------------------------------------------##
-
     def get_channel_ids(self):
         return self._channels
 
