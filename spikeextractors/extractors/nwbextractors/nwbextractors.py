@@ -165,7 +165,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             )
 
         # add other existing electrode properties
-        properties = recording.get_channel_property_names()
+        properties = recording.get_shared_channel_property_names()
         properties.remove('location')
         for pr in properties:
             pr_data = [recording.get_channel_property(ind, pr) for ind in range(M)]
@@ -197,6 +197,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         io.write(nwbfile)
         io.close()
+
 
 
 class NwbSortingExtractor(se.SortingExtractor):
