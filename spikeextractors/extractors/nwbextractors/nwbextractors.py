@@ -114,7 +114,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return frame / self.get_sampling_frequency() + self.recording_start_time
 
     @staticmethod
-    def write_recording(recording, save_path, acquisition_name='ElectricalSeries', nwbfile_kwargs=None):
+    def write_recording(recording, save_path, nwbfile_kwargs=None):
+        """
+
+        Parameters
+        ----------
+        recording: RecordingExtractor
+        save_path: str
+        nwbfile_kwargs: optional, dict with optional args of pynwb.NWBFile
+        """
         try:
             import pynwb
             from pynwb import NWBHDF5IO
@@ -198,6 +206,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         else:
             rate = recording.get_sampling_frequency()
             ephys_data = recording.get_traces().T
+            acquisition_name = 'ElectricalSeries'
             ephys_ts = ElectricalSeries(
                 name=acquisition_name,
                 data=ephys_data,
@@ -301,10 +310,10 @@ class NwbSortingExtractor(se.SortingExtractor):
         nwbfile_kwargs: optional, dict with optional args of pynwb.NWBFile
         """
         try:
+            import pynwb
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
             from pynwb.ecephys import ElectricalSeries
-
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
@@ -325,11 +334,16 @@ class NwbSortingExtractor(se.SortingExtractor):
                 input_nwbfile_kwargs.update(nwbfile_kwargs)
             nwbfile = NWBFile(**input_nwbfile_kwargs)
 
-        # Stores spike times for each detected cell (unit)
-        for id in ids:
-            spkt = sorting.get_unit_spike_train(unit_id=id) / fs
-            nwbfile.add_unit(id=id, spike_times=spkt)
-            # 'waveform_mean' and 'waveform_sd' are interesting args to include later
+        # Tests if Units already exists
+        aux = [isinstance(i, pynwb.misc.Units) for i in nwbfile.children]
+        if any(aux):
+            units = nwbfile.children[np.where(aux)[0][0]]
+        else:
+            # Stores spike times for each detected cell (unit)
+            for id in ids:
+                spkt = sorting.get_unit_spike_train(unit_id=id) / fs
+                nwbfile.add_unit(id=id, spike_times=spkt)
+                # 'waveform_mean' and 'waveform_sd' are interesting args to include later
 
         io.write(nwbfile)
         io.close()
