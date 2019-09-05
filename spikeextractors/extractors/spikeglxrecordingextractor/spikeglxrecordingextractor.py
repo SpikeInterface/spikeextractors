@@ -1,6 +1,5 @@
 from spikeextractors import RecordingExtractor
-from spikeextractors.extraction_tools import read_binary
-import os
+from .readSGLX import readMeta, SampRate, makeMemMapRaw, GainCorrectIM, GainCorrectNI
 import numpy as np
 from pathlib import Path
 
@@ -20,28 +19,49 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     def __init__(self, npx_file, x_pitch=None, y_pitch=None):
         RecordingExtractor.__init__(self)
         self._npxfile = Path(npx_file)
-        numchan = 385
-        dtype = 'int16'
-        root = str(self._npxfile.stem).split('.')[0]
-        # find metafile in same folder
-        metafile = [x for x in self._npxfile.parent.iterdir() if 'meta' in str(x)
-                    and root in str(x) and 'ap' in str(x)]
-        if len(metafile) == 0:
-            raise Exception("'meta' file for ap traces should be in the same folder.")
+        self._basepath = self._npxfile.cwd()
+
+        # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
+        aux = self._npxfile.stem.split('.')[-1]
+        if aux == 'nidq':
+            self._ftype = aux
         else:
-            metafile = metafile[0]
-        tot_chan, ap_chan, samplerate, locations = _parse_spikeglx_metafile(metafile, x_pitch, y_pitch)
-        frames_first = True
-        self._timeseries = read_binary(self._npxfile, tot_chan, dtype, frames_first, offset=0)
-        self._samplerate = float(samplerate)
+            self._ftype = self._npxfile.stem.split('.')[-2] + '.' + aux
 
+        # Metafile
+        self._metafile = self._npxfile.cwd().joinpath(self._npxfile.stem+'.meta')
+        if not self._metafile.exists():
+            raise Exception("'meta' file for '"+self._ftype+"' traces should be in the same folder.")
+        # Read in metadata, returns a dictionary
+        meta = readMeta(self._npxfile)
+
+        # Traces in 16-bit format
+        rawData = makeMemMapRaw(self._npxfile, meta)
+        self._timeseries = rawData  # [chanList, firstSamp:lastSamp+1]
+
+        # sampling rate and ap channels
+        self._samplerate = SampRate(meta)
+        tot_chan, ap_chan, locations = _parse_spikeglx_metafile(self._metafile, x_pitch, y_pitch)
         if ap_chan < tot_chan:
-            self._timeseries = self._timeseries[:ap_chan]
-        self._channels = list(range(self._timeseries.shape[0]))
+            self._channels = list(range(int(ap_chan)))
+            self._timeseries = self._timeseries[0:ap_chan, :]
+        else:
+            self._channels = list(range(int(tot_chan)))  # OriginalChans(meta).tolist()
 
+        # locations
         if len(locations) > 0:
-            for m in range(self._timeseries.shape[0]):
-                self.set_channel_property(m, 'location', locations[m])
+           for m in range(len(self._channels)):
+               self.set_channel_property(m, 'location', locations[m])
+
+        # get gains
+        if meta['typeThis'] == 'imec':
+            gains = GainCorrectIM(self._timeseries, self._channels, meta)
+        elif meta['typeThis'] =='nidq':
+            gains = GainCorrectNI(self._timeseries, self._channels, meta)
+
+        # set gains - convert from int16 to uVolt
+        self.set_channel_gains(self._channels, gains*1e6)
+
 
     def get_channel_ids(self):
         return self._channels
@@ -61,13 +81,13 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             channel_ids = list(range(self._timeseries.shape[0]))
         else:
             channel_ids = [self._channels.index(ch) for ch in channel_ids]
-        recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
+        recordings = self._timeseries[channel_ids, start_frame:end_frame]
         return recordings
 
     @staticmethod
     def write_recording(recording, save_path, dtype=None, transpose=False):
         save_path = Path(save_path)
-        if dtype == None:
+        if dtype is None:
             dtype = np.float32
         if not transpose:
             with save_path.open('wb') as f:
@@ -102,4 +122,4 @@ def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch):
                         x_pos = int(chan.split(':')[1])
                         y_pos = int(chan.split(':')[2])
                         locations.append([x_pos*x_pitch, y_pos*y_pitch])
-    return tot_channels, ap_channels, fs, locations
+    return tot_channels, ap_channels, locations
