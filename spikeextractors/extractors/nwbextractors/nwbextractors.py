@@ -1,5 +1,4 @@
 import spikeextractors as se
-
 import os
 import numpy as np
 from datetime import datetime
@@ -58,7 +57,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
             self.electrodes_df = es.electrodes.table.to_dataframe()
 
-            if hasattr(nwbfile, 'epochs'):
+            if nwbfile.epochs is not None:
                 df_epochs = nwbfile.epochs.to_dataframe()
                 self._epochs = {row['label']:
                                 {'start_frame': self.time_to_frame(row['start_time']),
@@ -66,8 +65,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                 for _, row in df_epochs.iterrows()}
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-
-        with NWBHDF5IO(self._path, 'r') as io:
+        import pynwb
+        with pynwb.NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             es = nwbfile.acquisition[self._electrical_series_name]
 
