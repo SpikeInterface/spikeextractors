@@ -204,15 +204,17 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             acquisition = nwbfile.children[np.where(aux)[0][0]]
         else:
             rate = recording.get_sampling_frequency()
+            gains = np.array(recording.get_channel_gains())
             ephys_data = recording.get_traces().T
+            ephys_data_V = 1e-6*gains*ephys_data
             acquisition_name = 'ElectricalSeries'
             ephys_ts = ElectricalSeries(
                 name=acquisition_name,
-                data=ephys_data,
+                data=ephys_data_V,
                 electrodes=electrode_table_region,
                 starting_time=recording.frame_to_time(0),
                 rate=rate,
-                resolution=1e-6,
+                conversion=1.,
                 comments='Generated from SpikeInterface::NwbRecordingExtractor',
                 description='acquisition_description'
             )
