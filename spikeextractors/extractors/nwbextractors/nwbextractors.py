@@ -116,6 +116,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     @staticmethod
     def write_recording(recording, save_path, acquisition_name='ElectricalSeries', nwbfile_kwargs=None):
         try:
+            import pynwb
             from pynwb import NWBHDF5IO
             from pynwb import NWBFile
             from pynwb.ecephys import ElectricalSeries
@@ -137,63 +138,77 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 input_nwbfile_kwargs.update(nwbfile_kwargs)
             nwbfile = NWBFile(**input_nwbfile_kwargs)
 
-        device = nwbfile.create_device(name='device_name')
-        eg_name = 'electrode_group_name'
-        eg_description = "electrode_group_description"
-        eg_location = "electrode_group_location"
+        # Tests if Device already exists
+        aux = [isinstance(i, pynwb.device.Device) for i in nwbfile.children]
+        if any(aux):
+            device = nwbfile.children[np.where(aux)[0][0]]
+        else:
+            device = nwbfile.create_device(name='Device')
 
-        electrode_group = nwbfile.create_electrode_group(
-            name=eg_name,
-            location=eg_location,
-            device=device,
-            description=eg_description
-        )
-
-        # add electrodes with locations
-        for m in range(M):
-            location = recording.get_channel_property(m, 'location')
-            impedence = -1.0
-            while len(location) < 3:
-                location = np.append(location, [0])
-            nwbfile.add_electrode(
-                id=m,
-                x=float(location[0]), y=float(location[1]), z=float(location[2]),
-                imp=impedence,
-                location='electrode_location',
-                filtering='none',
-                group=electrode_group,
+        # Tests if ElectrodeGroup already exists
+        aux = [isinstance(i, pynwb.ecephys.ElectrodeGroup) for i in nwbfile.children]
+        if any(aux):
+            electrode_group = nwbfile.children[np.where(aux)[0][0]]
+        else:
+            eg_name = 'electrode_group_name'
+            eg_description = "electrode_group_description"
+            eg_location = "electrode_group_location"
+            electrode_group = nwbfile.create_electrode_group(
+                name=eg_name,
+                location=eg_location,
+                device=device,
+                description=eg_description
             )
 
-        # add other existing electrode properties
-        properties = recording.get_shared_channel_property_names()
-        properties.remove('location')
-        for pr in properties:
-            pr_data = [recording.get_channel_property(ind, pr) for ind in range(M)]
-            nwbfile.add_electrode_column(
-                name=pr,
-                description='',
-                data=pr_data,
+            # add electrodes with locations
+            for m in range(M):
+                location = recording.get_channel_property(m, 'location')
+                impedence = -1.0
+                while len(location) < 3:
+                    location = np.append(location, [0])
+                nwbfile.add_electrode(
+                    id=m,
+                    x=float(location[0]), y=float(location[1]), z=float(location[2]),
+                    imp=impedence,
+                    location='electrode_location',
+                    filtering='none',
+                    group=electrode_group,
+                )
+
+            # add other existing electrode properties
+            properties = recording.get_shared_channel_property_names()
+            properties.remove('location')
+            for pr in properties:
+                pr_data = [recording.get_channel_property(ind, pr) for ind in range(M)]
+                nwbfile.add_electrode_column(
+                    name=pr,
+                    description='',
+                    data=pr_data,
+                )
+
+            electrode_table_region = nwbfile.create_electrode_table_region(
+                list(range(M)),
+                'electrode_table_region'
             )
 
-        electrode_table_region = nwbfile.create_electrode_table_region(
-            list(range(M)),
-            'electrode_table_region'
-        )
-
-        rate = recording.get_sampling_frequency()
-        ephys_data = recording.get_traces().T
-
-        ephys_ts = ElectricalSeries(
-            name=acquisition_name,
-            data=ephys_data,
-            electrodes=electrode_table_region,
-            starting_time=recording.frame_to_time(0),
-            rate=rate,
-            resolution=1e-6,
-            comments='Generated from SpikeInterface::NwbRecordingExtractor',
-            description='acquisition_description'
-        )
-        nwbfile.add_acquisition(ephys_ts)
+        # Tests if Acquisition already exists
+        aux = [isinstance(i, pynwb.ecephys.ElectricalSeries) for i in nwbfile.children]
+        if any(aux):
+            acquisition = nwbfile.children[np.where(aux)[0][0]]
+        else:
+            rate = recording.get_sampling_frequency()
+            ephys_data = recording.get_traces().T
+            ephys_ts = ElectricalSeries(
+                name=acquisition_name,
+                data=ephys_data,
+                electrodes=electrode_table_region,
+                starting_time=recording.frame_to_time(0),
+                rate=rate,
+                resolution=1e-6,
+                comments='Generated from SpikeInterface::NwbRecordingExtractor',
+                description='acquisition_description'
+            )
+            nwbfile.add_acquisition(ephys_ts)
 
         io.write(nwbfile)
         io.close()
