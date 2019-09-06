@@ -21,7 +21,7 @@ much easier!
 
 """
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from pathlib import Path
 from tkinter import Tk
 from tkinter import filedialog
@@ -343,21 +343,21 @@ def main():
             # apply gain coorection and conver to mV
             convData = 1e3*GainCorrectNI(selectData, chanList, meta)
 
-        # Plot the first of the extracted channels
-        fig, ax = plt.subplots()
-        ax.plot(tDat, convData[0, :])
-        plt.show()
+        # # Plot the first of the extracted channels
+        # fig, ax = plt.subplots()
+        # ax.plot(tDat, convData[0, :])
+        # plt.show()
 
     else:
         digArray = ExtractDigital(rawData, firstSamp, lastSamp, dw,
                                   dLineList, meta)
 
-        # Plot the first of the extracted channels
-        fig, ax = plt.subplots()
-
-        for i in range(0, len(dLineList)):
-           ax.plot(tDat, digArray[i, :])
-        plt.show()
+        # # Plot the first of the extracted channels
+        # fig, ax = plt.subplots()
+        # 
+        # for i in range(0, len(dLineList)):
+        #    ax.plot(tDat, digArray[i, :])
+        # plt.show()
 
 
 if __name__ == "__main__":
