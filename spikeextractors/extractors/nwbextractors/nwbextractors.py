@@ -343,8 +343,45 @@ class NwbSortingExtractor(se.SortingExtractor):
             # Stores spike times for each detected cell (unit)
             for id in ids:
                 spkt = sorting.get_unit_spike_train(unit_id=id) / fs
-                nwbfile.add_unit(id=id, spike_times=spkt)
-                # 'waveform_mean' and 'waveform_sd' are interesting args to include later
+                if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
+                    # Stores average and std of spike traces
+                    wf = sorting.get_unit_spike_features(unit_id=id,
+                                                         feature_name='waveforms')
+                    relevant_ch = most_relevant_ch(wf)
+                    # Spike traces on the most relevant channel
+                    traces = wf[:, relevant_ch, :]
+                    traces_avg = np.mean(traces, axis=0)
+                    traces_std = np.std(traces, axis=0)
+                    nwbfile.add_unit(id=id,
+                                     spike_times=spkt,
+                                     waveform_mean=traces_avg,
+                                     waveform_sd=traces_std)
+                else:
+                    nwbfile.add_unit(id=id, spike_times=spkt)
 
         io.write(nwbfile)
         io.close()
+
+
+def most_relevant_ch(traces):
+    """
+    Calculates the most relevant channel for an Unit.
+    Estimates the channel where the max-min difference of the average traces is greatest.
+
+    traces : ndarray
+        ndarray of shape (nSpikes, nChannels, nSamples)
+    """
+    nSpikes = traces.shape[0]
+    nChannels = traces.shape[1]
+    nSamples = traces.shape[2]
+
+    #average and std of spike traces per channel
+    avg = np.mean(traces, axis=0)
+    std = np.std(traces, axis=0)
+
+    max_min = np.zeros(nChannels)
+    for ch in range(nChannels):
+        max_min[ch] = avg[ch,:].max() - avg[ch,:].min()
+
+    relevant_ch = np.argmax(max_min)
+    return relevant_ch
