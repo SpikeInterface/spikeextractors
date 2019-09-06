@@ -29,7 +29,8 @@ python setup.py install
 ```
 
 ## Examples
-Example notebooks for SpikeExtractors can be found at: https://github.com/SpikeInterface/spikeinterface/tree/master/examples/modules/extractors
+
+For more details about using SpikeExtractors, please checkout these [examples](https://github.com/SpikeInterface/spikeinterface/tree/master/examples/modules/extractors).
 
 ## Documentation
 
