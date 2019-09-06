@@ -30,7 +30,7 @@ python setup.py install
 
 ## Examples
 
-For more details about using SpikeExtractors, please checkout these [examples](https://github.com/SpikeInterface/spikeinterface/tree/master/examples/modules/extractors).
+For more information about how to use SpikeExtractors, please checkout these [examples](https://github.com/SpikeInterface/spikeinterface/tree/master/examples/modules/extractors).
 
 ## Documentation
 
