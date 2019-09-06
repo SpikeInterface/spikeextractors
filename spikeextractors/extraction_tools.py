@@ -338,7 +338,7 @@ def get_sub_extractors_by_property(extractor, property_name, return_property_lis
             else:
                 return sub_list
     elif isinstance(extractor, SortingExtractor):
-        if property_name not in extractor.get_unit_property_names():
+        if property_name not in extractor.get_shared_unit_property_names():
             raise ValueError("'property_name' must be must be a property of the units")
         else:
             sub_list = []
