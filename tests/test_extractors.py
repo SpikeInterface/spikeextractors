@@ -42,16 +42,22 @@ class TestExtractors(unittest.TestCase):
         SX.add_unit(unit_id=1, times=train1)
         SX.add_unit(unit_id=2, times=np.sort(np.random.uniform(0, num_frames, spike_times[1])))
         SX.add_unit(unit_id=3, times=np.sort(np.random.uniform(0, num_frames, spike_times[2])))
-        SX.set_unit_property(unit_id=1, property_name='stablility', value=80)
+        SX.set_unit_property(unit_id=1, property_name='stability', value=80)
         SX.set_sampling_frequency(samplerate)
         SX2 = se.NumpySortingExtractor()
         spike_times2 = [100, 150, 450]
-        train2 = np.rint(np.random.uniform(0, num_frames, spike_times[0])).astype(int)
+        train2 = np.rint(np.random.uniform(0, num_frames, spike_times2[0])).astype(int)
         SX2.add_unit(unit_id=3, times=train2)
         SX2.add_unit(unit_id=4, times=np.random.uniform(0, num_frames, spike_times2[1]))
         SX2.add_unit(unit_id=5, times=np.random.uniform(0, num_frames, spike_times2[2]))
-        SX2.set_unit_property(unit_id=4, property_name='stablility', value=80)
+        SX2.set_unit_property(unit_id=4, property_name='stability', value=80)
+        SX2.set_unit_spike_features(unit_id=3, feature_name='widths', value=np.asarray([3]*spike_times2[0]))
         RX.set_channel_property(channel_id=0, property_name='location', value=(0, 0))
+        for i, unit_id in enumerate(SX2.get_unit_ids()):
+            SX2.set_unit_property(unit_id=unit_id, property_name='shared_unit_prop', value=i)
+            SX2.set_unit_spike_features(unit_id=unit_id, feature_name='shared_unit_feature', value=np.asarray([i]*spike_times2[i]))
+        for i, channel_id in enumerate(RX.get_channel_ids()):
+            RX.set_channel_property(channel_id=channel_id, property_name='shared_channel_prop', value=i)
         example_info = dict(
             channel_ids=channel_ids,
             num_channels=num_channels,
@@ -73,9 +79,15 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(self.SX.get_unit_ids(), self.example_info['unit_ids'])
         self.assertEqual(self.RX.get_channel_property(channel_id=0, property_name='location'),
                          self.example_info['channel_prop'])
-        self.assertEqual(self.SX.get_unit_property(unit_id=1, property_name='stablility'), self.example_info['unit_prop'])
+        self.assertEqual(self.SX.get_unit_property(unit_id=1, property_name='stability'), self.example_info['unit_prop'])
         self.assertTrue(np.array_equal(self.SX.get_unit_spike_train(1), self.example_info['train1']))
         self.assertTrue(issubclass(self.SX.get_unit_spike_train(1).dtype.type, np.integer))
+        self.assertTrue(self.RX.get_shared_channel_property_names(), ['shared_channel_prop'])
+        self.assertTrue(self.RX.get_channel_property_names(0), ['location', 'shared_channel_prop'])
+        self.assertTrue(self.SX2.get_shared_unit_property_names(), ['shared_unit_prop'])
+        self.assertTrue(self.SX2.get_unit_property_names(4), ['shared_unit_prop', 'stability'])
+        self.assertTrue(self.SX2.get_shared_unit_spike_feature_names(), ['shared_unit_feature'])
+        self.assertTrue(self.SX2.get_unit_spike_feature_names(3), ['shared_channel_prop', 'widths'])
         self._check_recording_return_types(self.RX)
 
     def test_mda_extractor(self):

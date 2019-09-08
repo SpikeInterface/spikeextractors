@@ -282,7 +282,7 @@ class ExdirSortingExtractor(SortingExtractor):
         ephys = exdir_group.require_group('processing').require_group('electrophysiology')
         ephys.attrs['sample_rate'] = sample_rate
 
-        if 'group' in sorting.get_unit_property_names():
+        if 'group' in sorting.get_shared_unit_property_names():
             channel_groups = np.unique([sorting.get_unit_property(unit, 'group') for unit in sorting.get_unit_ids()])
         else:
             channel_groups = [0]
@@ -346,7 +346,7 @@ class ExdirSortingExtractor(SortingExtractor):
             if save_waveforms:
                 if verbose:
                     print("Saving EventWaveforms")
-                if 'waveforms' in sorting.get_unit_spike_feature_names():
+                if 'waveforms' in sorting.get_shared_unit_spike_feature_names():
                     eventwaveform = ch_group.require_group('EventWaveform')
                     waveform_ts = eventwaveform.require_group('waveform_timeseries')
                     data = waveform_ts.require_dataset('data', data=waveforms)
@@ -448,7 +448,7 @@ class ExdirSortingExtractor(SortingExtractor):
                 if save_waveforms:
                     if verbose:
                         print("Saving EventWaveforms")
-                    if 'waveforms' in sorting.get_unit_spike_feature_names():
+                    if 'waveforms' in sorting.get_shared_unit_spike_feature_names():
                         eventwaveform = ch_group.require_group('EventWaveform')
                         waveform_ts = eventwaveform.require_group('waveform_timeseries')
                         data = waveform_ts.require_dataset('data', data=waveforms)

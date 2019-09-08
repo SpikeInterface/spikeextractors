@@ -28,6 +28,10 @@ cd spikeextractors
 python setup.py install
 ```
 
+## Examples
+
+For more information about how to use SpikeExtractors, please checkout these [examples](https://github.com/SpikeInterface/spikeinterface/tree/master/examples/modules/extractors).
+
 ## Documentation
 
 The documentation page for the SpikeInterface project can be found here: https://spikeinterface.readthedocs.io/en/latest/
