@@ -582,6 +582,64 @@ class NwbSortingExtractor(se.SortingExtractor):
         print(self.clear_units_property.__doc__)
 
 
+    def add_epoch(self, epoch_name, start_frame, end_frame):
+        '''This function adds an epoch to the NWB file.
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be added
+        start_frame: int
+            The start frame of the epoch to be added (inclusive)
+        end_frame: int
+            The end frame of the epoch to be added (exclusive)
+        '''
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        if not isinstance(epoch_name, str):
+            raise Exception("'epoch_name' must be a string")
+        if not isinstance(start_frame, int):
+            raise Exception("'start_frame' must be an integer")
+        if not isinstance(end_frame, int):
+            raise Exception("'end_frame' must be an integer")
+
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+            fs = self._sampling_frequency
+            nwbfile.add_epoch(start_time=start_frame*fs,
+                              stop_time=end_frame*fs,
+                              tags=epoch_name)
+
+
+    def remove_epoch(self, epoch_name=None):
+        '''NWB files do not allow removing epochs.'''
+        print(self.remove_epoch.__doc__)
+
+
+    def get_epoch_names(self):
+        '''This function returns a list of all the epoch names in the NWB file.
+
+        Returns
+        ----------
+        epoch_names: list
+            List of epoch names in the recording extractor
+        '''
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+            flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
+            aux = np.array(flat_list)
+            epoch_names = np.unique(aux).tolist()
+        return epoch_names
+        
+
     @staticmethod
     def write_sorting(sorting, save_path, nwbfile_kwargs=None):
         """
