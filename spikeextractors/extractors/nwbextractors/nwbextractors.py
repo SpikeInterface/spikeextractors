@@ -475,8 +475,8 @@ class NwbSortingExtractor(se.SortingExtractor):
 
     def set_units_property(self, unit_ids, property_name, values, default_values=np.nan):
         '''This function adds a new property data set to the chosen units.
-        NWB files require that new properties are set once for all units.
-        The 'property_name' for ids not present in 'unit_ids' will be filled with
+        NWB files require that new properties are set once for all units. Therefore,
+        the 'property_name' for ids not present in 'unit_ids' will be filled with
         'default_values'.
 
         Parameters
@@ -492,7 +492,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             Default values of 'property_name' for unit ids not present in
             'unit_ids' list.
         '''
-        if not isinstance(unit_ids, (list)):
+        if not isinstance(unit_ids, list):
             raise ValueError("'unit_ids' must be a list of integers")
         if not all(isinstance(x, int) for x in unit_ids):
             raise ValueError("'unit_ids' must be a list of integers")
@@ -521,6 +521,66 @@ class NwbSortingExtractor(se.SortingExtractor):
                                     description='',
                                     data=new_values)
             io.write(nwbfile)
+
+
+    def copy_unit_properties(self, sorting, unit_ids=None, default_values=None):
+        '''Copy unit properties from another sorting extractor to the current
+        sorting extractor. NWB files require that new properties are set once
+        for all units. Therefore, the 'property_name' for ids not present in
+        'unit_ids' will be filled with 'default_values'.
+
+        Parameters
+        ----------
+        sorting: SortingExtractor
+            The sorting extractor from which the properties will be copied
+        unit_ids: list
+            The list of unit_ids for which the properties will be copied.
+        default_values : list
+            List of default values for each property, for unit ids not present in
+            'unit_ids' list. Default to NaN for all properties.
+        '''
+
+        if unit_ids is None:
+            unit_ids = sorting.get_unit_ids()
+        else:
+            if not isinstance(unit_ids, list):
+                raise ValueError("'unit_ids' must be a list of integers")
+            if not all(isinstance(x, int) for x in unit_ids):
+                raise ValueError("'unit_ids' must be a list of integers")
+            existing_ids = self.get_unit_ids()
+            if not all(x in existing_ids for x in unit_ids):
+                raise ValueError("'unit_ids' contains values outside the range of existing ids")
+
+        new_property_names = sorting.get_shared_unit_property_names()
+        curr_property_names = self.get_shared_unit_property_names()
+        if default_values is None:
+            default_values = [np.nan]*len(new_property_names)
+        else:
+            if len(default_values)!=len(new_property_names):
+                raise Exception("'default_values' list must have length equal to"+
+                                " number of properties to be copied.")
+
+        # Copies only properties that do not exist already in NWB file
+        for i, pr in enumerate(new_property_names):
+            if pr in curr_property_names:
+                print(pr+" already exists in NWB file and can't be copied.")
+            else:
+                pr_values = sorting.get_units_property(unit_ids=unit_ids,
+                                                       property_name=pr)
+                self.set_units_property(unit_ids=unit_ids,
+                                        property_name=pr,
+                                        values=pr_values,
+                                        default_values=default_values[i])
+
+
+    def clear_unit_property(self, unit_id=None, property_name=None):
+        '''NWB files do not allow for deleting properties.'''
+        print(self.clear_unit_property.__doc__)
+
+    def clear_units_property(self, unit_ids=None, property_name=None):
+        '''NWB files do not allow for deleting properties.'''
+        print(self.clear_units_property.__doc__)
+
 
     @staticmethod
     def write_sorting(sorting, save_path, nwbfile_kwargs=None):
