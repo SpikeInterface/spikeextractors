@@ -275,6 +275,13 @@ class NwbSortingExtractor(se.SortingExtractor):
                 self._t0 = 0.
 
     def get_unit_ids(self):
+        '''This function returns a list of ids (ints) for each unit in the sorsted result.
+
+        Returns
+        ----------
+        unit_ids: array_like
+            A list of the unit ids in the sorted result (ints).
+        '''
         try:
             from pynwb import NWBHDF5IO
         except ModuleNotFoundError:
@@ -285,7 +292,100 @@ class NwbSortingExtractor(se.SortingExtractor):
             unit_ids = list(nwbfile.units.id[:])
         return unit_ids
 
+    def get_shared_unit_property_names(self, unit_ids=None):
+        '''Get the intersection of unit property names for a given set of units
+        or for all units if unit_ids is None. In NWB files all units must have
+        the same properties, so the argument 'unit_ids' is irrelevant and should
+        be left as None.
+
+         Parameters
+        ----------
+        unit_ids: array_like
+            The unit ids for which the shared property names will be returned.
+            If None (default), will return shared property names for all units,
+        Returns
+        ----------
+        property_names
+            The list of shared property names
+        '''
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+            property_names = list(nwbfile.units.colnames)
+        return property_names
+
+    def get_unit_property(self, unit_id, property_name):
+        '''This function rerturns the data stored under the property name given
+        from the given unit.
+
+        Parameters
+        ----------
+        unit_id: int
+            The unit id for which the property will be returned
+        property_name: str
+            The name of the property
+        Returns
+        ----------
+        value
+            The data associated with the given property name. Could be many
+            formats as specified by the user.
+        '''
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+
+        if not isinstance(unit_id, int):
+            raise ValueError("'unit_id' must be an integer")
+        existing_ids = self.get_unit_ids()
+        if not unit_id in existing_ids:
+            raise ValueError("'unit_id' outside the range of existing ids")
+        if not isinstance(property_name, str):
+            raise Exception("'property_name' must be a string")
+
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+            if property_name in list(nwbfile.units.colnames):
+                val = nwbfile.units[property_name][existing_ids.index(unit_id)]
+            else:
+                raise Exception(property_name+" is not a valid property in dataset")
+        return val
+
+
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        '''This function extracts spike frames from the specified unit.
+        It will return spike frames from within three ranges:
+
+            [start_frame, t_start+1, ..., end_frame-1]
+            [start_frame, start_frame+1, ..., final_unit_spike_frame - 1]
+            [0, 1, ..., end_frame-1]
+            [0, 1, ..., final_unit_spike_frame - 1]
+
+        if both start_frame and end_frame are given, if only start_frame is
+        given, if only end_frame is given, or if neither start_frame or end_frame
+        are given, respectively. Spike frames are returned in the form of an
+        array_like of spike frames. In this implementation, start_frame is inclusive
+        and end_frame is exclusive conforming to numpy standards.
+
+        Parameters
+        ----------
+        unit_id: int
+            The id that specifies a unit in the recording.
+        start_frame: int
+            The frame above which a spike frame is returned  (inclusive).
+        end_frame: int
+            The frame below which a spike frame is returned  (exclusive).
+        Returns
+        ----------
+        spike_train: numpy.ndarray
+            An 1D array containing all the frames for each spike in the
+            specified unit given the range of start and end frames.
+        '''
         try:
             from pynwb import NWBHDF5IO
         except ModuleNotFoundError:
@@ -339,8 +439,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             raise ValueError("'unit_ids' contains values outside the range of existing ids")
         if not isinstance(property_name, str):
             raise Exception("'property_name' must be a string")
-        if property_name in self.get_unit_property_names():
-            raise Exception(property_name + " already exists")
+        if property_name in self.get_shared_unit_property_names():
+            raise Exception(property_name + " property already exists")
         if len(unit_ids)!=len(values):
             raise Exception("'unit_ids' and 'values' should be lists of same size")
         try:
@@ -351,10 +451,10 @@ class NwbSortingExtractor(se.SortingExtractor):
 
         nUnits = len(existing_ids)
         new_values = [default_values]*nUnits
-        for i, v in zip(unit_ids, values):
-            new_values[i] = v
-        with NWBHDF5IO(self._path, 'r') as io:
+        with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
+            for i, v in zip(unit_ids, values):
+                new_values[existing_ids.index(i)] = v
             nwbfile.add_unit_column(name=property_name,
                                     description='',
                                     data=new_values)
