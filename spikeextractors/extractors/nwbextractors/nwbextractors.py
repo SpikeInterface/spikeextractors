@@ -98,7 +98,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if channel_ids is None:
             return self.channel_groups
         else:
-            return self.channel_groups[np.isin(self.channel_ids, channel_ids), :]
+            return self.channel_groups[np.isin(self.channel_ids, channel_ids)]
 
     def get_channel_property_names(self, channel_id=None):
         return list(self.electrodes_df.columns)
@@ -204,7 +204,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             acquisition = nwbfile.children[np.where(aux)[0][0]]
         else:
             rate = recording.get_sampling_frequency()
-            gains = np.array(recording.get_channel_gains())
+            if 'gain' in recording.get_shared_channel_property_names():
+                gains = np.array(recording.get_channel_gains())
+            else:
+                gains = np.ones(M)
             ephys_data = recording.get_traces().T
             ephys_data_V = 1e-6*gains*ephys_data
             acquisition_name = 'ElectricalSeries'
@@ -295,10 +298,67 @@ class NwbSortingExtractor(se.SortingExtractor):
             if end_frame is None:
                 end_frame = np.Inf
             # chosen unit and interval
-            times0 = nwbfile.units['spike_times'][int(unit_id-1)][start_frame:end_frame]
+            times0 = nwbfile.units['spike_times'][int(unit_id-1)][:]
             # spike times are measured in samples
             times = ((times0 - self._t0) * self._sampling_frequency).astype('int')
-        return times
+        return times[(times>start_frame) & (times<end_frame)]
+
+
+    def set_unit_property(self, unit_id, property_name, value):
+        """
+        NWB files require that new properties are set once for all units.
+        Please use method 'set_units_property()' instead.
+        """
+        print(self.set_unit_property.__doc__)
+
+    def set_units_property(self, unit_ids, property_name, values, default_values=np.nan):
+        '''This function adds a new property data set to the chosen units.
+        NWB files require that new properties are set once for all units.
+        The 'property_name' for ids not present in 'unit_ids' will be filled with
+        'default_values'.
+
+        Parameters
+        ----------
+        unit_ids: list of ints
+            The unit ids for which the property will be set.
+        property_name: str
+            The name of the property to be stored.
+        values :
+            The data associated with the given property name. Could be many
+            formats as specified by the user.
+        default_values :
+            Default values of 'property_name' for unit ids not present in
+            'unit_ids' list.
+        '''
+        if not isinstance(unit_ids, (list)):
+            raise ValueError("'unit_ids' must be a list of integers")
+        if not all(isinstance(x, int) for x in unit_ids):
+            raise ValueError("'unit_ids' must be a list of integers")
+        existing_ids = self.get_unit_ids()
+        if not all(x in existing_ids for x in unit_ids):
+            raise ValueError("'unit_ids' contains values outside the range of existing ids")
+        if not isinstance(property_name, str):
+            raise Exception("'property_name' must be a string")
+        if property_name in self.get_unit_property_names():
+            raise Exception(property_name + " already exists")
+        if len(unit_ids)!=len(values):
+            raise Exception("'unit_ids' and 'values' should be lists of same size")
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+
+        nUnits = len(existing_ids)
+        new_values = [default_values]*nUnits
+        for i, v in zip(unit_ids, values):
+            new_values[i] = v
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+            nwbfile.add_unit_column(name=property_name,
+                                    description='',
+                                    data=new_values)
+            io.write(nwbfile)
 
     @staticmethod
     def write_sorting(sorting, save_path, nwbfile_kwargs=None):
