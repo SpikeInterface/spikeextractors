@@ -52,20 +52,12 @@ class MultiSortingExtractor(SortingExtractor):
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
         return self._sortings[sorting_id].get_unit_property(unit_id_sorting, property_name)
 
-    def get_unit_property_names(self, unit_id=None):
-        if unit_id is None:
-            property_names = []
-            for sorting in self._sortings:
-                property_names_sorting = sorting.get_unit_property_names(unit_id)
-                for property_name in property_names_sorting:
-                    property_names.append(property_name)
-            property_names = list(set(property_names))
-        else:
-            sorting_id = self._unit_map[unit_id]['sorting_id']
-            unit_id_sorting = self._unit_map[unit_id]['unit_id']
-            property_names = self._sortings[sorting_id].get_unit_property_names(unit_id_sorting)
+    def get_unit_property_names(self, unit_id):
+        sorting_id = self._unit_map[unit_id]['sorting_id']
+        unit_id_sorting = self._unit_map[unit_id]['unit_id']
+        property_names = self._sortings[sorting_id].get_unit_property_names(unit_id_sorting)
         return property_names
-    
+
     def clear_unit_property(self, unit_id, property_name):
         if unit_id not in self._unit_map.keys():
             raise ValueError("Non-valid unit_id")
@@ -80,15 +72,7 @@ class MultiSortingExtractor(SortingExtractor):
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
         return self._sortings[sorting_id].get_unit_spike_features(unit_id_sorting, feature_name, start_frame=start_frame, end_frame=end_frame)
 
-    def get_unit_spike_feature_names(self, unit_id=None):
-        if unit_id is None:
-            feature_names = []
-            for unit_id in self.get_unit_ids():
-                curr_feature_names = self.get_unit_spike_feature_names(unit_id)
-                for curr_feature_name in curr_feature_names:
-                    feature_names.append(curr_feature_name)
-            feature_names = sorted(list(set(feature_names)))
-            return feature_names
+    def get_unit_spike_feature_names(self, unit_id):
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.get_unit_ids():
                 if unit_id not in self._unit_map.keys():

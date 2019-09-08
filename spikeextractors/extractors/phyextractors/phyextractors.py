@@ -131,12 +131,8 @@ class PhySortingExtractor(SortingExtractor):
                                         self.set_unit_property(int(row[0]), property, row[1])
                         line_count += 1
 
-        if 'quality' in self.get_unit_property_names():
-            for unit in self.get_unit_ids():
-                if 'quality' not in self.get_unit_property_names(unit):
-                    self.set_unit_property(unit, 'quality', 'unsorted')
-        else:
-            for unit in self.get_unit_ids():
+        for unit in self.get_unit_ids():
+            if 'quality' not in self.get_unit_property_names(unit):
                 self.set_unit_property(unit, 'quality', 'unsorted')
 
         if exclude_groups is not None:
@@ -228,10 +224,10 @@ class PhySortingExtractor(SortingExtractor):
             cl = [id] * len(sorting.get_unit_spike_train(id))
             spike_times = np.concatenate((spike_times, np.array(st)))
             spike_clusters = np.concatenate((spike_clusters, np.array(cl)))
-            if 'amplitudes' in sorting.get_unit_spike_feature_names():
+            if 'amplitudes' in sorting.get_shared_unit_spike_feature_names():
                 amp = sorting.get_unit_spike_features(id, 'amplitudes')
                 amplitudes = np.concatenate((amplitudes, np.array(amp)))
-            if 'pc_features' in sorting.get_unit_spike_feature_names():
+            if 'pc_features' in sorting.get_shared_unit_spike_feature_names():
                 pc_feat = sorting.get_unit_spike_features(id, 'pc_features')
                 if len(pc_features) == 0:
                     pc_features = pc_feat

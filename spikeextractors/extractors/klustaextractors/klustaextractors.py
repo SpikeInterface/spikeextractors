@@ -123,7 +123,7 @@ class KlustaSortingExtractor(SortingExtractor):
             save_path = save_path / 'klusta.kwik'
         F = h5py.File(save_path, 'w')
         F.attrs.create('kwik_version', data=2)
-        if 'group' in sorting.get_unit_property_names():
+        if 'group' in sorting.get_shared_unit_property_names():
             cgroups = np.unique([sorting.get_unit_property(unit, 'group') for unit in sorting.get_unit_ids()])
         else:
             cgroups = [0]
@@ -134,7 +134,7 @@ class KlustaSortingExtractor(SortingExtractor):
             channel_group = channel_groups.create_group(str(cgroup))
             time_samples = np.array([])
             cluster_main = np.array([])
-            if 'group' in sorting.get_unit_property_names():
+            if 'group' in sorting.get_shared_unit_property_names():
                 idxs = [unit for unit in sorting.get_unit_ids() if
                         sorting.get_unit_property(unit, 'group') == cgroup]
             else:
