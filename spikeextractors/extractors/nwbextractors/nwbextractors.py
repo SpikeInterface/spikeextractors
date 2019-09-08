@@ -274,6 +274,11 @@ class NwbSortingExtractor(se.SortingExtractor):
             else:
                 self._t0 = 0.
 
+
+    def set_sampling_frequency(self, sampling_frequency):
+        '''NWB file sampling rate can't be modified.'''
+        print(self.set_sampling_frequency.__doc__)
+
     def get_unit_ids(self):
         '''This function returns a list of ids (ints) for each unit in the sorsted result.
 
@@ -291,6 +296,20 @@ class NwbSortingExtractor(se.SortingExtractor):
             nwbfile = io.read()
             unit_ids = list(nwbfile.units.id[:])
         return unit_ids
+
+    def get_unit_property_names(self, unit_id):
+        '''Get a list of property names for a given unit.
+         Parameters
+        ----------
+        unit_id: int
+            The unit id for which the property names will be returned.
+        Returns
+        ----------
+        property_names
+            The list of property names
+        '''
+        property_names = self.get_shared_unit_property_names(unit_ids=None)
+        return property_names
 
     def get_shared_unit_property_names(self, unit_ids=None):
         '''Get the intersection of unit property names for a given set of units
@@ -319,7 +338,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         return property_names
 
     def get_unit_property(self, unit_id, property_name):
-        '''This function rerturns the data stored under the property name given
+        '''This function returns the data stored under the property name given
         from the given unit.
 
         Parameters
@@ -355,6 +374,49 @@ class NwbSortingExtractor(se.SortingExtractor):
             else:
                 raise Exception(property_name+" is not a valid property in dataset")
         return val
+
+
+    def get_units_property(self, unit_ids=None, property_name):
+        '''Returns a list of values stored under the property name corresponding
+        to a list of units
+
+        Parameters
+        ----------
+        unit_ids: list
+            The unit ids for which the property will be returned
+            Defaults to all ids
+        property_name: str
+            The name of the property
+        Returns
+        ----------
+        values
+            The list of values
+        '''
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        if not isinstance(property_name, str):
+            raise Exception("'property_name' must be a string")
+        existing_ids = self.get_unit_ids()
+        if unit_ids is None:
+            unit_ids = existing_ids
+        else:
+            if not isinstance(unit_ids, list):
+                raise ValueError("'unit_ids' must be a list of integers")
+            if not all(isinstance(x, int) for x in unit_ids):
+                raise ValueError("'unit_ids' must be a list of integers")
+            if not all(x in existing_ids for x in unit_ids):
+                raise ValueError("'unit_ids' contains values outside the range of existing ids")
+
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+            if property_name in list(nwbfile.units.colnames):
+                values = [nwbfile.units[property_name][existing_ids.index(id)] for id in unit_ids]
+            else:
+                raise Exception(property_name+" is not a valid property in dataset")
+        return values
 
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
