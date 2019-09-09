@@ -358,7 +358,6 @@ class NwbSortingExtractor(se.SortingExtractor):
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
-
         if not isinstance(unit_id, (int, np.integer)):
             raise ValueError("'unit_id' must be an integer")
         existing_ids = self.get_unit_ids()
@@ -539,7 +538,6 @@ class NwbSortingExtractor(se.SortingExtractor):
             List of default values for each property, for unit ids not present in
             'unit_ids' list. Default to NaN for all properties.
         '''
-
         if unit_ids is None:
             unit_ids = sorting.get_unit_ids()
         else:
@@ -565,8 +563,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             if pr in curr_property_names:
                 print(pr+" already exists in NWB file and can't be copied.")
             else:
-                pr_values = sorting.get_units_property(unit_ids=unit_ids,
-                                                       property_name=pr)
+                pr_values = sorting.get_unit_property(unit_ids=unit_ids,
+                                                      property_name=pr)
                 self.set_units_property(unit_ids=unit_ids,
                                         property_name=pr,
                                         values=pr_values,
@@ -580,6 +578,250 @@ class NwbSortingExtractor(se.SortingExtractor):
     def clear_units_property(self, unit_ids=None, property_name=None):
         '''NWB files do not allow for deleting properties.'''
         print(self.clear_units_property.__doc__)
+
+
+    def get_nspikes(self):
+        """Returns list with the number of spikes for each unit."""
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        with NWBHDF5IO(self._path, 'r+') as io:
+            nwbfile = io.read()
+            nSpikes = [len(spkt) for spkt in nwbfile.units['spike_times'][:]]
+        return nSpikes
+
+
+    def get_unit_spike_features(self, unit_id, feature_name, start_frame=None, end_frame=None):
+        '''This function extracts the specified spike features from the specified unit.
+        It will return spike features from within three ranges:
+
+            [start_frame, t_start+1, ..., end_frame-1]
+            [start_frame, start_frame+1, ..., final_unit_spike_frame - 1]
+            [0, 1, ..., end_frame-1]
+            [0, 1, ..., final_unit_spike_frame - 1]
+
+        if both start_frame and end_frame are given, if only start_frame is
+        given, if only end_frame is given, or if neither start_frame or end_frame
+        are given, respectively. Spike features are returned in the form of an
+        array_like of spike features. In this implementation, start_frame is inclusive
+        and end_frame is exclusive conforming to numpy standards.
+
+        Parameters
+        ----------
+        unit_id: int
+            The id that specifies a unit in the recording.
+        feature_name: string
+            The name of the feature to be returned.
+        start_frame: int
+            The frame above which a spike frame is returned  (inclusive).
+        end_frame: int
+            The frame below which a spike frame is returned  (exclusive).
+        Returns
+        ----------
+        spike_features: numpy.ndarray
+            An array containing all the features for each spike in the
+            specified unit given the range of start and end frames.
+        '''
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        if not isinstance(feature_name, str):
+            raise Exception("'feature_name' must be a string")
+        full_feat_name = 'spike_feature_'+feature_name
+        if full_feat_name not in self.get_shared_unit_spike_feature_names():
+            raise Exception(full_feat_name+" not present in NWB file")
+
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+            if start_frame is None:
+                start_frame = 0
+            if end_frame is None:
+                end_frame = np.Inf
+            # chosen unit and interval
+            feat_vals = np.array(nwbfile.units[full_feat_name][int(unit_id-1)][:])
+            times0 = nwbfile.units['spike_times'][int(unit_id-1)][:]
+            # spike times are measured in samples
+            times = ((times0 - self._t0) * self._sampling_frequency).astype('int')
+            mask = (times>start_frame) & (times<end_frame)
+            print(feat_vals)
+            print(feat_vals.shape)
+            print(len(mask))
+        return feat_vals[mask].tolist()
+
+
+    def set_unit_spike_features(self, unit_ids, feature_name, values, default_value=None):
+        '''This function adds a new feature for the spikes of sorted units.
+        NWB files require that new properties are set once for all units. Therefore,
+        the 'property_name' for ids not present in 'unit_ids' will be filled with
+        'default_values'.
+
+        Parameters
+        ----------
+        unit_ids: int
+            The unit id for which the features will be set
+        feature_name: str
+            The name of the feature to be stored
+        values : dict
+            The data associated with the given spike feature. Should be a dictionary
+            with a key for each unit in 'unit_ids'. The value for each key must
+            be a list with nSpikes elements, where nSpikes is the number
+            of spikes for the referred unit.
+        default_value :
+            Default value for spike property, for unit ids not present in
+            'unit_ids' list. Default to NaN.
+        '''
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        if not isinstance(unit_ids, list):
+            raise ValueError("'unit_ids' must be a list of integers")
+        if not all(isinstance(x, int) for x in unit_ids):
+            raise ValueError("'unit_ids' must be a list of integers")
+        existing_ids = self.get_unit_ids()
+        if not all(x in existing_ids for x in unit_ids):
+            raise ValueError("'unit_ids' contains values outside the range of existing ids")
+        if not isinstance(feature_name, str):
+            raise Exception("'feature_name' must be a string")
+        if 'spike_feature_'+feature_name in self.get_shared_unit_spike_feature_names():
+            raise Exception('spike_feature_'+feature_name + " feature already exists")
+        if not all([str(k) in values.keys() for k in unit_ids]):
+            raise Exception("All units in 'unit_id' should be present as keys "+
+                            "of 'values' dictionary")
+        if len(unit_ids)!=len(values.keys()):
+            raise Exception("'unit_ids' and the list of keys in 'values' should"+
+                            " be of same size")
+        if default_value is None:
+            default_value = np.nan
+        nUnits = len(existing_ids)
+        nspikes_units = self.get_nspikes()
+        new_values = [[default_value]*nSpikes for nSpikes in nspikes_units]
+        with NWBHDF5IO(self._path, 'r+') as io:
+            nwbfile = io.read()
+            for id in unit_ids:
+                spikes_unit = nwbfile.units['spike_times'][existing_ids.index(id)]
+                if len(spikes_unit)!=len(values[str(id)]):
+                    io.close()
+                    raise ValueError("feature values should have the same length"+
+                                     " as the spike train, error at unit #"+str(id))
+                new_values[existing_ids.index(id)] = values[str(id)]
+
+            nwbfile.add_unit_column(name='spike_feature_'+feature_name,
+                                    description='',
+                                    data=new_values)
+            io.write(nwbfile)
+
+
+    def get_shared_unit_spike_feature_names(self, unit_ids=None):
+        '''Get list of spike feature names for the units in the NWB file.
+        Since in a NWB file all units must contain the same feature columns,
+        'unit_ids' can be left in its default value of None.
+
+         Parameters
+        ----------
+        unit_ids: array_like
+            The unit ids for which the shared feature names will be returned.
+            If None (default), will return shared feature names for all units,
+        Returns
+        ----------
+        feature_names
+            The list of shared feature names
+        '''
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        with NWBHDF5IO(self._path, 'r+') as io:
+            nwbfile = io.read()
+            aux = list(nwbfile.units.colnames)
+            feature_names = [feat for feat in aux if feat[0:14]=='spike_feature_']
+        return feature_names
+
+
+    def get_unit_spike_feature_names(self, unit_id=None):
+        '''This function returns the list of feature names for the given unit.
+        Since in a NWB file all units must contain the same feature columns,
+        this method equals to 'get_shared_unit_spike_feature_names()'.
+
+        Parameters
+        ----------
+        unit_id: int
+            The unit id for which the feature names will be returned.
+        Returns
+        ----------
+        feature_names
+            The list of feature names.
+        '''
+        return self.get_shared_unit_spike_feature_names(unit_ids=None)
+
+
+    def copy_unit_spike_features(self, sorting, unit_ids=None, default_values=None):
+        '''Copy unit spike features from another sorting extractor to the current
+        NWB file. NWB files require that new properties are set once
+        for all units. Therefore, the spike feature values for ids not present
+        in 'unit_ids' will be filled with 'default_values'.
+
+        Parameters
+        ----------
+        sorting: SortingExtractor
+            The sorting extractor from which the spike features will be copied
+        unit_ids: list
+            The list of unit_ids for which the spike features will be copied.
+        default_values : list
+            List of default values for each spike feature, for unit ids not
+            present in 'unit_ids' list. Default to NaN for all properties.
+        '''
+        if unit_ids is None:
+            unit_ids = sorting.get_unit_ids()
+        else:
+            if not isinstance(unit_ids, list):
+                raise ValueError("'unit_ids' must be a list of integers")
+            if not all(isinstance(x, int) for x in unit_ids):
+                raise ValueError("'unit_ids' must be a list of integers")
+            existing_ids = self.get_unit_ids()
+            if not all(x in existing_ids for x in unit_ids):
+                raise ValueError("'unit_ids' contains values outside the range of existing ids")
+
+        new_feature_names = sorting.get_shared_unit_spike_feature_names()
+        curr_feature_names = self.get_shared_unit_spike_feature_names()
+        if default_values is None:
+            default_values = [np.nan]*len(new_feature_names)
+        else:
+            if len(default_values)!=len(new_feature_names):
+                raise Exception("'default_values' list must have length equal to"+
+                                " number of features to be copied.")
+        # Copies only features that do not exist in NWB file
+        nspikes_units = self.get_nspikes()
+        for i, feat in enumerate(new_feature_names):
+            full_feat_name = 'spike_feature_'+feat
+            if full_feat_name in curr_feature_names:
+                print(full_feat_name+" already exists in NWB file and can't be copied.")
+            else:
+                feat_values = {}
+                for id in unit_ids:
+                    vals = sorting.get_unit_spike_features(unit_id=id,
+                                                           feature_name=feat)
+                    feat_values[str(id)] = vals.tolist()
+                self.set_unit_spike_features(unit_ids=unit_ids,
+                                             feature_name=feat,
+                                             values=feat_values,
+                                             default_value=default_values[i])
+
+
+    def clear_unit_spike_features(self, unit_id=None, feature_name=None):
+        '''NWB files do not allow removing features.'''
+        print(self.clear_unit_spike_features.__doc__)
+
+
+    def clear_units_spike_features(self, *, unit_ids=None, feature_name):
+        '''NWB files do not allow removing features.'''
+        print(self.clear_units_spike_features.__doc__)
 
 
     def add_epoch(self, epoch_name, start_frame, end_frame):
@@ -747,10 +989,10 @@ class NwbSortingExtractor(se.SortingExtractor):
             # Stores spike times for each detected cell (unit)
             for id in ids:
                 spkt = sorting.get_unit_spike_train(unit_id=id) / fs
-                if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
+                if 'waveforms' in sorting.get_unit_property_names(unit_id=id):
                     # Stores average and std of spike traces
-                    wf = sorting.get_unit_spike_features(unit_id=id,
-                                                         feature_name='waveforms')
+                    wf = sorting.get_unit_property(unit_id=id,
+                                                   property_name='waveforms')
                     relevant_ch = most_relevant_ch(wf)
                     # Spike traces on the most relevant channel
                     traces = wf[:, relevant_ch, :]
