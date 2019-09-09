@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import copy
+from .extraction_tools import load_probe_file, save_to_probe_file, write_binary_dat_format, get_sub_extractors_by_property
 
 class RecordingExtractor(ABC):
     '''A class that contains functions for extracting important information
@@ -199,8 +200,8 @@ class RecordingExtractor(ABC):
                     snippet_buffer[1] -= snippet_range[1] - num_frames
                     snippet_range[1] -= snippet_range[1] - num_frames
                 snippet_chunk[:, snippet_buffer[0]:snippet_buffer[1]] = self.get_traces(channel_ids=channel_ids,
-                                                                                       start_frame=snippet_range[0],
-                                                                                       end_frame=snippet_range[1])
+                                                                                        start_frame=snippet_range[0],
+                                                                                        end_frame=snippet_range[1])
             snippets[i] = snippet_chunk
         return snippets
 
@@ -577,6 +578,92 @@ class RecordingExtractor(ABC):
         return SubRecordingExtractor(parent_recording=self, start_frame=start_frame,
                                      end_frame=end_frame)
 
+    def load_probe_file(self, probe_file, channel_map=None, channel_groups=None, verbose=False):
+        '''This function returns a SubRecordingExtractor that contains information from the given
+        probe file (channel locations, groups, etc.) If a .prb file is given, then 'location' and 'group' 
+        information for each channel is added to the SubRecordingExtractor. If a .csv file is given, then 
+        it will only add 'location' to the SubRecordingExtractor.
+
+        Parameters
+        ----------
+        recording: RecordingExtractor
+            The recording extractor to channel information
+        probe_file: str
+            Path to probe file. Either .prb or .csv
+        verbose: bool
+            If True, output is verbose
+
+        Returns
+        ---------
+        subrecording = SubRecordingExtractor
+            The extractor containing all of the probe information.
+        '''
+        subrecording = load_probe_file(self, probe_file, channel_map=channel_map, 
+                                       channel_groups=channel_groups, verbose=verbose)
+        return subrecording
+
+    def save_to_probe_file(self, probe_file, format=None, radius=100, dimensions=None, verbose=False):
+        '''Saves probe file from the channel information of this recording extractor.
+
+        Parameters
+        ----------
+        probe_file: str
+            file name of .prb or .csv file to save probe information to
+        format: str (optional)
+            Format for .prb file. It can be either 'klusta' or 'spyking_circus'. Default is None.
+        verbose: bool
+            If True, output is verbose
+        '''
+        save_to_probe_file(self, probe_file, format=format, radius=radius, dimensions=dimensions,
+                           verbose=verbose)
+
+    def write_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunksize=None):
+        '''Saves the traces of this recording extractor into binary .dat format.
+
+        Parameters
+        ----------
+        save_path: str
+            The path to the file.
+        time_axis: 0 (default) or 1
+            If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
+            If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
+        dtype: dtype
+            Type of the saved data. Default float32
+        chunksize: None or int
+            If not None then the copy done by chunk size.
+            This avoid to much memory consumption for big files.
+        '''
+        write_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunksize=chunksize)
+   
+    def get_sub_extractors_by_property(self, property_name, return_property_list=False):
+        '''Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given
+        property_name (e.g. group)
+
+        Parameters
+        ----------
+        property_name: str
+            The property used to subdivide the extractor
+        return_property_list: bool
+            If True the property list is returned
+
+        Returns
+        -------
+        sub_list: list
+            The list of subextractors to be returned.
+        OR
+        sub_list, prop_list
+            If return_property_list is True, the property list will be returned as well.
+
+        '''
+        if return_property_list:
+            sub_list, prop_list = get_sub_extractors_by_property(self, property_name=property_name, 
+                                                                return_property_list=return_property_list)
+            return sub_list, prop_list
+        else:
+            sub_list = get_sub_extractors_by_property(self, property_name=property_name, 
+                                                      return_property_list=return_property_list)
+            return sub_list
+            
     @classmethod
     def gui_params(self):
         return copy.deepcopy(self._gui_params)
