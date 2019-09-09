@@ -27,7 +27,7 @@ class RecordingExtractor(ABC):
         given channels ids and the given start and end frame. It will return
         traces from within three ranges:
 
-            [start_frame, t_start+1, ..., end_frame-1]
+            [start_frame, start_frame+1, ..., end_frame-1]
             [start_frame, start_frame+1, ..., final_recording_frame - 1]
             [0, 1, ..., end_frame-1]
             [0, 1, ..., final_recording_frame - 1]
