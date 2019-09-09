@@ -34,7 +34,7 @@ For more information about how to use SpikeExtractors, please checkout these [ex
 
 ## Documentation
 
-The documentation page for the SpikeInterface project can be found here: https://spikeinterface.readthedocs.io/en/latest/
+The documentation page for SpikeExtractors can be found here: https://spikeinterface.readthedocs.io/en/latest/modules/index.html#extractors-tutorial
 
 ### Authors
 
