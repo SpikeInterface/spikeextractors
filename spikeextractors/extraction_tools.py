@@ -248,7 +248,7 @@ def read_binary(file, numchan, dtype, frames_first=True, offset=0):
     return samples
 
 
-def write_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunksize=None):
+def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunksize=None):
     '''Saves the traces of a recording extractor in binary .dat format.
 
     Parameters

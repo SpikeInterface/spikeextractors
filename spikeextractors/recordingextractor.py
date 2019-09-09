@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import copy
-from .extraction_tools import load_probe_file, save_to_probe_file, write_binary_dat_format, get_sub_extractors_by_property
+from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, get_sub_extractors_by_property
 
 class RecordingExtractor(ABC):
     '''A class that contains functions for extracting important information
@@ -617,7 +617,7 @@ class RecordingExtractor(ABC):
         save_to_probe_file(self, probe_file, format=format, radius=radius, dimensions=dimensions,
                            verbose=verbose)
 
-    def write_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunksize=None):
+    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunksize=None):
         '''Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
@@ -633,7 +633,7 @@ class RecordingExtractor(ABC):
             If not None then the copy done by chunk size.
             This avoid to much memory consumption for big files.
         '''
-        write_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunksize=chunksize)
+        write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunksize=chunksize)
    
     def get_sub_extractors_by_property(self, property_name, return_property_list=False):
         '''Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given
@@ -663,7 +663,7 @@ class RecordingExtractor(ABC):
             sub_list = get_sub_extractors_by_property(self, property_name=property_name, 
                                                       return_property_list=return_property_list)
             return sub_list
-            
+
     @classmethod
     def gui_params(self):
         return copy.deepcopy(self._gui_params)

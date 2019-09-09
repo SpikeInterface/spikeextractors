@@ -37,26 +37,26 @@ class TestTools(unittest.TestCase):
         nb_chan = self.RX.get_num_channels()
 
         # time_axis=0 chunksize=None
-        self.RX.write_binary_dat_format(self.test_dir + 'rec.dat', time_axis=0, dtype='float32', chunksize=None)
+        self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=0, dtype='float32', chunksize=None)
         data = np.memmap(open(self.test_dir + 'rec.dat'), dtype='float32', mode='r', shape=(nb_sample, nb_chan)).T
         assert np.allclose(data, self.RX.get_traces())
         del(data) # this close the file
 
         # time_axis=1 chunksize=None
-        self.RX.write_binary_dat_format(self.test_dir + 'rec.dat', time_axis=1, dtype='float32', chunksize=None)
+        self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=1, dtype='float32', chunksize=None)
         data = np.memmap(open(self.test_dir + 'rec.dat'), dtype='float32', mode='r', shape=(nb_chan, nb_sample))
         assert np.allclose(data, self.RX.get_traces())
         del(data) # this close the file
 
         # time_axis=0 chunksize=99
-        self.RX.write_binary_dat_format(self.test_dir + 'rec.dat', time_axis=0, dtype='float32', chunksize=99)
+        self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=0, dtype='float32', chunksize=99)
         data = np.memmap(open(self.test_dir + 'rec.dat'), dtype='float32', mode='r', shape=(nb_sample, nb_chan)).T
         assert np.allclose(data, self.RX.get_traces())
         del(data) # this close the file
 
         # time_axis=1 chunksize=99 do not work
         with self.assertRaises(Exception) as context:
-            self.RX.write_binary_dat_format(self.test_dir + 'rec.dat', time_axis=1, dtype='float32', chunksize=99)
+            self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=1, dtype='float32', chunksize=99)
 
 
 if __name__ == '__main__':
