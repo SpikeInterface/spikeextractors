@@ -359,7 +359,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
 
-        if not isinstance(unit_id, int):
+        if not isinstance(unit_id, (int, np.integer)):
             raise ValueError("'unit_id' must be an integer")
         existing_ids = self.get_unit_ids()
         if not unit_id in existing_ids:
@@ -376,7 +376,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         return val
 
 
-    def get_units_property(self, unit_ids=None, property_name):
+    def get_units_property(self, unit_ids, property_name):
         '''Returns a list of values stored under the property name corresponding
         to a list of units
 
@@ -606,12 +606,13 @@ class NwbSortingExtractor(se.SortingExtractor):
         if not isinstance(end_frame, int):
             raise Exception("'end_frame' must be an integer")
 
-        with NWBHDF5IO(self._path, 'r') as io:
+        fs = self.get_sampling_frequency()
+        with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            fs = self._sampling_frequency
-            nwbfile.add_epoch(start_time=start_frame*fs,
-                              stop_time=end_frame*fs,
+            nwbfile.add_epoch(start_time=start_frame/fs,
+                              stop_time=end_frame/fs,
                               tags=epoch_name)
+            io.write(nwbfile)
 
 
     def remove_epoch(self, epoch_name=None):
@@ -634,11 +635,74 @@ class NwbSortingExtractor(se.SortingExtractor):
                                       "pip install pynwb\n\n")
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
-            aux = np.array(flat_list)
-            epoch_names = np.unique(aux).tolist()
+            if nwbfile.epochs is None:
+                print("No epochs in NWB file")
+                epoch_names = None
+            else:
+                flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
+                aux = np.array(flat_list)
+                epoch_names = np.unique(aux).tolist()
         return epoch_names
-        
+
+
+    def get_epoch_info(self, epoch_name):
+        '''This function returns the start frame and end frame of the epoch
+        in a dict.
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be returned
+
+        Returns
+        ----------
+        epoch_info: dict
+            A dict containing the start frame and end frame of the epoch
+        '''
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        if not isinstance(epoch_name, str):
+            raise ValueError("epoch_name must be a string")
+        all_epoch_names = self.get_epoch_names()
+        if epoch_name not in all_epoch_names:
+            raise ValueError("This epoch has not been added")
+
+        fs = self.get_sampling_frequency()
+        epoch_info = {}
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+            flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
+            for i, tag in enumerate(flat_list):
+                if tag == epoch_name:
+                    epoch_info['start_frame'] = int(nwbfile.epochs['start_time'][i]*fs)
+                    epoch_info['end_frame'] = int(nwbfile.epochs['stop_time'][i]*fs)
+        return epoch_info
+
+
+    def get_epoch(self, epoch_name):
+        '''This function returns a SubSortingExtractor which is a view to the
+        given epoch
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be returned
+
+        Returns
+        ----------
+        epoch_extractor: SubRecordingExtractor
+            A SubRecordingExtractor which is a view to the given epoch
+        '''
+        epoch_info = self.get_epoch_info(epoch_name)
+        start_frame = epoch_info['start_frame']
+        end_frame = epoch_info['end_frame']
+        from spikeextractors.subsortingextractor import SubSortingExtractor
+        return SubSortingExtractor(parent_sorting=self, start_frame=start_frame,
+                                   end_frame=end_frame)
+
 
     @staticmethod
     def write_sorting(sorting, save_path, nwbfile_kwargs=None):
