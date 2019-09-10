@@ -19,8 +19,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         except ModuleNotFoundError:
             raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
                                       "pip install pynwb\n\n")
-        self._path = path
         se.RecordingExtractor.__init__(self)
+        self._path = path
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             if electrical_series_name is not None:
@@ -34,7 +34,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 self._electrical_series_name = a_names[0]
             es = nwbfile.acquisition[self._electrical_series_name]
             if hasattr(es, 'timestamps') and es.timestamps:
-                self.sampling_frequency = 1 / np.median(np.diff(es.timestamps))
+                self.sampling_frequency = 1. / np.median(np.diff(es.timestamps))
                 self.recording_start_time = es.timestamps[0]
             else:
                 self.sampling_frequency = es.rate
@@ -43,20 +43,19 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 else:
                     self.recording_start_time = 0.
 
-            self.num_frames = len(es.data)
+            self.num_frames = int(es.data.shape[0])
             if len(es.data.shape) == 1:
                 self.num_channels = 1
             else:
                 self.num_channels = es.data.shape[1]
 
             self.channel_ids = es.electrodes.table.id[:]
-
             self.geom = np.column_stack([es.electrodes.table[d][:] for d in ('x', 'y', 'z')])
-
             self.channel_groups = es.electrodes.table['group_name'][:]
-
             self.electrodes_df = es.electrodes.table.to_dataframe()
 
+            self._channel_properties = {}
+            self._epochs = {}
             if nwbfile.epochs is not None:
                 df_epochs = nwbfile.epochs.to_dataframe()
                 self._epochs = {row['label']:
@@ -64,53 +63,421 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                  'end_frame': self.time_to_frame(row['stop_time'])}
                                 for _, row in df_epochs.iterrows()}
 
+
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        import pynwb
-        with pynwb.NWBHDF5IO(self._path, 'r') as io:
+        '''This function extracts and returns a trace from the recorded data from the
+        given channels ids and the given start and end frame. It will return
+        traces from within three ranges:
+
+            [start_frame, t_start+1, ..., end_frame-1]
+            [start_frame, start_frame+1, ..., final_recording_frame - 1]
+            [0, 1, ..., end_frame-1]
+            [0, 1, ..., final_recording_frame - 1]
+
+        if both start_frame and end_frame are given, if only start_frame is
+        given, if only end_frame is given, or if neither start_frame or end_frame
+        are given, respectively. Traces are returned in a 2D array that
+        contains all of the traces from each channel with dimensions
+        (num_channels x num_frames). In this implementation, start_frame is inclusive
+        and end_frame is exclusive conforming to numpy standards.
+
+        Parameters
+        ----------
+        start_frame: int
+            The starting frame of the trace to be returned (inclusive).
+        end_frame: int
+            The ending frame of the trace to be returned (exclusive).
+        channel_ids: array_like
+            A list or 1D array of channel ids (ints) from which each trace will be
+            extracted.
+
+        Returns
+        ----------
+        traces: numpy.ndarray
+            A 2D array that contains all of the traces from each channel.
+            Dimensions are: (num_channels x num_frames)
+        '''
+        try:
+            from pynwb import NWBHDF5IO, NWBFile
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        if channel_ids is not None:
+            if not isinstance(channel_ids, (list, np.ndarray)):
+                raise Exception("'channel_ids' must be a list or array of integers.")
+            if not all([id in self.channel_ids for id in channel_ids]):
+                raise Exception("'channel_ids' contain values outside the range of valid ids.")
+        else:
+            channel_ids = self.channel_ids
+        if start_frame is not None:
+            if not isinstance(start_frame, int):
+                raise Exception("'start_frame' should be an integer")
+        else:
+            start_frame = 0
+        if end_frame is not None:
+            if not isinstance(end_frame, int):
+                raise Exception("'end_frame' should be an integer")
+        else:
+            end_frame = -1
+
+        with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             es = nwbfile.acquisition[self._electrical_series_name]
+            traces = es.data[start_frame:end_frame, channel_ids].T
+        return traces
 
-            if start_frame is None:
-                start_frame = 0
-            if end_frame is None:
-                end_frame = -1
-            if channel_ids is None:
-                return es.data[start_frame:end_frame].T
-            else:
-                return es.data[start_frame:end_frame, np.isin(self.channel_ids, channel_ids)].T
 
     def get_sampling_frequency(self):
+        '''This function returns the sampling frequency in units of Hz.
+
+        Returns
+        -------
+        fs: float
+            Sampling frequency of the recordings in Hz.
+        '''
         return self.sampling_frequency
 
+
     def get_num_frames(self):
+        '''This function returns the number of frames in the recording.
+
+        Returns
+        -------
+        num_frames: int
+            Number of frames in the recording (duration of recording).
+        '''
         return self.num_frames
 
-    def get_channel_ids(self):
-        return self.channel_ids
-
-    def get_channel_locations(self, channel_ids=None):
-        if channel_ids is None:
-            return self.geom
-        else:
-            return self.geom[np.isin(self.channel_ids, channel_ids), :]
-
-    def get_channel_groups(self, channel_ids=None):
-        if channel_ids is None:
-            return self.channel_groups
-        else:
-            return self.channel_groups[np.isin(self.channel_ids, channel_ids)]
-
-    def get_channel_property_names(self, channel_id=None):
-        return list(self.electrodes_df.columns)
-
-    def get_channel_property(self, channel_id, property_name):
-        return self.electrodes_df[property_name][channel_id]
 
     def time_to_frame(self, time):
+        '''This function converts a user-inputted time (in seconds) to a frame
+        index.
+
+        Parameters
+        -------
+        time: float
+            The time (in seconds) to be converted to frame index.
+
+        Returns
+        -------
+        frame: float
+            The corresponding frame index.
+        '''
         return (time - self.recording_start_time) * self.get_sampling_frequency()
 
+
     def frame_to_time(self, frame):
+        '''This function converts a user-inputted frame index to a time with
+        units of seconds.
+
+        Parameters
+        ----------
+        frame: float
+            The frame to be converted to a time.
+
+        Returns
+        -------
+        time: float
+            The corresponding time in seconds.
+        '''
         return frame / self.get_sampling_frequency() + self.recording_start_time
+
+
+    def get_channel_ids(self):
+        '''Returns the list of channel ids. If not specified, the range from 0
+        to num_channels - 1 is returned.
+
+        Returns
+        -------
+        channel_ids: list
+            Channel list
+        '''
+        return self.channel_ids.tolist()
+
+
+    def set_channel_locations(self, channel_ids=None, locations=None):
+        '''
+        NWB files do not allow for setting already existing properties.
+        Channel locations should be set in the moment of adding channels.
+        '''
+        print(self.set_channel_locations.__doc__)
+
+
+    def set_channel_groups(self, channel_ids=None, groups=None):
+        '''
+        NWB files do not allow for setting already existing properties.
+        Channel groups should be set in the moment of adding channels.
+        '''
+        print(self.set_channel_groups.__doc__)
+
+
+    def set_channel_property(self, channel_id=None, property_name=None, value=None):
+        """
+        NWB files require that new properties are set once for all channels.
+        Please use method 'set_channels_property()' instead.
+        """
+        print(self.set_channel_property.__doc__)
+
+
+    def set_channels_property(self, channel_ids, property_name, values, default_values=np.nan):
+        '''This function adds a new property data set to the chosen channels.
+        NWB files require that new properties are set once for all channels.
+        Therefore, the 'property_name' for ids not present in 'channel_ids' will
+        be filled with 'default_values'.
+
+        Parameters
+        ----------
+        channel_ids: list of ints
+            The channel ids for which the property will be set.
+        property_name: str
+            The name of the property to be stored.
+        values : list
+            The data associated with the given property name. List elements
+            could be many types as specified by the user.
+        default_values :
+            Default values of 'property_name' for channel ids not present in
+            'channel_ids' list. Default to NaN.
+        '''
+        if not isinstance(channel_ids, list):
+            raise ValueError("'channel_ids' must be a list of integers")
+        if not all(isinstance(x, int) for x in channel_ids):
+            raise ValueError("'channel_ids' must be a list of integers")
+        existing_ids = self.get_channel_ids()
+        if not all(x in existing_ids for x in channel_ids):
+            raise ValueError("'channel_ids' contains values outside the range of existing ids")
+        if not isinstance(property_name, str):
+            raise Exception("'property_name' must be a string")
+        if property_name in self.get_shared_channel_property_names():
+            raise Exception(property_name + " property already exists")
+        if len(channel_ids)!=len(values):
+            raise Exception("'channel_ids' and 'values' should be lists of same size")
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+
+        nChannels = len(existing_ids)
+        new_values = [default_values]*nChannels
+        with NWBHDF5IO(self._path, 'r+') as io:
+            nwbfile = io.read()
+            for i, v in zip(channel_ids, values):
+                new_values[existing_ids.index(i)] = v
+            nwbfile.add_electrode_column(name=property_name,
+                                         description='',
+                                         data=new_values)
+            es = nwbfile.acquisition[self._electrical_series_name]
+            self.electrodes_df = es.electrodes.table.to_dataframe()
+            io.write(nwbfile)
+
+
+    def get_channel_property(self, channel_id, property_name):
+        '''This function returns the data stored under the property name from
+        the given channel.
+
+        Parameters
+        ----------
+        channel_id: int
+            The channel id for which the property will be returned
+        property_name: str
+            A property stored by the RecordingExtractor (location, etc.)
+
+        Returns
+        ----------
+        property_data
+            The data associated with the given property name. Could be many
+            formats as specified by the user.
+        '''
+        return self.electrodes_df[property_name][channel_id]
+
+
+    def get_channel_property_names(self, channel_id=None):
+        '''Get a list of property names for a given channel. In NWB files all
+        channels must have the same properties, so the argument 'channel_ids' is
+        irrelevant and should be left as None.
+
+        Parameters
+        ----------
+        channel_id: int
+            The channel id for which the property names will be returned.
+            If None (default), will return property names for all channels.
+
+        Returns
+        ----------
+        property_names
+            The list of property names
+        '''
+        return list(self.electrodes_df.columns)
+
+
+    def get_shared_channel_property_names(self, channel_ids=None):
+        '''Get the intersection of channel property names for a given set of
+        channels. In NWB files all channels must have the same properties, so
+        the argument 'channel_ids' is irrelevant and should be left as None.
+
+        Parameters
+        ----------
+        channel_ids: int
+            The channel ids for which the property names will be returned.
+            If None (default), will return property names for all channels.
+
+        Returns
+        ----------
+        property_names
+            The list of property names
+        '''
+        return list(self.electrodes_df.columns)
+
+
+    def copy_channel_properties(self, recording, channel_ids=None, default_values=None):
+        '''Copy channel properties from another recording extractor to the current
+        NwbRecordingExtractor. NWB files require that new properties are set once
+        for all channels. Therefore, the values of new properties for ids not
+        present in 'channel_ids' will be filled with 'default_values'.
+
+        Parameters
+        ----------
+        recording : RecordingExtractor
+            The recording extractor from which the properties will be copied
+        channel_ids : list
+            The list of channel ids for which the properties will be copied.
+        default_values : list
+            List of default values for each property, for channel ids not present
+            in 'channel_ids' list. Default to NaN for all properties.
+        '''
+        if channel_ids is None:
+            channel_ids = recording.get_channel_ids()
+        else:
+            if not isinstance(channel_ids, list):
+                raise ValueError("'channel_ids' must be a list of integers")
+            if not all(isinstance(x, int) for x in channel_ids):
+                raise ValueError("'channel_ids' must be a list of integers")
+            existing_ids = self.get_channel_ids()
+            if not all(x in existing_ids for x in channel_ids):
+                raise ValueError("'channel_ids' contains values outside the range of existing ids")
+
+        new_property_names = recording.get_shared_channel_property_names()
+        curr_property_names = self.get_shared_channel_property_names()
+        if default_values is None:
+            default_values = [np.nan]*len(new_property_names)
+        else:
+            if len(default_values)!=len(new_property_names):
+                raise Exception("'default_values' list must have length equal to"+
+                                " number of properties to be copied.")
+
+        # Copies only properties that do not exist already in NWB file
+        for i, pr in enumerate(new_property_names):
+            if pr in curr_property_names:
+                print(pr+" already exists in NWB file and can't be copied.")
+            else:
+                pr_values = recording.get_channel_property(channel_ids=unit_ids,
+                                                           property_name=pr)
+                self.set_channels_property(unit_ids=unit_ids,
+                                           property_name=pr,
+                                           values=pr_values,
+                                           default_values=default_values[i])
+
+
+    def add_epoch(self, epoch_name, start_frame, end_frame):
+        '''This function adds an epoch to the NWB file.
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be added
+        start_frame: int
+            The start frame of the epoch to be added (inclusive)
+        end_frame: int
+            The end frame of the epoch to be added (exclusive)
+        '''
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        if not isinstance(epoch_name, str):
+            raise Exception("'epoch_name' must be a string")
+        if not isinstance(start_frame, int):
+            raise Exception("'start_frame' must be an integer")
+        if not isinstance(end_frame, int):
+            raise Exception("'end_frame' must be an integer")
+
+        fs = self.get_sampling_frequency()
+        with NWBHDF5IO(self._path, 'r+') as io:
+            nwbfile = io.read()
+            nwbfile.add_epoch(start_time=start_frame/fs,
+                              stop_time=end_frame/fs,
+                              tags=epoch_name)
+            io.write(nwbfile)
+
+
+    def remove_epoch(self, epoch_name=None):
+        '''NWB files do not allow removing epochs.'''
+        print(self.remove_epoch.__doc__)
+
+
+    def get_epoch_names(self):
+        '''This function returns a list of all the epoch names in the NWB file.
+
+        Returns
+        ----------
+        epoch_names: list
+            List of epoch names in the sorting extractor
+        '''
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+            if nwbfile.epochs is None:
+                print("No epochs in NWB file")
+                epoch_names = None
+            else:
+                flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
+                aux = np.array(flat_list)
+                epoch_names = np.unique(aux).tolist()
+        return epoch_names
+
+
+    def get_epoch_info(self, epoch_name):
+        '''This function returns the start frame and end frame of the epoch
+        in a dict.
+
+        Parameters
+        ----------
+        epoch_name: str
+            The name of the epoch to be returned
+
+        Returns
+        ----------
+        epoch_info: dict
+            A dict containing the start frame and end frame of the epoch
+        '''
+        try:
+            from pynwb import NWBHDF5IO
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
+                                      "pip install pynwb\n\n")
+        if not isinstance(epoch_name, str):
+            raise ValueError("epoch_name must be a string")
+        all_epoch_names = self.get_epoch_names()
+        if epoch_name not in all_epoch_names:
+            raise ValueError("This epoch has not been added")
+
+        fs = self.get_sampling_frequency()
+        epoch_info = {}
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+            flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
+            for i, tag in enumerate(flat_list):
+                if tag == epoch_name:
+                    epoch_info['start_frame'] = int(nwbfile.epochs['start_time'][i]*fs)
+                    epoch_info['end_frame'] = int(nwbfile.epochs['stop_time'][i]*fs)
+        return epoch_info
+
+
 
     @staticmethod
     def write_recording(recording, save_path, nwbfile_kwargs=None):
@@ -297,12 +664,14 @@ class NwbSortingExtractor(se.SortingExtractor):
             unit_ids = list(nwbfile.units.id[:])
         return unit_ids
 
-    def get_unit_property_names(self, unit_id):
+    def get_unit_property_names(self, unit_id=None):
         '''Get a list of property names for a given unit.
+
          Parameters
         ----------
         unit_id: int
             The unit id for which the property names will be returned.
+
         Returns
         ----------
         property_names
@@ -715,7 +1084,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                                     data=flatten_new_values,
                                     index=spikes_index)
             io.write(nwbfile)
-            
+
 
     def get_shared_unit_spike_feature_names(self, unit_ids=None):
         '''Get list of spike feature names for the units in the NWB file.
@@ -868,7 +1237,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         Returns
         ----------
         epoch_names: list
-            List of epoch names in the recording extractor
+            List of epoch names in the sorting extractor
         '''
         try:
             from pynwb import NWBHDF5IO
@@ -935,8 +1304,8 @@ class NwbSortingExtractor(se.SortingExtractor):
 
         Returns
         ----------
-        epoch_extractor: SubRecordingExtractor
-            A SubRecordingExtractor which is a view to the given epoch
+        epoch_extractor: SubSortingExtractor
+            A SubSortingExtractor which is a view to the given epoch
         '''
         epoch_info = self.get_epoch_info(epoch_name)
         start_frame = epoch_info['start_frame']
