@@ -647,9 +647,6 @@ class NwbSortingExtractor(se.SortingExtractor):
             # spike times are measured in samples
             times = ((times0 - self._t0) * self._sampling_frequency).astype('int')
             mask = (times>start_frame) & (times<end_frame)
-            print(feat_vals)
-            print(feat_vals.shape)
-            print(len(mask))
         return feat_vals[mask].tolist()
 
 
@@ -701,7 +698,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         nUnits = len(existing_ids)
         nspikes_units = self.get_nspikes()
         new_values = [[default_value]*nSpikes for nSpikes in nspikes_units]
-        with NWBHDF5IO(self._path, 'r+') as io:
+        with NWBHDF5IO(self._path, 'a') as io:
             nwbfile = io.read()
             for id in unit_ids:
                 spikes_unit = nwbfile.units['spike_times'][existing_ids.index(id)]
@@ -711,11 +708,14 @@ class NwbSortingExtractor(se.SortingExtractor):
                                      " as the spike train, error at unit #"+str(id))
                 new_values[existing_ids.index(id)] = values[str(id)]
 
+            flatten_new_values = [item for sublist in new_values for item in sublist]
+            spikes_index = np.cumsum(nspikes_units)
             nwbfile.add_unit_column(name='spike_feature_'+feature_name,
                                     description='',
-                                    data=new_values)
+                                    data=flatten_new_values,
+                                    index=spikes_index)
             io.write(nwbfile)
-
+            
 
     def get_shared_unit_spike_feature_names(self, unit_ids=None):
         '''Get list of spike feature names for the units in the NWB file.
