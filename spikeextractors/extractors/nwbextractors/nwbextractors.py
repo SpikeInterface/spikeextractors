@@ -110,12 +110,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         else:
             channel_ids = self.channel_ids
         if start_frame is not None:
-            if not isinstance(start_frame, int):
+            if not isinstance(start_frame, (int,np.integer)):
                 raise Exception("'start_frame' should be an integer")
         else:
             start_frame = 0
         if end_frame is not None:
-            if not isinstance(end_frame, int):
+            if not isinstance(end_frame, (int,np.integer)):
                 raise Exception("'end_frame' should be an integer")
         else:
             end_frame = -1
@@ -209,6 +209,54 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         Channel groups should be set in the moment of adding channels.
         '''
         print(self.set_channel_groups.__doc__)
+
+
+    def get_channel_groups(self, channel_ids=None):
+        '''This function returns the group of each channel specifed by
+        channel_ids
+
+        Parameters
+        ----------
+        channel_ids: array_like
+            The channel ids (ints) for which the groups will be returned
+
+        Returns
+        ----------
+        groups: array_like
+            Returns a list of corresonding groups (ints) for the given
+            channel_ids.
+        '''
+        if channel_ids is not None:
+            if not isinstance(channel_ids, (list, np.ndarray)):
+                raise Exception("'channel_ids' must be a list or array of integers.")
+            if not all([id in self.channel_ids for id in channel_ids]):
+                raise Exception("'channel_ids' contain values outside the range of valid ids.")
+        else:
+            channel_ids = self.channel_ids
+
+        groups = self.electrodes_df['group_name'][channel_ids]
+        return groups.tolist()
+
+
+    def set_channel_gains(self, channel_ids, gains):
+        '''This function sets the gain property of each specified channel
+        id with the corresponding group of the passed in gains float/list.
+        NWB files require that new properties are set once for all channels.
+        Therefore, the gain for ids not present in 'channel_ids' will
+        be filled with the default value of 1.
+
+        Parameters
+        ----------
+        channel_ids: array_like
+            The channel ids (ints) for which the groups will be specified
+        gains: float/array_like
+            If a float, each channel will be assigned the corresponding gain.
+            If a list, each channel will be given a gain from the list.
+        '''
+        self.set_channels_property(channel_ids=channel_ids,
+                                   property_name='gain',
+                                   values=gains,
+                                   default_values=1.)
 
 
     def set_channel_property(self, channel_id=None, property_name=None, value=None):
@@ -476,7 +524,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     epoch_info['start_frame'] = int(nwbfile.epochs['start_time'][i]*fs)
                     epoch_info['end_frame'] = int(nwbfile.epochs['stop_time'][i]*fs)
         return epoch_info
-
 
 
     @staticmethod
