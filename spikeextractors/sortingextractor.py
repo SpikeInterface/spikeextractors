@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import copy
+from .extraction_tools import get_sub_extractors_by_property
+
 
 
 class SortingExtractor(ABC):
@@ -589,6 +591,32 @@ class SortingExtractor(ABC):
         from .subsortingextractor import SubSortingExtractor
         return SubSortingExtractor(parent_sorting=self, start_frame=start_frame,
                                    end_frame=end_frame)
+
+    def get_sub_extractors_by_property(self, property_name, return_property_list=False):
+        '''Returns a list of SubSortingExtractors from this SortingExtractor based on the given
+        property_name (e.g. group)
+
+        Parameters
+        ----------
+        property_name: str
+            The property used to subdivide the extractor
+        return_property_list: bool
+            If True the property list is returned
+
+        Returns
+        -------
+        sub_list: list
+            The list of subextractors to be returned.
+
+        '''
+        if return_property_list:
+            sub_list, prop_list = get_sub_extractors_by_property(self, property_name=property_name, 
+                                                                return_property_list=return_property_list)
+            return sub_list, prop_list
+        else:
+            sub_list = get_sub_extractors_by_property(self, property_name=property_name, 
+                                                      return_property_list=return_property_list)
+            return sub_list
 
     @classmethod
     def gui_params(self):
