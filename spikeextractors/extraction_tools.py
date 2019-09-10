@@ -1,8 +1,4 @@
 import numpy as np
-from .recordingextractor import RecordingExtractor
-from .sortingextractor import SortingExtractor
-from .subrecordingextractor import SubRecordingExtractor
-from .subsortingextractor import SubSortingExtractor
 import csv
 import os
 import sys
@@ -58,9 +54,10 @@ def write_python(path, dict):
 
 
 def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None, verbose=False):
-    '''Loads channel information into recording extractor. If a .prb file is given,
-    then 'location' and 'group' information for each channel is stored. If a .csv
-    file is given, then it will only store 'location'
+    '''This function returns a SubRecordingExtractor that contains information from the given
+    probe file (channel locations, groups, etc.) If a .prb file is given, then 'location' and 'group' 
+    information for each channel is added to the SubRecordingExtractor. If a .csv file is given, then 
+    it will only add 'location' to the SubRecordingExtractor.
 
     Parameters
     ----------
@@ -73,8 +70,11 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
 
     Returns
     ---------
-    subRecordingExtractor
+    subrecording = SubRecordingExtractor
+        The extractor containing all of the probe information.
     '''
+    from .subrecordingextractor import SubRecordingExtractor
+    from .subsortingextractor import SubSortingExtractor
     probe_file = Path(probe_file)
     if probe_file.suffix == '.prb':
         probe_dict = read_python(probe_file)
@@ -171,9 +171,9 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
     return subrecording
 
 
-def save_probe_file(recording, probe_file, format=None, radius=100, dimensions=None, verbose=False):
+def save_to_probe_file(recording, probe_file, format=None, radius=100, dimensions=None, verbose=False):
     '''Saves probe file from the channel information of the given recording
-    extractor
+    extractor.
 
     Parameters
     ----------
@@ -234,9 +234,6 @@ def read_binary(file, numchan, dtype, frames_first=True, offset=0):
     offset: int
         number of offset bytes
 
-    Returns
-    -------
-
     '''
     numchan = int(numchan)
     with Path(file).open() as f:
@@ -251,7 +248,7 @@ def read_binary(file, numchan, dtype, frames_first=True, offset=0):
     return samples
 
 
-def write_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunksize=None):
+def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunksize=None):
     '''Saves the traces of a recording extractor in binary .dat format.
 
     Parameters
@@ -267,9 +264,7 @@ def write_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunk
         Type of the saved data. Default float32
     chunksize: None or int
         If not None then the copy done by chunk size.
-        Thi avoid to much memory consumption for big files.
-    Returns
-    -------
+        This avoid to much memory consumption for big files.
     '''
     save_path = Path(save_path)
     if save_path.suffix == '':
@@ -304,12 +299,11 @@ def write_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunk
 
 
 def get_sub_extractors_by_property(extractor, property_name, return_property_list=False):
-    '''Divides Recording or Sorting Extractor based on the property_name (e.g. group)
+    '''Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given
+    property_name (e.g. group)
 
     Parameters
     ----------
-    extractor: RecordingExtractor or SortingExtractor
-        The extractor to be subdivided in subextractors
     property_name: str
         The property used to subdivide the extractor
     return_property_list: bool
@@ -317,9 +311,16 @@ def get_sub_extractors_by_property(extractor, property_name, return_property_lis
 
     Returns
     -------
-    List of subextractors
-
+    sub_list: list
+        The list of subextractors to be returned.
+    OR
+    sub_list, prop_list
+        If return_property_list is True, the property list will be returned as well.
     '''
+    from .recordingextractor import RecordingExtractor
+    from .sortingextractor import SortingExtractor
+    from .subrecordingextractor import SubRecordingExtractor
+    from .subsortingextractor import SubSortingExtractor
     if isinstance(extractor, RecordingExtractor):
         if property_name not in extractor.get_shared_channel_property_names():
             raise ValueError("'property_name' must be must be a property of the recording channels")
