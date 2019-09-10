@@ -100,10 +100,15 @@ class MdaSortingExtractor(SortingExtractor):
         SortingExtractor.__init__(self)
         self._firings_path = firings_file
         self._firings = readmda(self._firings_path)
+        self._max_channels = self._firings[0, :]
         self._times = self._firings[1, :]
         self._labels = self._firings[2, :]
         self._unit_ids = np.unique(self._labels).astype(int)
         self._sampling_frequency = sampling_frequency
+        for unit_id in self._unit_ids:
+            inds = np.where(self._labels == unit_id)
+            max_channels = self._max_channels[inds].astype(int)
+            self.set_unit_property(unit_id, 'max_channel', max_channels[0])
 
     def get_unit_ids(self):
         return list(self._unit_ids)
@@ -122,18 +127,17 @@ class MdaSortingExtractor(SortingExtractor):
         times_list = []
         labels_list = []
         primary_channels_list = []
-        for unit in unit_ids:
-            times = sorting.get_unit_spike_train(unit_id=unit)
+        for unit_id in unit_ids:
+            times = sorting.get_unit_spike_train(unit_id=unit_id)
             times_list.append(times)
-            labels_list.append(np.ones(times.shape) * unit)
+            labels_list.append(np.ones(times.shape) * unit_id)
             if write_primary_channels:
-                if 'max_channel' in sorting.get_unit_spike_feature_names(unit_id=unit):
-                    primary_channels_list.append(sorting.get_unit_spike_features(unit_id=unit,
-                                                                                 feature_name='max_channel'))
+                if 'max_channel' in sorting.get_unit_property_names(unit_id):
+                    primary_channels_list.append([sorting.get_unit_property(unit_id, 'max_channel')]*times.shape[0])
                 else:
                     raise ValueError(
                         "Unable to write primary channels because 'max_channel' spike feature not set in unit " + str(
-                            unit))
+                            unit_id))
             else:
                 primary_channels_list.append(np.zeros(times.shape))
         all_times = _concatenate(times_list)
