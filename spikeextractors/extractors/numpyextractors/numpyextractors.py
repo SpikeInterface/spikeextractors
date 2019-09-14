@@ -5,6 +5,8 @@ import numpy as np
 
 
 class NumpyRecordingExtractor(RecordingExtractor):
+    extractor_name = 'NumpyRecordingExtractor'
+    is_writable = True
     def __init__(self, timeseries, samplerate, geom=None):
         if isinstance(timeseries, str):
             if Path(timeseries).is_file():
@@ -46,6 +48,8 @@ class NumpyRecordingExtractor(RecordingExtractor):
 
 
 class NumpySortingExtractor(SortingExtractor):
+    extractor_name = 'NumpySortingExtractor'
+    is_writable = False
     def __init__(self):
         SortingExtractor.__init__(self)
         self._units = {}

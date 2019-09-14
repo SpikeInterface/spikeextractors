@@ -2,6 +2,7 @@ from spikeextractors import SortingExtractor
 import numpy as np
 
 class NeuroscopeSortingExtractor(SortingExtractor):
+
     """
     Extracts sorting information from pair of .res and .clu files . The .res is a text file with
     a sorted list of all spiketimes from all units displayed in sample (integer '%i') units.
@@ -17,6 +18,10 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     clufile : str
         Path to the .clu text file.
     """
+    extractor_name = 'NeuroscopeSortingExtractor'
+    installed = True  # check at class level if installed or not
+    is_writable = True
+    mode = 'custom'
 
     def __init__(self, resfile, clufile):
         SortingExtractor.__init__(self)

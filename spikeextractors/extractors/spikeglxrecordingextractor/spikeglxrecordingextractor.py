@@ -9,16 +9,18 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     extractor_name = 'SpikeGLXRecordingExtractor'
     has_default_locations = True
     installed = True  # check at class level if installed or not
+    is_writable = True
+    mode = 'file'
     _gui_params = [
-        {'name': 'npx_file', 'type': 'path', 'title': "Path to file"},
+        {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
         {'name': 'x_pitch', 'type': 'float', 'value':21.0, 'default':21.0, 'title': "x_pitch for Neuropixels probe (default 21)"},
         {'name': 'y_pitch', 'type': 'float', 'value':20.0, 'default':20.0, 'title': "y_pitch for Neuropixels probe (default 20)"},
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, npx_file, x_pitch=None, y_pitch=None):
+    def __init__(self, file_path, x_pitch=None, y_pitch=None):
         RecordingExtractor.__init__(self)
-        self._npxfile = Path(npx_file)
+        self._npxfile = Path(file_path)
         self._basepath = self._npxfile.cwd()
 
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'

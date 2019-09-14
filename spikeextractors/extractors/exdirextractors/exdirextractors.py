@@ -15,15 +15,17 @@ class ExdirRecordingExtractor(RecordingExtractor):
     extractor_name = 'ExdirRecordingExtractor'
     has_default_locations = False
     installed = HAVE_EXDIR  # check at class level if installed or not
+    is_writable = True
+    mode = 'dir'
     _gui_params = [
-        {'name': 'exdir_file', 'type': 'path', 'title': "Path to file"},
+        {'name': 'dir_path', 'type': 'dir', 'title': "Path to directory"},
     ]
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
-    def __init__(self, exdir_file):
+    def __init__(self, dir_path):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
-        self._exdir_file = exdir_file
-        exdir_group = exdir.File(exdir_file, plugins=[exdir.plugins.quantities])
+        self._exdir_file = dir_path
+        exdir_group = exdir.File(dir_path, plugins=[exdir.plugins.quantities])
 
         self._recordings = exdir_group['acquisition']['timeseries']
         self._samplerate = float(self._recordings.attrs['sample_rate'].rescale('Hz').magnitude)
@@ -51,11 +53,11 @@ class ExdirRecordingExtractor(RecordingExtractor):
         return self._recordings.data[np.array(channel_ids), start_frame:end_frame]
 
     @staticmethod
-    def write_recording(recording, exdir_file, lfp=False, mua=False):
+    def write_recording(recording, save_path, lfp=False, mua=False):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         channel_ids = recording.get_channel_ids()
         raw = recording.get_traces()
-        exdir_group = exdir.File(exdir_file, plugins=[exdir.plugins.quantities])
+        exdir_group = exdir.File(save_path, plugins=[exdir.plugins.quantities])
 
         if not lfp and not mua:
             acq = exdir_group.require_group('acquisition')
@@ -194,20 +196,15 @@ class ExdirSortingExtractor(SortingExtractor):
 
     extractor_name = 'ExdirSortingExtractor'
     installed = HAVE_EXDIR  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'exdir_file', 'type': 'file_path', 'title': "str, Path to file"},
-        {'name': 'sample_rate', 'type': 'float', 'title': "Sampling rate of recording. "
-                                                          "It will be overwritten if exdir_file contains this info."},
-        {'name': 'channel_group', 'type': 'int', 'title': "Channel group to load spike trains from."},
-        {'name': 'load_waveforms', 'type': 'bool', 'title': "if True, waveforms are loaded."},
-    ]
+    is_writable = True
+    mode = 'dir'
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
-    def __init__(self, exdir_file, sample_rate=None, channel_group=None, load_waveforms=False):
+    def __init__(self, dir_path, sample_rate=None, channel_group=None, load_waveforms=False):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         SortingExtractor.__init__(self)
-        self._exdir_file = exdir_file
-        exdir_group = exdir.File(exdir_file, plugins=exdir.plugins.quantities)
+        self._exdir_file = dir_path
+        exdir_group = exdir.File(dir_path, plugins=exdir.plugins.quantities)
 
         electrophysiology = None
         if 'processing' in exdir_group.keys():
@@ -268,7 +265,7 @@ class ExdirSortingExtractor(SortingExtractor):
         return np.rint(times[inds]).astype(int)
 
     @staticmethod
-    def write_sorting(sorting, exdir_file, recording=None, sample_rate=None, save_waveforms=False, verbose=False):
+    def write_sorting(sorting, save_path, recording=None, sample_rate=None, save_waveforms=False, verbose=False):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         if sample_rate is None and recording is None:
             raise Exception("Provide 'sample_rate' argument (Hz)")
@@ -278,7 +275,7 @@ class ExdirSortingExtractor(SortingExtractor):
             else:
                 sample_rate = recording.get_sampling_frequency() * pq.Hz
 
-        exdir_group = exdir.File(exdir_file, plugins=exdir.plugins.quantities)
+        exdir_group = exdir.File(save_path, plugins=exdir.plugins.quantities)
         ephys = exdir_group.require_group('processing').require_group('electrophysiology')
         ephys.attrs['sample_rate'] = sample_rate
 

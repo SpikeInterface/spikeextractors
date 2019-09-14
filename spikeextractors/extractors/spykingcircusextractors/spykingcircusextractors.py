@@ -15,13 +15,15 @@ class SpykingCircusRecordingExtractor(NumpyRecordingExtractor):
     extractor_name = 'SpykingCircusRecordingExtractor'
     has_default_locations = False
     installed = True  # check at class level if installed or not
+    is_writable = False
+    mode = 'dir'
     _gui_params = [
-        {'name': 'spykingcircus_folder', 'type': 'path', 'title': "Path to folder"},
+        {'name': 'dir_path', 'type': 'dir', 'title': "Path to directory"},
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, spykingcircus_folder):
-        spykingcircus_folder = Path(spykingcircus_folder)
+    def __init__(self, dir_path):
+        spykingcircus_folder = Path(dir_path)
         listfiles = spykingcircus_folder.iterdir()
         sample_rate = None
         recording_file = None
@@ -41,7 +43,7 @@ class SpykingCircusRecordingExtractor(NumpyRecordingExtractor):
                     if any([f_.suffix == '.hdf5' for f_ in f.iterdir()]):
                         result_folder = spykingcircus_folder
 
-        assert isinstance(parent_folder, Path) and isinstance(result_folder, Path), "Not a valid spyking circus folder"
+        assert isinstance(parent_folder, Path) and isinstance(result_folder, Path), "Not a valid spyking circus directory"
 
         for f in parent_folder.iterdir():
             if f.suffix == '.params':
@@ -55,16 +57,18 @@ class SpykingCircusSortingExtractor(SortingExtractor):
 
     extractor_name = 'SpykingCircusSortingExtractor'
     installed = HAVE_SCSX  # check at class level if installed or not
+    is_writable = True
+    mode = 'dir'
     _gui_params = [
-        {'name': 'spykingcircus_folder', 'type': 'path', 'title': "Path to folder"},
+        {'name': 'dir_path', 'type': 'dir', 'title': "Path to directory"},
     ]
     installation_mesg = "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
                                # error message when not installed
 
-    def __init__(self, spykingcircus_folder):
+    def __init__(self, dir_path):
         assert HAVE_SCSX, "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
         SortingExtractor.__init__(self)
-        spykingcircus_folder = Path(spykingcircus_folder)
+        spykingcircus_folder = Path(dir_path)
         listfiles = spykingcircus_folder.iterdir()
         results = None
         sample_rate = None
@@ -84,7 +88,7 @@ class SpykingCircusSortingExtractor(SortingExtractor):
                     if any([f_.suffix == '.hdf5' for f_ in f.iterdir()]):
                         result_folder = spykingcircus_folder
 
-        assert isinstance(parent_folder, Path) and isinstance(result_folder, Path), "Not a valid spyking circus folder"
+        assert isinstance(parent_folder, Path) and isinstance(result_folder, Path), "Not a valid spyking circus directory"
 
         # load files
         for f in result_folder.iterdir():
@@ -103,7 +107,7 @@ class SpykingCircusSortingExtractor(SortingExtractor):
             self._sampling_frequency = sample_rate
 
         if results is None:
-            raise Exception(spykingcircus_folder, " is not a spyking circus folder")
+            raise Exception(spykingcircus_folder, " is not a spyking circus directory")
         f_results = h5py.File(results)
         self._spiketrains = []
         self._unit_ids = []

@@ -17,6 +17,8 @@ class SortingExtractor(ABC):
     installed = False  # check at class level if installed or not
     _gui_params = []
     installation_mesg = ""  # error message when not installed
+    is_writable = False
+    mode = 'file'           # 'file', dir' or 'file_or_dir"
 
     def __init__(self):
         self._epochs = {}

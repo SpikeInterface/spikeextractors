@@ -12,13 +12,15 @@ class MdaRecordingExtractor(RecordingExtractor):
     extractor_name = 'MdaRecordingExtractor'
     has_default_locations = True
     installed = True  # check at class level if installed or not
+    is_writable = True
+    mode = 'dir'
     _gui_params = [
-        {'name': 'dataset_directory', 'type': 'path', 'title': "Path to folder"},
+        {'name': 'dir_path', 'type': 'dir', 'title': "Path to directory"},
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, dataset_directory):
-        dataset_directory = Path(dataset_directory)
+    def __init__(self, dir_path):
+        dataset_directory = Path(dir_path)
         self._dataset_directory = dataset_directory
         timeseries0 = dataset_directory / 'raw.mda'
         self._dataset_params = read_dataset_params(str(dataset_directory))
@@ -89,16 +91,14 @@ class MdaRecordingExtractor(RecordingExtractor):
 class MdaSortingExtractor(SortingExtractor):
     extractor_name = 'MdaSortingExtractor'
     installed = True  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'firings_file', 'type': 'file_path', 'title': "str, Path to file"},
-        {'name': 'sampling_frequency', 'type': 'float', 'title': "sampling frequency"}
-    ]
+    is_writable = True
+    mode = 'file'
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, firings_file, sampling_frequency=None):
+    def __init__(self, file_path, sampling_frequency=None):
 
         SortingExtractor.__init__(self)
-        self._firings_path = firings_file
+        self._firings_path = file_path
         self._firings = readmda(self._firings_path)
         self._max_channels = self._firings[0, :]
         self._times = self._firings[1, :]

@@ -16,14 +16,16 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
     extractor_name = 'KlustaRecordingExtractor'
     has_default_locations = False
     installed = HAVE_KLSX  # check at class level if installed or not
+    is_writable = True
+    mode = 'dir'
     _gui_params = [
-        {'name': 'kwikfile', 'type': 'path', 'title': "Path to file"},
+        {'name': 'dir_path', 'type': 'dir', 'title': "Path to directory"},
     ]
     installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
-    def __init__(self, klustafolder):
+    def __init__(self, dir_path):
         assert HAVE_KLSX, "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"
-        klustafolder = Path(klustafolder).absolute()
+        klustafolder = Path(dir_path).absolute()
         config_file = [f for f in klustafolder.iterdir() if f.suffix == '.prm'][0]
         dat_file = [f for f in klustafolder.iterdir() if f.suffix == '.dat'][0]
         assert config_file.is_file() and dat_file.is_file(), "Not a valid klusta folder"
@@ -32,7 +34,7 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
         n_channels = config['traces']['n_channels']
         dtype = config['traces']['dtype']
 
-        BinDatRecordingExtractor.__init__(self, datfile=dat_file, samplerate=sample_rate, numchan=n_channels,
+        BinDatRecordingExtractor.__init__(self, file_path=dat_file, samplerate=sample_rate, numchan=n_channels,
                                           dtype=dtype)
 
 
@@ -40,11 +42,12 @@ class KlustaSortingExtractor(SortingExtractor):
     extractor_name = 'KlustaSortingExtractor'
     installed = HAVE_KLSX  # check at class level if installed or not
     installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
-
-    def __init__(self, kwik_file_or_folder):
+    is_writable = True
+    mode = 'file_or_dir'
+    def __init__(self, file_or_dir_path):
         assert HAVE_KLSX, "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"
         SortingExtractor.__init__(self)
-        kwik_file_or_folder = Path(kwik_file_or_folder)
+        kwik_file_or_folder = Path(file_or_dir_path)
         kwikfile = None
         klustafolder = None
         if kwik_file_or_folder.is_file():
