@@ -10,6 +10,10 @@ except ImportError:
 class HS2SortingExtractor(SortingExtractor):
 
     extractor_name = 'HS2SortingExtractor'
+    exporter_name = 'HS2SortingExporter'
+    exporter_gui_params = [
+        {'name': 'save_path', 'type': 'file', 'title': "Save path"},
+    ]
     installed = HAVE_HS2SX  # check at class level if installed or not
     is_writable = True
     mode = 'file'

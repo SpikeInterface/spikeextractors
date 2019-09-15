@@ -13,18 +13,18 @@ class MdaRecordingExtractor(RecordingExtractor):
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = True
-    mode = 'dir'
-    _gui_params = [
-        {'name': 'dir_path', 'type': 'dir', 'title': "Path to directory"},
+    mode = 'folder'
+    extractor_gui_params = [
+        {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, dir_path):
-        dataset_directory = Path(dir_path)
+    def __init__(self, folder_path):
+        dataset_directory = Path(folder_path)
         self._dataset_directory = dataset_directory
         timeseries0 = dataset_directory / 'raw.mda'
         self._dataset_params = read_dataset_params(str(dataset_directory))
-        self._samplerate = self._dataset_params['samplerate'] * 1.0
+        self._sampling_frequency = self._dataset_params['samplerate'] * 1.0
         self._timeseries_path = os.path.abspath(timeseries0)
         geom0 = os.path.join(dataset_directory, 'geom.csv')
         self._geom_fname = geom0
@@ -47,7 +47,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         return self._num_timepoints
 
     def get_sampling_frequency(self):
-        return self._samplerate
+        return self._sampling_frequency
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
@@ -90,6 +90,10 @@ class MdaRecordingExtractor(RecordingExtractor):
 
 class MdaSortingExtractor(SortingExtractor):
     extractor_name = 'MdaSortingExtractor'
+    exporter_name = 'MdaSortingExporter'
+    exporter_gui_params = [
+        {'name': 'save_path', 'type': 'file', 'title': "Save path"},
+    ]
     installed = True  # check at class level if installed or not
     is_writable = True
     mode = 'file'

@@ -37,7 +37,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
     installed = HAVE_NWB  # check at class level if installed or not
     is_writable = True
     mode = 'file'
-    _gui_params = [
+    extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
         {'name': 'acquisition_name', 'type': 'string', 'value': None, 'default': None, 'title': "Name of Acquisition Method"},
     ]
@@ -66,11 +66,11 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             for m in range(M):
                 geom[m, :] = [ts.electrodes[m][1], ts.electrodes[m][2], ts.electrodes[m][3]]
             if hasattr(ts, 'timestamps') and ts.timestamps:
-                samplerate = 1 / (ts.timestamps[1] - ts.timestamps[0])  # there's probably a better way
+                sampling_frequency = 1 / (ts.timestamps[1] - ts.timestamps[0])  # there's probably a better way
             else:
-                samplerate = ts.rate * 1000
+                sampling_frequency = ts.rate * 1000
             data = np.copy(np.transpose(ts.data))
-            NRX = se.NumpyRecordingExtractor(timeseries=data, samplerate=samplerate, geom=geom)
+            NRX = se.NumpyRecordingExtractor(timeseries=data, sampling_frequency=sampling_frequency, geom=geom)
             CopyRecordingExtractor.__init__(self, NRX)
 
     @staticmethod
@@ -136,6 +136,12 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
 
 class NwbSortingExtractor(se.SortingExtractor):
     extractor_name = 'NwbSortingExtractor'
+    exporter_name = 'NwbSortingExporter'
+    exporter_gui_params = [
+        {'name': 'save_path', 'type': 'file', 'title': "Save path"},
+        {'name': 'identifier', 'type': 'string', 'value': None, 'default': None, 'title': "The session identifier"},
+        {'name': 'session_description', 'type': 'string', 'value': None, 'default': None, 'title': "The session description"},
+    ]
     installed = HAVE_NWB  # check at class level if installed or not
     is_writable = True
     mode = 'file'

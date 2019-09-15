@@ -15,7 +15,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     installed = HAVE_OE  # check at class level if installed or not
     is_writable = False
     mode = 'file'
-    _gui_params = [
+    extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "str, Path to file"},
         {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
         {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
@@ -61,12 +61,6 @@ class OpenEphysSortingExtractor(SortingExtractor):
     installed = HAVE_OE  # check at class level if installed or not
     is_writable = False
     mode = 'file'
-    _gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "str, Path to file"},
-        {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
-        {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
-    ]
-
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
 
     def __init__(self, file_path, *, experiment_id=0, recording_id=0):
