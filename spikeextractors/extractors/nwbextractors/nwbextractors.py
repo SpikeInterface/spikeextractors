@@ -139,8 +139,8 @@ class NwbSortingExtractor(se.SortingExtractor):
     exporter_name = 'NwbSortingExporter'
     exporter_gui_params = [
         {'name': 'save_path', 'type': 'file', 'title': "Save path"},
-        {'name': 'identifier', 'type': 'string', 'value': None, 'default': None, 'title': "The session identifier"},
-        {'name': 'session_description', 'type': 'string', 'value': None, 'default': None, 'title': "The session description"},
+        {'name': 'identifier', 'type': 'str', 'value': None, 'default': None, 'title': "The session identifier"},
+        {'name': 'session_description', 'type': 'str', 'value': None, 'default': None, 'title': "The session description"},
     ]
     installed = HAVE_NWB  # check at class level if installed or not
     is_writable = True
