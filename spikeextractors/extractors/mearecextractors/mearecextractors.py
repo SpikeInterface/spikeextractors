@@ -19,7 +19,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
     installed = HAVE_MREX  # check at class level if installed or not
     is_writable = True
     mode = 'file'
-    _gui_params = [
+    extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
     ]
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
@@ -116,6 +116,10 @@ class MEArecRecordingExtractor(RecordingExtractor):
 class MEArecSortingExtractor(SortingExtractor):
 
     extractor_name = 'MEArecSortingExtractor'
+    exporter_name = 'MEArecSortingExporter'
+    exporter_gui_params = [
+        {'name': 'save_path', 'type': 'file', 'title': "Save path (.h5 or .hdf5)"},
+    ]
     installed = HAVE_MREX  # check at class level if installed or not
     is_writable = True
     mode = 'file'

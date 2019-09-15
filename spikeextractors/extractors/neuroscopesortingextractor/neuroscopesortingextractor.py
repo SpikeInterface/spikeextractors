@@ -19,6 +19,10 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         Path to the .clu text file.
     """
     extractor_name = 'NeuroscopeSortingExtractor'
+    exporter_name = 'NeuroscopeSortingExporter'
+    exporter_gui_params = [
+        {'name': 'save_path', 'type': 'file', 'title': "Save path"},
+    ]
     installed = True  # check at class level if installed or not
     is_writable = True
     mode = 'custom'

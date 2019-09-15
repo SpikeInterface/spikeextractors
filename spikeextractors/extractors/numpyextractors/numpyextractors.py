@@ -7,7 +7,7 @@ import numpy as np
 class NumpyRecordingExtractor(RecordingExtractor):
     extractor_name = 'NumpyRecordingExtractor'
     is_writable = True
-    def __init__(self, timeseries, samplerate, geom=None):
+    def __init__(self, timeseries, sampling_frequency, geom=None):
         if isinstance(timeseries, str):
             if Path(timeseries).is_file():
                 self._timeseries = np.load(timeseries)
@@ -16,7 +16,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
         else:
             raise TypeError("'timeseries must be a .npy file name or a numpy array")
         RecordingExtractor.__init__(self)
-        self._samplerate = float(samplerate)
+        self._sampling_frequency = float(sampling_frequency)
         self._geom = geom
         if geom is not None:
             for m in range(self._timeseries.shape[0]):
@@ -29,7 +29,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
         return self._timeseries.shape[1]
 
     def get_sampling_frequency(self):
-        return self._samplerate
+        return self._sampling_frequency
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:

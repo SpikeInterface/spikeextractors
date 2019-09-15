@@ -15,10 +15,8 @@ class IntanRecordingExtractor(RecordingExtractor):
     is_writable = False
     mode = 'file'
     installed = HAVE_INTAN  # check at class level if installed or not
-    _gui_params = [
+    extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.rhs or .rhd)"},
-        {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
-        {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
     ]
     installation_mesg = "To use the Intan extractor, install pyintan: \n\n pip install pyintan\n\n"  # error message when not installed
 

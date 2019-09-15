@@ -261,7 +261,7 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
         If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
     dtype: dtype
-        Type of the saved data. Default float32
+        Type of the saved data. Default float32.
     chunksize: None or int
         If not None then the copy done by chunk size.
         This avoid to much memory consumption for big files.

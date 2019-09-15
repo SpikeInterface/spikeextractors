@@ -17,8 +17,9 @@ class BiocamRecordingExtractor(RecordingExtractor):
     installed = HAVE_BIOCAM  # check at class level if installed or not
     is_writable = True
     mode = 'file'
-    _gui_params = [       
+    extractor_gui_params = [       
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
+        {'name': 'mea_pitch', 'type': 'int', 'value': 42, 'default': 42, 'title': "The pitch of the MEA"},
     ]
     installation_mesg = "To use the BiocamRecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 

@@ -12,15 +12,15 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = False
-    mode = 'dir'
-    _gui_params = [
-        {'name': 'dir_path', 'type': 'path', 'title': "Path to directory"},
+    mode = 'folder'
+    extractor_gui_params = [
+        {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, dir_path):
+    def __init__(self, folder_path):
         RecordingExtractor.__init__(self)
-        phy_folder = Path(dir_path)
+        phy_folder = Path(folder_path)
 
         self.params = read_python(str(phy_folder / 'params.py'))
         datfile = [x for x in phy_folder.iterdir() if x.suffix == '.dat' or x.suffix == '.bin']
@@ -34,7 +34,7 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
         else:
             channel_map = list(range(self.params['n_channels_dat']))
 
-        BinDatRecordingExtractor.__init__(self, datfile[0], samplerate=float(self.params['sample_rate']),
+        BinDatRecordingExtractor.__init__(self, datfile[0], sampling_frequency=float(self.params['sample_rate']),
                                           dtype=self.params['dtype'], numchan=self.params['n_channels_dat'],
                                           recording_channels=list(channel_map))
 
@@ -54,14 +54,18 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
 class PhySortingExtractor(SortingExtractor):
 
     extractor_name = 'PhySortingExtractor'
+    exporter_name = 'PhySortingExporter'
+    exporter_gui_params = [
+        {'name': 'save_path', 'type': 'folder', 'title': "Save path"},
+    ]
     installed = True  # check at class level if installed or not
     is_writable = True
-    mode = 'dir'
+    mode = 'folder'
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, dir_path, exclude_cluster_groups=None, load_waveforms=False, verbose=False):
+    def __init__(self, folder_path, exclude_cluster_groups=None, load_waveforms=False, verbose=False):
         SortingExtractor.__init__(self)
-        phy_folder = Path(dir_path)
+        phy_folder = Path(folder_path)
 
         spike_times = np.load(phy_folder / 'spike_times.npy')
         spike_templates = np.load(phy_folder / 'spike_templates.npy')
@@ -156,7 +160,7 @@ class PhySortingExtractor(SortingExtractor):
         if load_waveforms:
             datfile = [x for x in phy_folder.iterdir() if x.suffix == '.dat' or x.suffix == '.bin']
 
-            recording = BinDatRecordingExtractor(datfile[0], samplerate=float(self.params['sample_rate']),
+            recording = BinDatRecordingExtractor(datfile[0], sampling_frequency=float(self.params['sample_rate']),
                                                  dtype=self.params['dtype'], numchan=self.params['n_channels_dat'])
             # if channel groups are present, compute waveforms by group
             if (phy_folder / 'channel_groups.npy').is_file():
