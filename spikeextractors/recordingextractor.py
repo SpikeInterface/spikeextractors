@@ -12,12 +12,6 @@ class RecordingExtractor(ABC):
  
     '''
 
-    extractor_name = ''
-    has_default_locations = False
-    installed = False  # check at class level if installed or not
-    _gui_params = []
-    installation_mesg = ""  # error message when not installed
-
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
@@ -663,10 +657,6 @@ class RecordingExtractor(ABC):
             sub_list = get_sub_extractors_by_property(self, property_name=property_name, 
                                                       return_property_list=return_property_list)
             return sub_list
-
-    @classmethod
-    def gui_params(self):
-        return copy.deepcopy(self._gui_params)
 
     @staticmethod
     def write_recording(recording, save_path):

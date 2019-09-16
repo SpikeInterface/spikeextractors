@@ -12,15 +12,13 @@ class TridesclousSortingExtractor(SortingExtractor):
 
     extractor_name = 'TridesclousSortingExtractor'
     installed = HAVE_TDC  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'tdc_folder', 'type': 'path', 'title': "Path to folder"},
-        {'name': 'chan_grp', 'type': 'list', 'value':None, 'default':None, 'title': "List of channel groups"},
-    ]
+    is_writable = False
+    mode = 'folder'
     installation_mesg = "must install tridesclous" # error message when not installed
 
-    def __init__(self, tdc_folder, chan_grp=None):
+    def __init__(self, folder_path, chan_grp=None):
         assert HAVE_TDC, "must install tridesclous"
-        tdc_folder = Path(tdc_folder)
+        tdc_folder = Path(folder_path)
         SortingExtractor.__init__(self)
         self.dataio = tdc.DataIO(str(tdc_folder))
         if chan_grp is None:

@@ -35,6 +35,10 @@ class MultiSortingExtractor(SortingExtractor):
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
         return self._sortings[sorting_id].get_unit_spike_train(unit_id_sorting)
 
+    def set_sampling_frequency(self, sampling_frequency):
+        for sorting in self._sortings:
+            sorting.set_sampling_frequency(sampling_frequency)
+
     def get_sampling_frequency(self):
         return self._sortings[0].get_sampling_frequency()
 

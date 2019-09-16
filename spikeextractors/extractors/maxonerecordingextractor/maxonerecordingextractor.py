@@ -12,14 +12,16 @@ class MaxOneRecordingExtractor(RecordingExtractor):
     extractor_name = 'MaxOneRecordingExtractor'
     has_default_locations = True
     installed = HAVE_MAX  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'recording_path', 'type': 'path', 'title': "Path to file"},
+    is_writable = False
+    mode = 'file'
+    extractor_gui_params = [
+        {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, recording_path):
+    def __init__(self, file_path):
         RecordingExtractor.__init__(self)
-        self._recording_path = recording_path
+        self._file_path= file_path
         self._fs = None
         self._positions = None
         self._recordings = None
@@ -27,12 +29,8 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._mapping = None
         self._initialize()
 
-        # if self._locations is not None:
-        #     for chan, pos in enumerate(self._locations):
-        #         self.set_channel_property(chan, 'location', pos)
-
     def _initialize(self):
-        self._filehandle = h5py.File(self._recording_path)
+        self._filehandle = h5py.File(self._file_path)
         self._mapping = self._filehandle['mapping']
         self._channel_ids = self._mapping['channel']
         self._num_channels = len(self._channel_ids)

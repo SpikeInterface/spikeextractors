@@ -9,16 +9,18 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     extractor_name = 'SpikeGLXRecordingExtractor'
     has_default_locations = True
     installed = True  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'npx_file', 'type': 'path', 'title': "Path to file"},
-        {'name': 'x_pitch', 'type': 'float', 'value':21.0, 'default':21.0, 'title': "x_pitch for Neuropixels probe (default 21)"},
-        {'name': 'y_pitch', 'type': 'float', 'value':20.0, 'default':20.0, 'title': "y_pitch for Neuropixels probe (default 20)"},
+    is_writable = True
+    mode = 'file'
+    extractor_gui_params = [
+        {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
+        {'name': 'x_pitch', 'type': 'int', 'value':21, 'default':21, 'title': "x_pitch for Neuropixels probe (default 21)"},
+        {'name': 'y_pitch', 'type': 'int', 'value':20, 'default':20, 'title': "y_pitch for Neuropixels probe (default 20)"},
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, npx_file, x_pitch=None, y_pitch=None):
+    def __init__(self, file_path, x_pitch=21, y_pitch=20):
         RecordingExtractor.__init__(self)
-        self._npxfile = Path(npx_file)
+        self._npxfile = Path(file_path)
         self._basepath = self._npxfile.cwd()
 
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
@@ -40,7 +42,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         self._timeseries = rawData  # [chanList, firstSamp:lastSamp+1]
 
         # sampling rate and ap channels
-        self._samplerate = SampRate(meta)
+        self._sampling_frequency = SampRate(meta)
         tot_chan, ap_chan, locations = _parse_spikeglx_metafile(self._metafile, x_pitch, y_pitch)
         if ap_chan < tot_chan:
             self._channels = list(range(int(ap_chan)))
@@ -70,7 +72,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         return self._timeseries.shape[1]
 
     def get_sampling_frequency(self):
-        return self._samplerate
+        return self._sampling_frequency
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:

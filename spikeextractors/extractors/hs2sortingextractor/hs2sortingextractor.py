@@ -10,16 +10,19 @@ except ImportError:
 class HS2SortingExtractor(SortingExtractor):
 
     extractor_name = 'HS2SortingExtractor'
-    installed = HAVE_HS2SX  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'recording_file', 'type': 'path', 'title': "Path to file"},
+    exporter_name = 'HS2SortingExporter'
+    exporter_gui_params = [
+        {'name': 'save_path', 'type': 'file', 'title': "Save path"},
     ]
+    installed = HAVE_HS2SX  # check at class level if installed or not
+    is_writable = True
+    mode = 'file'
     installation_mesg = "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
-    def __init__(self, recording_file, load_unit_info=False):
+    def __init__(self, file_path, load_unit_info=False):
         assert HAVE_HS2SX, "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"
         SortingExtractor.__init__(self)
-        self._recording_file = recording_file
+        self._recording_file = file_path
         self._rf = h5py.File(self._recording_file, mode='r')
         if 'Sampling' in self._rf:
             if(self._rf['Sampling'][()] == 0):

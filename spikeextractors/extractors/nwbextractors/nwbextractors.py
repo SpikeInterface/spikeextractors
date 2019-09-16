@@ -4,6 +4,13 @@ import os
 import numpy as np
 from datetime import datetime
 
+try:
+    from pynwb import NWBHDF5IO
+    from pynwb import NWBFile
+    from pynwb.ecephys import ElectricalSeries
+    HAVE_NWB = True
+except ModuleNotFoundError:
+    HAVE_NWB = False
 
 class CopyRecordingExtractor(se.RecordingExtractor):
     def __init__(self, other):
@@ -25,17 +32,22 @@ class CopyRecordingExtractor(se.RecordingExtractor):
 
 
 class NwbRecordingExtractor(CopyRecordingExtractor):
-    def __init__(self, path, acquisition_name=None):
-        try:
-            from pynwb import NWBHDF5IO
-            from pynwb import NWBFile
-            from pynwb.ecephys import ElectricalSeries
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
-                                      "pip install pynwb\n\n")
-        self._path = path
+    extractor_name = 'NwbRecordingExtractor'
+    has_default_locations = True
+    installed = HAVE_NWB  # check at class level if installed or not
+    is_writable = True
+    mode = 'file'
+    extractor_gui_params = [
+        {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
+        {'name': 'acquisition_name', 'type': 'string', 'value': None, 'default': None, 'title': "Name of Acquisition Method"},
+    ]
+    installation_mesg = "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+
+    def __init__(self, file_path, acquisition_name=None):
+        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        self._path = file_path
         self._acquisition_name = acquisition_name
-        with NWBHDF5IO(path, 'r') as io:
+        with NWBHDF5IO(file_path, 'r') as io:
             nwbfile = io.read()
             if acquisition_name is None:
                 a_names = list(nwbfile.acquisition.keys())
@@ -54,22 +66,16 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             for m in range(M):
                 geom[m, :] = [ts.electrodes[m][1], ts.electrodes[m][2], ts.electrodes[m][3]]
             if hasattr(ts, 'timestamps') and ts.timestamps:
-                samplerate = 1 / (ts.timestamps[1] - ts.timestamps[0])  # there's probably a better way
+                sampling_frequency = 1 / (ts.timestamps[1] - ts.timestamps[0])  # there's probably a better way
             else:
-                samplerate = ts.rate * 1000
+                sampling_frequency = ts.rate * 1000
             data = np.copy(np.transpose(ts.data))
-            NRX = se.NumpyRecordingExtractor(timeseries=data, samplerate=samplerate, geom=geom)
+            NRX = se.NumpyRecordingExtractor(timeseries=data, sampling_frequency=sampling_frequency, geom=geom)
             CopyRecordingExtractor.__init__(self, NRX)
 
     @staticmethod
     def write_recording(recording, save_path, acquisition_name='ElectricalSeries'):
-        try:
-            from pynwb import NWBHDF5IO
-            from pynwb import NWBFile
-            from pynwb.ecephys import ElectricalSeries
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
-                                      "pip install pynwb\n\n")
+        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         M = recording.get_num_channels()
 
         nwbfile = NWBFile(
@@ -129,14 +135,20 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
 
 
 class NwbSortingExtractor(se.SortingExtractor):
-    def __init__(self, path):
-        try:
-            from pynwb import NWBHDF5IO
-            from pynwb import NWBFile
-            from pynwb.ecephys import ElectricalSeries
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
-                                      "pip install pynwb\n\n")
+    extractor_name = 'NwbSortingExtractor'
+    exporter_name = 'NwbSortingExporter'
+    exporter_gui_params = [
+        {'name': 'save_path', 'type': 'file', 'title': "Save path"},
+        {'name': 'identifier', 'type': 'str', 'value': None, 'default': None, 'title': "The session identifier"},
+        {'name': 'session_description', 'type': 'str', 'value': None, 'default': None, 'title': "The session description"},
+    ]
+    installed = HAVE_NWB  # check at class level if installed or not
+    is_writable = True
+    mode = 'file'
+    installation_mesg = "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+
+    def __init__(self, file_path):
+        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         se.SortingExtractor.__init__(self)
 
     @staticmethod
@@ -149,15 +161,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         save_path: str
         nwbfile_kwargs: optional, dict with optional args of pynwb.NWBFile
         """
-        try:
-            from pynwb import NWBHDF5IO
-            from pynwb import NWBFile
-            from pynwb.ecephys import ElectricalSeries
-            
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError("To use the Nwb extractors, install pynwb: \n\n"
-                                      "pip install pynwb\n\n")
-            
+        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
 

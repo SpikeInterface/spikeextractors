@@ -9,11 +9,11 @@ class TestTools(unittest.TestCase):
     def setUp(self):
         M = 32
         N = 10000
-        samplerate = 30000
+        sampling_frequency = 30000
         X = np.random.normal(0, 1, (M, N))
         self._X = X
-        self._samplerate = samplerate
-        self.RX = se.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate)
+        self._sampling_frequency = sampling_frequency
+        self.RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency)
         self.test_dir = tempfile.mkdtemp()
 
     def tearDown(self):
