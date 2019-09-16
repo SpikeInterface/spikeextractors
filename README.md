@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/SpikeInterface/spikeextractors.svg?branch=master)](https://travis-ci.org/SpikeInterface/spikeextractors) [![PyPI version](https://badge.fury.io/py/spikeextractors.svg)](https://pypi.org/project/spikeextractors/)
+[![Build Status](https://travis-ci.org/SpikeInterface/spikeextractors.svg?branch=master)](https://travis-ci.org/SpikeInterface/spikeextractors) [![PyPI version](https://d25lcipzij17d.cloudfront.net/badge.svg?id=py&type=6&v=0.6.0&x2=0)](https://pypi.org/project/spikeextractors/)
 
 # SpikeExtractors
 
