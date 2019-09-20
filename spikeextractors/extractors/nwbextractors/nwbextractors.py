@@ -1405,10 +1405,10 @@ class NwbSortingExtractor(se.SortingExtractor):
             # Stores spike times for each detected cell (unit)
             for id in ids:
                 spkt = sorting.get_unit_spike_train(unit_id=id) / fs
-                if 'waveforms' in sorting.get_unit_property_names(unit_id=id):
+                if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
                     # Stores average and std of spike traces
-                    wf = sorting.get_unit_property(unit_id=id,
-                                                   property_name='waveforms')
+                    wf = sorting.get_unit_spike_features(unit_id=id,
+                                                         feature_name='waveforms')
                     relevant_ch = most_relevant_ch(wf)
                     # Spike traces on the most relevant channel
                     traces = wf[:, relevant_ch, :]
