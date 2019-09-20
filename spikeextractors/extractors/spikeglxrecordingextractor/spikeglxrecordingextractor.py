@@ -21,7 +21,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     def __init__(self, file_path, x_pitch=21, y_pitch=20):
         RecordingExtractor.__init__(self)
         self._npxfile = Path(file_path)
-        self._basepath = self._npxfile.cwd()
+        self._basepath = self._npxfile.parents[0]
 
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
         aux = self._npxfile.stem.split('.')[-1]
@@ -31,7 +31,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             self._ftype = self._npxfile.stem.split('.')[-2] + '.' + aux
 
         # Metafile
-        self._metafile = self._npxfile.cwd().joinpath(self._npxfile.stem+'.meta')
+        self._metafile = self._basepath.joinpath(self._npxfile.stem+'.meta')
         if not self._metafile.exists():
             raise Exception("'meta' file for '"+self._ftype+"' traces should be in the same folder.")
         # Read in metadata, returns a dictionary
