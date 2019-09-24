@@ -626,7 +626,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     yield data
 
             data = data_generator(recording=recording, num_channels=M)
-            ephys_data = DataChunkIterator(data=data)
+            ephys_data = DataChunkIterator(data=data,
+                                           iter_axis=1)
             acquisition_name = 'ElectricalSeries'
             ephys_ts = ElectricalSeries(
                 name=acquisition_name,
