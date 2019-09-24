@@ -3,6 +3,7 @@ import os
 import numpy as np
 from datetime import datetime
 from lazy_ops import DatasetView
+from hdmf.data_utils import DataChunkIterator
 
 try:
     from pynwb import NWBHDF5IO
@@ -615,19 +616,21 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 gains = np.array(recording.get_channel_gains())
             else:
                 gains = np.ones(M)
-            # Substitute this: ----------------------------
-            ephys_data = recording.get_traces().T
-            ephys_data_V = 1e-6*gains*ephys_data
-            # For this: --------------------------------
-            ephys_data = DataChunkIterator(data=data,
-                                           iter_axis=1,
-                                           maxshape=(len(raw_ts), num_electrodes))
+            #ephys_data = recording.get_traces().T
+            #ephys_data_V = 1e-6*gains*ephys_data
 
-            # --------------------------------------------
+            def data_generator(recording, num_channels):
+                #  generates data chunks for iterator
+                for id in range(0, num_channels):
+                    data = recording.get_traces(channel_ids=id)
+                    yield data
+
+            data = data_generator(recording=recording, num_channels=M)
+            ephys_data = DataChunkIterator(data=data)
             acquisition_name = 'ElectricalSeries'
             ephys_ts = ElectricalSeries(
                 name=acquisition_name,
-                data=ephys_data_V,
+                data=ephys_data,
                 electrodes=electrode_table_region,
                 starting_time=recording.frame_to_time(0),
                 rate=rate,
