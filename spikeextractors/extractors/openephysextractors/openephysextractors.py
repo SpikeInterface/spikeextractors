@@ -13,8 +13,10 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     extractor_name = 'OpenEphysRecordingExtractor'
     has_default_locations = False
     installed = HAVE_OE  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'recording_file', 'type': 'path', 'title': "str, Path to file"},
+    is_writable = False
+    mode = 'file'
+    extractor_gui_params = [
+        {'name': 'file_path', 'type': 'file', 'title': "str, Path to file"},
         {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
         {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
         {'name': 'dtype', 'type': 'str',  'value':'float', 'default':'float', 'title':"dtype ('float' or 'int')"},
@@ -22,12 +24,12 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
 
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
 
-    def __init__(self, recording_file, *, experiment_id=0, recording_id=0, dtype='float'):
+    def __init__(self, file_path, *, experiment_id=0, recording_id=0, dtype='float'):
         assert HAVE_OE, "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"
         assert dtype == 'int16' or 'float' in dtype, "'dtype' can be int16 (memory map) or 'float' (load into memory)"
         RecordingExtractor.__init__(self)
-        self._recording_file = recording_file
-        self._recording = pyopenephys.File(recording_file).experiments[experiment_id].recordings[recording_id]
+        self._recording_file = file_path
+        self._recording = pyopenephys.File(file_path).experiments[experiment_id].recordings[recording_id]
         self._dtype = dtype
 
     def get_channel_ids(self):
@@ -57,19 +59,15 @@ class OpenEphysSortingExtractor(SortingExtractor):
 
     extractor_name = 'OpenEphysSortingExtractor'
     installed = HAVE_OE  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'recording_file', 'type': 'file_path', 'title': "str, Path to file"},
-        {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
-        {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
-    ]
-
+    is_writable = False
+    mode = 'file'
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
 
-    def __init__(self, recording_file, *, experiment_id=0, recording_id=0):
+    def __init__(self, file_path, *, experiment_id=0, recording_id=0):
         assert HAVE_OE, "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"
         SortingExtractor.__init__(self)
-        self._recording_file = recording_file
-        self._recording = pyopenephys.File(recording_file).experiments[experiment_id].recordings[recording_id]
+        self._recording_file = file_path
+        self._recording = pyopenephys.File(file_path).experiments[experiment_id].recordings[recording_id]
         self._spiketrains = self._recording.spiketrains
         self._unit_ids = list([np.unique(st.clusters)[0] for st in self._spiketrains])
         self._sampling_frequency = float(self._recording.sample_rate.rescale('Hz').magnitude)

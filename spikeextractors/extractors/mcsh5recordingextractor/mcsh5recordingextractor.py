@@ -14,14 +14,16 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     extractor_name = 'MCSH5RecordingExtractor'
     has_default_locations = False
     installed = HAVE_MCSH5  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'recording_file', 'type': 'path', 'title': "Path to file"},
+    is_writable = False
+    mode = 'file'
+    extractor_gui_params = [
+        {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
     ]
     installation_mesg = "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
-    def __init__(self, recording_file, verbose=False):
+    def __init__(self, file_path, verbose=False):
         assert HAVE_MCSH5, "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"
-        self._recording_file = recording_file
+        self._recording_file = file_path
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, \
         self._channel_ids, self._electrodeLabels, self._exponent, self._convFact \
         = openMCSH5File(

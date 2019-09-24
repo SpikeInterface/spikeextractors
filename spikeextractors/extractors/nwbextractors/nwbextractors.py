@@ -533,6 +533,27 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         save_path: str
         nwbfile_kwargs: optional, dict with optional args of pynwb.NWBFile
         """
+=======
+                acquisition_name = a_names[0]
+            ts = nwbfile.acquisition[acquisition_name]
+            self._nwb_timeseries = ts
+            M = np.array(ts.data).shape[1]
+            if M != len(ts.electrodes):
+                raise Exception(
+                    'Number of electrodes does not match the shape of the data {}<>{}'.format(M, len(ts.electrodes)))
+            geom = np.zeros((M, 3))
+            for m in range(M):
+                geom[m, :] = [ts.electrodes[m][1], ts.electrodes[m][2], ts.electrodes[m][3]]
+            if hasattr(ts, 'timestamps') and ts.timestamps:
+                sampling_frequency = 1 / (ts.timestamps[1] - ts.timestamps[0])  # there's probably a better way
+            else:
+                sampling_frequency = ts.rate * 1000
+            data = np.copy(np.transpose(ts.data))
+            NRX = se.NumpyRecordingExtractor(timeseries=data, sampling_frequency=sampling_frequency, geom=geom)
+            CopyRecordingExtractor.__init__(self, NRX)
+
+    @staticmethod
+    def write_recording(recording, save_path, acquisition_name='ElectricalSeries'):
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         M = recording.get_num_channels()
 
@@ -1317,7 +1338,6 @@ class NwbSortingExtractor(se.SortingExtractor):
         nwbfile_kwargs: optional, dict with optional args of pynwb.NWBFile
         """
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
-
         ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
 

@@ -15,14 +15,20 @@ class NpzSortingExtractor(SortingExtractor):
 
     """
     extractor_name = 'NpzSortingExtractor'
+    exporter_name = 'NpzSortingExporter'
+    exporter_gui_params = [
+        {'name': 'save_path', 'type': 'file', 'title': "Save path (.npz)"},
+    ]
     installed = True # depend only on numpy
-    _gui_params = []
     installation_mesg = "Always installed"
+    is_writable = True
+    mode = 'file'
 
-    def __init__(self, npz_filename):
-        self.npz_filename = npz_filename
+    def __init__(self, file_path):
+        SortingExtractor.__init__(self)
+        self.npz_filename = file_path
 
-        npz = np.load(npz_filename)
+        npz = np.load(file_path)
 
         self.unit_ids = npz['unit_ids']
         self.spike_indexes = npz['spike_indexes']
@@ -45,7 +51,7 @@ class NpzSortingExtractor(SortingExtractor):
         return spike_times
 
     @staticmethod
-    def write_sorting(sorting, save_file):
+    def write_sorting(sorting, save_path):
         d = {}
         units_ids = np.array(sorting.get_unit_ids())
         d['unit_ids'] = units_ids
@@ -73,4 +79,4 @@ class NpzSortingExtractor(SortingExtractor):
         if sorting.get_sampling_frequency() is not None:
             d['sampling_frequency'] = np.array([sorting.get_sampling_frequency()], dtype='float64')
 
-        np.savez(save_file, **d)
+        np.savez(save_path, **d)

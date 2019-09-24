@@ -12,21 +12,21 @@ class IntanRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'IntanRecordingExtractor'
     has_default_locations = False
+    is_writable = False
+    mode = 'file'
     installed = HAVE_INTAN  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'recording_file', 'type': 'path', 'title': "Path to file"},
-        {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
-        {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
+    extractor_gui_params = [
+        {'name': 'file_path', 'type': 'file', 'title': "Path to file (.rhs or .rhd)"},
     ]
     installation_mesg = "To use the Intan extractor, install pyintan: \n\n pip install pyintan\n\n"  # error message when not installed
 
-    def __init__(self, recording_file, verbose=False):
+    def __init__(self, file_path, verbose=False):
         assert HAVE_INTAN, "To use the Intan extractor, install pyintan: \n\n pip install pyintan\n\n"
         RecordingExtractor.__init__(self)
-        assert Path(recording_file).suffix == '.rhs' or Path(recording_file).suffix == '.rhd', \
+        assert Path(file_path).suffix == '.rhs' or Path(file_path).suffix == '.rhd', \
             "Only '.rhd' and '.rhs' files are supported"
-        self._recording_file = recording_file
-        self._recording = pyintan.File(recording_file, verbose)
+        self._recording_file = file_path
+        self._recording = pyintan.File(file_path, verbose)
 
     def get_channel_ids(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))

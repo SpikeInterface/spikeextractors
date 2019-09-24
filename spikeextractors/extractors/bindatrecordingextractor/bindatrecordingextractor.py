@@ -1,5 +1,5 @@
 from spikeextractors import RecordingExtractor
-from spikeextractors.extraction_tools import read_binary
+from spikeextractors.extraction_tools import read_binary, write_to_binary_dat_format
 import os
 import numpy as np
 from pathlib import Path
@@ -10,26 +10,28 @@ class BinDatRecordingExtractor(RecordingExtractor):
     extractor_name = 'BinDatRecordingExtractor'
     has_default_locations = False
     installed = True  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'datfile', 'type': 'path', 'title': "Path to file"},
-        {'name': 'samplerate', 'type': 'float', 'title': "Sampling rate in HZ"},
+    is_writable = True
+    mode = 'file'      
+    extractor_gui_params = [
+        {'name': 'file_path', 'type': 'file', 'title': "Path to file (.dat)"},
+        {'name': 'sampling_frequency', 'type': 'float', 'title': "Sampling rate in HZ"},
         {'name': 'numchan', 'type': 'int', 'title': "Number of channels"},
         {'name': 'dtype', 'type': 'np.dtype', 'title': "The dtype of underlying data (int16, float32, etc.)"},
         {'name': 'recording_channels', 'type': 'int_list', 'value': None, 'default': None, 'title': "List of recording channels"},
-        {'name': 'frames_first', 'type': 'bool', 'value': True, 'default': True, 'title': "Frames first"},
+        {'name': 'time_axis', 'type': 'int', 'value': 0, 'default': 0, 'title': "If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file. If 1, the traces shape (nb_channel, nb_sample) is kept in the file."},
         {'name': 'offset', 'type': 'int', 'value': 0, 'default': 0, 'title': "Offset in binary file"},
         {'name': 'gain', 'type': 'float', 'title': "gain of the recordings"},
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, datfile, samplerate, numchan, dtype, recording_channels=None,
-                 frames_first=True, geom=None, offset=0, gain=None):
+    def __init__(self, file_path, sampling_frequency, numchan, dtype, recording_channels=None,
+                 time_axis=0, geom=None, offset=0, gain=None):
         RecordingExtractor.__init__(self)
-        self._datfile = Path(datfile)
-        self._frame_first = frames_first
+        self._datfile = Path(file_path)
+        self._time_axis = time_axis
         self._dtype = str(dtype)
-        self._timeseries = read_binary(self._datfile, numchan, dtype, frames_first, offset)
-        self._samplerate = float(samplerate)
+        self._timeseries = read_binary(self._datfile, numchan, dtype, time_axis, offset)
+        self._sampling_frequency = float(sampling_frequency)
         self._gain = gain
         self._geom = geom
 
@@ -51,7 +53,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         return self._timeseries.shape[1]
 
     def get_sampling_frequency(self):
-        return self._samplerate
+        return self._sampling_frequency
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
@@ -72,13 +74,22 @@ class BinDatRecordingExtractor(RecordingExtractor):
         return recordings
 
     @staticmethod
-    def write_recording(recording, save_path, dtype=None, transpose=False):
-        save_path = Path(save_path)
-        if dtype == None:
-            dtype = np.float32
-        if not transpose:
-            with save_path.open('wb') as f:
-                np.transpose(np.array(recording.get_traces(), dtype=dtype)).tofile(f)
-        elif transpose:
-            with save_path.open('wb') as f:
-                np.array(recording.get_traces(), dtype=dtype).tofile(f)
+    def write_recording(recording, save_path, time_axis=0, dtype=None, chunksize=None):
+        '''Saves the traces of a recording extractor in binary .dat format.
+
+        Parameters
+        ----------
+        recording: RecordingExtractor
+            The recording extractor object to be saved in .dat format
+        save_path: str
+            The path to the file.
+        time_axis: 0 (default) or 1
+            If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
+            If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
+        dtype: dtype
+            Type of the saved data. Default float32.
+        chunksize: None or int
+            If not None then the copy done by chunk size.
+            This avoid to much memory consumption for big files.
+        '''
+        write_to_binary_dat_format(recording, save_path, time_axis=time_axis, dtype=dtype, chunksize=chunksize)
