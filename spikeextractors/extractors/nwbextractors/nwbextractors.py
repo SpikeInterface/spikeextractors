@@ -2,6 +2,7 @@ import spikeextractors as se
 import os
 import numpy as np
 from datetime import datetime
+from lazy_ops import DatasetView
 
 try:
     from pynwb import NWBHDF5IO
@@ -135,8 +136,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            es = nwbfile.acquisition[self._electrical_series_name]
-            traces = es.data[start_frame:end_frame, channel_ids].T
+            es = nwbfile.acquisition[self._electrical_series_name].data
+            # traces = es.data[start_frame:end_frame, channel_ids].T
+            es_view = DatasetView(es)  # es is an instantiated h5py dataset
+            traces = es_view.lazy_slice[start_frame:end_frame, channel_ids].lazy_transpose()
         return traces
 
 
@@ -612,8 +615,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 gains = np.array(recording.get_channel_gains())
             else:
                 gains = np.ones(M)
+            # Substitute this: ----------------------------
             ephys_data = recording.get_traces().T
             ephys_data_V = 1e-6*gains*ephys_data
+            # For this: --------------------------------
+            ephys_data = DataChunkIterator(data=data,
+                                           iter_axis=1,
+                                           maxshape=(len(raw_ts), num_electrodes))
+
+            # --------------------------------------------
             acquisition_name = 'ElectricalSeries'
             ephys_ts = ElectricalSeries(
                 name=acquisition_name,
