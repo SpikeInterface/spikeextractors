@@ -137,10 +137,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            es = nwbfile.acquisition[self._electrical_series_name].data
-            # traces = es.data[start_frame:end_frame, channel_ids].T
-            es_view = DatasetView(es)  # es is an instantiated h5py dataset
-            traces = es_view.lazy_slice[start_frame:end_frame, channel_ids].lazy_transpose()
+            es = nwbfile.acquisition[self._electrical_series_name]
+            traces = es.data[start_frame:end_frame, channel_ids].T
+            # This DatasetView and lazy operations will only work within context
+            # We're keeping the non-lazy version for now
+            # es_view = DatasetView(es.data)  # es is an instantiated h5py dataset
+            # traces = es_view.lazy_slice[start_frame:end_frame, channel_ids].lazy_transpose()
         return traces
 
 
