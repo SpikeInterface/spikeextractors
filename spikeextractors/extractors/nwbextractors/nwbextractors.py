@@ -618,26 +618,27 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 gains = np.array(recording.get_channel_gains())
             else:
                 gains = np.ones(M)
-            #ephys_data = recording.get_traces().T
-            #ephys_data_V = 1e-6*gains*ephys_data
 
             def data_generator(recording, num_channels):
                 #  generates data chunks for iterator
                 for id in range(0, num_channels):
-                    data = recording.get_traces(channel_ids=id)
+                    data = recording.get_traces(channel_ids=[id]).flatten().astype('int16')
                     yield data
 
             data = data_generator(recording=recording, num_channels=M)
             ephys_data = DataChunkIterator(data=data,
                                            iter_axis=1)
             acquisition_name = 'ElectricalSeries'
+            
+            # Traces are stored as 'int16'. To get Volts = data*channel_conversion*conversion
             ephys_ts = ElectricalSeries(
                 name=acquisition_name,
                 data=ephys_data,
                 electrodes=electrode_table_region,
                 starting_time=recording.frame_to_time(0),
                 rate=rate,
-                conversion=1.,
+                conversion=1e-6,
+                channel_conversion=gains,
                 comments='Generated from SpikeInterface::NwbRecordingExtractor',
                 description='acquisition_description'
             )
