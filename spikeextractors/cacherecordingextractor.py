@@ -7,8 +7,8 @@ class CacheRecordingExtractor(BinDatRecordingExtractor):
 
     extractor_name = 'CacheRecordingExtractor'
 
-    def __init__(self, recording, dtype=None, chunksize=None):
-        self._tmp_file = tempfile.NamedTemporaryFile(suffix=".dat").name
+    def __init__(self, recording, dtype=None, chunksize=None, dir=None):
+        self._tmp_file = tempfile.NamedTemporaryFile(suffix=".dat", dir=dir).name
         if dtype is None:
             dtype = recording.get_traces(start_frame=0, end_frame=2).dtype
         recording.write_to_binary_dat_format(save_path=self._tmp_file, dtype=dtype, chunksize=chunksize)
