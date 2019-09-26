@@ -1,16 +1,9 @@
 import numpy as np
 import os, sys
+from pathlib import Path
 import unittest
 import tempfile
 import shutil
-
-
-def append_to_path(dir0):  # A convenience function
-    if dir0 not in sys.path:
-        sys.path.append(dir0)
-
-
-append_to_path(os.getcwd() + '/..')
 import spikeextractors as se
 
 
@@ -89,6 +82,16 @@ class TestExtractors(unittest.TestCase):
         self.assertTrue(self.SX2.get_shared_unit_spike_feature_names(), ['shared_unit_feature'])
         self.assertTrue(self.SX2.get_unit_spike_feature_names(3), ['shared_channel_prop', 'widths'])
         self._check_recording_return_types(self.RX)
+
+    def test_cache_extractor(self):
+        cache_extractor = se.CacheRecordingExtractor(self.RX)
+        self._check_recording_return_types(cache_extractor)
+        self._check_recordings_equal(self.RX, cache_extractor)
+        cache_extractor.save_to_file('cache')
+
+        assert cache_extractor.get_filename() == 'cache.dat'
+        del cache_extractor
+        assert not Path('cache.dat').is_file()
 
     def test_mda_extractor(self):
         path1 = self.test_dir + '/mda'
