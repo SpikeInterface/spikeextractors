@@ -627,9 +627,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
             data = data_generator(recording=recording, num_channels=M)
             ephys_data = DataChunkIterator(data=data,
-                                           iter_axis=1)
+                                           iter_axis=1,
+                                           dtype=np.dtype('int16'))
             acquisition_name = 'ElectricalSeries'
-            
+
             # Traces are stored as 'int16'. To get Volts = data*channel_conversion*conversion
             ephys_ts = ElectricalSeries(
                 name=acquisition_name,
