@@ -1,87 +1,75 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 
+from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
+
+try:
+    import hybridizer.io as sbio
+    import hybridizer.probes as sbprb
+    HAVE_SBEX = True
+except ImportError:
+    HAVE_SBEX = False
 
 class SHYBRIDRecordingExtractor(RecordingExtractor):
-    def __init__(self, ex_parameter_1, ex_parameter_2):
+    def __init__(self, recording_fn):
         RecordingExtractor.__init__(self)
 
-        ## All file specific initialization code can go here.
+        # load params file related to the given shybrid recording
+        self._params = sbio.get_params(recording_fn)['data']
+
+        self._nb_channels = None
+        self._channels = None
+        self._geom = None
+
+        self._convert_shybrid_probe()
+
+        # translate the byte ordering
+        # TODO still ambiguous, shybrid assumes time_axis=1
+        byte_order = self._params['order']
+        if byte_order == 'C':
+            time_axis = 1
+        elif byte_order == 'F':
+            time_axis = 0
+
+        # piggyback on binary data recording extractor
+        self._bindatext = BinDatRecordingExtractor(recording_fn,
+                                                   self._params['fs'],
+                                                   self._nb_channels,
+                                                   self._params['dtype'],
+                                                   recording_channels=self._channels,
+                                                   time_axis=time_axis,
+                                                   geom=self._geom)
 
     def get_channel_ids(self):
-
-        # Fill code to get a list of channel_ids. If channel ids are not specified, you can use:
-        # channel_ids = range(num_channels)
-
-        return channel_ids
+        return self._bindatext.get_channel_ids()
 
     def get_num_frames(self):
+        return self._bindatext.get_num_frames(self)
 
-        # Fill code to get the number of frames (samples) in the recordings.
-
-        return num_frames
-
-    def get_sampling_frequency(self, unit_id, start_frame=None, end_frame=None):
-
-        # Fill code to get the sampling frequency of the recordings.
-
-        return sampling_frequency
+    def get_sampling_frequency(self):
+        return self._bindatext.get_sampling_frequency()
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        '''This function extracts and returns a trace from the recorded data from the
-        given channels ids and the given start and end frame. It will return
-        traces from within three ranges:
+        return self._bindatext.get_traces(channel_ids=channel_ids,
+                                          start_frame=start_frame,
+                                          end_frame=end_frame)
 
-            [start_frame, t_start+1, ..., end_frame-1]
-            [start_frame, start_frame+1, ..., final_recording_frame - 1]
-            [0, 1, ..., end_frame-1]
-            [0, 1, ..., final_recording_frame - 1]
+    def _convert_shybrid_probe(self):
+        """ Convert shybrid probe data
+        """
+        # create a shybrid probe object
+        probe = sbprb.Probe(self._params['probe'])
 
-        if both start_frame and end_frame are given, if only start_frame is
-        given, if only end_frame is given, or if neither start_frame or end_frame
-        are given, respectively. Traces are returned in a 2D array that
-        contains all of the traces from each channel with dimensions
-        (num_channels x num_frames). In this implementation, start_frame is inclusive
-        and end_frame is exclusive conforming to numpy standards.
+        # extract info from the probe
+        self._nb_channels = probe.total_nb_channels
+        self._channels = probe.channels.tolist()
 
-        Parameters
-        ----------
-        start_frame: int
-            The starting frame of the trace to be returned (inclusive).
-        end_frame: int
-            The ending frame of the trace to be returned (exclusive).
-        channel_ids: array_like
-            A list or 1D array of channel ids (ints) from which each trace will be
-            extracted.
+        # convert geometry dictionary into simple 2d list
+        geom = []
+        for channel in self._channels:
+            geom.append(probe.geometry[channel])
 
-        Returns
-        ----------
-        traces: numpy.ndarray
-            A 2D array that contains all of the traces from each channel.
-            Dimensions are: (num_channels x num_frames)
-        '''
-
-        # Fill code to get the the traces of the specified channel_ids, from start_frame to end_frame
-
-        return traces
-
-    .
-    .
-    .
-    .
-    . #Optional functions and pre-implemented functions that a new RecordingExtractor doesn't need to implement
-    .
-    .
-    .
-    .
-
-    @staticmethod
-    def write_recording(recording, save_path, other_params):
-        '''
-        This is an example of a function that is not abstract so it is optional if you want to override it.
-        It allows other RecordingExtractor to use your new RecordingExtractor to convert their recorded data into
-        your recording file format.
-        '''
+        self._geom = geom
 
 
 class SHYBRIDSortingExtractor(SortingExtractor):
@@ -117,16 +105,6 @@ class SHYBRIDSortingExtractor(SortingExtractor):
         '''
 
         return spike_train
-
-    .
-    .
-    .
-    .
-    . #Optional functions and pre-implemented functions that a new SortingExtractor doesn't need to implement
-    .
-    .
-    .
-    .
 
     @staticmethod
     def write_sorting(sorting, save_path):
