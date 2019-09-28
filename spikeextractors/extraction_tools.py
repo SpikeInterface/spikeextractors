@@ -242,7 +242,7 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
         if time_axis == 0:
             samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
                                 shape=(nsamples, numchan))
-            samples = np.transpose(samples)
+            samples = np.memmap.transpose(samples)
         else:
             samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
                                 shape=(numchan, nsamples))
