@@ -16,9 +16,13 @@ missing_nixio_msg = ("To use the NIXIORecordingExtractor install nixio:"
 class NIXIORecordingExtractor(RecordingExtractor):
 
     extractor_name = 'NIXIORecordingExtractor'
+    has_default_locations = False
     installed = HAVE_NIXIO
     is_writable = True
     mode = 'file'
+    extractor_gui_params = [       
+        {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
+    ]
 
     def __init__(self, file_path):
         if not HAVE_NIXIO:
