@@ -24,61 +24,46 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
 
         # load params file related to the given shybrid recording
-        self._params = sbio.get_params(recording_fn)['data']
+        params = sbio.get_params(recording_fn)['data']
 
-        self._nb_channels = None
-        self._channels = None
-        self._geom = None
-
-        self._convert_shybrid_probe()
+        # create a shybrid probe object
+        probe = sbprb.Probe(params['probe'])
+        nb_channels = probe.total_nb_channels
 
         # translate the byte ordering
         # TODO still ambiguous, shybrid should assume time_axis=1, since spike interface makes an assumption on the byte ordering
-        byte_order = self._params['order']
+        byte_order = params['order']
         if byte_order == 'C':
             time_axis = 1
         elif byte_order == 'F':
             time_axis = 0
 
         # piggyback on binary data recording extractor
-        self._bindatext = BinDatRecordingExtractor(recording_fn,
-                                                   self._params['fs'],
-                                                   self._nb_channels,
-                                                   self._params['dtype'],
-                                                   recording_channels=self._channels,
-                                                   time_axis=time_axis,
-                                                   geom=self._geom)
+        bindatext = BinDatRecordingExtractor(recording_fn,
+                                             params['fs'],
+                                             nb_channels,
+                                             params['dtype'],
+                                             time_axis=time_axis)
+
+        # attach probe file to binary extractor
+        # TODO why doesn't the load probe file writes the properties of its object?
+        self._extractor_w_prb = bindatext.load_probe_file(params['probe'])
+        # copy properties from sub extractor to current object
+        self.copy_channel_properties(self._extractor_w_prb)
 
     def get_channel_ids(self):
-        return self._bindatext.get_channel_ids()
+        return self._extractor_w_prb.get_channel_ids()
 
     def get_num_frames(self):
-        return self._bindatext.get_num_frames(self)
+        return self._extractor_w_prb.get_num_frames()
 
     def get_sampling_frequency(self):
-        return self._bindatext.get_sampling_frequency()
+        return self._extractor_w_prb.get_sampling_frequency()
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        return self._bindatext.get_traces(channel_ids=channel_ids,
+        return self._extractor_w_prb.get_traces(channel_ids=channel_ids,
                                           start_frame=start_frame,
                                           end_frame=end_frame)
-
-    def _convert_shybrid_probe(self):
-        """ Convert shybrid probe data
-        """
-        # create a shybrid probe object
-        probe = sbprb.Probe(self._params['probe'])
-
-        # extract info from the probe
-        self._nb_channels = probe.total_nb_channels
-        self._channels = probe.channels.tolist()
-
-        # convert geometry dictionary into simple 2d list
-        geom = []
-        for channel in self._channels:
-            geom.append(probe.geometry[channel])
-
-        self._geom = np.array(geom)
 
 
 class SHYBRIDSortingExtractor(SortingExtractor):
