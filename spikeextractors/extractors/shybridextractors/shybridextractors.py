@@ -1,6 +1,9 @@
+import os
+
+import numpy as np
+
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 
 try:
@@ -24,7 +27,7 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
         self._convert_shybrid_probe()
 
         # translate the byte ordering
-        # TODO still ambiguous, shybrid assumes time_axis=1
+        # TODO still ambiguous, shybrid should assume time_axis=1, since spike interface makes an assumption on the byte ordering
         byte_order = self._params['order']
         if byte_order == 'C':
             time_axis = 1
@@ -73,44 +76,25 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
 
 
 class SHYBRIDSortingExtractor(SortingExtractor):
-    def __init__(self, ex_parameter_1, ex_parameter_2):
+    def __init__(self, gt_fn, delimiter=','):
         SortingExtractor.__init__(self)
 
-        ## All file specific initialization code can go here.
-        # If your format stores the sampling frequency, you can overweite the self._sampling_frequency. This way,
-        # the base method self.get_sampling_frequency() will return the correct sampling frequency
-
-        self._sampling_frequency = my_sampling_frequency
+        if os.path.isfile(gt_fn):
+            self._spike_clusters = sbio.SpikeClusters()
+            self._spike_clusters.fromCSV(gt_fn, None, delimiter=delimiter)
+        else:
+            raise FileNotFoundError('the ground truth file "{}" could not be found'.format(gt_fn))
 
     def get_unit_ids(self):
-
-        #Fill code to get a unit_ids list containing all the ids (ints) of detected units in the recording
-
-        return unit_ids
+        return self._spike_clusters.keys()
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        train = self._spike_clusters[unit_id].get_actual_spike_train().spikes
 
-        '''Code to extract spike frames from the specified unit.
-        It will return spike frames from within three ranges:
-            [start_frame, t_start+1, ..., end_frame-1]
-            [start_frame, start_frame+1, ..., final_unit_spike_frame - 1]
-            [0, 1, ..., end_frame-1]
-            [0, 1, ..., final_unit_spike_frame - 1]
-        if both start_frame and end_frame are given, if only start_frame is
-        given, if only end_frame is given, or if neither start_frame or end_frame
-        are given, respectively. Spike frames are returned in the form of an
-        array_like of spike frames. In this implementation, start_frame is inclusive
-        and end_frame is exclusive conforming to numpy standards.
+        if start_frame is None:
+            start_frame = 0
+        if end_frame is None:
+            end_frame = np.Inf
 
-        '''
-
-        return spike_train
-
-    @staticmethod
-    def write_sorting(sorting, save_path):
-        '''
-        This is an example of a function that is not abstract so it is optional if you want to override it. It allows other
-        SortingExtractors to use your new SortingExtractor to convert their sorted data into your
-        sorting file format.
-        '''
-
+        idxs = np.where((start_frame <= train) & (train < end_frame))
+        return train[idxs]
