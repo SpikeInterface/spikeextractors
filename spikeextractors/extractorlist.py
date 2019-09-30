@@ -18,7 +18,7 @@ from .extractors.spikeglxrecordingextractor.spikeglxrecordingextractor import Sp
 from .extractors.tridescloussortingextractor.tridescloussortingextractor import TridesclousSortingExtractor
 from .extractors.npzsortingextractor.npzsortingextractor import NpzSortingExtractor
 from .extractors.mcsh5recordingextractor.mcsh5recordingextractor import MCSH5RecordingExtractor
-
+from .extractors.shybridextractors import SHYBRIDRecordingExtractor, SHYBRIDSortingExtractor
 
 recording_extractor_full_list = [
     MdaRecordingExtractor,
@@ -34,7 +34,8 @@ recording_extractor_full_list = [
     SpikeGLXRecordingExtractor,
     PhyRecordingExtractor,
     MaxOneRecordingExtractor,
-    MCSH5RecordingExtractor
+    MCSH5RecordingExtractor,
+    SHYBRIDRecordingExtractor,
 ]
 
 recording_extractor_dict = {recording_class.extractor_name: recording_class for recording_class in recording_extractor_full_list}
@@ -52,6 +53,7 @@ sorting_extractor_full_list = [
     SpykingCircusSortingExtractor,
     TridesclousSortingExtractor,
     NpzSortingExtractor,
+    SHYBRIDSortingExtractor,
 ]
 
 installed_sorting_extractor_list = [sx for sx in sorting_extractor_full_list if sx.installed]
