@@ -14,6 +14,12 @@ except ImportError:
     HAVE_SBEX = False
 
 class SHYBRIDRecordingExtractor(RecordingExtractor):
+    extractor_name = 'SHYBRIDRecordingExtractor'
+    installed = HAVE_SBEX
+    extractor_gui_params = [
+        {'name': 'recording_fn', 'type': 'file', 'title': "Full path to hybrid recording (.bin)"},
+    ]
+
     def __init__(self, recording_fn):
         RecordingExtractor.__init__(self)
 
@@ -72,10 +78,17 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
         for channel in self._channels:
             geom.append(probe.geometry[channel])
 
-        self._geom = geom
+        self._geom = np.array(geom)
 
 
 class SHYBRIDSortingExtractor(SortingExtractor):
+    extractor_name = 'SHYBRIDSortingExtractor'
+    installed = HAVE_SBEX
+    extractor_gui_params = [
+        {'name': 'gt_fn', 'type': 'file', 'title': "Full path to hybrid ground truth labels (.csv)"},
+    ]
+    is_writable = False
+
     def __init__(self, gt_fn, delimiter=','):
         SortingExtractor.__init__(self)
 
