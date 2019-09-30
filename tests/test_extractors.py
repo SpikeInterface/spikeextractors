@@ -196,7 +196,7 @@ class TestExtractors(unittest.TestCase):
         RX_sub = RX_multi.get_epoch('C')
         self._check_recordings_equal(self.RX, RX_sub)
         self.assertEqual(4, len(RX_sub.get_channel_ids()))
-        
+
         RX_multi = se.MultiRecordingChannelExtractor(
             recordings=[self.RX, self.RX2, self.RX3],
             groups=[1, 2, 3]
@@ -223,6 +223,17 @@ class TestExtractors(unittest.TestCase):
         )
         SX_sub1 = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0, end_frame=N)
         self._check_sortings_equal(SX_multi, SX_sub1)
+
+    def test_nixio_extractor(self):
+        path1 = os.path.join(self.test_dir, 'raw.nix')
+        se.NIXIORecordingExtractor.write_recording(self.RX, path1)
+        RX_nixio = se.NIXIORecordingExtractor(path1)
+        self._check_recording_return_types(RX_nixio)
+        self._check_recordings_equal(self.RX, RX_nixio)
+        del RX_nixio
+        # test force overwrite
+        se.NIXIORecordingExtractor.write_recording(self.RX, path1,
+                                                   overwrite=True)
 
     def _check_recordings_equal(self, RX1, RX2):
         M = RX1.get_num_channels()
