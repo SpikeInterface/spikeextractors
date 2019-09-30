@@ -1,4 +1,5 @@
 import os
+import numpy as np
 try:
     import nixio as nix
     HAVE_NIXIO = True
@@ -83,7 +84,10 @@ class NIXIORecordingExtractor(RecordingExtractor):
             A 2D array that contains all of the traces from each channel.
             Dimensions are: (num_channels x num_frames)
         '''
-        channels = self._traces[channel_ids]
+        if channel_ids:
+            channels = np.array([self._traces[cid] for cid in channel_ids])
+        else:
+            channels = self._traces[:]
         return channels[:, start_frame:end_frame]
 
     @staticmethod
@@ -111,5 +115,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
         chandim = da.append_set_dimension()
         chandim.labels = labels
         sfreq = recording.get_sampling_frequency()
-        da.append_sampled_dimension(sampling_interval=1./sfreq, unit="s")
+        timedim = da.append_sampled_dimension(sampling_interval=1./sfreq)
+        timedim.unit = "s"
+
         nf.close()
