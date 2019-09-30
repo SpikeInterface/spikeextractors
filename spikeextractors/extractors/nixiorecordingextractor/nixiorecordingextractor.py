@@ -106,7 +106,10 @@ class NIXIORecordingExtractor(RecordingExtractor):
         da = block.create_data_array("traces", "spikeinterface.traces",
                                      data=recording.get_traces())
         labels = recording.get_channel_ids()
-        da.append_set_dimension(labels=labels)
+        if not labels:  # channel IDs not specified; just number them
+            labels = list(range(recording.get_num_channels()))
+        chandim = da.append_set_dimension()
+        chandim.labels = labels
         sfreq = recording.get_sampling_frequency()
         da.append_sampled_dimension(sampling_interval=1./sfreq, unit="s")
         nf.close()
