@@ -79,7 +79,7 @@ class NumpySortingExtractor(SortingExtractor):
         if copy_unit_properties:
             self.copy_unit_properties(sorting)
         if copy_unit_spike_features:
-            self.copy_unit_spike_features(sorting):
+            self.copy_unit_spike_features(sorting)
 
     def set_sampling_frequency(self, sampling_frequency):
         self._sampling_frequency = sampling_frequency
@@ -101,7 +101,7 @@ class NumpySortingExtractor(SortingExtractor):
             self.add_unit(unit_id=int(unit), times=times0)
 
     def add_unit(self, unit_id, times):
-         '''This function adds a new unit with the given spike times.
+        '''This function adds a new unit with the given spike times.
 
         Parameters
         ----------
