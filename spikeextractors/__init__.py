@@ -1,5 +1,6 @@
 from .recordingextractor import RecordingExtractor
 from .sortingextractor import SortingExtractor
+from .cacherecordingextractor import CacheRecordingExtractor
 from .subsortingextractor import SubSortingExtractor
 from .subrecordingextractor import SubRecordingExtractor
 from .multirecordingchannelextractor import concatenate_recordings_by_channel, MultiRecordingChannelExtractor

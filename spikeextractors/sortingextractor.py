@@ -170,7 +170,7 @@ class SortingExtractor(ABC):
         Parameters
         ----------
         unit_id: int
-            The id that specifies a unit in the recording.
+            The id that specifies a unit in the sorting.
         feature_name: string
             The name of the feature to be cleared.
         '''
@@ -184,7 +184,7 @@ class SortingExtractor(ABC):
         Parameters
         ----------
         unit_ids: list
-            A list of ids that specifies a set of units in the recording.
+            A list of ids that specifies a set of units in the sorting.
         feature_name: string
             The name of the feature to be cleared.
         '''
@@ -434,7 +434,7 @@ class SortingExtractor(ABC):
         Parameters
         ----------
         unit_id: int
-            The id that specifies a unit in the recording.
+            The id that specifies a unit in the sorting.
         property_name: string
             The name of the property to be cleared.
         '''
@@ -448,7 +448,7 @@ class SortingExtractor(ABC):
         Parameters
         ----------
         unit_ids: list
-            A list of ids that specifies a set of units in the recording.
+            A list of ids that specifies a set of units in the sorting.
         property_name: string
             The name of the property to be cleared.
         '''

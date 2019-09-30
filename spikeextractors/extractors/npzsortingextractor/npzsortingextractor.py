@@ -25,6 +25,7 @@ class NpzSortingExtractor(SortingExtractor):
     mode = 'file'
 
     def __init__(self, file_path):
+        SortingExtractor.__init__(self)
         self.npz_filename = file_path
 
         npz = np.load(file_path)
