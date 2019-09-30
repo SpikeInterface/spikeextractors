@@ -1,4 +1,4 @@
-import numpy as np
+import os
 try:
     import nixio as nix
     HAVE_NIXIO = True
@@ -7,36 +7,47 @@ except ImportError:
 
 from ...recordingextractor import RecordingExtractor
 
+# error message when not installed
+missing_nixio_msg = ("To use the NIXIORecordingExtractor install nixio:"
+                     "\n\n pip install nixio\n\n")
+
 
 class NIXIORecordingExtractor(RecordingExtractor):
 
     extractor_name = 'NIXIORecordingExtractor'
-    installed = HAVE_NIXIO  # check at class level if installed or not
+    installed = HAVE_NIXIO
     is_writable = True
     mode = 'file'
-    # error message when not installed
-    installation_mesg = ("To use the NIXIORecordingExtractor install nixio:"
-                         "\n\n pip install nixio\n\n")
 
-    def __init__(self, arg):
+    def __init__(self, file_path):
+        if not HAVE_NIXIO:
+            raise ImportError(missing_nixio_msg)
         RecordingExtractor.__init__(self)
-        # All file specific initialization code can go here.
+        self._file = nix.File.open(file_path, nix.FileMode.ReadOnly)
+
+    def __del__(self):
+        self._file.close()
+
+    @property
+    def _traces(self):
+        blk = self._file.blocks[0]
+        da = blk.data_arrays["traces"]
+        return da
 
     def get_channel_ids(self):
-        # Fill code to get a list of channel_ids. If channel ids are not
-        # specified, you can use: channel_ids = range(num_channels)
-        channel_ids = list()
+        da = self._traces
+        channel_dim = da.dimensions[0]
+        channel_ids = [int(chid) for chid in channel_dim.labels]
         return channel_ids
 
     def get_num_frames(self):
-        # Fill code to get the number of frames (samples) in the recordings.
-        num_frames = 0
-        return num_frames
+        da = self._traces
+        return da.shape[1]
 
-    def get_sampling_frequency(self, unit_id, start_frame=None,
-                               end_frame=None):
-        # Fill code to get the sampling frequency of the recordings.
-        sampling_frequency = 0
+    def get_sampling_frequency(self):
+        da = self._traces
+        timedim = da.dimensions[1]
+        sampling_frequency = 1./timedim.sampling_interval
         return sampling_frequency
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
@@ -72,20 +83,30 @@ class NIXIORecordingExtractor(RecordingExtractor):
             A 2D array that contains all of the traces from each channel.
             Dimensions are: (num_channels x num_frames)
         '''
-        # Fill code to get the traces of the specified channel_ids, from
-        # start_frame to end_frame
-        traces = np.zeros((0, 0))
-        return traces
-
-    # Optional functions and pre-implemented functions that a new
-    # RecordingExtractor doesn't need to implement
+        channels = self._traces[channel_ids]
+        return channels[:, start_frame:end_frame]
 
     @staticmethod
-    def write_recording(recording, save_path):
+    def write_recording(recording, save_path, overwrite=False):
         '''
         This is an example of a function that is not abstract so it is
         optional if you want to override it.  It allows other
         RecordingExtractor to use your new RecordingExtractor to convert their
         recorded data into your recording file format.
         '''
-        pass
+        if not HAVE_NIXIO:
+            raise ImportError(missing_nixio_msg)
+        if os.path.exists(save_path) and not overwrite:
+            raise FileExistsError("File exists: {}".format(save_path))
+
+        nf = nix.File.open(save_path, nix.FileMode.Overwrite)
+        # use the file name to name the top-level block
+        fname = os.path.basename(save_path)
+        block = nf.create_block(fname, "spikeinterface.recording")
+        da = block.create_data_array("traces", "spikeinterface.traces",
+                                     data=recording.get_traces())
+        labels = recording.get_channel_ids()
+        da.append_set_dimension(labels=labels)
+        sfreq = recording.get_sampling_frequency()
+        da.append_sampled_dimension(sampling_interval=1./sfreq, unit="s")
+        nf.close()
