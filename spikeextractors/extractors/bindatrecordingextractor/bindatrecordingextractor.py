@@ -36,15 +36,13 @@ class BinDatRecordingExtractor(RecordingExtractor):
         self._geom = geom
 
         if recording_channels is not None:
-            assert len(recording_channels) == self._timeseries.shape[0], \
-                'Provided recording channels have the wrong length'
             self._channels = recording_channels
         else:
             self._channels = list(range(self._timeseries.shape[0]))
 
         if geom is not None:
-            for m in range(self._timeseries.shape[0]):
-                self.set_channel_property(m, 'location', self._geom[m, :])
+            for idx, channel in enumerate(self._channels):
+                self.set_channel_property(channel, 'location', self._geom[idx, :])
 
     def get_channel_ids(self):
         return self._channels
