@@ -8,6 +8,7 @@ except ImportError:
     HAVE_NIXIO = False
 
 from ...recordingextractor import RecordingExtractor
+from ...sortingextractor import SortingExtractor
 
 # error message when not installed
 missing_nixio_msg = ("To use the NIXIORecordingExtractor install nixio:"
@@ -94,6 +95,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
         da = block.create_data_array("traces", "spikeinterface.traces",
                                      data=recording.get_traces())
         da.unit = "uV"
+        da.label = "voltage"
         labels = recording.get_channel_ids()
         if not labels:  # channel IDs not specified; just number them
             labels = list(range(recording.get_num_channels()))
@@ -138,5 +140,65 @@ class NIXIORecordingExtractor(RecordingExtractor):
                 else:
                     values = propvalue
                 chan_md.create_property(propname, values)
+
+        nf.close()
+
+
+class NIXIOSortingExtractor(SortingExtractor):
+
+    extractor_name = 'NIXIOSortingExtractor'
+    exporter_name = 'NIXIOSortingExtractor'
+    has_default_locations = False
+    installed = HAVE_NIXIO
+    is_writable = True
+    mode = 'file'
+    extractor_gui_params = [
+        {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
+    ]
+
+    def __init__(self, file_path):
+        SortingExtractor.__init__(self)
+        self._file = nix.File.open(file_path, nix.FileMode.ReadOnly)
+
+    def __del__(self):
+        self._file.close()
+
+    @property
+    def _spike_das(self):
+        blk = self._file.blocks[0]
+        return blk.data_arrays
+
+    def get_unit_ids(self):
+        return [int(da.label) for da in self._spike_das]
+
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        name = "spikes-{}".format(unit_id)
+        da = self._spike_das[name]
+        return da[start_frame:end_frame]
+
+    @staticmethod
+    def write_sorting(sorting, save_path, overwrite=False):
+        if not HAVE_NIXIO:
+            raise ImportError(missing_nixio_msg)
+        if os.path.exists(save_path) and not overwrite:
+            raise FileExistsError("File exists: {}".format(save_path))
+
+        nf = nix.File.open(save_path, nix.FileMode.Overwrite)
+        # use the file name to name the top-level block
+        fname = os.path.basename(save_path)
+        block = nf.create_block(fname, "spikeinterface.sorting")
+        for unit_id in sorting.get_unit_ids():
+            spikes = sorting.get_unit_spike_train(unit_id)
+            name = "spikes-{}".format(unit_id)
+            da = block.create_data_array(name, "spikeinterface.spikes",
+                                         data=spikes)
+            sfreq = sorting.get_sampling_frequency()
+            if sfreq == 1:
+                unit = "s"
+            else:
+                unit = "{} s".format(1./sfreq)
+
+            da.unit = unit
+            da.label = str(unit_id)
 
         nf.close()

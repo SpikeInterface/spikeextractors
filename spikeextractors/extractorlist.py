@@ -18,7 +18,7 @@ from .extractors.spikeglxrecordingextractor.spikeglxrecordingextractor import Sp
 from .extractors.tridescloussortingextractor.tridescloussortingextractor import TridesclousSortingExtractor
 from .extractors.npzsortingextractor.npzsortingextractor import NpzSortingExtractor
 from .extractors.mcsh5recordingextractor.mcsh5recordingextractor import MCSH5RecordingExtractor
-from .extractors.nixiorecordingextractor.nixiorecordingextractor import NIXIORecordingExtractor
+from .extractors.nixioextractors.nixioextractors import NIXIORecordingExtractor, NIXIOSortingExtractor
 
 
 recording_extractor_full_list = [
@@ -54,6 +54,7 @@ sorting_extractor_full_list = [
     SpykingCircusSortingExtractor,
     TridesclousSortingExtractor,
     NpzSortingExtractor,
+    NIXIOSortingExtractor,
 ]
 
 installed_sorting_extractor_list = [sx for sx in sorting_extractor_full_list if sx.installed]
