@@ -159,6 +159,10 @@ class NIXIOSortingExtractor(SortingExtractor):
     def __init__(self, file_path):
         SortingExtractor.__init__(self)
         self._file = nix.File.open(file_path, nix.FileMode.ReadOnly)
+        md = self._file.sections
+        if "sampling_frequency" in md:
+            sfreq = md["sampling_frequency"]
+            self._sampling_frequency = sfreq
 
     def __del__(self):
         self._file.close()
@@ -183,21 +187,25 @@ class NIXIOSortingExtractor(SortingExtractor):
         if os.path.exists(save_path) and not overwrite:
             raise FileExistsError("File exists: {}".format(save_path))
 
+        sfreq = sorting.get_sampling_frequency()
+        if sfreq == 1:
+            unit = "s"
+        else:
+            unit = "{} s".format(1./sfreq)
+
         nf = nix.File.open(save_path, nix.FileMode.Overwrite)
         # use the file name to name the top-level block
         fname = os.path.basename(save_path)
         block = nf.create_block(fname, "spikeinterface.sorting")
+        commonmd = nf.create_section(fname, "spikeinterface.sorting.metadata")
+        if sfreq is not None:
+            commonmd["sampling_frequency"] = sfreq
+
         for unit_id in sorting.get_unit_ids():
             spikes = sorting.get_unit_spike_train(unit_id)
             name = "spikes-{}".format(unit_id)
             da = block.create_data_array(name, "spikeinterface.spikes",
                                          data=spikes)
-            sfreq = sorting.get_sampling_frequency()
-            if sfreq == 1:
-                unit = "s"
-            else:
-                unit = "{} s".format(1./sfreq)
-
             da.unit = unit
             da.label = str(unit_id)
 
