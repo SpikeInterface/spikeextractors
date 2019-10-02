@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from collections.abc import Iterable
 try:
     import nixio as nix
     HAVE_NIXIO = True
@@ -20,7 +21,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
     installed = HAVE_NIXIO
     is_writable = True
     mode = 'file'
-    extractor_gui_params = [       
+    extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
     ]
 
@@ -75,6 +76,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
         block = nf.create_block(fname, "spikeinterface.recording")
         da = block.create_data_array("traces", "spikeinterface.traces",
                                      data=recording.get_traces())
+        da.unit = "uV"
         labels = recording.get_channel_ids()
         if not labels:  # channel IDs not specified; just number them
             labels = list(range(recording.get_num_channels()))
@@ -83,5 +85,41 @@ class NIXIORecordingExtractor(RecordingExtractor):
         sfreq = recording.get_sampling_frequency()
         timedim = da.append_sampled_dimension(sampling_interval=1./sfreq)
         timedim.unit = "s"
+
+        # In NIX, channel properties are stored as follows
+        # Traces metadata (nix.Section)
+        #     |
+        #     |--- Channel 0 (nix.Section)
+        #     |       |
+        #     |       |---- Location (nix.Property)
+        #     |       |
+        #     |       |---- Other property a (nix.Property)
+        #     |       |
+        #     |       `---- Other property b (nix.Property)
+        #     |
+        #     `--- Channel 1 (nix.Section)
+        #             |
+        #             |---- Location (nix.Property)
+        #             |
+        #             |---- Other property a (nix.Property)
+        #             |
+        #             `---- Other property b (nix.Property)
+        traces_md = nf.create_section("traces.metadata",
+                                      "spikeinterface.properties")
+        da.metadata = traces_md
+        channels = recording.get_channel_ids()
+        for chanid in channels:
+            chan_md = traces_md.create_section(str(chanid),
+                                               "spikeinterface.properties")
+            for propname in recording.get_channel_property_names(chanid):
+                propvalue = recording.get_channel_property(chanid, propname)
+                if nf.version <= (1, 1, 0):
+                    if isinstance(propvalue, Iterable):
+                        values = list(map(nix.Value, propvalue))
+                    else:
+                        values = nix.Value(propvalue)
+                else:
+                    values = propvalue
+                chan_md.create_property(propname, values)
 
         nf.close()
