@@ -30,6 +30,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
             raise ImportError(missing_nixio_msg)
         RecordingExtractor.__init__(self)
         self._file = nix.File.open(file_path, nix.FileMode.ReadOnly)
+        self._load_properties()
 
     def __del__(self):
         self._file.close()
@@ -62,6 +63,22 @@ class NIXIORecordingExtractor(RecordingExtractor):
         else:
             channels = self._traces[:]
         return channels[:, start_frame:end_frame]
+
+    def _load_properties(self):
+        traces_md = self._traces.metadata
+        if traces_md is None:
+            # no metadata stored
+            return
+
+        for chan_md in traces_md.sections:
+            chan_id = int(chan_md.name)
+            for prop in chan_md.props:
+                values = prop.values
+                if self._file.version <= (1, 1, 0):
+                    values = [v.value for v in prop.values]
+                if len(values) == 1:
+                    values = values[0]
+                self.set_channel_property(chan_id, prop.name, values)
 
     @staticmethod
     def write_recording(recording, save_path, overwrite=False):
