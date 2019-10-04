@@ -48,7 +48,7 @@ class NpzSortingExtractor(SortingExtractor):
             spike_times = spike_times[spike_times >= start_frame]
         if end_frame is not None:
             spike_times = spike_times[spike_times < end_frame]
-        return spike_times
+        return spike_times.astype('int64')
 
     @staticmethod
     def write_sorting(sorting, save_path):
