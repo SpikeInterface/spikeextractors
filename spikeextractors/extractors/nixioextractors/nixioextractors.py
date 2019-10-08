@@ -147,8 +147,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
 class NIXIOSortingExtractor(SortingExtractor):
 
     extractor_name = 'NIXIOSortingExtractor'
-    exporter_name = 'NIXIOSortingExtractor'
-    has_default_locations = False
+    exporter_name = 'NIXIOSortingExporter'
     installed = HAVE_NIXIO
     is_writable = True
     mode = 'file'
