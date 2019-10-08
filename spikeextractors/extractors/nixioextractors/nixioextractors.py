@@ -188,7 +188,9 @@ class NIXIOSortingExtractor(SortingExtractor):
             raise FileExistsError("File exists: {}".format(save_path))
 
         sfreq = sorting.get_sampling_frequency()
-        if sfreq == 1:
+        if sfreq is None:
+            unit = None
+        elif sfreq == 1:
             unit = "s"
         else:
             unit = "{} s".format(1./sfreq)
