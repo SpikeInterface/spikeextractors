@@ -163,6 +163,7 @@ class NIXIOSortingExtractor(SortingExtractor):
         if "sampling_frequency" in md:
             sfreq = md["sampling_frequency"]
             self._sampling_frequency = sfreq
+        self._load_properties()
 
     def __del__(self):
         self._file.close()
@@ -179,6 +180,22 @@ class NIXIOSortingExtractor(SortingExtractor):
         name = "spikes-{}".format(unit_id)
         da = self._spike_das[name]
         return da[start_frame:end_frame]
+
+    def _load_properties(self):
+        spikes_md = self._spike_das[0].metadata
+        if spikes_md is None:
+            # no metadata stored
+            return
+
+        for unit_md in spikes_md.sections:
+            unit_id = int(unit_md.name)
+            for prop in unit_md.props:
+                values = prop.values
+                if self._file.version <= (1, 1, 0):
+                    values = [v.value for v in prop.values]
+                if len(values) == 1:
+                    values = values[0]
+                self.set_unit_property(unit_id, prop.name, values)
 
     @staticmethod
     def write_sorting(sorting, save_path, overwrite=False):
