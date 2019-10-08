@@ -8,6 +8,7 @@ except ImportError:
     HAVE_NIXIO = False
 
 from ...recordingextractor import RecordingExtractor
+from ...sortingextractor import SortingExtractor
 
 # error message when not installed
 missing_nixio_msg = ("To use the NIXIORecordingExtractor install nixio:"
@@ -94,6 +95,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
         da = block.create_data_array("traces", "spikeinterface.traces",
                                      data=recording.get_traces())
         da.unit = "uV"
+        da.label = "voltage"
         labels = recording.get_channel_ids()
         if not labels:  # channel IDs not specified; just number them
             labels = list(range(recording.get_num_channels()))
@@ -125,11 +127,11 @@ class NIXIORecordingExtractor(RecordingExtractor):
                                       "spikeinterface.properties")
         da.metadata = traces_md
         channels = recording.get_channel_ids()
-        for chanid in channels:
-            chan_md = traces_md.create_section(str(chanid),
+        for chan_id in channels:
+            chan_md = traces_md.create_section(str(chan_id),
                                                "spikeinterface.properties")
-            for propname in recording.get_channel_property_names(chanid):
-                propvalue = recording.get_channel_property(chanid, propname)
+            for propname in recording.get_channel_property_names(chan_id):
+                propvalue = recording.get_channel_property(chan_id, propname)
                 if nf.version <= (1, 1, 0):
                     if isinstance(propvalue, Iterable):
                         values = list(map(nix.Value, propvalue))
@@ -138,5 +140,114 @@ class NIXIORecordingExtractor(RecordingExtractor):
                 else:
                     values = propvalue
                 chan_md.create_property(propname, values)
+
+        nf.close()
+
+
+class NIXIOSortingExtractor(SortingExtractor):
+
+    extractor_name = 'NIXIOSortingExtractor'
+    exporter_name = 'NIXIOSortingExtractor'
+    has_default_locations = False
+    installed = HAVE_NIXIO
+    is_writable = True
+    mode = 'file'
+    extractor_gui_params = [
+        {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
+    ]
+
+    def __init__(self, file_path):
+        SortingExtractor.__init__(self)
+        self._file = nix.File.open(file_path, nix.FileMode.ReadOnly)
+        md = self._file.sections
+        if "sampling_frequency" in md:
+            sfreq = md["sampling_frequency"]
+            self._sampling_frequency = sfreq
+        self._load_properties()
+
+    def __del__(self):
+        self._file.close()
+
+    @property
+    def _spike_das(self):
+        blk = self._file.blocks[0]
+        return blk.data_arrays
+
+    def get_unit_ids(self):
+        return [int(da.label) for da in self._spike_das]
+
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        name = "spikes-{}".format(unit_id)
+        da = self._spike_das[name]
+        return da[start_frame:end_frame]
+
+    def _load_properties(self):
+        spikes_md = self._spike_das[0].metadata
+        if spikes_md is None:
+            # no metadata stored
+            return
+
+        for unit_md in spikes_md.sections:
+            unit_id = int(unit_md.name)
+            for prop in unit_md.props:
+                values = prop.values
+                if self._file.version <= (1, 1, 0):
+                    values = [v.value for v in prop.values]
+                if len(values) == 1:
+                    values = values[0]
+                self.set_unit_property(unit_id, prop.name, values)
+
+    @staticmethod
+    def write_sorting(sorting, save_path, overwrite=False):
+        if not HAVE_NIXIO:
+            raise ImportError(missing_nixio_msg)
+        if os.path.exists(save_path) and not overwrite:
+            raise FileExistsError("File exists: {}".format(save_path))
+
+        sfreq = sorting.get_sampling_frequency()
+        if sfreq is None:
+            unit = None
+        elif sfreq == 1:
+            unit = "s"
+        else:
+            unit = "{} s".format(1./sfreq)
+
+        nf = nix.File.open(save_path, nix.FileMode.Overwrite)
+        # use the file name to name the top-level block
+        fname = os.path.basename(save_path)
+        block = nf.create_block(fname, "spikeinterface.sorting")
+        commonmd = nf.create_section(fname, "spikeinterface.sorting.metadata")
+        if sfreq is not None:
+            commonmd["sampling_frequency"] = sfreq
+
+        spikes_das = list()
+        for unit_id in sorting.get_unit_ids():
+            spikes = sorting.get_unit_spike_train(unit_id)
+            name = "spikes-{}".format(unit_id)
+            da = block.create_data_array(name, "spikeinterface.spikes",
+                                         data=spikes)
+            da.unit = unit
+            da.label = str(unit_id)
+            spikes_das.append(da)
+
+        spikes_md = nf.create_section("spikes.metadata",
+                                      "spikeinterface.properties")
+        for da in spikes_das:
+            da.metadata = spikes_md
+
+        units = sorting.get_unit_ids()
+        for unit_id in units:
+            unit_md = spikes_md.create_section(str(unit_id),
+                                               "spikeinterface.properties")
+            for propname in sorting.get_unit_property_names(unit_id):
+                propvalue = sorting.get_unit_property(unit_id, propname)
+                if nf.version <= (1, 1, 0):
+                    if isinstance(propvalue, Iterable):
+                        values = list(map(nix.Value, propvalue))
+                    else:
+                        values = nix.Value(propvalue)
+                else:
+                    values = propvalue
+                unit_md.create_property(propname, values)
 
         nf.close()

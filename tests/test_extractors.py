@@ -235,6 +235,12 @@ class TestExtractors(unittest.TestCase):
         se.NIXIORecordingExtractor.write_recording(self.RX, path1,
                                                    overwrite=True)
 
+        path2 = self.test_dir + '/firings_true.nix'
+        se.NIXIOSortingExtractor.write_sorting(self.SX, path2)
+        SX_mearec = se.NIXIOSortingExtractor(path2)
+        self._check_sorting_return_types(SX_mearec)
+        self._check_sortings_equal(self.SX, SX_mearec)
+
     def _check_recordings_equal(self, RX1, RX2):
         M = RX1.get_num_channels()
         N = RX1.get_num_frames()
