@@ -203,6 +203,7 @@ class NIXIOSortingExtractor(SortingExtractor):
         if sfreq is not None:
             commonmd["sampling_frequency"] = sfreq
 
+        spikes_das = list()
         for unit_id in sorting.get_unit_ids():
             spikes = sorting.get_unit_spike_train(unit_id)
             name = "spikes-{}".format(unit_id)
@@ -210,5 +211,26 @@ class NIXIOSortingExtractor(SortingExtractor):
                                          data=spikes)
             da.unit = unit
             da.label = str(unit_id)
+            spikes_das.append(da)
+
+        spikes_md = nf.create_section("spikes.metadata",
+                                      "spikeinterface.properties")
+        for da in spikes_das:
+            da.metadata = spikes_md
+
+        units = sorting.get_unit_ids()
+        for uid in units:
+            unit_md = spikes_md.create_section(str(uid),
+                                               "spikeinterface.properties")
+            for propname in sorting.get_unit_property_names(uid):
+                propvalue = sorting.get_unit_property(uid, propname)
+                if nf.version <= (1, 1, 0):
+                    if isinstance(propvalue, Iterable):
+                        values = list(map(nix.Value, propvalue))
+                    else:
+                        values = nix.Value(propvalue)
+                else:
+                    values = propvalue
+                unit_md.create_property(propname, values)
 
         nf.close()
