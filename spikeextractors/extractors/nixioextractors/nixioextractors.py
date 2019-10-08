@@ -127,11 +127,11 @@ class NIXIORecordingExtractor(RecordingExtractor):
                                       "spikeinterface.properties")
         da.metadata = traces_md
         channels = recording.get_channel_ids()
-        for chanid in channels:
-            chan_md = traces_md.create_section(str(chanid),
+        for chan_id in channels:
+            chan_md = traces_md.create_section(str(chan_id),
                                                "spikeinterface.properties")
-            for propname in recording.get_channel_property_names(chanid):
-                propvalue = recording.get_channel_property(chanid, propname)
+            for propname in recording.get_channel_property_names(chan_id):
+                propvalue = recording.get_channel_property(chan_id, propname)
                 if nf.version <= (1, 1, 0):
                     if isinstance(propvalue, Iterable):
                         values = list(map(nix.Value, propvalue))
@@ -236,11 +236,11 @@ class NIXIOSortingExtractor(SortingExtractor):
             da.metadata = spikes_md
 
         units = sorting.get_unit_ids()
-        for uid in units:
-            unit_md = spikes_md.create_section(str(uid),
+        for unit_id in units:
+            unit_md = spikes_md.create_section(str(unit_id),
                                                "spikeinterface.properties")
-            for propname in sorting.get_unit_property_names(uid):
-                propvalue = sorting.get_unit_property(uid, propname)
+            for propname in sorting.get_unit_property_names(unit_id):
+                propvalue = sorting.get_unit_property(unit_id, propname)
                 if nf.version <= (1, 1, 0):
                     if isinstance(propvalue, Iterable):
                         values = list(map(nix.Value, propvalue))
