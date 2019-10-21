@@ -17,15 +17,17 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     mode = 'file'
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
+        {'name': 'stream_id', 'type': 'int', 'title': 'ID of stream that will be loaded'},
     ]
     installation_mesg = "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
-    def __init__(self, file_path, verbose=False):
+    def __init__(self, file_path, stream_id=0, verbose=False):
         assert HAVE_MCSH5, "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"
         self._recording_file = file_path
-        self._rf, self._nFrames, self._samplingRate, self._nRecCh, \
-        self._channel_ids, self._electrodeLabels, self._exponent, self._convFact \
-            = openMCSH5File(self._recording_file, verbose)
+        self._verbose = verbose
+        self._available_stream_ids = self.get_available_stream_ids()
+        self.set_stream_id(stream_id)
+        
         RecordingExtractor.__init__(self)
 
     def __del__(self):
@@ -39,6 +41,29 @@ class MCSH5RecordingExtractor(RecordingExtractor):
 
     def get_sampling_frequency(self):
         return self._samplingRate
+
+    def set_stream_id(self, stream_id):
+        assert stream_id in self._available_stream_ids,  "The specified stream ID is unavailable."
+        self._stream_id = stream_id
+        
+        if hasattr(self, '_rf'):
+            self._rf.close()
+
+        self._rf, self._nFrames, self._samplingRate, self._nRecCh, \
+        self._channel_ids, self._electrodeLabels, self._exponent, self._convFact \
+            = openMCSH5File(self._recording_file, stream_id, self._verbose)
+
+    def get_stream_id(self):
+        assert hasattr(self, '_stream_id'), "Stream ID has not been set yet."
+        return self._stream_id
+
+    def get_available_stream_ids(self):
+        if hasattr(self, '_available_stream_ids'):
+            return self._available_stream_ids
+        else:
+            rf = h5py.File(self._recording_file, 'r')
+            analog_stream_names = list(rf.require_group('/Data/Recording_0/AnalogStream').keys())
+            return list(range(len(analog_stream_names)))
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
@@ -57,7 +82,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
                     assert m in self._channel_ids, 'channel_id {} not found'.format(m)
                     channel_idxs.append(np.where(self._channel_ids == m)[0][0])
 
-        stream = self._rf.require_group('/Data/Recording_0/AnalogStream/Stream_0')
+        stream = self._rf.require_group('/Data/Recording_0/AnalogStream/Stream_' + str(self._stream_id))
         data_v = np.array(stream.get('ChannelData'), dtype=np.int) * self._convFact.astype(float) * \
                  (10.0 ** self._exponent)
 
@@ -71,11 +96,15 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         raise NotImplementedError
 
 
-def openMCSH5File(filename, verbose=False):
+def openMCSH5File(filename, stream_id, verbose=False):
     """Open an MCS hdf5 file, read and return the recording info."""
     rf = h5py.File(filename, 'r')
 
-    stream = rf.require_group('/Data/Recording_0/AnalogStream/Stream_0')
+    stream_name = 'Stream_' + str(stream_id)
+    analog_stream_names = list(rf.require_group('/Data/Recording_0/AnalogStream').keys())
+    assert stream_name in analog_stream_names, "Specified stream does not exist."
+
+    stream = rf.require_group('/Data/Recording_0/AnalogStream/' + stream_name)
     data = np.array(stream.get('ChannelData'), dtype=np.int)
     timestamps = np.array(stream.get('ChannelDataTimeStamps'))
     info = np.array(stream.get('InfoChannel'))
@@ -90,6 +119,7 @@ def openMCSH5File(filename, verbose=False):
     assert len(np.unique(channel_ids)) == len(channel_ids), 'Duplicate MCS channel IDs found'
     electrodeLabels = info['Label']
 
+    assert timestamps[0][0] < timestamps[0][2], 'Please check the validity of \'ChannelDataTimeStamps\' in the stream.'
     TimeVals = np.arange(timestamps[0][0], timestamps[0][2] + 1, 1) * Tick
 
     assert Unit == b'V', 'Unexpected units found, expected volts, found {}'.format(Unit.decode('UTF-8'))

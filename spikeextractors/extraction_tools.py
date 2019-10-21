@@ -249,7 +249,7 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
     return samples
 
 
-def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunksize=None):
+def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunk_size=None):
     '''Saves the traces of a recording extractor in binary .dat format.
 
     Parameters
@@ -263,7 +263,7 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
     dtype: dtype
         Type of the saved data. Default float32.
-    chunksize: None or int
+    chunk_size: None or int
         If not None then the copy done by chunk size.
         This avoid to much memory consumption for big files.
     '''
@@ -272,7 +272,7 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         # when suffix is already raw/bin/dat do not change it.
         save_path = save_path.parent / (save_path.name + '.dat')
 
-    if chunksize is None:
+    if chunk_size is None:
         traces = recording.get_traces()
         if dtype is not None:
             traces = traces.astype(dtype)
@@ -284,13 +284,13 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         assert time_axis ==0, 'chunked writting work only with time_axis 0'
         n_sample = recording.get_num_frames()
         n_chan = recording.get_num_channels()
-        n_chunk = n_sample // chunksize
-        if n_sample % chunksize > 0:
+        n_chunk = n_sample // chunk_size
+        if n_sample % chunk_size > 0:
             n_chunk += 1
         with save_path.open('wb') as f:
             for i in range(n_chunk):
-                traces = recording.get_traces(start_frame=i*chunksize,
-                                              end_frame=min((i+1)*chunksize, n_sample))
+                traces = recording.get_traces(start_frame=i*chunk_size,
+                                              end_frame=min((i+1)*chunk_size, n_sample))
                 if dtype is not None:
                     traces = traces.astype(dtype)
                 if time_axis == 0:
