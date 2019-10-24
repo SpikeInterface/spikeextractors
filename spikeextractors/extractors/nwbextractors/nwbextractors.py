@@ -75,8 +75,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             CopyRecordingExtractor.__init__(self, NRX)
 
     @staticmethod
-    def write_recording(recording, save_path, acquisition_name='ElectricalSeries', session_description=None,
-                        identifier=None):
+    def write_recording(recording, save_path, acquisition_name='ElectricalSeries', **nwbfile_kwargs):
         '''
 
         Parameters
@@ -84,23 +83,23 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
         recording: RecordingExtractor
         save_path: str
         acquisition_name: str (default 'ElectricalSeries')
-        session_description: str
-        identifier: str
-
+        nwbfile_kwargs: optional, pynwb.NWBFile args
         '''
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         M = recording.get_num_channels()
 
-        if session_description is None:
-            session_description = 'No description'
-        if identifier is None:
-            identifier = str(uuid.uuid4())
+        if os.path.exists(save_path):
+            os.remove(save_path)
 
-        nwbfile = NWBFile(
-            session_description=session_description,
-            identifier=identifier,
-            session_start_time=datetime.now(),
-        )
+        if 'session_description' not in nwbfile_kwargs.keys():
+            nwbfile_kwargs['session_description'] = 'No description'
+        if 'identifier' not in nwbfile_kwargs.keys():
+            nwbfile_kwargs['identifier'] = str(uuid.uuid4())
+        input_nwbfile_kwargs = {
+            'session_start_time': datetime.now()}
+        input_nwbfile_kwargs.update(nwbfile_kwargs)
+        nwbfile = NWBFile(**input_nwbfile_kwargs)
+
         device = nwbfile.create_device(name='device_name')
         eg_name = 'electrode_group_name'
         eg_description = "electrode_group_description"
@@ -144,10 +143,8 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             comments='Generated from SpikeInterface::NwbRecordingExtractor',
             description='acquisition_description'
         )
-        nwbfile.add_acquisition(ephys_ts)
 
-        if os.path.exists(save_path):
-            os.remove(save_path)
+        nwbfile.add_acquisition(ephys_ts)
         with NWBHDF5IO(save_path, 'w') as io:
             io.write(nwbfile)
 
@@ -170,38 +167,31 @@ class NwbSortingExtractor(se.SortingExtractor):
         se.SortingExtractor.__init__(self)
 
     @staticmethod
-    def write_sorting(sorting, save_path, session_description=None, identifier=None, nwbfile_kwargs=None):
+    def write_sorting(sorting, save_path, **nwbfile_kwargs):
         """
 
         Parameters
         ----------
         sorting: SortingExtractor
         save_path: str
-        nwbfile_kwargs: optional, dict with optional args of pynwb.NWBFile
-        session_description: str
-        identifier: str
-
+        nwbfile_kwargs: optional, pynwb.NWBFile args
         """
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
-
-        if session_description is None:
-            session_description = 'No description'
-        if identifier is None:
-            identifier = str(uuid.uuid4())
 
         if os.path.exists(save_path):
             io = NWBHDF5IO(save_path, 'r+')
             nwbfile = io.read()
         else:
             io = NWBHDF5IO(save_path, mode='w')
+            if 'session_description' not in nwbfile_kwargs.keys():
+                nwbfile_kwargs['session_description'] = 'No description'
+            if 'identifier' not in nwbfile_kwargs.keys():
+                nwbfile_kwargs['identifier'] = str(uuid.uuid4())
             input_nwbfile_kwargs = {
-                'session_start_time': datetime.now(),
-                'identifier': identifier,
-                'session_description': session_description}
-            if nwbfile_kwargs is not None:
-                input_nwbfile_kwargs.update(nwbfile_kwargs)
+                'session_start_time': datetime.now()}
+            input_nwbfile_kwargs.update(nwbfile_kwargs)
             nwbfile = NWBFile(**input_nwbfile_kwargs)
 
         # Stores spike times for each detected cell (unit)
