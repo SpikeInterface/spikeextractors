@@ -3,6 +3,7 @@ import spikeextractors as se
 import os
 import numpy as np
 from datetime import datetime
+import uuid
 
 try:
     from pynwb import NWBHDF5IO
@@ -74,13 +75,30 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             CopyRecordingExtractor.__init__(self, NRX)
 
     @staticmethod
-    def write_recording(recording, save_path, acquisition_name='ElectricalSeries'):
+    def write_recording(recording, save_path, acquisition_name='ElectricalSeries', session_description=None,
+                        identifier=None):
+        '''
+
+        Parameters
+        ----------
+        recording: RecordingExtractor
+        save_path: str
+        acquisition_name: str (default 'ElectricalSeries')
+        session_description: str
+        identifier: str
+
+        '''
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         M = recording.get_num_channels()
 
+        if session_description is None:
+            session_description = 'No description'
+        if identifier is None:
+            identifier = str(uuid.uuid4())
+
         nwbfile = NWBFile(
-            session_description='',
-            identifier='',
+            session_description=session_description,
+            identifier=identifier,
             session_start_time=datetime.now(),
         )
         device = nwbfile.create_device(name='device_name')
@@ -152,7 +170,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         se.SortingExtractor.__init__(self)
 
     @staticmethod
-    def write_sorting(sorting, save_path, nwbfile_kwargs=None):
+    def write_sorting(sorting, save_path, session_description=None, identifier=None, nwbfile_kwargs=None):
         """
 
         Parameters
@@ -160,10 +178,18 @@ class NwbSortingExtractor(se.SortingExtractor):
         sorting: SortingExtractor
         save_path: str
         nwbfile_kwargs: optional, dict with optional args of pynwb.NWBFile
+        session_description: str
+        identifier: str
+
         """
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
+
+        if session_description is None:
+            session_description = 'No description'
+        if identifier is None:
+            identifier = str(uuid.uuid4())
 
         if os.path.exists(save_path):
             io = NWBHDF5IO(save_path, 'r+')
@@ -172,15 +198,15 @@ class NwbSortingExtractor(se.SortingExtractor):
             io = NWBHDF5IO(save_path, mode='w')
             input_nwbfile_kwargs = {
                 'session_start_time': datetime.now(),
-                'identifier': '',
-                'session_description': ''}
+                'identifier': identifier,
+                'session_description': session_description}
             if nwbfile_kwargs is not None:
                 input_nwbfile_kwargs.update(nwbfile_kwargs)
             nwbfile = NWBFile(**input_nwbfile_kwargs)
 
         # Stores spike times for each detected cell (unit)
         for id in ids:
-            spkt = sorting.get_unit_spike_train(unit_id=id+1) / fs
+            spkt = sorting.get_unit_spike_train(unit_id=id) / fs
             nwbfile.add_unit(id=id, spike_times=spkt)
             # 'waveform_mean' and 'waveform_sd' are interesting args to include later            
 
