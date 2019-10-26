@@ -375,7 +375,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     data = recording.get_traces(channel_ids=[id]).flatten()
                     yield data
 
-            data = data_generator(recording=recording, num_channels=M)
+            data = data_generator(recording=recording, num_channels=n_channels)
             ephys_data = DataChunkIterator(data=data,
                                            iter_axis=1)
             acquisition_name = 'ElectricalSeries'
