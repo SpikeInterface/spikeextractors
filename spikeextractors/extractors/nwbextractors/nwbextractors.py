@@ -2,7 +2,6 @@ import spikeextractors as se
 import os
 import numpy as np
 from datetime import datetime
-from lazy_ops import DatasetView
 from hdmf.data_utils import DataChunkIterator
 
 try:
@@ -82,7 +81,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                  'end_frame': self.time_to_frame(row['stop_time'])}
                                 for _, row in df_epochs.iterrows()}
 
-
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         '''This function extracts and returns a trace from the recorded data from the
         given channels ids and the given start and end frame. It will return
@@ -145,7 +143,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             # traces = es_view.lazy_slice[start_frame:end_frame, channel_ids].lazy_transpose()
         return traces
 
-
     def get_sampling_frequency(self):
         '''This function returns the sampling frequency in units of Hz.
 
@@ -156,7 +153,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         '''
         return self.sampling_frequency
 
-
     def get_num_frames(self):
         '''This function returns the number of frames in the recording.
 
@@ -166,7 +162,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             Number of frames in the recording (duration of recording).
         '''
         return self.num_frames
-
 
     def time_to_frame(self, time):
         '''This function converts a user-inputted time (in seconds) to a frame
@@ -201,7 +196,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         '''
         return frame / self.get_sampling_frequency() + self.recording_start_time
 
-
     def get_channel_ids(self):
         '''Returns the list of channel ids. If not specified, the range from 0
         to num_channels - 1 is returned.
@@ -213,7 +207,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         '''
         return self.channel_ids.tolist()
 
-
     def set_channel_locations(self, channel_ids=None, locations=None):
         '''
         NWB files do not allow for setting already existing properties.
@@ -221,14 +214,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         '''
         print(self.set_channel_locations.__doc__)
 
-
     def set_channel_groups(self, channel_ids=None, groups=None):
         '''
         NWB files do not allow for setting already existing properties.
         Channel groups should be set in the moment of adding channels.
         '''
         print(self.set_channel_groups.__doc__)
-
 
     def get_channel_groups(self, channel_ids=None):
         '''This function returns the group of each channel specifed by
@@ -256,7 +247,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         groups = self.electrodes_df['group_name'][channel_ids]
         return groups.tolist()
 
-
     def set_channel_gains(self, channel_ids, gains):
         '''This function sets the gain property of each specified channel
         id with the corresponding group of the passed in gains float/list.
@@ -277,14 +267,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                    values=gains,
                                    default_values=1.)
 
-
     def set_channel_property(self, channel_id=None, property_name=None, value=None):
         """
         NWB files require that new properties are set once for all channels.
         Please use method 'set_channels_property()' instead.
         """
         print(self.set_channel_property.__doc__)
-
 
     def set_channels_property(self, channel_ids, property_name, values, default_values=np.nan):
         '''This function adds a new property data set to the chosen channels.
@@ -317,7 +305,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             raise Exception("'property_name' must be a string")
         if property_name in self.get_shared_channel_property_names():
             raise Exception(property_name + " property already exists")
-        if len(channel_ids)!=len(values):
+        if len(channel_ids) != len(values):
             raise Exception("'channel_ids' and 'values' should be lists of same size")
 
         nChannels = len(existing_ids)
@@ -332,7 +320,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             es = nwbfile.acquisition[self._electrical_series_name]
             self.electrodes_df = es.electrodes.table.to_dataframe()
             io.write(nwbfile)
-
 
     def get_channel_property(self, channel_id, property_name):
         '''This function returns the data stored under the property name from
@@ -353,7 +340,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         '''
         return self.electrodes_df[property_name][channel_id]
 
-
     def get_channel_property_names(self, channel_id=None):
         '''Get a list of property names for a given channel. In NWB files all
         channels must have the same properties, so the argument 'channel_ids' is
@@ -372,7 +358,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         '''
         return list(self.electrodes_df.columns)
 
-
     def get_shared_channel_property_names(self, channel_ids=None):
         '''Get the intersection of channel property names for a given set of
         channels. In NWB files all channels must have the same properties, so
@@ -390,7 +375,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             The list of property names
         '''
         return list(self.electrodes_df.columns)
-
 
     def copy_channel_properties(self, recording, channel_ids=None, default_values=None):
         '''Copy channel properties from another recording extractor to the current
@@ -424,14 +408,14 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if default_values is None:
             default_values = [np.nan]*len(new_property_names)
         else:
-            if len(default_values)!=len(new_property_names):
+            if len(default_values) != len(new_property_names):
                 raise Exception("'default_values' list must have length equal to"+
                                 " number of properties to be copied.")
 
         # Copies only properties that do not exist already in NWB file
         for i, pr in enumerate(new_property_names):
             if pr in curr_property_names:
-                print(pr+" already exists in NWB file and can't be copied.")
+                print(pr + " already exists in NWB file and can't be copied.")
             else:
                 pr_values = recording.get_channel_property(channel_ids=unit_ids,
                                                            property_name=pr)
@@ -439,7 +423,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                            property_name=pr,
                                            values=pr_values,
                                            default_values=default_values[i])
-
 
     def add_epoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to the NWB file.
@@ -469,11 +452,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                               tags=epoch_name)
             io.write(nwbfile)
 
-
     def remove_epoch(self, epoch_name=None):
         '''NWB files do not allow removing epochs.'''
         print(self.remove_epoch.__doc__)
-
 
     def get_epoch_names(self):
         '''This function returns a list of all the epoch names in the NWB file.
@@ -494,7 +475,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 aux = np.array(flat_list)
                 epoch_names = np.unique(aux).tolist()
         return epoch_names
-
 
     def get_epoch_info(self, epoch_name):
         '''This function returns the start frame and end frame of the epoch
@@ -527,7 +507,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     epoch_info['start_frame'] = int(nwbfile.epochs['start_time'][i]*fs)
                     epoch_info['end_frame'] = int(nwbfile.epochs['stop_time'][i]*fs)
         return epoch_info
-
 
     @staticmethod
     def write_recording(recording, save_path, nwbfile_kwargs=None):
@@ -649,7 +628,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         io.close()
 
 
-
 class NwbSortingExtractor(se.SortingExtractor):
     extractor_name = 'NwbSortingExtractor'
     exporter_name = 'NwbSortingExporter'
@@ -701,7 +679,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                 self._t0 = es.timestamps[0]
             else:
                 self._t0 = 0.
-
 
     def set_sampling_frequency(self, sampling_frequency):
         '''NWB file sampling rate can't be modified.'''
@@ -792,7 +769,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                 raise Exception(property_name+" is not a valid property in dataset")
         return val
 
-
     def get_units_property(self, unit_ids, property_name):
         '''Returns a list of values stored under the property name corresponding
         to a list of units
@@ -830,7 +806,6 @@ class NwbSortingExtractor(se.SortingExtractor):
             else:
                 raise Exception(property_name+" is not a valid property in dataset")
         return values
-
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         '''This function extracts spike frames from the specified unit.
@@ -872,8 +847,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             times0 = nwbfile.units['spike_times'][int(unit_id-1)][:]
             # spike times are measured in samples
             times = ((times0 - self._t0) * self._sampling_frequency).astype('int')
-        return times[(times>start_frame) & (times<end_frame)]
-
+        return times[(times > start_frame) & (times < end_frame)]
 
     def set_unit_property(self, unit_id, property_name, value):
         """
@@ -913,7 +887,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             raise Exception("'property_name' must be a string")
         if property_name in self.get_shared_unit_property_names():
             raise Exception(property_name + " property already exists")
-        if len(unit_ids)!=len(values):
+        if len(unit_ids) != len(values):
             raise Exception("'unit_ids' and 'values' should be lists of same size")
 
         nUnits = len(existing_ids)
@@ -926,7 +900,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                                     description='',
                                     data=new_values)
             io.write(nwbfile)
-
 
     def copy_unit_properties(self, sorting, unit_ids=None, default_values=None):
         '''Copy unit properties from another sorting extractor to the current
@@ -960,7 +933,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         if default_values is None:
             default_values = [np.nan]*len(new_property_names)
         else:
-            if len(default_values)!=len(new_property_names):
+            if len(default_values) != len(new_property_names):
                 raise Exception("'default_values' list must have length equal to"+
                                 " number of properties to be copied.")
 
@@ -976,7 +949,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                                         values=pr_values,
                                         default_values=default_values[i])
 
-
     def clear_unit_property(self, unit_id=None, property_name=None):
         '''NWB files do not allow for deleting properties.'''
         print(self.clear_unit_property.__doc__)
@@ -985,7 +957,6 @@ class NwbSortingExtractor(se.SortingExtractor):
         '''NWB files do not allow for deleting properties.'''
         print(self.clear_units_property.__doc__)
 
-
     def get_nspikes(self):
         """Returns list with the number of spikes for each unit."""
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
@@ -993,7 +964,6 @@ class NwbSortingExtractor(se.SortingExtractor):
             nwbfile = io.read()
             nSpikes = [len(spkt) for spkt in nwbfile.units['spike_times'][:]]
         return nSpikes
-
 
     def get_unit_spike_features(self, unit_id, feature_name, start_frame=None, end_frame=None):
         '''This function extracts the specified spike features from the specified unit.
@@ -1047,7 +1017,6 @@ class NwbSortingExtractor(se.SortingExtractor):
             mask = (times>start_frame) & (times<end_frame)
         return feat_vals[mask].tolist()
 
-
     def set_unit_spike_features(self, unit_ids, feature_name, values, default_value=None):
         '''This function adds a new feature for the spikes of sorted units.
         NWB files require that new properties are set once for all units. Therefore,
@@ -1084,7 +1053,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         if not all([str(k) in values.keys() for k in unit_ids]):
             raise Exception("All units in 'unit_id' should be present as keys "+
                             "of 'values' dictionary")
-        if len(unit_ids)!=len(values.keys()):
+        if len(unit_ids) != len(values.keys()):
             raise Exception("'unit_ids' and the list of keys in 'values' should"+
                             " be of same size")
         if default_value is None:
@@ -1110,7 +1079,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                                     index=spikes_index)
             io.write(nwbfile)
 
-
     def get_shared_unit_spike_feature_names(self, unit_ids=None):
         '''Get list of spike feature names for the units in the NWB file.
         Since in a NWB file all units must contain the same feature columns,
@@ -1133,7 +1101,6 @@ class NwbSortingExtractor(se.SortingExtractor):
             feature_names = [feat for feat in aux if feat[0:14]=='spike_feature_']
         return feature_names
 
-
     def get_unit_spike_feature_names(self, unit_id=None):
         '''This function returns the list of feature names for the given unit.
         Since in a NWB file all units must contain the same feature columns,
@@ -1149,7 +1116,6 @@ class NwbSortingExtractor(se.SortingExtractor):
             The list of feature names.
         '''
         return self.get_shared_unit_spike_feature_names(unit_ids=None)
-
 
     def copy_unit_spike_features(self, sorting, unit_ids=None, default_values=None):
         '''Copy unit spike features from another sorting extractor to the current
@@ -1203,16 +1169,13 @@ class NwbSortingExtractor(se.SortingExtractor):
                                              values=feat_values,
                                              default_value=default_values[i])
 
-
     def clear_unit_spike_features(self, unit_id=None, feature_name=None):
         '''NWB files do not allow removing features.'''
         print(self.clear_unit_spike_features.__doc__)
 
-
     def clear_units_spike_features(self, *, unit_ids=None, feature_name):
         '''NWB files do not allow removing features.'''
         print(self.clear_units_spike_features.__doc__)
-
 
     def add_epoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to the NWB file.
@@ -1242,11 +1205,9 @@ class NwbSortingExtractor(se.SortingExtractor):
                               tags=epoch_name)
             io.write(nwbfile)
 
-
     def remove_epoch(self, epoch_name=None):
         '''NWB files do not allow removing epochs.'''
         print(self.remove_epoch.__doc__)
-
 
     def get_epoch_names(self):
         '''This function returns a list of all the epoch names in the NWB file.
@@ -1267,7 +1228,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                 aux = np.array(flat_list)
                 epoch_names = np.unique(aux).tolist()
         return epoch_names
-
 
     def get_epoch_info(self, epoch_name):
         '''This function returns the start frame and end frame of the epoch
@@ -1301,7 +1261,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                     epoch_info['end_frame'] = int(nwbfile.epochs['stop_time'][i]*fs)
         return epoch_info
 
-
     def get_epoch(self, epoch_name):
         '''This function returns a SubSortingExtractor which is a view to the
         given epoch
@@ -1322,7 +1281,6 @@ class NwbSortingExtractor(se.SortingExtractor):
         from spikeextractors.subsortingextractor import SubSortingExtractor
         return SubSortingExtractor(parent_sorting=self, start_frame=start_frame,
                                    end_frame=end_frame)
-
 
     @staticmethod
     def write_sorting(sorting, save_path, nwbfile_kwargs=None):
