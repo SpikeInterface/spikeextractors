@@ -81,10 +81,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             self._epochs = {}
             if nwbfile.epochs is not None:
                 df_epochs = nwbfile.epochs.to_dataframe()
-                self._epochs = {row['label']:
-                                    {'start_frame': self.time_to_frame(row['start_time']),
-                                     'end_frame': self.time_to_frame(row['stop_time'])}
-                                for _, row in df_epochs.iterrows()}
+                self._epochs = {row['label']: {
+                    'start_frame': self.time_to_frame(row['start_time']),
+                    'end_frame': self.time_to_frame(row['stop_time'])}
+                    for _, row in df_epochs.iterrows()}
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
@@ -183,7 +183,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             for i, v in zip(channel_ids, values):
                 new_values[existing_ids.index(i)] = v
             nwbfile.add_electrode_column(name=property_name,
-                                         description='',
+                                         description='no description',
                                          data=new_values)
             es = nwbfile.acquisition[self._electrical_series_name]
             self.electrodes_df = es.electrodes.table.to_dataframe()
@@ -202,12 +202,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if channel_ids is None:
             channel_ids = recording.get_channel_ids()
         else:
-            if not isinstance(channel_ids, list):
-                raise ValueError("'channel_ids' must be a list of integers")
-            if not all(isinstance(x, int) for x in channel_ids):
+            if not isinstance(channel_ids, list) or not all(isinstance(x, int) for x in channel_ids):
                 raise ValueError("'channel_ids' must be a list of integers")
             existing_ids = self.get_channel_ids()
-            if not all(x in existing_ids for x in channel_ids):
+            if any(x not in existing_ids for x in channel_ids):
                 raise ValueError("'channel_ids' contains values outside the range of existing ids")
 
         new_property_names = recording.get_shared_channel_property_names()
@@ -222,14 +220,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         # Copies only properties that do not exist already in NWB file
         for i, pr in enumerate(new_property_names):
             if pr in curr_property_names:
-                print(pr + " already exists in NWB file and can't be copied.")
+                # todo
+                raise NotImplementedError()
             else:
-                pr_values = recording.get_channel_property(channel_ids=channel_ids,
-                                                           property_name=pr)
-                self.set_channels_property(channel_ids=channel_ids,
-                                           property_name=pr,
-                                           values=pr_values,
-                                           default_values=default_values[i])
+                for channel_id in channel_ids:
+                    pr_value = recording.get_channel_property(channel_id=channel_id,
+                                                              property_name=pr)
+                    self.set_channel_property(channel_id=channel_id,
+                                              property_name=pr,
+                                              value=pr_value)
 
     def add_epoch(self, epoch_name, start_frame, end_frame):
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
@@ -243,26 +242,24 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         fs = self.get_sampling_frequency()
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            nwbfile.add_epoch(start_time=start_frame / fs,
-                              stop_time=end_frame / fs,
+            nwbfile.add_epoch(start_time=self.frame_to_time(start_frame),
+                              stop_time=self.frame_to_time(end_frame),
                               tags=epoch_name)
             io.write(nwbfile)
 
     def remove_epoch(self, epoch_name=None):
-        '''NWB files do not allow removing epochs.'''
-        print(self.remove_epoch.__doc__)
+        # to do
+        raise NotImplementedError()
 
     def get_epoch_names(self):
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             if nwbfile.epochs is None:
-                print("No epochs in NWB file")
-                epoch_names = None
-            else:
-                flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
-                aux = np.array(flat_list)
-                epoch_names = np.unique(aux).tolist()
+                return
+            flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
+            aux = np.array(flat_list)
+            epoch_names = np.unique(aux).tolist()
         return epoch_names
 
     def get_epoch_info(self, epoch_name):
@@ -280,20 +277,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
             for i, tag in enumerate(flat_list):
                 if tag == epoch_name:
-                    epoch_info['start_frame'] = int(nwbfile.epochs['start_time'][i] * fs)
-                    epoch_info['end_frame'] = int(nwbfile.epochs['stop_time'][i] * fs)
+                    epoch_info['start_frame'] = self.time_to_frame(nwbfile.epochs['start_time'][i])
+                    epoch_info['end_frame'] = self.time_to_frame(nwbfile.epochs['stop_time'][i])
         return epoch_info
-
-    @staticmethod
-    def write_recording(recording, save_path, **nwbfile_kwargs):
-        """
-
-        Parameters
-        ----------
-        recording: RecordingExtractor
-        save_path: str
-        nwbfile_kwargs: optional, dict with optional args of pynwb.NWBFile
-        """
 
     @staticmethod
     def write_recording(recording, save_path, acquisition_name='ElectricalSeries', **nwbfile_kwargs):
@@ -307,87 +293,81 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         nwbfile_kwargs: optional, pynwb.NWBFile args
         '''
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
-        M = recording.get_num_channels()
+        n_channels = recording.get_num_channels()
 
         if os.path.exists(save_path):
-            io = NWBHDF5IO(save_path, 'r+')
-            nwbfile = io.read()
+            read_mode = 'r+'
         else:
-            io = NWBHDF5IO(save_path, mode='w')
-            kwargs = {'session_description': 'No description',
-                      'identifier': str(uuid.uuid4()),
-                      'session_start_time': datetime.now()}
-            kwargs.update(**nwbfile_kwargs)
-            nwbfile = NWBFile(**kwargs)
+            read_mode = 'w'
 
-        # Tests if Device already exists
-        aux = [isinstance(i, Device) for i in nwbfile.children]
-        if any(aux):
-            device = nwbfile.children[np.where(aux)[0][0]]
-        else:
-            device = nwbfile.create_device(name='Device')
+        with NWBHDF5IO(save_path, mode=read_mode) as io:
+            if read_mode == 'r+':
+                io = NWBHDF5IO(save_path, 'r+')
+                nwbfile = io.read()
+            else:
+                kwargs = {'session_description': 'No description',
+                          'identifier': str(uuid.uuid4()),
+                          'session_start_time': datetime.now()}
+                kwargs.update(**nwbfile_kwargs)
+                nwbfile = NWBFile(**kwargs)
 
-        # Tests if ElectrodeGroup already exists
-        aux = [isinstance(i, ElectrodeGroup) for i in nwbfile.children]
-        if any(aux):
-            electrode_group = nwbfile.children[np.where(aux)[0][0]]
-        else:
-            electrode_group = nwbfile.create_electrode_group(
-                name='electrode_group_name',
-                location="electrode_group_location",
-                device=device,
-                description="electrode_group_description"
+            # Tests if Device already exists
+            aux = [isinstance(i, Device) for i in nwbfile.children]
+            if any(aux):
+                device = nwbfile.children[np.where(aux)[0][0]]
+            else:
+                device = nwbfile.create_device(name='Device')
+
+            # Tests if ElectrodeGroup already exists
+            aux = [isinstance(i, ElectrodeGroup) for i in nwbfile.children]
+            if any(aux):
+                electrode_group = nwbfile.children[np.where(aux)[0][0]]
+            else:
+                electrode_group = nwbfile.create_electrode_group(
+                    name='electrode_group_name',
+                    location="electrode_group_location",
+                    device=device,
+                    description="electrode_group_description"
+                )
+            if os.path.exists(save_path):
+                os.remove(save_path)
+
+            # add electrodes with locations
+            for m in range(n_channels):
+                location = recording.get_channel_property(m, 'location')
+                impedence = -1.0
+                while len(location) < 3:
+                    location = np.append(location, [0])
+                nwbfile.add_electrode(
+                    id=m,
+                    x=float(location[0]), y=float(location[1]), z=float(location[2]),
+                    imp=impedence,
+                    location='unknown',
+                    filtering='none',
+                    group=electrode_group,
+                )
+
+            # add other existing electrode properties
+            properties = recording.get_shared_channel_property_names()
+            properties.remove('location')
+            for pr in properties:
+                pr_data = [recording.get_channel_property(ind, pr) for ind in range(n_channels)]
+                nwbfile.add_electrode_column(
+                    name=pr,
+                    description='no description',
+                    data=pr_data,
+                )
+
+            electrode_table_region = nwbfile.create_electrode_table_region(
+                list(range(n_channels)),
+                'electrode_table_region'
             )
-        if os.path.exists(save_path):
-            os.remove(save_path)
 
-        input_nwbfile_kwargs = {'session_description': 'No description',
-                                'identifier': str(uuid.uuid4()),
-                                'session_start_time': datetime.now()}
-        input_nwbfile_kwargs.update(**nwbfile_kwargs)
-        nwbfile = NWBFile(**input_nwbfile_kwargs)
-
-        # add electrodes with locations
-        for m in range(M):
-            location = recording.get_channel_property(m, 'location')
-            impedence = -1.0
-            while len(location) < 3:
-                location = np.append(location, [0])
-            nwbfile.add_electrode(
-                id=m,
-                x=float(location[0]), y=float(location[1]), z=float(location[2]),
-                imp=impedence,
-                location='electrode_location',
-                filtering='none',
-                group=electrode_group,
-            )
-
-        # add other existing electrode properties
-        properties = recording.get_shared_channel_property_names()
-        properties.remove('location')
-        for pr in properties:
-            pr_data = [recording.get_channel_property(ind, pr) for ind in range(M)]
-            nwbfile.add_electrode_column(
-                name=pr,
-                description='no description',
-                data=pr_data,
-            )
-
-        electrode_table_region = nwbfile.create_electrode_table_region(
-            list(range(M)),
-            'electrode_table_region'
-        )
-
-        # Tests if Acquisition already exists
-        aux = [isinstance(i, ElectricalSeries) for i in nwbfile.children]
-        if any(aux):
-            acquisition = nwbfile.children[np.where(aux)[0][0]]
-        else:
             rate = recording.get_sampling_frequency()
             if 'gain' in recording.get_shared_channel_property_names():
                 gains = np.array(recording.get_channel_gains())
             else:
-                gains = np.ones(M)
+                gains = np.ones(n_channels)
 
             def data_generator(recording, num_channels):
                 #  generates data chunks for iterator
@@ -414,8 +394,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             )
             nwbfile.add_acquisition(ephys_ts)
 
-        io.write(nwbfile)
-        io.close()
+            io.write(nwbfile)
 
 
 class NwbSortingExtractor(se.SortingExtractor):
