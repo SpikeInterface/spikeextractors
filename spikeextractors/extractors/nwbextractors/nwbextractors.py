@@ -69,7 +69,7 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
             if hasattr(ts, 'timestamps') and ts.timestamps:
                 sampling_frequency = 1 / (ts.timestamps[1] - ts.timestamps[0])  # there's probably a better way
             else:
-                sampling_frequency = ts.rate * 1000
+                sampling_frequency = ts.rate
             data = np.copy(np.transpose(ts.data))
             NRX = se.NumpyRecordingExtractor(timeseries=data, sampling_frequency=sampling_frequency, geom=geom)
             CopyRecordingExtractor.__init__(self, NRX)
@@ -91,9 +91,9 @@ class NwbRecordingExtractor(CopyRecordingExtractor):
         if os.path.exists(save_path):
             os.remove(save_path)
 
-        if 'session_description' not in nwbfile_kwargs.keys():
+        if 'session_description' not in nwbfile_kwargs:
             nwbfile_kwargs['session_description'] = 'No description'
-        if 'identifier' not in nwbfile_kwargs.keys():
+        if 'identifier' not in nwbfile_kwargs:
             nwbfile_kwargs['identifier'] = str(uuid.uuid4())
         input_nwbfile_kwargs = {
             'session_start_time': datetime.now()}
@@ -165,6 +165,13 @@ class NwbSortingExtractor(se.SortingExtractor):
     def __init__(self, file_path):
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         se.SortingExtractor.__init__(self)
+        raise NotImplementedError()
+
+    def get_unit_ids(self):
+        pass
+
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        pass
 
     @staticmethod
     def write_sorting(sorting, save_path, **nwbfile_kwargs):
@@ -185,9 +192,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             nwbfile = io.read()
         else:
             io = NWBHDF5IO(save_path, mode='w')
-            if 'session_description' not in nwbfile_kwargs.keys():
+            if 'session_description' not in nwbfile_kwargs:
                 nwbfile_kwargs['session_description'] = 'No description'
-            if 'identifier' not in nwbfile_kwargs.keys():
+            if 'identifier' not in nwbfile_kwargs:
                 nwbfile_kwargs['identifier'] = str(uuid.uuid4())
             input_nwbfile_kwargs = {
                 'session_start_time': datetime.now()}
