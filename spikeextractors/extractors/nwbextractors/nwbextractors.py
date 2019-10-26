@@ -82,38 +82,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                 for _, row in df_epochs.iterrows()}
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        '''This function extracts and returns a trace from the recorded data from the
-        given channels ids and the given start and end frame. It will return
-        traces from within three ranges:
-
-            [start_frame, t_start+1, ..., end_frame-1]
-            [start_frame, start_frame+1, ..., final_recording_frame - 1]
-            [0, 1, ..., end_frame-1]
-            [0, 1, ..., final_recording_frame - 1]
-
-        if both start_frame and end_frame are given, if only start_frame is
-        given, if only end_frame is given, or if neither start_frame or end_frame
-        are given, respectively. Traces are returned in a 2D array that
-        contains all of the traces from each channel with dimensions
-        (num_channels x num_frames). In this implementation, start_frame is inclusive
-        and end_frame is exclusive conforming to numpy standards.
-
-        Parameters
-        ----------
-        start_frame: int
-            The starting frame of the trace to be returned (inclusive).
-        end_frame: int
-            The ending frame of the trace to be returned (exclusive).
-        channel_ids: array_like
-            A list or 1D array of channel ids (ints) from which each trace will be
-            extracted.
-
-        Returns
-        ----------
-        traces: numpy.ndarray
-            A 2D array that contains all of the traces from each channel.
-            Dimensions are: (num_channels x num_frames)
-        '''
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         if channel_ids is not None:
             if not isinstance(channel_ids, (list, np.ndarray)):
@@ -123,12 +91,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         else:
             channel_ids = self.channel_ids
         if start_frame is not None:
-            if not isinstance(start_frame, (int,np.integer)):
+            if not isinstance(start_frame, (int, np.integer)):
                 raise Exception("'start_frame' should be an integer")
         else:
             start_frame = 0
         if end_frame is not None:
-            if not isinstance(end_frame, (int,np.integer)):
+            if not isinstance(end_frame, (int, np.integer)):
                 raise Exception("'end_frame' should be an integer")
         else:
             end_frame = -1
@@ -144,98 +112,29 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return traces
 
     def get_sampling_frequency(self):
-        '''This function returns the sampling frequency in units of Hz.
-
-        Returns
-        -------
-        fs: float
-            Sampling frequency of the recordings in Hz.
-        '''
         return self.sampling_frequency
 
     def get_num_frames(self):
-        '''This function returns the number of frames in the recording.
-
-        Returns
-        -------
-        num_frames: int
-            Number of frames in the recording (duration of recording).
-        '''
         return self.num_frames
 
     def time_to_frame(self, time):
-        '''This function converts a user-inputted time (in seconds) to a frame
-        index.
-
-        Parameters
-        -------
-        time: float
-            The time (in seconds) to be converted to frame index.
-
-        Returns
-        -------
-        frame: float
-            The corresponding frame index.
-        '''
         return (time - self.recording_start_time) * self.get_sampling_frequency()
 
-
     def frame_to_time(self, frame):
-        '''This function converts a user-inputted frame index to a time with
-        units of seconds.
-
-        Parameters
-        ----------
-        frame: float
-            The frame to be converted to a time.
-
-        Returns
-        -------
-        time: float
-            The corresponding time in seconds.
-        '''
         return frame / self.get_sampling_frequency() + self.recording_start_time
 
     def get_channel_ids(self):
-        '''Returns the list of channel ids. If not specified, the range from 0
-        to num_channels - 1 is returned.
-
-        Returns
-        -------
-        channel_ids: list
-            Channel list
-        '''
         return self.channel_ids.tolist()
 
     def set_channel_locations(self, channel_ids=None, locations=None):
-        '''
-        NWB files do not allow for setting already existing properties.
-        Channel locations should be set in the moment of adding channels.
-        '''
-        print(self.set_channel_locations.__doc__)
+        # todo
+        raise NotImplementedError()
 
     def set_channel_groups(self, channel_ids=None, groups=None):
-        '''
-        NWB files do not allow for setting already existing properties.
-        Channel groups should be set in the moment of adding channels.
-        '''
-        print(self.set_channel_groups.__doc__)
+        # todo
+        raise NotImplementedError()
 
     def get_channel_groups(self, channel_ids=None):
-        '''This function returns the group of each channel specifed by
-        channel_ids
-
-        Parameters
-        ----------
-        channel_ids: array_like
-            The channel ids (ints) for which the groups will be returned
-
-        Returns
-        ----------
-        groups: array_like
-            Returns a list of corresonding groups (ints) for the given
-            channel_ids.
-        '''
         if channel_ids is not None:
             if not isinstance(channel_ids, (list, np.ndarray)):
                 raise Exception("'channel_ids' must be a list or array of integers.")
@@ -248,51 +147,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return groups.tolist()
 
     def set_channel_gains(self, channel_ids, gains):
-        '''This function sets the gain property of each specified channel
-        id with the corresponding group of the passed in gains float/list.
-        NWB files require that new properties are set once for all channels.
-        Therefore, the gain for ids not present in 'channel_ids' will
-        be filled with the default value of 1.
-
-        Parameters
-        ----------
-        channel_ids: array_like
-            The channel ids (ints) for which the groups will be specified
-        gains: float/array_like
-            If a float, each channel will be assigned the corresponding gain.
-            If a list, each channel will be given a gain from the list.
-        '''
         self.set_channels_property(channel_ids=channel_ids,
                                    property_name='gain',
                                    values=gains,
                                    default_values=1.)
 
     def set_channel_property(self, channel_id=None, property_name=None, value=None):
-        """
-        NWB files require that new properties are set once for all channels.
-        Please use method 'set_channels_property()' instead.
-        """
-        print(self.set_channel_property.__doc__)
+        raise NotImplementedError()
 
     def set_channels_property(self, channel_ids, property_name, values, default_values=np.nan):
-        '''This function adds a new property data set to the chosen channels.
-        NWB files require that new properties are set once for all channels.
-        Therefore, the 'property_name' for ids not present in 'channel_ids' will
-        be filled with 'default_values'.
-
-        Parameters
-        ----------
-        channel_ids: list of ints
-            The channel ids for which the property will be set.
-        property_name: str
-            The name of the property to be stored.
-        values : list
-            The data associated with the given property name. List elements
-            could be many types as specified by the user.
-        default_values :
-            Default values of 'property_name' for channel ids not present in
-            'channel_ids' list. Default to NaN.
-        '''
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         if not isinstance(channel_ids, list):
             raise ValueError("'channel_ids' must be a list of integers")
@@ -322,76 +185,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             io.write(nwbfile)
 
     def get_channel_property(self, channel_id, property_name):
-        '''This function returns the data stored under the property name from
-        the given channel.
-
-        Parameters
-        ----------
-        channel_id: int
-            The channel id for which the property will be returned
-        property_name: str
-            A property stored by the RecordingExtractor (location, etc.)
-
-        Returns
-        ----------
-        property_data
-            The data associated with the given property name. Could be many
-            formats as specified by the user.
-        '''
         return self.electrodes_df[property_name][channel_id]
 
     def get_channel_property_names(self, channel_id=None):
-        '''Get a list of property names for a given channel. In NWB files all
-        channels must have the same properties, so the argument 'channel_ids' is
-        irrelevant and should be left as None.
-
-        Parameters
-        ----------
-        channel_id: int
-            The channel id for which the property names will be returned.
-            If None (default), will return property names for all channels.
-
-        Returns
-        ----------
-        property_names
-            The list of property names
-        '''
         return list(self.electrodes_df.columns)
 
     def get_shared_channel_property_names(self, channel_ids=None):
-        '''Get the intersection of channel property names for a given set of
-        channels. In NWB files all channels must have the same properties, so
-        the argument 'channel_ids' is irrelevant and should be left as None.
-
-        Parameters
-        ----------
-        channel_ids: int
-            The channel ids for which the property names will be returned.
-            If None (default), will return property names for all channels.
-
-        Returns
-        ----------
-        property_names
-            The list of property names
-        '''
         return list(self.electrodes_df.columns)
 
     def copy_channel_properties(self, recording, channel_ids=None, default_values=None):
-        '''Copy channel properties from another recording extractor to the current
-        NwbRecordingExtractor. NWB files require that new properties are set once
-        for all channels. Therefore, the values of new properties for ids not
-        present in 'channel_ids' will be filled with 'default_values'.
-
-        Parameters
-        ----------
-        recording : RecordingExtractor
-            The recording extractor from which the properties will be copied
-        channel_ids : list
-            The list of channel ids for which the properties will be copied.
-        default_values : list
-            List of default values for each property, for channel ids not present
-            in 'channel_ids' list. Default to NaN for all properties.
-        '''
         if channel_ids is None:
             channel_ids = recording.get_channel_ids()
         else:
