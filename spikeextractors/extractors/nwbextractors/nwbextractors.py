@@ -123,7 +123,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return self.num_frames
 
     def time_to_frame(self, time):
-        return (time - self.recording_start_time) * self.get_sampling_frequency()
+        return int((time - self.recording_start_time) * self.get_sampling_frequency())
 
     def frame_to_time(self, frame):
         return frame / self.get_sampling_frequency() + self.recording_start_time
@@ -427,13 +427,11 @@ class NwbSortingExtractor(se.SortingExtractor):
             # defines the electrical series from where the sorting came from
             # important to know the associated fs and t0
             if electrical_series is None:
-                a_names = list(nwbfile.acquisition.keys())
-                if len(a_names) > 1:
+                if len(nwbfile.acquisition) > 1:
                     raise Exception('More than one acquisition found. You must specify electrical_series.')
-                if len(a_names) == 0:
+                if len(nwbfile.acquisition) == 0:
                     raise Exception('No acquisitions found in the .nwb file.')
-                acquisition_name = a_names[0]
-                es = nwbfile.acquisition[acquisition_name]
+                es = nwbfile.acquisition.values()[0]
             else:
                 es = electrical_series
 
@@ -451,11 +449,10 @@ class NwbSortingExtractor(se.SortingExtractor):
                 self._t0 = 0.
 
     def set_sampling_frequency(self, sampling_frequency):
-        '''NWB file sampling rate can't be modified.'''
-        print(self.set_sampling_frequency.__doc__)
+        raise ValueError("NWB file sampling rate can't be modified.")
 
     def get_unit_ids(self):
-        '''This function returns a list of ids (ints) for each unit in the sorsted result.
+        '''This function returns a list of ids (ints) for each unit in the sorted result.
 
         Returns
         ----------
@@ -481,8 +478,8 @@ class NwbSortingExtractor(se.SortingExtractor):
         property_names
             The list of property names
         '''
-        property_names = self.get_shared_unit_property_names(unit_ids=None)
-        return property_names
+        # units cannot have unique property keys in NWB
+        return self.get_shared_unit_property_names(unit_ids=None)
 
     def get_shared_unit_property_names(self, unit_ids=None):
         '''Get the intersection of unit property names for a given set of units
@@ -500,11 +497,11 @@ class NwbSortingExtractor(se.SortingExtractor):
         property_names
             The list of shared property names
         '''
+        # units cannot have unique property keys in NWB
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            property_names = list(nwbfile.units.colnames)
-        return property_names
+            return list(nwbfile.units.colnames)
 
     def get_unit_property(self, unit_id, property_name):
         '''This function returns the data stored under the property name given
@@ -526,7 +523,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         if not isinstance(unit_id, (int, np.integer)):
             raise ValueError("'unit_id' must be an integer")
         existing_ids = self.get_unit_ids()
-        if not unit_id in existing_ids:
+        if unit_id not in existing_ids:
             raise ValueError("'unit_id' outside the range of existing ids")
         if not isinstance(property_name, str):
             raise Exception("'property_name' must be a string")
@@ -536,10 +533,10 @@ class NwbSortingExtractor(se.SortingExtractor):
             if property_name in list(nwbfile.units.colnames):
                 val = nwbfile.units[property_name][existing_ids.index(unit_id)]
             else:
-                raise Exception(property_name + " is not a valid property in dataset")
+                raise Exception(property_name + " not column found")
         return val
 
-    def get_units_property(self, unit_ids, property_name):
+    def get_units_property(self, *, unit_ids=None, property_name):
         '''Returns a list of values stored under the property name corresponding
         to a list of units
 
@@ -577,28 +574,28 @@ class NwbSortingExtractor(se.SortingExtractor):
                 raise Exception(property_name + " is not a valid property in dataset")
         return values
 
-    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+    def time_to_frame(self, time):
+        return int((time - self._t0) * self.get_sampling_frequency())
+
+    def get_unit_spike_train(self, unit_id, start_frame=0, end_frame=np.Inf):
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            if start_frame is None:
-                start_frame = 0
-            if end_frame is None:
-                end_frame = np.Inf
             # chosen unit and interval
-            times0 = nwbfile.units['spike_times'][int(unit_id - 1)][:]
+            times = nwbfile.units['spike_times'][nwbfile.units.id.index(unit_id)][:]
             # spike times are measured in samples
-            times = ((times0 - self._t0) * self._sampling_frequency).astype('int')
-        return times[(times > start_frame) & (times < end_frame)]
+            frames = self.time_to_frame(times)
+        return frames[(frames > start_frame) & (frames < end_frame)]
 
     def set_unit_property(self, unit_id, property_name, value):
-        """
-        NWB files require that new properties are set once for all units.
-        Please use method 'set_units_property()' instead.
-        """
-        print(self.set_unit_property.__doc__)
+        with NWBHDF5IO(self._path, 'r+') as io:
+            nwbfile = io.read()
+            units = nwbfile.units
+            if property_name not in units:
+                raise NotImplementedError('adding property not yet implemented')
+            units[property_name][units.id.index(unit_id)] = value
 
-    def set_units_property(self, unit_ids, property_name, values, default_values=np.nan):
+    def set_units_property(self, *, unit_ids, property_name, values, default_value=np.nan):
         '''This function adds a new property data set to the chosen units.
         NWB files require that new properties are set once for all units. Therefore,
         the 'property_name' for ids not present in 'unit_ids' will be filled with
@@ -613,8 +610,8 @@ class NwbSortingExtractor(se.SortingExtractor):
         values :
             The data associated with the given property name. Could be many
             formats as specified by the user.
-        default_values :
-            Default values of 'property_name' for unit ids not present in
+        default_value:
+            Default value of 'property_name' for unit ids not present in
             'unit_ids' list.
         '''
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
@@ -627,27 +624,27 @@ class NwbSortingExtractor(se.SortingExtractor):
             raise ValueError("'unit_ids' contains values outside the range of existing ids")
         if not isinstance(property_name, str):
             raise Exception("'property_name' must be a string")
-        if property_name in self.get_shared_unit_property_names():
-            raise Exception(property_name + " property already exists")
         if len(unit_ids) != len(values):
             raise Exception("'unit_ids' and 'values' should be lists of same size")
 
         nUnits = len(existing_ids)
-        new_values = [default_values] * nUnits
+        new_values = [default_value] * nUnits
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            for i, v in zip(unit_ids, values):
-                new_values[existing_ids.index(i)] = v
-            nwbfile.add_unit_column(name=property_name,
-                                    description='no description',
-                                    data=new_values)
+            if property_name in nwbfile.units:
+                [self.set_unit_property(unit_id, property_name, value)
+                 for unit_id, value in zip(unit_ids, values)]
+            else:
+                for i, v in zip(unit_ids, values):
+                    new_values[existing_ids.index(i)] = v
+                nwbfile.add_unit_column(name=property_name,
+                                        description='no description',
+                                        data=new_values)
             io.write(nwbfile)
 
-    def copy_unit_properties(self, sorting, unit_ids=None, default_values=None):
+    def copy_unit_properties(self, sorting, unit_ids=None, default_value=np.nan):
         '''Copy unit properties from another sorting extractor to the current
-        sorting extractor. NWB files require that new properties are set once
-        for all units. Therefore, the 'property_name' for ids not present in
-        'unit_ids' will be filled with 'default_values'.
+        sorting extractor.
 
         Parameters
         ----------
@@ -655,41 +652,28 @@ class NwbSortingExtractor(se.SortingExtractor):
             The sorting extractor from which the properties will be copied
         unit_ids: list
             The list of unit_ids for which the properties will be copied.
-        default_values : list
-            List of default values for each property, for unit ids not present in
-            'unit_ids' list. Default to NaN for all properties.
+        default_value:
+            Default value for each unit, for unit ids not present in
+            'unit_ids' list. Defaults to NaN.
         '''
         if unit_ids is None:
             unit_ids = sorting.get_unit_ids()
         else:
-            if not isinstance(unit_ids, list):
+            if not isinstance(unit_ids, list) or not all(isinstance(x, int) for x in unit_ids):
                 raise ValueError("'unit_ids' must be a list of integers")
-            if not all(isinstance(x, int) for x in unit_ids):
-                raise ValueError("'unit_ids' must be a list of integers")
-            existing_ids = self.get_unit_ids()
-            if not all(x in existing_ids for x in unit_ids):
+            if any(x not in self.get_unit_ids() for x in unit_ids):
                 raise ValueError("'unit_ids' contains values outside the range of existing ids")
 
         new_property_names = sorting.get_shared_unit_property_names()
-        curr_property_names = self.get_shared_unit_property_names()
-        if default_values is None:
-            default_values = [np.nan] * len(new_property_names)
-        else:
-            if len(default_values) != len(new_property_names):
-                raise Exception("'default_values' list must have length equal to" +
-                                " number of properties to be copied.")
 
         # Copies only properties that do not exist already in NWB file
-        for i, pr in enumerate(new_property_names):
-            if pr in curr_property_names:
-                print(pr + " already exists in NWB file and can't be copied.")
-            else:
-                pr_values = sorting.get_unit_property(unit_ids=unit_ids,
-                                                      property_name=pr)
-                self.set_units_property(unit_ids=unit_ids,
-                                        property_name=pr,
-                                        values=pr_values,
-                                        default_values=default_values[i])
+        for pr in new_property_names:
+            pr_values = sorting.get_unit_property(unit_ids=unit_ids,
+                                                  property_name=pr)
+            self.set_units_property(unit_ids=unit_ids,
+                                    property_name=pr,
+                                    values=pr_values,
+                                    default_value=default_value)
 
     def clear_unit_property(self, unit_id=None, property_name=None):
         '''NWB files do not allow for deleting properties.'''
@@ -701,13 +685,14 @@ class NwbSortingExtractor(se.SortingExtractor):
 
     def get_nspikes(self):
         """Returns list with the number of spikes for each unit."""
+        # todo: there is a way to do this without reading all of the data if you use spike_times_index
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
             nSpikes = [len(spkt) for spkt in nwbfile.units['spike_times'][:]]
         return nSpikes
 
-    def get_unit_spike_features(self, unit_id, feature_name, start_frame=None, end_frame=None):
+    def get_unit_spike_features(self, unit_id, feature_name, start_frame=0, end_frame=np.Inf):
         '''This function extracts the specified spike features from the specified unit.
         It will return spike features from within three ranges:
 
@@ -747,17 +732,14 @@ class NwbSortingExtractor(se.SortingExtractor):
 
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            if start_frame is None:
-                start_frame = 0
-            if end_frame is None:
-                end_frame = np.Inf
+            units = nwbfile.units
             # chosen unit and interval
-            feat_vals = np.array(nwbfile.units[full_feat_name][int(unit_id - 1)][:])
-            times0 = nwbfile.units['spike_times'][int(unit_id - 1)][:]
+            feat_vals = np.array(units[full_feat_name][units.id.index(unit_id)][:])
+            times = units['spike_times'][units.id.index(unit_id)][:]
             # spike times are measured in samples
-            times = ((times0 - self._t0) * self._sampling_frequency).astype('int')
-            mask = (times > start_frame) & (times < end_frame)
-        return feat_vals[mask].tolist()
+            frames = self.time_to_frame(times)
+            mask = (frames > start_frame) & (frames < end_frame)
+        return feat_vals[mask]
 
     def set_unit_spike_features(self, unit_ids, feature_name, values, default_value=None):
         '''This function adds a new feature for the spikes of sorted units.
@@ -839,9 +821,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            aux = list(nwbfile.units.colnames)
-            feature_names = [feat for feat in aux if feat[0:14] == 'spike_feature_']
-        return feature_names
+            return [feat for feat in nwbfile.units.colnames if feat.starts_with('spike_feature_')]
 
     def get_unit_spike_feature_names(self, unit_id=None):
         '''This function returns the list of feature names for the given unit.
