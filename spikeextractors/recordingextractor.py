@@ -381,21 +381,18 @@ class RecordingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if isinstance(channel_id, (int, np.integer)):
-            if channel_id in self.get_channel_ids():
-                if channel_id not in self._channel_properties:
-                    self._channel_properties[channel_id] = {}
-                if isinstance(property_name, str):
-                    if property_name in list(self._channel_properties[channel_id].keys()):
-                        return self._channel_properties[channel_id][property_name]
-                    else:
-                        raise RuntimeError(str(property_name) + " has not been added to channel " + str(channel_id))
-                else:
-                    raise TypeError(str(property_name) + " must be a string")
-            else:
-                raise ValueError(str(channel_id) + " is not a valid channel_id")
-        else:
+        if not isinstance(channel_id, (int, np.integer)):
             raise TypeError(str(channel_id) + " must be an int")
+        if channel_id not in self.get_channel_ids():
+            raise ValueError(str(channel_id) + " is not a valid channel_id")
+        if channel_id not in self._channel_properties:
+            self._channel_properties[channel_id] = {}
+        if property_name not in list(self._channel_properties[channel_id].keys()):
+            raise RuntimeError(str(property_name) + " has not been added to channel " + str(channel_id))
+        if not isinstance(property_name, str):
+            raise TypeError(str(property_name) + " must be a string")
+        if property_name in self._channel_properties[channel_id]:
+            return self._channel_properties[channel_id][property_name]
 
     def get_channel_property_names(self, channel_id):
         '''Get a list of property names for a given channel.
