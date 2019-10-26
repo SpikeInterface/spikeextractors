@@ -587,13 +587,24 @@ class NwbSortingExtractor(se.SortingExtractor):
             frames = self.time_to_frame(times)
         return frames[(frames > start_frame) & (frames < end_frame)]
 
-    def set_unit_property(self, unit_id, property_name, value):
+    @staticmethod
+    def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, default_value=np.nan,
+                                   description='no description'):
+        if isinstance(row_ids, int):
+            row_ids = [row_ids]
+            values = [values]
+        if property_name not in dynamic_table:
+            values = [default_value] * len(dynamic_table.ids)
+            values[dynamic_table.ids[:].index(row_id)] = value
+            dynamic_table.add_column(name=property_name, description=description, data=values)
+        else:
+            dynamic_table[property_name][dynamic_table.id[:].index(row_id)] = value
+
+    def set_unit_property(self, unit_id, property_name, value, default_value=np.nan, description='no description'):
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
             units = nwbfile.units
-            if property_name not in units:
-                raise NotImplementedError('adding property not yet implemented')
-            units[property_name][units.id.index(unit_id)] = value
+            self.set_dynamic_table_property(units, unit_id, property_name, value, default_value, description)
 
     def set_units_property(self, *, unit_ids, property_name, values, default_value=np.nan):
         '''This function adds a new property data set to the chosen units.
@@ -741,40 +752,29 @@ class NwbSortingExtractor(se.SortingExtractor):
             mask = (frames > start_frame) & (frames < end_frame)
         return feat_vals[mask]
 
-    def set_unit_spike_features(self, unit_ids, feature_name, values, default_value=None):
-        '''This function adds a new feature for the spikes of sorted units.
-        NWB files require that new properties are set once for all units. Therefore,
-        the 'property_name' for ids not present in 'unit_ids' will be filled with
-        'default_values'.
+    def set_unit_spike_features(self, unit_id, feature_name, values):
+        '''This function adds a unit features data set under the given features
+        name to the given unit.
 
         Parameters
         ----------
-        unit_ids: int
+        unit_id: int
             The unit id for which the features will be set
         feature_name: str
             The name of the feature to be stored
-        values : dict
-            The data associated with the given spike feature. Should be a dictionary
-            with a key for each unit in 'unit_ids'. The value for each key must
-            be a list with nSpikes elements, where nSpikes is the number
-            of spikes for the referred unit.
-        default_value :
-            Default value for spike property, for unit ids not present in
-            'unit_ids' list. Default to NaN.
+        value
+            The data associated with the given feature name. Could be many
+            formats as specified by the user.
         '''
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
-        if not isinstance(unit_ids, list):
-            raise ValueError("'unit_ids' must be a list of integers")
-        if not all(isinstance(x, int) for x in unit_ids):
-            raise ValueError("'unit_ids' must be a list of integers")
+        if not isinstance(unit_id, int):
+            raise ValueError("'unit_id' must be an integer")
         existing_ids = self.get_unit_ids()
-        if not all(x in existing_ids for x in unit_ids):
-            raise ValueError("'unit_ids' contains values outside the range of existing ids")
         if not isinstance(feature_name, str):
             raise Exception("'feature_name' must be a string")
         if 'spike_feature_' + feature_name in self.get_shared_unit_spike_feature_names():
             raise Exception('spike_feature_' + feature_name + " feature already exists")
-        if not all([str(k) in values.keys() for k in unit_ids]):
+        if any([k not in values.keys() for k in unit_ids]):
             raise Exception("All units in 'unit_id' should be present as keys " +
                             "of 'values' dictionary")
         if len(unit_ids) != len(values.keys()):
@@ -782,7 +782,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                             " be of same size")
         if default_value is None:
             default_value = np.nan
-        nUnits = len(existing_ids)
         nspikes_units = self.get_nspikes()
         new_values = [[default_value] * nSpikes for nSpikes in nspikes_units]
         with NWBHDF5IO(self._path, 'a') as io:
