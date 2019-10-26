@@ -3,6 +3,7 @@ import os
 import numpy as np
 from datetime import datetime
 from hdmf.data_utils import DataChunkIterator
+import uuid
 
 try:
     from pynwb import NWBHDF5IO
@@ -273,6 +274,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 print("No epochs in NWB file")
                 epoch_names = None
             else:
+                sampling_frequency = ts.rate
+            data = np.copy(np.transpose(ts.data))
+            NRX = se.NumpyRecordingExtractor(timeseries=data, sampling_frequency=sampling_frequency, geom=geom)
+            CopyRecordingExtractor.__init__(self, NRX)
                 flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
                 aux = np.array(flat_list)
                 epoch_names = np.unique(aux).tolist()
@@ -311,7 +316,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return epoch_info
 
     @staticmethod
-    def write_recording(recording, save_path, nwbfile_kwargs=None):
+    def write_recording(recording, save_path, **nwbfile_kwargs):
         """
 
         Parameters
@@ -320,6 +325,16 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         save_path: str
         nwbfile_kwargs: optional, dict with optional args of pynwb.NWBFile
         """
+    def write_recording(recording, save_path, acquisition_name='ElectricalSeries', **nwbfile_kwargs):
+        '''
+
+        Parameters
+        ----------
+        recording: RecordingExtractor
+        save_path: str
+        acquisition_name: str (default 'ElectricalSeries')
+        nwbfile_kwargs: optional, pynwb.NWBFile args
+        '''
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         M = recording.get_num_channels()
 
@@ -328,13 +343,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             nwbfile = io.read()
         else:
             io = NWBHDF5IO(save_path, mode='w')
-            input_nwbfile_kwargs = {
-                'session_start_time': datetime.now(),
-                'identifier': '',
-                'session_description': ''}
-            if nwbfile_kwargs is not None:
-                input_nwbfile_kwargs.update(nwbfile_kwargs)
-            nwbfile = NWBFile(**input_nwbfile_kwargs)
+            kwargs = {'session_description': 'No description',
+                      'identifier': str(uuid.uuid4()),
+                      'session_start_time': datetime.now()}
+            kwargs.update(**nwbfile_kwargs)
+            nwbfile = NWBFile(**kwargs)
 
         # Tests if Device already exists
         aux = [isinstance(i, Device) for i in nwbfile.children]
@@ -357,6 +370,29 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 device=device,
                 description=eg_description
             )
+        if os.path.exists(save_path):
+            os.remove(save_path)
+
+        if 'session_description' not in nwbfile_kwargs:
+            nwbfile_kwargs['session_description'] = 'No description'
+        if 'identifier' not in nwbfile_kwargs:
+            nwbfile_kwargs['identifier'] = str(uuid.uuid4())
+        input_nwbfile_kwargs = {
+            'session_start_time': datetime.now()}
+        input_nwbfile_kwargs.update(nwbfile_kwargs)
+        nwbfile = NWBFile(**input_nwbfile_kwargs)
+
+        device = nwbfile.create_device(name='device_name')
+        eg_name = 'electrode_group_name'
+        eg_description = "electrode_group_description"
+        eg_location = "electrode_group_location"
+
+        electrode_group = nwbfile.create_electrode_group(
+            name=eg_name,
+            location=eg_location,
+            device=device,
+            description=eg_description
+        )
 
             # add electrodes with locations
             for m in range(M):
@@ -406,6 +442,20 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     data = recording.get_traces(channel_ids=[id]).flatten().astype('int16')
                     yield data
 
+        ephys_ts = ElectricalSeries(
+            name=acquisition_name,
+            data=ephys_data,
+            electrodes=electrode_table_region,
+            starting_time=recording.frame_to_time(0),
+            rate=rate,
+            resolution=1e-6,
+            comments='Generated from SpikeInterface::NwbRecordingExtractor',
+            description='acquisition_description'
+        )
+
+        nwbfile.add_acquisition(ephys_ts)
+        with NWBHDF5IO(save_path, 'w') as io:
+            io.write(nwbfile)
             data = data_generator(recording=recording, num_channels=M)
             ephys_data = DataChunkIterator(data=data,
                                            iter_axis=1,
@@ -1057,14 +1107,14 @@ class NwbSortingExtractor(se.SortingExtractor):
                                    end_frame=end_frame)
 
     @staticmethod
-    def write_sorting(sorting, save_path, nwbfile_kwargs=None):
+    def write_sorting(sorting, save_path, **nwbfile_kwargs):
         """
 
         Parameters
         ----------
         sorting: SortingExtractor
         save_path: str
-        nwbfile_kwargs: optional, dict with optional args of pynwb.NWBFile
+        nwbfile_kwargs: optional, pynwb.NWBFile args
         """
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
 
@@ -1078,10 +1128,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             io = NWBHDF5IO(save_path, mode='w')
             input_nwbfile_kwargs = {
                 'session_start_time': datetime.now(),
-                'identifier': '',
-                'session_description': ''}
-            if nwbfile_kwargs is not None:
-                input_nwbfile_kwargs.update(nwbfile_kwargs)
+                'identifier': str(uuid.uuid4()),
+                'session_description': 'No description'}
+            input_nwbfile_kwargs.update(**nwbfile_kwargs)
             nwbfile = NWBFile(**input_nwbfile_kwargs)
 
         # Tests if Units already exists

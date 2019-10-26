@@ -1,16 +1,9 @@
 import numpy as np
 import os, sys
+from pathlib import Path
 import unittest
 import tempfile
 import shutil
-
-
-def append_to_path(dir0):  # A convenience function
-    if dir0 not in sys.path:
-        sys.path.append(dir0)
-
-
-append_to_path(os.getcwd() + '/..')
 import spikeextractors as se
 
 
@@ -51,11 +44,12 @@ class TestExtractors(unittest.TestCase):
         SX2.add_unit(unit_id=4, times=np.random.uniform(0, num_frames, spike_times2[1]))
         SX2.add_unit(unit_id=5, times=np.random.uniform(0, num_frames, spike_times2[2]))
         SX2.set_unit_property(unit_id=4, property_name='stability', value=80)
-        SX2.set_unit_spike_features(unit_id=3, feature_name='widths', value=np.asarray([3]*spike_times2[0]))
+        SX2.set_unit_spike_features(unit_id=3, feature_name='widths', value=np.asarray([3] * spike_times2[0]))
         RX.set_channel_property(channel_id=0, property_name='location', value=(0, 0))
         for i, unit_id in enumerate(SX2.get_unit_ids()):
             SX2.set_unit_property(unit_id=unit_id, property_name='shared_unit_prop', value=i)
-            SX2.set_unit_spike_features(unit_id=unit_id, feature_name='shared_unit_feature', value=np.asarray([i]*spike_times2[i]))
+            SX2.set_unit_spike_features(unit_id=unit_id, feature_name='shared_unit_feature',
+                                        value=np.asarray([i] * spike_times2[i]))
         for i, channel_id in enumerate(RX.get_channel_ids()):
             RX.set_channel_property(channel_id=channel_id, property_name='shared_channel_prop', value=i)
         example_info = dict(
@@ -79,7 +73,8 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(self.SX.get_unit_ids(), self.example_info['unit_ids'])
         self.assertEqual(self.RX.get_channel_property(channel_id=0, property_name='location'),
                          self.example_info['channel_prop'])
-        self.assertEqual(self.SX.get_unit_property(unit_id=1, property_name='stability'), self.example_info['unit_prop'])
+        self.assertEqual(self.SX.get_unit_property(unit_id=1, property_name='stability'),
+                         self.example_info['unit_prop'])
         self.assertTrue(np.array_equal(self.SX.get_unit_spike_train(1), self.example_info['train1']))
         self.assertTrue(issubclass(self.SX.get_unit_spike_train(1).dtype.type, np.integer))
         self.assertTrue(self.RX.get_shared_channel_property_names(), ['shared_channel_prop'])
@@ -89,6 +84,16 @@ class TestExtractors(unittest.TestCase):
         self.assertTrue(self.SX2.get_shared_unit_spike_feature_names(), ['shared_unit_feature'])
         self.assertTrue(self.SX2.get_unit_spike_feature_names(3), ['shared_channel_prop', 'widths'])
         self._check_recording_return_types(self.RX)
+
+    def test_cache_extractor(self):
+        cache_extractor = se.CacheRecordingExtractor(self.RX)
+        self._check_recording_return_types(cache_extractor)
+        self._check_recordings_equal(self.RX, cache_extractor)
+        cache_extractor.save_to_file('cache')
+
+        assert cache_extractor.get_filename() == 'cache.dat'
+        del cache_extractor
+        assert not Path('cache.dat').is_file()
 
     def test_mda_extractor(self):
         path1 = self.test_dir + '/mda'
@@ -102,22 +107,14 @@ class TestExtractors(unittest.TestCase):
         self._check_sorting_return_types(SX_mda)
         self._check_sortings_equal(self.SX, SX_mda)
 
-    # old: don't do this test because pynwb causes a seg fault!
-    # don't do this test because pynwb interface has changed
-    # def test_nwb_extractor(self):
-    #    path1=self.test_dir+'/test.nwb'
-    #    se.NwbRecordingExtractor.write_recording(self.RX,path1,acquisition_name='test')
-    #    RX_nwb=se.NwbRecordingExtractor(path1,acquisition_name='test')
-    #    self._check_recording_return_types(RX_nwb)
-    #    self._check_recordings_equal(self.RX,RX_nwb)
-
     def _check_recording_return_types(self, RX):
         channel_ids = RX.get_channel_ids()
         M = RX.get_num_channels()
         N = RX.get_num_frames()
         self.assertTrue((type(RX.get_num_channels()) == int) or (type(RX.get_num_channels()) == np.int64))
         self.assertTrue((type(RX.get_num_frames()) == int) or (type(RX.get_num_frames()) == np.int64))
-        self.assertTrue((type(RX.get_sampling_frequency()) == float) or (type(RX.get_sampling_frequency()) == np.float64))
+        self.assertTrue(
+            (type(RX.get_sampling_frequency()) == float) or (type(RX.get_sampling_frequency()) == np.float64))
         self.assertTrue(type(RX.get_traces(start_frame=0, end_frame=10)) == np.ndarray)
         for channel_id in channel_ids:
             self.assertTrue((type(channel_id) == int) or (type(channel_id) == np.int64))
@@ -193,15 +190,15 @@ class TestExtractors(unittest.TestCase):
         RX_sub = RX_multi.get_epoch('C')
         self._check_recordings_equal(self.RX, RX_sub)
         self.assertEqual(4, len(RX_sub.get_channel_ids()))
-        
+
         RX_multi = se.MultiRecordingChannelExtractor(
             recordings=[self.RX, self.RX2, self.RX3],
             groups=[1, 2, 3]
         )
         print(RX_multi.get_channel_groups())
-        RX_sub = se.SubRecordingExtractor(RX_multi, channel_ids=[4,5,6,7], renamed_channel_ids=[0,1,2,3])
+        RX_sub = se.SubRecordingExtractor(RX_multi, channel_ids=[4, 5, 6, 7], renamed_channel_ids=[0, 1, 2, 3])
         self._check_recordings_equal(self.RX2, RX_sub)
-        self.assertEqual([2,2,2,2], RX_sub.get_channel_groups())
+        self.assertEqual([2, 2, 2, 2], RX_sub.get_channel_groups())
         self.assertEqual(12, len(RX_multi.get_channel_ids()))
 
     def test_multi_sub_sorting_extractor(self):
@@ -220,6 +217,43 @@ class TestExtractors(unittest.TestCase):
         )
         SX_sub1 = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0, end_frame=N)
         self._check_sortings_equal(SX_multi, SX_sub1)
+
+    def test_nwb_extractor(self):
+        path1 = self.test_dir + '/test.nwb'
+        se.NwbRecordingExtractor.write_recording(self.RX, path1)
+        RX_nwb = se.NwbRecordingExtractor(path1)
+        self._check_recording_return_types(RX_nwb)
+        self._check_recordings_equal(self.RX, RX_nwb)
+        del RX_nwb
+        # overwrite
+        se.NwbRecordingExtractor.write_recording(self.RX, path1, session_description='second',
+                                                 identifier='19475')
+        RX_nwb = se.NwbRecordingExtractor(path1)
+        self._check_recording_return_types(RX_nwb)
+        self._check_recordings_equal(self.RX, RX_nwb)
+        # add sorting to existing
+        se.NwbSortingExtractor.write_sorting(self.SX, path1)
+        # create new
+        path2 = self.test_dir + '/firings_true.nwb'
+        se.NwbSortingExtractor.write_sorting(self.SX, path2, session_description='second',
+                                                 identifier='19475')
+
+    def test_nixio_extractor(self):
+        path1 = os.path.join(self.test_dir, 'raw.nix')
+        se.NIXIORecordingExtractor.write_recording(self.RX, path1)
+        RX_nixio = se.NIXIORecordingExtractor(path1)
+        self._check_recording_return_types(RX_nixio)
+        self._check_recordings_equal(self.RX, RX_nixio)
+        del RX_nixio
+        # test force overwrite
+        se.NIXIORecordingExtractor.write_recording(self.RX, path1,
+                                                   overwrite=True)
+
+        path2 = self.test_dir + '/firings_true.nix'
+        se.NIXIOSortingExtractor.write_sorting(self.SX, path2)
+        SX_nixio = se.NIXIOSortingExtractor(path2)
+        self._check_sorting_return_types(SX_nixio)
+        self._check_sortings_equal(self.SX, SX_nixio)
 
     def _check_recordings_equal(self, RX1, RX2):
         M = RX1.get_num_channels()
@@ -248,7 +282,8 @@ class TestExtractors(unittest.TestCase):
         ))
         for f in range(0, RX1.get_num_frames(), 10):
             self.assertTrue(np.isclose(RX1.frame_to_time(f), RX2.frame_to_time(f)))
-            self.assertTrue(np.isclose(RX1.time_to_frame(RX1.frame_to_time(f)), RX2.time_to_frame(RX2.frame_to_time(f))))
+            self.assertTrue(
+                np.isclose(RX1.time_to_frame(RX1.frame_to_time(f)), RX2.time_to_frame(RX2.frame_to_time(f))))
         # get_snippets
         frames = [30, 50, 80]
         snippets1 = RX1.get_snippets(reference_frames=frames, snippet_len=20)

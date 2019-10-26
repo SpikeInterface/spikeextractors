@@ -466,7 +466,36 @@ class RecordingExtractor(ABC):
                 for curr_property_name in curr_property_names:
                     value = recording.get_channel_property(channel_id=channel_id, property_name=curr_property_name)
                     self.set_channel_property(channel_id=channel_id, property_name=curr_property_name, value=value)
+    
+    def clear_channel_property(self, channel_id, property_name):
+        '''This function clears the channel property for the given property.
 
+        Parameters
+        ----------
+        channel_id: int
+            The id that specifies a channel in the recording.
+        property_name: string
+            The name of the property to be cleared.
+        '''
+        if channel_id in self._channel_properties:
+            if property_name in self._channel_properties[channel_id]:
+                del self._channel_properties[channel_id][property_name]
+
+    def clear_channels_property(self, *, channel_ids=None, property_name):
+        '''This function clears the channels' properties for the given property.
+
+        Parameters
+        ----------
+        channel_ids: list
+            A list of ids that specifies a set of channels in the recording.
+        property_name: string
+            The name of the property to be cleared.
+        '''
+        if channel_ids is None:
+            channel_ids = self.get_channel_ids()
+        for channel_id in channel_ids:
+            self.clear_channel_property(channel_id, property_name)
+            
     def add_epoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to your recording extractor that tracks
         a certain time period in your recording. It is stored in an internal
@@ -611,7 +640,7 @@ class RecordingExtractor(ABC):
         save_to_probe_file(self, probe_file, format=format, radius=radius, dimensions=dimensions,
                            verbose=verbose)
 
-    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunksize=None):
+    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None):
         '''Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
@@ -623,11 +652,11 @@ class RecordingExtractor(ABC):
             If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
         dtype: dtype
             Type of the saved data. Default float32
-        chunksize: None or int
+        chunk_size: None or int
             If not None then the copy done by chunk size.
             This avoid to much memory consumption for big files.
         '''
-        write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunksize=chunksize)
+        write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size)
    
     def get_sub_extractors_by_property(self, property_name, return_property_list=False):
         '''Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given
@@ -651,7 +680,7 @@ class RecordingExtractor(ABC):
         '''
         if return_property_list:
             sub_list, prop_list = get_sub_extractors_by_property(self, property_name=property_name, 
-                                                                return_property_list=return_property_list)
+                                                                 return_property_list=return_property_list)
             return sub_list, prop_list
         else:
             sub_list = get_sub_extractors_by_property(self, property_name=property_name, 
