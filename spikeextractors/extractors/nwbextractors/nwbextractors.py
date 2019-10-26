@@ -1,9 +1,11 @@
-import spikeextractors as se
 import os
-import numpy as np
-from datetime import datetime
-from hdmf.data_utils import DataChunkIterator
 import uuid
+from datetime import datetime
+
+import numpy as np
+from hdmf.data_utils import DataChunkIterator
+
+import spikeextractors as se
 
 try:
     from pynwb import NWBHDF5IO
@@ -12,6 +14,7 @@ try:
     from pynwb.ecephys import ElectrodeGroup
     from pynwb.device import Device
     from pynwb.misc import Units
+
     HAVE_NWB = True
 except ModuleNotFoundError:
     HAVE_NWB = False
@@ -25,7 +28,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     mode = 'file'
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
-        {'name': 'acquisition_name', 'type': 'string', 'value': None, 'default': None, 'title': "Name of Acquisition Method"},
+        {'name': 'acquisition_name', 'type': 'string', 'value': None, 'default': None,
+         'title': "Name of Acquisition Method"},
     ]
     installation_mesg = "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
 
@@ -78,8 +82,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             if nwbfile.epochs is not None:
                 df_epochs = nwbfile.epochs.to_dataframe()
                 self._epochs = {row['label']:
-                                {'start_frame': self.time_to_frame(row['start_time']),
-                                 'end_frame': self.time_to_frame(row['stop_time'])}
+                                    {'start_frame': self.time_to_frame(row['start_time']),
+                                     'end_frame': self.time_to_frame(row['stop_time'])}
                                 for _, row in df_epochs.iterrows()}
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
@@ -173,7 +177,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             raise Exception("'channel_ids' and 'values' should be lists of same size")
 
         nChannels = len(existing_ids)
-        new_values = [default_values]*nChannels
+        new_values = [default_values] * nChannels
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
             for i, v in zip(channel_ids, values):
@@ -209,10 +213,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         new_property_names = recording.get_shared_channel_property_names()
         curr_property_names = self.get_shared_channel_property_names()
         if default_values is None:
-            default_values = [np.nan]*len(new_property_names)
+            default_values = [np.nan] * len(new_property_names)
         else:
             if len(default_values) != len(new_property_names):
-                raise Exception("'default_values' list must have length equal to"+
+                raise Exception("'default_values' list must have length equal to" +
                                 " number of properties to be copied.")
 
         # Copies only properties that do not exist already in NWB file
@@ -220,25 +224,14 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             if pr in curr_property_names:
                 print(pr + " already exists in NWB file and can't be copied.")
             else:
-                pr_values = recording.get_channel_property(channel_ids=unit_ids,
+                pr_values = recording.get_channel_property(channel_ids=channel_ids,
                                                            property_name=pr)
-                self.set_channels_property(unit_ids=unit_ids,
+                self.set_channels_property(channel_ids=channel_ids,
                                            property_name=pr,
                                            values=pr_values,
                                            default_values=default_values[i])
 
     def add_epoch(self, epoch_name, start_frame, end_frame):
-        '''This function adds an epoch to the NWB file.
-
-        Parameters
-        ----------
-        epoch_name: str
-            The name of the epoch to be added
-        start_frame: int
-            The start frame of the epoch to be added (inclusive)
-        end_frame: int
-            The end frame of the epoch to be added (exclusive)
-        '''
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         if not isinstance(epoch_name, str):
             raise Exception("'epoch_name' must be a string")
@@ -250,8 +243,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         fs = self.get_sampling_frequency()
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            nwbfile.add_epoch(start_time=start_frame/fs,
-                              stop_time=end_frame/fs,
+            nwbfile.add_epoch(start_time=start_frame / fs,
+                              stop_time=end_frame / fs,
                               tags=epoch_name)
             io.write(nwbfile)
 
@@ -260,13 +253,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         print(self.remove_epoch.__doc__)
 
     def get_epoch_names(self):
-        '''This function returns a list of all the epoch names in the NWB file.
-
-        Returns
-        ----------
-        epoch_names: list
-            List of epoch names in the sorting extractor
-        '''
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
@@ -274,29 +260,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 print("No epochs in NWB file")
                 epoch_names = None
             else:
-                sampling_frequency = ts.rate
-            data = np.copy(np.transpose(ts.data))
-            NRX = se.NumpyRecordingExtractor(timeseries=data, sampling_frequency=sampling_frequency, geom=geom)
-            CopyRecordingExtractor.__init__(self, NRX)
                 flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
                 aux = np.array(flat_list)
                 epoch_names = np.unique(aux).tolist()
         return epoch_names
 
     def get_epoch_info(self, epoch_name):
-        '''This function returns the start frame and end frame of the epoch
-        in a dict.
-
-        Parameters
-        ----------
-        epoch_name: str
-            The name of the epoch to be returned
-
-        Returns
-        ----------
-        epoch_info: dict
-            A dict containing the start frame and end frame of the epoch
-        '''
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         if not isinstance(epoch_name, str):
             raise ValueError("epoch_name must be a string")
@@ -311,8 +280,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
             for i, tag in enumerate(flat_list):
                 if tag == epoch_name:
-                    epoch_info['start_frame'] = int(nwbfile.epochs['start_time'][i]*fs)
-                    epoch_info['end_frame'] = int(nwbfile.epochs['stop_time'][i]*fs)
+                    epoch_info['start_frame'] = int(nwbfile.epochs['start_time'][i] * fs)
+                    epoch_info['end_frame'] = int(nwbfile.epochs['stop_time'][i] * fs)
         return epoch_info
 
     @staticmethod
@@ -325,6 +294,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         save_path: str
         nwbfile_kwargs: optional, dict with optional args of pynwb.NWBFile
         """
+
+    @staticmethod
     def write_recording(recording, save_path, acquisition_name='ElectricalSeries', **nwbfile_kwargs):
         '''
 
@@ -361,69 +332,51 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if any(aux):
             electrode_group = nwbfile.children[np.where(aux)[0][0]]
         else:
-            eg_name = 'electrode_group_name'
-            eg_description = "electrode_group_description"
-            eg_location = "electrode_group_location"
             electrode_group = nwbfile.create_electrode_group(
-                name=eg_name,
-                location=eg_location,
+                name='electrode_group_name',
+                location="electrode_group_location",
                 device=device,
-                description=eg_description
+                description="electrode_group_description"
             )
         if os.path.exists(save_path):
             os.remove(save_path)
 
-        if 'session_description' not in nwbfile_kwargs:
-            nwbfile_kwargs['session_description'] = 'No description'
-        if 'identifier' not in nwbfile_kwargs:
-            nwbfile_kwargs['identifier'] = str(uuid.uuid4())
-        input_nwbfile_kwargs = {
-            'session_start_time': datetime.now()}
-        input_nwbfile_kwargs.update(nwbfile_kwargs)
+        input_nwbfile_kwargs = {'session_description': 'No description',
+                                'identifier': str(uuid.uuid4()),
+                                'session_start_time': datetime.now()}
+        input_nwbfile_kwargs.update(**nwbfile_kwargs)
         nwbfile = NWBFile(**input_nwbfile_kwargs)
 
-        device = nwbfile.create_device(name='device_name')
-        eg_name = 'electrode_group_name'
-        eg_description = "electrode_group_description"
-        eg_location = "electrode_group_location"
-
-        electrode_group = nwbfile.create_electrode_group(
-            name=eg_name,
-            location=eg_location,
-            device=device,
-            description=eg_description
-        )
-
-            # add electrodes with locations
-            for m in range(M):
-                location = recording.get_channel_property(m, 'location')
-                impedence = -1.0
-                while len(location) < 3:
-                    location = np.append(location, [0])
-                nwbfile.add_electrode(
-                    id=m,
-                    x=float(location[0]), y=float(location[1]), z=float(location[2]),
-                    imp=impedence,
-                    location='electrode_location',
-                    filtering='none',
-                    group=electrode_group,
-                )
-
-            # add other existing electrode properties
-            properties = recording.get_shared_channel_property_names()
-            properties.remove('location')
-            for pr in properties:
-                pr_data = [recording.get_channel_property(ind, pr) for ind in range(M)]
-                nwbfile.add_electrode_column(
-                    name=pr,
-                    description='',
-                    data=pr_data,
-                )
-
-            electrode_table_region = nwbfile.create_electrode_table_region(
-                list(range(M)),
-                'electrode_table_region'
+        # add electrodes with locations
+        for m in range(M):
+            location = recording.get_channel_property(m, 'location')
+            impedence = -1.0
+            while len(location) < 3:
+                location = np.append(location, [0])
+            nwbfile.add_electrode(
+                id=m,
+                x=float(location[0]), y=float(location[1]), z=float(location[2]),
+                imp=impedence,
+                location='electrode_location',
+                filtering='none',
+                group=electrode_group,
             )
+
+        # add other existing electrode properties
+        properties = recording.get_shared_channel_property_names()
+        properties.remove('location')
+        for pr in properties:
+            pr_data = [recording.get_channel_property(ind, pr) for ind in range(M)]
+            nwbfile.add_electrode_column(
+                name=pr,
+                description='no description',
+                data=pr_data,
+            )
+
+        electrode_table_region = nwbfile.create_electrode_table_region(
+            list(range(M)),
+            'electrode_table_region'
+        )
 
         # Tests if Acquisition already exists
         aux = [isinstance(i, ElectricalSeries) for i in nwbfile.children]
@@ -439,30 +392,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             def data_generator(recording, num_channels):
                 #  generates data chunks for iterator
                 for id in range(0, num_channels):
-                    data = recording.get_traces(channel_ids=[id]).flatten().astype('int16')
+                    data = recording.get_traces(channel_ids=[id]).flatten()
                     yield data
 
-        ephys_ts = ElectricalSeries(
-            name=acquisition_name,
-            data=ephys_data,
-            electrodes=electrode_table_region,
-            starting_time=recording.frame_to_time(0),
-            rate=rate,
-            resolution=1e-6,
-            comments='Generated from SpikeInterface::NwbRecordingExtractor',
-            description='acquisition_description'
-        )
-
-        nwbfile.add_acquisition(ephys_ts)
-        with NWBHDF5IO(save_path, 'w') as io:
-            io.write(nwbfile)
             data = data_generator(recording=recording, num_channels=M)
             ephys_data = DataChunkIterator(data=data,
-                                           iter_axis=1,
-                                           dtype=np.dtype('int16'))
+                                           iter_axis=1)
             acquisition_name = 'ElectricalSeries'
 
-            # Traces are stored as 'int16'. To get Volts = data*channel_conversion*conversion
+            # If traces are stored as 'int16', then to get Volts = data*channel_conversion*conversion
             ephys_ts = ElectricalSeries(
                 name=acquisition_name,
                 data=ephys_data,
@@ -486,7 +424,8 @@ class NwbSortingExtractor(se.SortingExtractor):
     exporter_gui_params = [
         {'name': 'save_path', 'type': 'file', 'title': "Save path"},
         {'name': 'identifier', 'type': 'str', 'value': None, 'default': None, 'title': "The session identifier"},
-        {'name': 'session_description', 'type': 'str', 'value': None, 'default': None, 'title': "The session description"},
+        {'name': 'session_description', 'type': 'str', 'value': None, 'default': None,
+         'title': "The session description"},
     ]
     installed = HAVE_NWB  # check at class level if installed or not
     is_writable = True
@@ -618,7 +557,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             if property_name in list(nwbfile.units.colnames):
                 val = nwbfile.units[property_name][existing_ids.index(unit_id)]
             else:
-                raise Exception(property_name+" is not a valid property in dataset")
+                raise Exception(property_name + " is not a valid property in dataset")
         return val
 
     def get_units_property(self, unit_ids, property_name):
@@ -656,7 +595,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             if property_name in list(nwbfile.units.colnames):
                 values = [nwbfile.units[property_name][existing_ids.index(id)] for id in unit_ids]
             else:
-                raise Exception(property_name+" is not a valid property in dataset")
+                raise Exception(property_name + " is not a valid property in dataset")
         return values
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
@@ -668,7 +607,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             if end_frame is None:
                 end_frame = np.Inf
             # chosen unit and interval
-            times0 = nwbfile.units['spike_times'][int(unit_id-1)][:]
+            times0 = nwbfile.units['spike_times'][int(unit_id - 1)][:]
             # spike times are measured in samples
             times = ((times0 - self._t0) * self._sampling_frequency).astype('int')
         return times[(times > start_frame) & (times < end_frame)]
@@ -715,13 +654,13 @@ class NwbSortingExtractor(se.SortingExtractor):
             raise Exception("'unit_ids' and 'values' should be lists of same size")
 
         nUnits = len(existing_ids)
-        new_values = [default_values]*nUnits
+        new_values = [default_values] * nUnits
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
             for i, v in zip(unit_ids, values):
                 new_values[existing_ids.index(i)] = v
             nwbfile.add_unit_column(name=property_name,
-                                    description='',
+                                    description='no description',
                                     data=new_values)
             io.write(nwbfile)
 
@@ -755,16 +694,16 @@ class NwbSortingExtractor(se.SortingExtractor):
         new_property_names = sorting.get_shared_unit_property_names()
         curr_property_names = self.get_shared_unit_property_names()
         if default_values is None:
-            default_values = [np.nan]*len(new_property_names)
+            default_values = [np.nan] * len(new_property_names)
         else:
             if len(default_values) != len(new_property_names):
-                raise Exception("'default_values' list must have length equal to"+
+                raise Exception("'default_values' list must have length equal to" +
                                 " number of properties to be copied.")
 
         # Copies only properties that do not exist already in NWB file
         for i, pr in enumerate(new_property_names):
             if pr in curr_property_names:
-                print(pr+" already exists in NWB file and can't be copied.")
+                print(pr + " already exists in NWB file and can't be copied.")
             else:
                 pr_values = sorting.get_unit_property(unit_ids=unit_ids,
                                                       property_name=pr)
@@ -823,9 +762,9 @@ class NwbSortingExtractor(se.SortingExtractor):
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         if not isinstance(feature_name, str):
             raise Exception("'feature_name' must be a string")
-        full_feat_name = 'spike_feature_'+feature_name
+        full_feat_name = 'spike_feature_' + feature_name
         if full_feat_name not in self.get_shared_unit_spike_feature_names():
-            raise Exception(full_feat_name+" not present in NWB file")
+            raise Exception(full_feat_name + " not present in NWB file")
 
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
@@ -834,11 +773,11 @@ class NwbSortingExtractor(se.SortingExtractor):
             if end_frame is None:
                 end_frame = np.Inf
             # chosen unit and interval
-            feat_vals = np.array(nwbfile.units[full_feat_name][int(unit_id-1)][:])
-            times0 = nwbfile.units['spike_times'][int(unit_id-1)][:]
+            feat_vals = np.array(nwbfile.units[full_feat_name][int(unit_id - 1)][:])
+            times0 = nwbfile.units['spike_times'][int(unit_id - 1)][:]
             # spike times are measured in samples
             times = ((times0 - self._t0) * self._sampling_frequency).astype('int')
-            mask = (times>start_frame) & (times<end_frame)
+            mask = (times > start_frame) & (times < end_frame)
         return feat_vals[mask].tolist()
 
     def set_unit_spike_features(self, unit_ids, feature_name, values, default_value=None):
@@ -872,33 +811,33 @@ class NwbSortingExtractor(se.SortingExtractor):
             raise ValueError("'unit_ids' contains values outside the range of existing ids")
         if not isinstance(feature_name, str):
             raise Exception("'feature_name' must be a string")
-        if 'spike_feature_'+feature_name in self.get_shared_unit_spike_feature_names():
-            raise Exception('spike_feature_'+feature_name + " feature already exists")
+        if 'spike_feature_' + feature_name in self.get_shared_unit_spike_feature_names():
+            raise Exception('spike_feature_' + feature_name + " feature already exists")
         if not all([str(k) in values.keys() for k in unit_ids]):
-            raise Exception("All units in 'unit_id' should be present as keys "+
+            raise Exception("All units in 'unit_id' should be present as keys " +
                             "of 'values' dictionary")
         if len(unit_ids) != len(values.keys()):
-            raise Exception("'unit_ids' and the list of keys in 'values' should"+
+            raise Exception("'unit_ids' and the list of keys in 'values' should" +
                             " be of same size")
         if default_value is None:
             default_value = np.nan
         nUnits = len(existing_ids)
         nspikes_units = self.get_nspikes()
-        new_values = [[default_value]*nSpikes for nSpikes in nspikes_units]
+        new_values = [[default_value] * nSpikes for nSpikes in nspikes_units]
         with NWBHDF5IO(self._path, 'a') as io:
             nwbfile = io.read()
             for id in unit_ids:
                 spikes_unit = nwbfile.units['spike_times'][existing_ids.index(id)]
-                if len(spikes_unit)!=len(values[str(id)]):
+                if len(spikes_unit) != len(values[str(id)]):
                     io.close()
-                    raise ValueError("feature values should have the same length"+
-                                     " as the spike train, error at unit #"+str(id))
+                    raise ValueError("feature values should have the same length" +
+                                     " as the spike train, error at unit #" + str(id))
                 new_values[existing_ids.index(id)] = values[str(id)]
 
             flatten_new_values = [item for sublist in new_values for item in sublist]
             spikes_index = np.cumsum(nspikes_units)
-            nwbfile.add_unit_column(name='spike_feature_'+feature_name,
-                                    description='',
+            nwbfile.add_unit_column(name='spike_feature_' + feature_name,
+                                    description='no description',
                                     data=flatten_new_values,
                                     index=spikes_index)
             io.write(nwbfile)
@@ -922,7 +861,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
             aux = list(nwbfile.units.colnames)
-            feature_names = [feat for feat in aux if feat[0:14]=='spike_feature_']
+            feature_names = [feat for feat in aux if feat[0:14] == 'spike_feature_']
         return feature_names
 
     def get_unit_spike_feature_names(self, unit_id=None):
@@ -971,17 +910,17 @@ class NwbSortingExtractor(se.SortingExtractor):
         new_feature_names = sorting.get_shared_unit_spike_feature_names()
         curr_feature_names = self.get_shared_unit_spike_feature_names()
         if default_values is None:
-            default_values = [np.nan]*len(new_feature_names)
+            default_values = [np.nan] * len(new_feature_names)
         else:
-            if len(default_values)!=len(new_feature_names):
-                raise Exception("'default_values' list must have length equal to"+
+            if len(default_values) != len(new_feature_names):
+                raise Exception("'default_values' list must have length equal to" +
                                 " number of features to be copied.")
         # Copies only features that do not exist in NWB file
         nspikes_units = self.get_nspikes()
         for i, feat in enumerate(new_feature_names):
-            full_feat_name = 'spike_feature_'+feat
+            full_feat_name = 'spike_feature_' + feat
             if full_feat_name in curr_feature_names:
-                print(full_feat_name+" already exists in NWB file and can't be copied.")
+                print(full_feat_name + " already exists in NWB file and can't be copied.")
             else:
                 feat_values = {}
                 for id in unit_ids:
@@ -1024,8 +963,8 @@ class NwbSortingExtractor(se.SortingExtractor):
         fs = self.get_sampling_frequency()
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            nwbfile.add_epoch(start_time=start_frame/fs,
-                              stop_time=end_frame/fs,
+            nwbfile.add_epoch(start_time=start_frame / fs,
+                              stop_time=end_frame / fs,
                               tags=epoch_name)
             io.write(nwbfile)
 
@@ -1081,8 +1020,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
             for i, tag in enumerate(flat_list):
                 if tag == epoch_name:
-                    epoch_info['start_frame'] = int(nwbfile.epochs['start_time'][i]*fs)
-                    epoch_info['end_frame'] = int(nwbfile.epochs['stop_time'][i]*fs)
+                    epoch_info['start_frame'] = int(nwbfile.epochs['start_time'][i] * fs)
+                    epoch_info['end_frame'] = int(nwbfile.epochs['stop_time'][i] * fs)
         return epoch_info
 
     def get_epoch(self, epoch_name):
@@ -1169,17 +1108,12 @@ def most_relevant_ch(traces):
     traces : ndarray
         ndarray of shape (nSpikes, nChannels, nSamples)
     """
-    nSpikes = traces.shape[0]
     nChannels = traces.shape[1]
-    nSamples = traces.shape[2]
-
-    #average and std of spike traces per channel
     avg = np.mean(traces, axis=0)
-    std = np.std(traces, axis=0)
 
     max_min = np.zeros(nChannels)
     for ch in range(nChannels):
-        max_min[ch] = avg[ch,:].max() - avg[ch,:].min()
+        max_min[ch] = avg[ch, :].max() - avg[ch, :].min()
 
     relevant_ch = np.argmax(max_min)
     return relevant_ch

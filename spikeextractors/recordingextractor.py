@@ -208,7 +208,7 @@ class RecordingExtractor(ABC):
         channel_ids: array_like
             The channel ids (ints) for which the locations will be specified
         locations: array_like
-            A list of corresonding locations (array_like) for the given channel_ids
+            A list of corresponding locations (array_like) for the given channel_ids
         '''
         if len(channel_ids) == len(locations):
             for i in range(len(channel_ids)):

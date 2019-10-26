@@ -308,7 +308,7 @@ class SortingExtractor(ABC):
             raise ValueError(str(unit_id) + " must be an int")
 
     def get_unit_property(self, unit_id, property_name):
-        '''This function rerturns the data stored under the property name given
+        '''This function returns the data stored under the property name given
         from the given unit.
 
         Parameters
