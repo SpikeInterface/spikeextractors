@@ -20,6 +20,37 @@ except ModuleNotFoundError:
     HAVE_NWB = False
 
 
+def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, default_value=np.nan,
+                               description='no description'):
+    assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+    if isinstance(row_ids, int):
+        row_ids = [row_ids]
+        values = [values]
+    elif not (isinstance(row_ids, list) and all(isinstance(x, int) for x in row_ids)):
+        raise ValueError("'ids' must be an integer or a list of integers")
+    ids = dynamic_table.ids[:]
+    if any(row_ids not in ids):
+        raise ValueError("'ids' contains values outside the range of existing ids")
+    if not isinstance(property_name, str):
+        raise Exception("'property_name' must be a string")
+    if len(row_ids) != len(values):
+        raise Exception("'ids' and 'values' should be lists of same size")
+
+    col_data = [default_value] * len(ids)  # init with default val
+    for (row_id, value) in zip(row_ids, values):
+        col_data[ids.index(row_id)] = value
+    if property_name not in dynamic_table:
+        dynamic_table.add_column(name=property_name, description=description, data=values)
+    else:
+        dynamic_table[property_name][:] = col_data
+
+
+def get_dynamic_table_property(dynamic_table, *, row_ids=None, property_name):
+    if row_ids is None:
+        row_ids = dynamic_table.ids[:]
+    return [dynamic_table[property_name][dynamic_table.ids.index(x)] for x in row_ids]
+
+
 class NwbRecordingExtractor(se.RecordingExtractor):
     extractor_name = 'NwbRecordingExtractor'
     has_default_locations = True
@@ -132,24 +163,20 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return self.channel_ids.tolist()
 
     def set_channel_locations(self, channel_ids=None, locations=None):
-        # todo
-        raise NotImplementedError()
+        with NWBHDF5IO(self._path, 'r+') as io:
+            nwbfile = io.read()
+            set_dynamic_table_property(nwbfile.electrodes, channel_ids, 'x', locations[:, 0])
+            set_dynamic_table_property(nwbfile.electrodes, channel_ids, 'y', locations[:, 1])
+            set_dynamic_table_property(nwbfile.electrodes, channel_ids, 'z', locations[:, 2])
 
     def set_channel_groups(self, channel_ids=None, groups=None):
         # todo
         raise NotImplementedError()
 
     def get_channel_groups(self, channel_ids=None):
-        if channel_ids is not None:
-            if not isinstance(channel_ids, (list, np.ndarray)):
-                raise Exception("'channel_ids' must be a list or array of integers.")
-            if not all([id in self.channel_ids for id in channel_ids]):
-                raise Exception("'channel_ids' contain values outside the range of valid ids.")
-        else:
-            channel_ids = self.channel_ids
-
-        groups = self.electrodes_df['group_name'][channel_ids]
-        return groups.tolist()
+        with NWBHDF5IO(self._path, 'r') as io:
+            nwbfile = io.read()
+            return get_dynamic_table_property(nwbfile.electrodes, row_ids=channel_ids, property_name='group_name')
 
     def set_channel_gains(self, channel_ids, gains):
         self.set_channels_property(channel_ids=channel_ids,
@@ -160,34 +187,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     def set_channel_property(self, channel_id=None, property_name=None, value=None):
         raise NotImplementedError()
 
-    def set_channels_property(self, channel_ids, property_name, values, default_values=np.nan):
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
-        if not isinstance(channel_ids, list):
-            raise ValueError("'channel_ids' must be a list of integers")
-        if not all(isinstance(x, int) for x in channel_ids):
-            raise ValueError("'channel_ids' must be a list of integers")
-        existing_ids = self.get_channel_ids()
-        if not all(x in existing_ids for x in channel_ids):
-            raise ValueError("'channel_ids' contains values outside the range of existing ids")
-        if not isinstance(property_name, str):
-            raise Exception("'property_name' must be a string")
-        if property_name in self.get_shared_channel_property_names():
-            raise Exception(property_name + " property already exists")
-        if len(channel_ids) != len(values):
-            raise Exception("'channel_ids' and 'values' should be lists of same size")
-
-        nChannels = len(existing_ids)
-        new_values = [default_values] * nChannels
+    def set_channels_property(self, channel_ids, property_name, values, default_values=np.nan,
+                              description='no description'):
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            for i, v in zip(channel_ids, values):
-                new_values[existing_ids.index(i)] = v
-            nwbfile.add_electrode_column(name=property_name,
-                                         description='no description',
-                                         data=new_values)
-            es = nwbfile.acquisition[self._electrical_series_name]
-            self.electrodes_df = es.electrodes.table.to_dataframe()
-            io.write(nwbfile)
+            set_dynamic_table_property(nwbfile.electrodes, channel_ids, property_name, values, default_values,
+                                       description)
 
     def get_channel_property(self, channel_id, property_name):
         return self.electrodes_df[property_name][channel_id]
@@ -504,78 +509,17 @@ class NwbSortingExtractor(se.SortingExtractor):
             return list(nwbfile.units.colnames)
 
     def get_unit_property(self, unit_id, property_name):
-        '''This function returns the data stored under the property name given
-        from the given unit.
-
-        Parameters
-        ----------
-        unit_id: int
-            The unit id for which the property will be returned
-        property_name: str
-            The name of the property
-        Returns
-        ----------
-        value
-            The data associated with the given property name. Could be many
-            formats as specified by the user.
-        '''
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
-        if not isinstance(unit_id, (int, np.integer)):
-            raise ValueError("'unit_id' must be an integer")
-        existing_ids = self.get_unit_ids()
-        if unit_id not in existing_ids:
-            raise ValueError("'unit_id' outside the range of existing ids")
-        if not isinstance(property_name, str):
-            raise Exception("'property_name' must be a string")
-
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            if property_name in list(nwbfile.units.colnames):
-                val = nwbfile.units[property_name][existing_ids.index(unit_id)]
-            else:
-                raise Exception(property_name + " not column found")
-        return val
+            return get_dynamic_table_property(nwbfile.units, unit_id=unit_id, property_name=property_name)
 
     def get_units_property(self, *, unit_ids=None, property_name):
-        '''Returns a list of values stored under the property name corresponding
-        to a list of units
-
-        Parameters
-        ----------
-        unit_ids: list
-            The unit ids for which the property will be returned
-            Defaults to all ids
-        property_name: str
-            The name of the property
-        Returns
-        ----------
-        values
-            The list of values
-        '''
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
-        if not isinstance(property_name, str):
-            raise Exception("'property_name' must be a string")
-        existing_ids = self.get_unit_ids()
-        if unit_ids is None:
-            unit_ids = existing_ids
-        else:
-            if not isinstance(unit_ids, list):
-                raise ValueError("'unit_ids' must be a list of integers")
-            if not all(isinstance(x, int) for x in unit_ids):
-                raise ValueError("'unit_ids' must be a list of integers")
-            if not all(x in existing_ids for x in unit_ids):
-                raise ValueError("'unit_ids' contains values outside the range of existing ids")
-
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            if property_name in list(nwbfile.units.colnames):
-                values = [nwbfile.units[property_name][existing_ids.index(id)] for id in unit_ids]
-            else:
-                raise Exception(property_name + " is not a valid property in dataset")
-        return values
+            return get_dynamic_table_property(nwbfile.units, unit_ids, property_name)
 
     def time_to_frame(self, time):
-        return int((time - self._t0) * self.get_sampling_frequency())
+        return ((time - self._t0) * self.get_sampling_frequency()).astype('int')
 
     def get_unit_spike_train(self, unit_id, start_frame=0, end_frame=np.Inf):
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
@@ -587,100 +531,24 @@ class NwbSortingExtractor(se.SortingExtractor):
             frames = self.time_to_frame(times)
         return frames[(frames > start_frame) & (frames < end_frame)]
 
-    @staticmethod
-    def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, default_value=np.nan,
-                                   description='no description'):
-        if isinstance(row_ids, int):
-            row_ids = [row_ids]
-            values = [values]
-        if property_name not in dynamic_table:
-            values = [default_value] * len(dynamic_table.ids)
-            values[dynamic_table.ids[:].index(row_id)] = value
-            dynamic_table.add_column(name=property_name, description=description, data=values)
-        else:
-            dynamic_table[property_name][dynamic_table.id[:].index(row_id)] = value
-
     def set_unit_property(self, unit_id, property_name, value, default_value=np.nan, description='no description'):
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            units = nwbfile.units
-            self.set_dynamic_table_property(units, unit_id, property_name, value, default_value, description)
+            set_dynamic_table_property(nwbfile.units, unit_id, property_name, value, default_value, description)
 
-    def set_units_property(self, *, unit_ids, property_name, values, default_value=np.nan):
-        '''This function adds a new property data set to the chosen units.
-        NWB files require that new properties are set once for all units. Therefore,
-        the 'property_name' for ids not present in 'unit_ids' will be filled with
-        'default_values'.
-
-        Parameters
-        ----------
-        unit_ids: list of ints
-            The unit ids for which the property will be set.
-        property_name: str
-            The name of the property to be stored.
-        values :
-            The data associated with the given property name. Could be many
-            formats as specified by the user.
-        default_value:
-            Default value of 'property_name' for unit ids not present in
-            'unit_ids' list.
-        '''
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
-        if not isinstance(unit_ids, list):
-            raise ValueError("'unit_ids' must be a list of integers")
-        if not all(isinstance(x, int) for x in unit_ids):
-            raise ValueError("'unit_ids' must be a list of integers")
-        existing_ids = self.get_unit_ids()
-        if not all(x in existing_ids for x in unit_ids):
-            raise ValueError("'unit_ids' contains values outside the range of existing ids")
-        if not isinstance(property_name, str):
-            raise Exception("'property_name' must be a string")
-        if len(unit_ids) != len(values):
-            raise Exception("'unit_ids' and 'values' should be lists of same size")
-
-        nUnits = len(existing_ids)
-        new_values = [default_value] * nUnits
+    def set_units_property(self, *, unit_ids=None, property_name, values, default_value=np.nan, description='no description'):
+        if unit_ids is None:
+            unit_ids = self.get_unit_ids()
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            if property_name in nwbfile.units:
-                [self.set_unit_property(unit_id, property_name, value)
-                 for unit_id, value in zip(unit_ids, values)]
-            else:
-                for i, v in zip(unit_ids, values):
-                    new_values[existing_ids.index(i)] = v
-                nwbfile.add_unit_column(name=property_name,
-                                        description='no description',
-                                        data=new_values)
-            io.write(nwbfile)
+            set_dynamic_table_property(nwbfile.units, unit_ids, property_name, values, default_value, description)
 
     def copy_unit_properties(self, sorting, unit_ids=None, default_value=np.nan):
-        '''Copy unit properties from another sorting extractor to the current
-        sorting extractor.
-
-        Parameters
-        ----------
-        sorting: SortingExtractor
-            The sorting extractor from which the properties will be copied
-        unit_ids: list
-            The list of unit_ids for which the properties will be copied.
-        default_value:
-            Default value for each unit, for unit ids not present in
-            'unit_ids' list. Defaults to NaN.
-        '''
-        if unit_ids is None:
-            unit_ids = sorting.get_unit_ids()
-        else:
-            if not isinstance(unit_ids, list) or not all(isinstance(x, int) for x in unit_ids):
-                raise ValueError("'unit_ids' must be a list of integers")
-            if any(x not in self.get_unit_ids() for x in unit_ids):
-                raise ValueError("'unit_ids' contains values outside the range of existing ids")
-
-        new_property_names = sorting.get_shared_unit_property_names()
+        property_names = sorting.get_shared_unit_property_names()
 
         # Copies only properties that do not exist already in NWB file
-        for pr in new_property_names:
-            pr_values = sorting.get_unit_property(unit_ids=unit_ids,
-                                                  property_name=pr)
+        for pr in property_names:
+            pr_values = sorting.get_units_property(unit_ids=unit_ids, property_name=pr)
             self.set_units_property(unit_ids=unit_ids,
                                     property_name=pr,
                                     values=pr_values,
@@ -766,6 +634,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             The data associated with the given feature name. Could be many
             formats as specified by the user.
         '''
+        # todo
+        return NotImplementedError()
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         if not isinstance(unit_id, int):
             raise ValueError("'unit_id' must be an integer")
@@ -774,12 +644,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             raise Exception("'feature_name' must be a string")
         if 'spike_feature_' + feature_name in self.get_shared_unit_spike_feature_names():
             raise Exception('spike_feature_' + feature_name + " feature already exists")
-        if any([k not in values.keys() for k in unit_ids]):
-            raise Exception("All units in 'unit_id' should be present as keys " +
-                            "of 'values' dictionary")
-        if len(unit_ids) != len(values.keys()):
-            raise Exception("'unit_ids' and the list of keys in 'values' should" +
-                            " be of same size")
+
         if default_value is None:
             default_value = np.nan
         nspikes_units = self.get_nspikes()
@@ -898,6 +763,9 @@ class NwbSortingExtractor(se.SortingExtractor):
         '''NWB files do not allow removing features.'''
         print(self.clear_units_spike_features.__doc__)
 
+    def frame_to_time(self, frame):
+        return frame / self.get_sampling_frequency() + self._t0
+
     def add_epoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to the NWB file.
 
@@ -918,11 +786,10 @@ class NwbSortingExtractor(se.SortingExtractor):
         if not isinstance(end_frame, int):
             raise Exception("'end_frame' must be an integer")
 
-        fs = self.get_sampling_frequency()
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            nwbfile.add_epoch(start_time=start_frame / fs,
-                              stop_time=end_frame / fs,
+            nwbfile.add_epoch(start_time=self.frame_to_time(start_frame),
+                              stop_time=self.frame_to_time(end_frame),
                               tags=epoch_name)
             io.write(nwbfile)
 
@@ -943,12 +810,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             nwbfile = io.read()
             if nwbfile.epochs is None:
                 print("No epochs in NWB file")
-                epoch_names = None
-            else:
-                flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
-                aux = np.array(flat_list)
-                epoch_names = np.unique(aux).tolist()
-        return epoch_names
+                return
+            return [x[0] for x in nwbfile.epochs['tags'][:]]
 
     def get_epoch_info(self, epoch_name):
         '''This function returns the start frame and end frame of the epoch
@@ -1066,11 +929,11 @@ def most_relevant_ch(traces):
     traces : ndarray
         ndarray of shape (nSpikes, nChannels, nSamples)
     """
-    nChannels = traces.shape[1]
+    n_channels = traces.shape[1]
     avg = np.mean(traces, axis=0)
 
-    max_min = np.zeros(nChannels)
-    for ch in range(nChannels):
+    max_min = np.zeros(n_channels)
+    for ch in range(n_channels):
         max_min[ch] = avg[ch, :].max() - avg[ch, :].min()
 
     relevant_ch = np.argmax(max_min)
