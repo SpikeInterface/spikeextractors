@@ -184,21 +184,19 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         self.set_channels_property(channel_ids=channel_ids,
                                    property_name='gain',
                                    values=gains,
-                                   default_values=1.)
+                                   default_value=1.)
 
-    def set_channel_property(self, channel_id=None, property_name=None, value=None, default_value=np.nan,
+    def set_channel_property(self, channel_id, property_name=None, value=None, default_value=np.nan,
                              description='no description'):
-        with NWBHDF5IO(self._path, 'r+') as io:
-            nwbfile = io.read()
-            set_dynamic_table_property(nwbfile.electrodes, row_ids=channel_id, property_name=property_name,
-                                       values=value, default_value=default_value, description=description)
+        self.set_channels_property([channel_id], property_name=property_name, values=[value],
+                                   default_value=default_value, description=description)
 
-    def set_channels_property(self, channel_ids, property_name, values, default_values=np.nan,
+    def set_channels_property(self, channel_ids, property_name, values, default_value=np.nan,
                               description='no description'):
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
             set_dynamic_table_property(nwbfile.electrodes, row_ids=channel_ids, property_name=property_name,
-                                       values=values, default_value=default_values, description=description)
+                                       values=values, default_value=default_value, description=description)
 
     def get_channel_property(self, channel_id, property_name):
         return self.electrodes_df[property_name][channel_id]
@@ -250,7 +248,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if not isinstance(end_frame, int):
             raise Exception("'end_frame' must be an integer")
 
-        fs = self.get_sampling_frequency()
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
             nwbfile.add_epoch(start_time=self.frame_to_time(start_frame),
@@ -281,7 +278,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if epoch_name not in all_epoch_names:
             raise ValueError("This epoch has not been added")
 
-        fs = self.get_sampling_frequency()
         epoch_info = {}
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
@@ -513,14 +509,12 @@ class NwbSortingExtractor(se.SortingExtractor):
             return list(nwbfile.units.colnames)
 
     def get_unit_property(self, unit_id, property_name):
-        with NWBHDF5IO(self._path, 'r') as io:
-            nwbfile = io.read()
-            return get_dynamic_table_property(nwbfile.units, unit_id=unit_id, property_name=property_name)
+        return self.get_units_property(unit_ids=[unit_id], property_name=property_name)
 
     def get_units_property(self, *, unit_ids=None, property_name):
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            return get_dynamic_table_property(nwbfile.units, unit_ids, property_name)
+            return get_dynamic_table_property(nwbfile.units, row_ids=unit_ids, property_name=property_name)
 
     def time_to_frame(self, time):
         return ((time - self._t0) * self.get_sampling_frequency()).astype('int')
@@ -536,11 +530,13 @@ class NwbSortingExtractor(se.SortingExtractor):
         return frames[(frames > start_frame) & (frames < end_frame)]
 
     def set_unit_property(self, unit_id, property_name, value, default_value=np.nan, description='no description'):
-        with NWBHDF5IO(self._path, 'r+') as io:
-            nwbfile = io.read()
-            set_dynamic_table_property(nwbfile.units, unit_id, property_name, value, default_value, description)
+        if not isinstance(unit_id, int):
+            raise ValueError('unit_id must be an int')
+        self.set_units_property(unit_ids=[unit_id], property_name=property_name, values=[value],
+                                default_value=default_value, description=description)
 
-    def set_units_property(self, *, unit_ids=None, property_name, values, default_value=np.nan, description='no description'):
+    def set_units_property(self, *, unit_ids=None, property_name, values, default_value=np.nan,
+                           description='no description'):
         if unit_ids is None:
             unit_ids = self.get_unit_ids()
         with NWBHDF5IO(self._path, 'r+') as io:
