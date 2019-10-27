@@ -23,10 +23,7 @@ except ModuleNotFoundError:
 def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, default_value=np.nan,
                                description='no description'):
     assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
-    if isinstance(row_ids, int):
-        row_ids = [row_ids]
-        values = [values]
-    elif not (isinstance(row_ids, list) and all(isinstance(x, int) for x in row_ids)):
+    if not isinstance(row_ids, list) or not all(isinstance(x, int) for x in row_ids):
         raise ValueError("'ids' must be an integer or a list of integers")
     ids = dynamic_table.id[:]
     if any(row_ids not in ids):
@@ -897,31 +894,26 @@ class NwbSortingExtractor(se.SortingExtractor):
                 kwargs.update(**nwbfile_kwargs)
                 nwbfile = NWBFile(**kwargs)
 
-            # Tests if Units already exists
-            aux = [isinstance(i, Units) for i in nwbfile.children]
-            if any(aux):
-                units = nwbfile.children[np.where(aux)[0][0]]
-            else:
-                # Stores spike times for each detected cell (unit)
-                for id in ids:
-                    spkt = sorting.get_unit_spike_train(unit_id=id) / fs
-                    if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
-                        # Stores average and std of spike traces
-                        wf = sorting.get_unit_spike_features(unit_id=id,
-                                                             feature_name='waveforms')
-                        relevant_ch = most_relevant_ch(wf)
-                        # Spike traces on the most relevant channel
-                        traces = wf[:, relevant_ch, :]
-                        traces_avg = np.mean(traces, axis=0)
-                        traces_std = np.std(traces, axis=0)
-                        nwbfile.add_unit(id=id,
-                                         spike_times=spkt,
-                                         waveform_mean=traces_avg,
-                                         waveform_sd=traces_std)
-                    else:
-                        nwbfile.add_unit(id=id, spike_times=spkt)
+            # Stores spike times for each detected cell (unit)
+            for id in ids:
+                spkt = sorting.get_unit_spike_train(unit_id=id) / fs
+                if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
+                    # Stores average and std of spike traces
+                    wf = sorting.get_unit_spike_features(unit_id=id,
+                                                         feature_name='waveforms')
+                    relevant_ch = most_relevant_ch(wf)
+                    # Spike traces on the most relevant channel
+                    traces = wf[:, relevant_ch, :]
+                    traces_avg = np.mean(traces, axis=0)
+                    traces_std = np.std(traces, axis=0)
+                    nwbfile.add_unit(id=id,
+                                     spike_times=spkt,
+                                     waveform_mean=traces_avg,
+                                     waveform_sd=traces_std)
+                else:
+                    nwbfile.add_unit(id=id, spike_times=spkt)
 
-            io.write(nwbfile)
+        io.write(nwbfile)
 
 
 def most_relevant_ch(traces):
