@@ -28,7 +28,7 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
         values = [values]
     elif not (isinstance(row_ids, list) and all(isinstance(x, int) for x in row_ids)):
         raise ValueError("'ids' must be an integer or a list of integers")
-    ids = dynamic_table.ids[:]
+    ids = dynamic_table.id[:]
     if any(row_ids not in ids):
         raise ValueError("'ids' contains values outside the range of existing ids")
     if not isinstance(property_name, str):
@@ -36,19 +36,21 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
     if len(row_ids) != len(values):
         raise Exception("'ids' and 'values' should be lists of same size")
 
-    col_data = [default_value] * len(ids)  # init with default val
-    for (row_id, value) in zip(row_ids, values):
-        col_data[ids.index(row_id)] = value
-    if property_name not in dynamic_table:
-        dynamic_table.add_column(name=property_name, description=description, data=values)
+    if property_name in dynamic_table:
+        for (row_id, value) in zip(row_ids, values):
+            dynamic_table[property_name][ids.index(row_id)] = value
     else:
-        dynamic_table[property_name][:] = col_data
+        col_data = [default_value] * len(ids)  # init with default val
+        for (row_id, value) in zip(row_ids, values):
+            col_data[ids.index(row_id)] = value
+        dynamic_table.add_column(name=property_name, description=description, data=values)
 
 
 def get_dynamic_table_property(dynamic_table, *, row_ids=None, property_name):
     if row_ids is None:
-        row_ids = dynamic_table.ids[:]
-    return [dynamic_table[property_name][dynamic_table.ids.index(x)] for x in row_ids]
+        row_ids = dynamic_table.id[:]
+        return [dynamic_table[property_name][dynamic_table.id[:].index(x)] for x in row_ids]
+    return dynamic_table[property_name][:].tolist()
 
 
 class NwbRecordingExtractor(se.RecordingExtractor):
@@ -184,15 +186,19 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                    values=gains,
                                    default_values=1.)
 
-    def set_channel_property(self, channel_id=None, property_name=None, value=None):
-        raise NotImplementedError()
+    def set_channel_property(self, channel_id=None, property_name=None, value=None, default_value=np.nan,
+                             description='no description'):
+        with NWBHDF5IO(self._path, 'r+') as io:
+            nwbfile = io.read()
+            set_dynamic_table_property(nwbfile.electrodes, row_ids=channel_id, property_name=property_name,
+                                       values=value, default_value=default_value, description=description)
 
     def set_channels_property(self, channel_ids, property_name, values, default_values=np.nan,
                               description='no description'):
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            set_dynamic_table_property(nwbfile.electrodes, channel_ids, property_name, values, default_values,
-                                       description)
+            set_dynamic_table_property(nwbfile.electrodes, row_ids=channel_ids, property_name=property_name,
+                                       values=values, default_value=default_values, description=description)
 
     def get_channel_property(self, channel_id, property_name):
         return self.electrodes_df[property_name][channel_id]
@@ -253,7 +259,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             io.write(nwbfile)
 
     def remove_epoch(self, epoch_name=None):
-        # to do
+        # todo
         raise NotImplementedError()
 
     def get_epoch_names(self):
@@ -381,8 +387,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     yield data
 
             data = data_generator(recording=recording, num_channels=n_channels)
-            ephys_data = DataChunkIterator(data=data,
-                                           iter_axis=1)
+            ephys_data = DataChunkIterator(data=data, iter_axis=1)
             acquisition_name = 'ElectricalSeries'
 
             # If traces are stored as 'int16', then to get Volts = data*channel_conversion*conversion
@@ -398,7 +403,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 description='acquisition_description'
             )
             nwbfile.add_acquisition(ephys_ts)
-
             io.write(nwbfile)
 
 
@@ -882,43 +886,46 @@ class NwbSortingExtractor(se.SortingExtractor):
         fs = sorting.get_sampling_frequency()
 
         if os.path.exists(save_path):
-            io = NWBHDF5IO(save_path, 'r+')
-            nwbfile = io.read()
+            read_mode = 'r+'
         else:
-            io = NWBHDF5IO(save_path, mode='w')
-            input_nwbfile_kwargs = {
-                'session_start_time': datetime.now(),
-                'identifier': str(uuid.uuid4()),
-                'session_description': 'No description'}
-            input_nwbfile_kwargs.update(**nwbfile_kwargs)
-            nwbfile = NWBFile(**input_nwbfile_kwargs)
+            read_mode = 'w'
 
-        # Tests if Units already exists
-        aux = [isinstance(i, Units) for i in nwbfile.children]
-        if any(aux):
-            units = nwbfile.children[np.where(aux)[0][0]]
-        else:
-            # Stores spike times for each detected cell (unit)
-            for id in ids:
-                spkt = sorting.get_unit_spike_train(unit_id=id) / fs
-                if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
-                    # Stores average and std of spike traces
-                    wf = sorting.get_unit_spike_features(unit_id=id,
-                                                         feature_name='waveforms')
-                    relevant_ch = most_relevant_ch(wf)
-                    # Spike traces on the most relevant channel
-                    traces = wf[:, relevant_ch, :]
-                    traces_avg = np.mean(traces, axis=0)
-                    traces_std = np.std(traces, axis=0)
-                    nwbfile.add_unit(id=id,
-                                     spike_times=spkt,
-                                     waveform_mean=traces_avg,
-                                     waveform_sd=traces_std)
-                else:
-                    nwbfile.add_unit(id=id, spike_times=spkt)
+        with NWBHDF5IO(save_path, mode=read_mode) as io:
+            if read_mode == 'r+':
+                io = NWBHDF5IO(save_path, 'r+')
+                nwbfile = io.read()
+            else:
+                kwargs = {'session_description': 'No description',
+                          'identifier': str(uuid.uuid4()),
+                          'session_start_time': datetime.now()}
+                kwargs.update(**nwbfile_kwargs)
+                nwbfile = NWBFile(**kwargs)
 
-        io.write(nwbfile)
-        io.close()
+            # Tests if Units already exists
+            aux = [isinstance(i, Units) for i in nwbfile.children]
+            if any(aux):
+                units = nwbfile.children[np.where(aux)[0][0]]
+            else:
+                # Stores spike times for each detected cell (unit)
+                for id in ids:
+                    spkt = sorting.get_unit_spike_train(unit_id=id) / fs
+                    if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
+                        # Stores average and std of spike traces
+                        wf = sorting.get_unit_spike_features(unit_id=id,
+                                                             feature_name='waveforms')
+                        relevant_ch = most_relevant_ch(wf)
+                        # Spike traces on the most relevant channel
+                        traces = wf[:, relevant_ch, :]
+                        traces_avg = np.mean(traces, axis=0)
+                        traces_std = np.std(traces, axis=0)
+                        nwbfile.add_unit(id=id,
+                                         spike_times=spkt,
+                                         waveform_mean=traces_avg,
+                                         waveform_sd=traces_std)
+                    else:
+                        nwbfile.add_unit(id=id, spike_times=spkt)
+
+            io.write(nwbfile)
 
 
 def most_relevant_ch(traces):
