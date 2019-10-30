@@ -25,7 +25,7 @@ def synthesize_random_firings(*, K=20, sampling_frequency=30000.0, duration=60, 
 
         ## make an interesting autocorrelogram shape
         times0 = np.hstack((times0, times0 + rand_distr2(refr_timepoints, refr_timepoints * 20, times0.size, seeds[i])))
-        times0 = times0[np.random.RandomState(seed=seed).choice(times0.size, int(times0.size / 2))]
+        times0 = times0[np.random.RandomState(seed=seeds[i]).choice(times0.size, int(times0.size / 2))]
         times0 = times0[np.where((0 <= times0) & (times0 < N))]
 
         times0 = enforce_refractory_period(times0, refr_timepoints)
