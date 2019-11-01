@@ -333,8 +333,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     device=device,
                     description="electrode_group_description"
                 )
-            if os.path.exists(save_path):
-                os.remove(save_path)
 
             # add electrodes with locations
             for m in range(n_channels):
