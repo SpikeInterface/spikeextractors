@@ -25,8 +25,8 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
     assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
     if not isinstance(row_ids, list) or not all(isinstance(x, int) for x in row_ids):
         raise ValueError("'ids' must be an integer or a list of integers")
-    ids = dynamic_table.id[:]
-    if any(row_ids not in ids):
+    ids = list(dynamic_table.id[:])
+    if any([i not in ids for i in row_ids]):
         raise ValueError("'ids' contains values outside the range of existing ids")
     if not isinstance(property_name, str):
         raise Exception("'property_name' must be a string")
@@ -40,14 +40,15 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
         col_data = [default_value] * len(ids)  # init with default val
         for (row_id, value) in zip(row_ids, values):
             col_data[ids.index(row_id)] = value
-        dynamic_table.add_column(name=property_name, description=description, data=values)
+
+        dynamic_table.add_column(name=property_name, description=description, data=col_data)
 
 
 def get_dynamic_table_property(dynamic_table, *, row_ids=None, property_name):
     if row_ids is None:
-        row_ids = dynamic_table.id[:]
-        return [dynamic_table[property_name][dynamic_table.id[:].index(x)] for x in row_ids]
-    return dynamic_table[property_name][:].tolist()
+        row_ids = list(dynamic_table.id[:])
+        return [dynamic_table[property_name][row_ids.index(x)] for x in row_ids]
+    return dynamic_table[property_name][row_ids].tolist()
 
 
 class NwbRecordingExtractor(se.RecordingExtractor):
@@ -194,6 +195,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             nwbfile = io.read()
             set_dynamic_table_property(nwbfile.electrodes, row_ids=channel_ids, property_name=property_name,
                                        values=values, default_value=default_value, description=description)
+            es = nwbfile.acquisition[self._electrical_series_name]
+            self.electrodes_df = es.electrodes.table.to_dataframe()
 
     def get_channel_property(self, channel_id, property_name):
         return self.electrodes_df[property_name][channel_id]
@@ -435,7 +438,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     raise Exception('More than one acquisition found. You must specify electrical_series.')
                 if len(nwbfile.acquisition) == 0:
                     raise Exception('No acquisitions found in the .nwb file.')
-                es = nwbfile.acquisition.values()[0]
+                es = list(nwbfile.acquisition.values())[0]
             else:
                 es = electrical_series
 
@@ -523,7 +526,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             # chosen unit and interval
-            times = nwbfile.units['spike_times'][nwbfile.units.id.index(unit_id)][:]
+            times = nwbfile.units['spike_times'][list(nwbfile.units.id[:]).index(unit_id)][:]
             # spike times are measured in samples
             frames = self.time_to_frame(times)
         return frames[(frames > start_frame) & (frames < end_frame)]
@@ -531,8 +534,13 @@ class NwbSortingExtractor(se.SortingExtractor):
     def set_unit_property(self, unit_id, property_name, value, default_value=np.nan, description='no description'):
         if not isinstance(unit_id, int):
             raise ValueError('unit_id must be an int')
-        self.set_units_property(unit_ids=[unit_id], property_name=property_name, values=[value],
-                                default_value=default_value, description=description)
+        self.set_units_property(
+            unit_ids=[unit_id],
+            property_name=property_name,
+            values=[value],
+            default_value=default_value,
+            description=description
+        )
 
     def set_units_property(self, *, unit_ids=None, property_name, values, default_value=np.nan,
                            description='no description'):
@@ -540,7 +548,15 @@ class NwbSortingExtractor(se.SortingExtractor):
             unit_ids = self.get_unit_ids()
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            set_dynamic_table_property(nwbfile.units, unit_ids, property_name, values, default_value, description)
+            set_dynamic_table_property(
+                dynamic_table=nwbfile.units,
+                row_ids=unit_ids,
+                property_name=property_name,
+                values=values,
+                default_value=default_value,
+                description=description
+            )
+            io.write(nwbfile)
 
     def copy_unit_properties(self, sorting, unit_ids=None, default_value=np.nan):
         property_names = sorting.get_shared_unit_property_names()
@@ -684,7 +700,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
-            return [feat for feat in nwbfile.units.colnames if feat.starts_with('spike_feature_')]
+            return [feat for feat in nwbfile.units.colnames if feat.startswith('spike_feature_')]
 
     def get_unit_spike_feature_names(self, unit_id=None):
         '''This function returns the list of feature names for the given unit.
@@ -749,7 +765,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     vals = sorting.get_unit_spike_features(unit_id=id,
                                                            feature_name=feat)
                     feat_values[str(id)] = vals.tolist()
-                self.set_unit_spike_features(unit_ids=unit_ids,
+                self.set_unit_spike_features(unit_id=unit_ids,
                                              feature_name=feat,
                                              values=feat_values,
                                              default_value=default_values[i])
