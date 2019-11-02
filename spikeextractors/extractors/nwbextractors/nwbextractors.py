@@ -20,9 +20,13 @@ except ModuleNotFoundError:
     HAVE_NWB = False
 
 
+def check_nwb_install():
+    assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+
+
 def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, default_value=np.nan,
                                description='no description'):
-    assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+    check_nwb_install()
     if not isinstance(row_ids, list) or not all(isinstance(x, int) for x in row_ids):
         raise ValueError("'ids' must be an integer or a list of integers")
     ids = list(dynamic_table.id[:])
@@ -72,7 +76,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         path: path to NWB file
         electrical_series_name: str, optional
         """
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         se.RecordingExtractor.__init__(self)
         self._path = path
         with NWBHDF5IO(self._path, 'a') as io:
@@ -118,7 +122,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     for _, row in df_epochs.iterrows()}
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         if channel_ids is not None:
             if not isinstance(channel_ids, (list, np.ndarray)):
                 raise Exception("'channel_ids' must be a list or array of integers.")
@@ -240,7 +244,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                               value=pr_value)
 
     def add_epoch(self, epoch_name, start_frame, end_frame):
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         if not isinstance(epoch_name, str):
             raise Exception("'epoch_name' must be a string")
         if not isinstance(start_frame, int):
@@ -260,7 +264,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         raise NotImplementedError()
 
     def get_epoch_names(self):
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             if nwbfile.epochs is None:
@@ -271,7 +275,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return epoch_names
 
     def get_epoch_info(self, epoch_name):
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         if not isinstance(epoch_name, str):
             raise ValueError("epoch_name must be a string")
         all_epoch_names = self.get_epoch_names()
@@ -299,7 +303,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         acquisition_name: str (default 'ElectricalSeries')
         nwbfile_kwargs: optional, pynwb.NWBFile args
         '''
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         n_channels = recording.get_num_channels()
 
         if os.path.exists(save_path):
@@ -426,7 +430,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         path: path to NWB file
         electrical_series: pynwb.ecephys.ElectricalSeries object
         """
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         se.SortingExtractor.__init__(self)
         self._path = path
         with NWBHDF5IO(self._path, 'r') as io:
@@ -466,7 +470,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         unit_ids: array_like
             A list of the unit ids in the sorted result (ints).
         '''
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             unit_ids = list(nwbfile.units.id[:])
@@ -505,7 +509,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             The list of shared property names
         '''
         # units cannot have unique property keys in NWB
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             return list(nwbfile.units.colnames)
@@ -522,7 +526,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         return ((time - self._t0) * self.get_sampling_frequency()).astype('int')
 
     def get_unit_spike_train(self, unit_id, start_frame=0, end_frame=np.Inf):
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             # chosen unit and interval
@@ -580,7 +584,7 @@ class NwbSortingExtractor(se.SortingExtractor):
     def get_nspikes(self):
         """Returns list with the number of spikes for each unit."""
         # todo: there is a way to do this without reading all of the data if you use spike_times_index
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
             nSpikes = [len(spkt) for spkt in nwbfile.units['spike_times'][:]]
@@ -617,9 +621,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             An array containing all the features for each spike in the
             specified unit given the range of start and end frames.
         '''
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         if not isinstance(feature_name, str):
-            raise Exception("'feature_name' must be a string")
+            raise TypeError("'feature_name' must be a string")
         full_feat_name = 'spike_feature_' + feature_name
         if full_feat_name not in self.get_shared_unit_spike_feature_names():
             raise Exception(full_feat_name + " not present in NWB file")
@@ -632,7 +636,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             times = units['spike_times'][units.id.index(unit_id)][:]
             # spike times are measured in samples
             frames = self.time_to_frame(times)
-            mask = (frames > start_frame) & (frames < end_frame)
+            mask = (frames >= start_frame) & (frames < end_frame)
         return feat_vals[mask]
 
     def set_unit_spike_features(self, unit_id, feature_name, values):
@@ -651,12 +655,12 @@ class NwbSortingExtractor(se.SortingExtractor):
         '''
         # todo
         return NotImplementedError()
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         if not isinstance(unit_id, int):
-            raise ValueError("'unit_id' must be an integer")
+            raise TypeError("'unit_id' must be an integer")
         existing_ids = self.get_unit_ids()
         if not isinstance(feature_name, str):
-            raise Exception("'feature_name' must be a string")
+            raise TypeError("'feature_name' must be a string")
         if 'spike_feature_' + feature_name in self.get_shared_unit_spike_feature_names():
             raise Exception('spike_feature_' + feature_name + " feature already exists")
 
@@ -697,7 +701,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         feature_names
             The list of shared feature names
         '''
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
             return [feat for feat in nwbfile.units.colnames if feat.startswith('spike_feature_')]
@@ -793,7 +797,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         end_frame: int
             The end frame of the epoch to be added (exclusive)
         '''
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         if not isinstance(epoch_name, str):
             raise Exception("'epoch_name' must be a string")
         if not isinstance(start_frame, int):
@@ -820,7 +824,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         epoch_names: list
             List of epoch names in the sorting extractor
         '''
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             if nwbfile.epochs is None:
@@ -842,7 +846,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         epoch_info: dict
             A dict containing the start frame and end frame of the epoch
         '''
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
         if not isinstance(epoch_name, str):
             raise ValueError("epoch_name must be a string")
         all_epoch_names = self.get_epoch_names()
@@ -856,8 +860,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
             for i, tag in enumerate(flat_list):
                 if tag == epoch_name:
-                    epoch_info['start_frame'] = int(nwbfile.epochs['start_time'][i] * fs)
-                    epoch_info['end_frame'] = int(nwbfile.epochs['stop_time'][i] * fs)
+                    epoch_info['start_frame'] = self.time_to_frame(nwbfile.epochs['start_time'][i])
+                    epoch_info['end_frame'] = self.time_to_frame(nwbfile.epochs['stop_time'][i])
         return epoch_info
 
     def get_epoch(self, epoch_name):
@@ -891,7 +895,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         save_path: str
         nwbfile_kwargs: optional, pynwb.NWBFile args
         """
-        assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+        check_nwb_install()
 
         ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
