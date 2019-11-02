@@ -28,14 +28,14 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
                                description='no description'):
     check_nwb_install()
     if not isinstance(row_ids, list) or not all(isinstance(x, int) for x in row_ids):
-        raise ValueError("'ids' must be an integer or a list of integers")
+        raise TypeError("'ids' must be an integer or a list of integers")
     ids = list(dynamic_table.id[:])
     if any([i not in ids for i in row_ids]):
         raise ValueError("'ids' contains values outside the range of existing ids")
     if not isinstance(property_name, str):
-        raise Exception("'property_name' must be a string")
+        raise TypeError("'property_name' must be a string")
     if len(row_ids) != len(values):
-        raise Exception("'ids' and 'values' should be lists of same size")
+        raise ValueError("'ids' and 'values' should be lists of same size")
 
     if property_name in dynamic_table:
         for (row_id, value) in zip(row_ids, values):
@@ -86,9 +86,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             else:
                 a_names = list(nwbfile.acquisition.keys())
                 if len(a_names) > 1:
-                    raise Exception('More than one acquisition found. You must specify electrical_series.')
+                    raise ValueError('More than one acquisition found. You must specify electrical_series.')
                 if len(a_names) == 0:
-                    raise Exception('No acquisitions found in the .nwb file.')
+                    raise ValueError('No acquisitions found in the .nwb file.')
                 self._electrical_series_name = a_names[0]
             es = nwbfile.acquisition[self._electrical_series_name]
             if hasattr(es, 'timestamps') and es.timestamps:
@@ -125,19 +125,19 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         check_nwb_install()
         if channel_ids is not None:
             if not isinstance(channel_ids, (list, np.ndarray)):
-                raise Exception("'channel_ids' must be a list or array of integers.")
+                raise TypeError("'channel_ids' must be a list or array of integers.")
             if not all([id in self.channel_ids for id in channel_ids]):
-                raise Exception("'channel_ids' contain values outside the range of valid ids.")
+                raise ValueError("'channel_ids' contain values outside the range of valid ids.")
         else:
             channel_ids = self.channel_ids
         if start_frame is not None:
             if not isinstance(start_frame, (int, np.integer)):
-                raise Exception("'start_frame' should be an integer")
+                raise TypeError("'start_frame' must be an integer")
         else:
             start_frame = 0
         if end_frame is not None:
             if not isinstance(end_frame, (int, np.integer)):
-                raise Exception("'end_frame' should be an integer")
+                raise TypeError("'end_frame' must be an integer")
         else:
             end_frame = None #-1
 
@@ -227,7 +227,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             default_values = [np.nan] * len(new_property_names)
         else:
             if len(default_values) != len(new_property_names):
-                raise Exception("'default_values' list must have length equal to" +
+                raise ValueError("'default_values' list must have length equal to" +
                                 " number of properties to be copied.")
 
         # Copies only properties that do not exist already in NWB file
@@ -246,11 +246,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     def add_epoch(self, epoch_name, start_frame, end_frame):
         check_nwb_install()
         if not isinstance(epoch_name, str):
-            raise Exception("'epoch_name' must be a string")
+            raise TypeError("'epoch_name' must be a string")
         if not isinstance(start_frame, int):
-            raise Exception("'start_frame' must be an integer")
+            raise TypeError("'start_frame' must be an integer")
         if not isinstance(end_frame, int):
-            raise Exception("'end_frame' must be an integer")
+            raise TypeError("'end_frame' must be an integer")
 
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
@@ -277,7 +277,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     def get_epoch_info(self, epoch_name):
         check_nwb_install()
         if not isinstance(epoch_name, str):
-            raise ValueError("epoch_name must be a string")
+            raise TypeError("epoch_name must be a string")
         all_epoch_names = self.get_epoch_names()
         if epoch_name not in all_epoch_names:
             raise ValueError("This epoch has not been added")
@@ -626,7 +626,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             raise TypeError("'feature_name' must be a string")
         full_feat_name = 'spike_feature_' + feature_name
         if full_feat_name not in self.get_shared_unit_spike_feature_names():
-            raise Exception(full_feat_name + " not present in NWB file")
+            raise ValueError(full_feat_name + " not present in NWB file")
 
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
@@ -662,7 +662,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         if not isinstance(feature_name, str):
             raise TypeError("'feature_name' must be a string")
         if 'spike_feature_' + feature_name in self.get_shared_unit_spike_feature_names():
-            raise Exception('spike_feature_' + feature_name + " feature already exists")
+            raise ValueError('spike_feature_' + feature_name + " feature already exists")
 
         if default_value is None:
             default_value = np.nan
@@ -755,7 +755,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             default_values = [np.nan] * len(new_feature_names)
         else:
             if len(default_values) != len(new_feature_names):
-                raise Exception("'default_values' list must have length equal to" +
+                raise ValueError("'default_values' list must have length equal to" +
                                 " number of features to be copied.")
         # Copies only features that do not exist in NWB file
         nspikes_units = self.get_nspikes()
@@ -799,11 +799,11 @@ class NwbSortingExtractor(se.SortingExtractor):
         '''
         check_nwb_install()
         if not isinstance(epoch_name, str):
-            raise Exception("'epoch_name' must be a string")
+            raise TypeError("'epoch_name' must be a string")
         if not isinstance(start_frame, int):
-            raise Exception("'start_frame' must be an integer")
+            raise TypeError("'start_frame' must be an integer")
         if not isinstance(end_frame, int):
-            raise Exception("'end_frame' must be an integer")
+            raise TypeError("'end_frame' must be an integer")
 
         with NWBHDF5IO(self._path, 'r+') as io:
             nwbfile = io.read()
@@ -848,7 +848,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         '''
         check_nwb_install()
         if not isinstance(epoch_name, str):
-            raise ValueError("epoch_name must be a string")
+            raise TypeError("epoch_name must be a string")
         all_epoch_names = self.get_epoch_names()
         if epoch_name not in all_epoch_names:
             raise ValueError("This epoch has not been added")
