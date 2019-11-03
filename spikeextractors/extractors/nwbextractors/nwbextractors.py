@@ -512,7 +512,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         check_nwb_install()
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            return list(nwbfile.units.colnames)
+            return [name for name in nwbfile.units.colnames if not name == 'spike_times']
 
     def get_unit_property(self, unit_id, property_name):
         return self.get_units_property(unit_ids=[unit_id], property_name=property_name)
