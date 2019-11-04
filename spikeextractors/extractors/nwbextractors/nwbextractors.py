@@ -144,7 +144,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             es = nwbfile.acquisition[self._electrical_series_name]
-            traces = es.data[start_frame:end_frame, channel_ids].T
+            if np.array(channel_ids).size > 1 and np.any(np.diff(channel_ids) < 0):
+                sorted_idx = np.argsort(channel_ids)
+                recordings = es.data[start_frame:end_frame, np.sort(channel_ids)].T
+                traces = recordings[sorted_idx, :]
+            else:
+                traces = es.data[start_frame:end_frame, channel_ids].T
             # This DatasetView and lazy operations will only work within context
             # We're keeping the non-lazy version for now
             # es_view = DatasetView(es.data)  # es is an instantiated h5py dataset
