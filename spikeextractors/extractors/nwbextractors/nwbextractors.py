@@ -39,7 +39,7 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
 
     if property_name in dynamic_table:
         for (row_id, value) in zip(row_ids, values):
-            dynamic_table[property_name][ids.index(row_id)] = value
+            dynamic_table[property_name].data[ids.index(row_id)] = value
     else:
         col_data = [default_value] * len(ids)  # init with default val
         for (row_id, value) in zip(row_ids, values):
@@ -49,10 +49,10 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
 
 
 def get_dynamic_table_property(dynamic_table, *, row_ids=None, property_name):
+    all_row_ids = list(dynamic_table.id[:])
     if row_ids is None:
-        row_ids = list(dynamic_table.id[:])
-        return [dynamic_table[property_name][row_ids.index(x)] for x in row_ids]
-    return dynamic_table[property_name][row_ids].tolist()
+        row_ids = all_row_ids
+    return [dynamic_table[property_name][all_row_ids.index(x)] for x in row_ids]
 
 
 class NwbRecordingExtractor(se.RecordingExtractor):
@@ -190,7 +190,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     def set_channel_property(self, channel_id, property_name=None, value=None, default_value=np.nan,
                              description='no description'):
-        self.set_channels_property([channel_id], property_name=property_name, values=[value],
+        self.set_channels_property(channel_ids=[channel_id], property_name=property_name, values=[value],
                                    default_value=default_value, description=description)
 
     def set_channels_property(self, channel_ids, property_name, values, default_value=np.nan,
@@ -201,6 +201,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                        values=values, default_value=default_value, description=description)
             es = nwbfile.acquisition[self._electrical_series_name]
             self.electrodes_df = es.electrodes.table.to_dataframe()
+            io.write(nwbfile)
 
     def get_channel_property(self, channel_id, property_name):
         return self.electrodes_df[property_name][channel_id]
@@ -523,7 +524,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             return get_dynamic_table_property(nwbfile.units, row_ids=unit_ids, property_name=property_name)
 
     def time_to_frame(self, time):
-        return ((time - self._t0) * self.get_sampling_frequency()).astype('int')
+        return np.round((time - self._t0) * self.get_sampling_frequency()).astype('int')
 
     def get_unit_spike_train(self, unit_id, start_frame=0, end_frame=np.Inf):
         check_nwb_install()
@@ -632,14 +633,15 @@ class NwbSortingExtractor(se.SortingExtractor):
             nwbfile = io.read()
             units = nwbfile.units
             # chosen unit and interval
-            feat_vals = np.array(units[full_feat_name][units.id.index(unit_id)][:])
-            times = units['spike_times'][units.id.index(unit_id)][:]
+            feat_vals = np.array(units[full_feat_name][list(units.id[:]).index(unit_id)][:])
+            times = units['spike_times'][list(units.id[:]).index(unit_id)][:]
             # spike times are measured in samples
             frames = self.time_to_frame(times)
             mask = (frames >= start_frame) & (frames < end_frame)
         return feat_vals[mask]
 
-    def set_unit_spike_features(self, unit_id, feature_name, values):
+    def set_unit_spike_features(self, unit_ids, feature_name, values,
+                                default_value=np.nan):
         '''This function adds a unit features data set under the given features
         name to the given unit.
 
@@ -649,15 +651,16 @@ class NwbSortingExtractor(se.SortingExtractor):
             The unit id for which the features will be set
         feature_name: str
             The name of the feature to be stored
-        value
+        value :
             The data associated with the given feature name. Could be many
             formats as specified by the user.
+        default_value :
+            Default value of property to be set.
+
         '''
-        # todo
-        return NotImplementedError()
         check_nwb_install()
-        if not isinstance(unit_id, int):
-            raise TypeError("'unit_id' must be an integer")
+        if not isinstance(unit_ids, list):
+            raise TypeError("'unit_ids' must be a list of integers")
         existing_ids = self.get_unit_ids()
         if not isinstance(feature_name, str):
             raise TypeError("'feature_name' must be a string")
