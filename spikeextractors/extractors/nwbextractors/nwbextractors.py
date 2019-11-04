@@ -39,7 +39,7 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
 
     if property_name in dynamic_table:
         for (row_id, value) in zip(row_ids, values):
-            dynamic_table[property_name][ids.index(row_id)] = value
+            dynamic_table[property_name].data[ids.index(row_id)] = value
     else:
         col_data = [default_value] * len(ids)  # init with default val
         for (row_id, value) in zip(row_ids, values):
