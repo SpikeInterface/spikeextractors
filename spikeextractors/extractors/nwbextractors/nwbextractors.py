@@ -49,10 +49,10 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
 
 
 def get_dynamic_table_property(dynamic_table, *, row_ids=None, property_name):
+    all_row_ids = list(dynamic_table.id[:])
     if row_ids is None:
-        row_ids = list(dynamic_table.id[:])
-        return [dynamic_table[property_name][row_ids.index(x)] for x in row_ids]
-    return dynamic_table[property_name][row_ids].tolist()
+        row_ids = all_row_ids
+    return [dynamic_table[property_name][all_row_ids.index(x)] for x in row_ids]
 
 
 class NwbRecordingExtractor(se.RecordingExtractor):
