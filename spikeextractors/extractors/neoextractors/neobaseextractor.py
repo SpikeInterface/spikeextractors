@@ -131,8 +131,8 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         assert start_frame is None , 'Do not handle slice of spikes'
         assert end_frame is None, 'Do not handle slice of spikes'
         
-        spike_timestamps = self.neo_reader.get_spike_timestamps(block_index=0, seg_index=0, unit_index=0,
-                             t_start=None, t_stop=None)
+        spike_timestamps = self.neo_reader.get_spike_timestamps(block_index=self.block_index, seg_index=self.seg_index,
+                            unit_index=neo_unit_id, t_start=None, t_stop=None)
         spike_times = self.neo_reader.rescale_spike_timestamp(spike_timestamps, dtype='float64')
         
         spike_indexes = ((spike_times - self._time_start) * self._sampling_rate).astype('int64')
