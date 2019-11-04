@@ -190,7 +190,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     def set_channel_property(self, channel_id, property_name=None, value=None, default_value=np.nan,
                              description='no description'):
-        self.set_channels_property([channel_id], property_name=property_name, values=[value],
+        self.set_channels_property(channel_ids=[channel_id], property_name=property_name, values=[value],
                                    default_value=default_value, description=description)
 
     def set_channels_property(self, channel_ids, property_name, values, default_value=np.nan,
@@ -201,6 +201,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                        values=values, default_value=default_value, description=description)
             es = nwbfile.acquisition[self._electrical_series_name]
             self.electrodes_df = es.electrodes.table.to_dataframe()
+            io.write(nwbfile)
 
     def get_channel_property(self, channel_id, property_name):
         return self.electrodes_df[property_name][channel_id]
