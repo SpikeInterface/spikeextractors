@@ -289,7 +289,7 @@ class ExdirSortingExtractor(SortingExtractor):
         else:
             channel_groups = [0]
 
-        if len(channel_groups) == 1:
+        if len(channel_groups) == 1 and channel_groups[0] == 0:
             chan = 0
             if verbose:
                 print("Single group: ", chan)
