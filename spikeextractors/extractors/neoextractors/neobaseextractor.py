@@ -5,8 +5,13 @@ from ..recordingextractor import RecordingExtractor
 from ..sortingextractor import SortingExtractor
 
 
-class NeoBaseRecordingExtractor(RecordingExtractor):
+class _NeoBaseExtractor:
     NeoRawIOClass = None
+
+    installed = True
+    is_writable = False
+    extractor_gui_params = []
+    
     def __init__(self, **kargs):
         self.neo_reader = self.NeoRawIOClass(**kkargs)
         self.neo_reader.parse_header()
@@ -21,6 +26,13 @@ class NeoBaseRecordingExtractor(RecordingExtractor):
         # select first block first segment
         self.block_index = 0
         self.seg_index = 0
+    
+
+class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
+    
+    def __init__(self, **kargs):
+        _NeoBaseExtractor.__init__(self, **kargs)
+        
         
         # TODO propose a meachanisim to select the appropriate channel groups
         # in neo one channel group have the same dtype/sampling_rate/group_id
@@ -80,6 +92,48 @@ class NeoBaseRecordingExtractor(RecordingExtractor):
         return chan_ids
 
 
-# Not done yet
-class NeoBaseSortingExtractor(SortingExtractor):
-    NeoRawIOClass = None
+class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
+    def __init__(self, **kargs):
+        _NeoBaseExtractor.__init__(self, **kargs)
+        
+        # the sampling frequency is quite tricky because in neo
+        # spike are handle in s or ms
+        # internally many format do have have the spike time stamps
+        # at the same speed as the signal but at a higher clocks speed.
+        # here in spikeinterface we need spike index to be at the same speed 
+        # that signal it do not make sens to have spikes at 50kHz sample
+        # when the sig is 10kHz.
+        # neo handle this but not spikeextractors
+        
+        self._handle_sampling_frequency()
+        #self._sampling_frequency = None
+    
+    def _handle_sampling_frequency(self):
+        # must handle :
+        #   _sampling_frequency
+        #   _time_stamp0
+        raise(NotImplementedError)
+    
+    def get_unit_ids(self):
+        # should be this
+        unit_ids = self.neo_reader.header['unit_channels']['id']
+        # in neo unit_ids are string so here we take index
+        unit_ids = np.arange(unit_ids.size, dtype='int64')
+        return unit_ids
+    
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        neo_unit_id = self.neo_reader.header['unit_channels']['id'][unit_id]
+        
+        # neo handle limts in times (s, ms) but spikeextractors in frames.
+        # but spike can have diffrents sampling rate than signals
+        # so conversion from signals frames to times is
+        # format dependent
+        assert start_frame is None , 'Do not handle slice of spikes'
+        assert end_frame is None, 'Do not handle slice of spikes'
+        
+        spike_timestamps = self.neo_reader.get_spike_timestamps(block_index=0, seg_index=0, unit_index=0,
+                             t_start=None, t_stop=None)
+        spike_times = self.neo_reader.rescale_spike_timestamp(spike_timestamps, dtype='float64')
+        
+        spike_indexes = ((spike_times - self._time_start) * self._sampling_rate).astype('int64')
+        return spike_indexes
