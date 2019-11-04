@@ -113,7 +113,7 @@ def openBiocamFile(filename,  mea_pitch, verbose=False):
     file_format = rf['3BData'].attrs.get('Version')
     if file_format == 100:
         nRecCh = len(rf['3BData/Raw'][0])
-    elif file_format == 101:
+    elif (file_format == 101) or (file_format == 102):
         nRecCh = int(1. * rf['3BData/Raw'].shape[0] / nFrames)
     else:
         raise Exception('Unknown data file format.')
@@ -138,9 +138,9 @@ def openBiocamFile(filename,  mea_pitch, verbose=False):
         read_function = readHDF5t_100
     elif (file_format == 100)&(signalInv == -1):
         read_function = readHDF5t_100_i
-    if (file_format == 101)&(signalInv == 1):
+    if ((file_format == 101)|(file_format == 102))&(signalInv == 1):
         read_function = readHDF5t_101
-    elif (file_format == 101)&(signalInv == -1):
+    elif ((file_format == 101)|(file_format == 102))&(signalInv == -1):
         read_function = readHDF5t_101_i
     else:
         raise RuntimeError("File format unknown.")
