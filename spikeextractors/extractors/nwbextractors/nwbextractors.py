@@ -632,14 +632,15 @@ class NwbSortingExtractor(se.SortingExtractor):
             nwbfile = io.read()
             units = nwbfile.units
             # chosen unit and interval
-            feat_vals = np.array(units[full_feat_name][units.id.index(unit_id)][:])
-            times = units['spike_times'][units.id.index(unit_id)][:]
+            feat_vals = np.array(units[full_feat_name][list(units.id[:]).index(unit_id)][:])
+            times = units['spike_times'][list(units.id[:]).index(unit_id)][:]
             # spike times are measured in samples
             frames = self.time_to_frame(times)
             mask = (frames >= start_frame) & (frames < end_frame)
         return feat_vals[mask]
 
-    def set_unit_spike_features(self, unit_id, feature_name, values):
+    def set_unit_spike_features(self, unit_ids, feature_name, values,
+                                default_value=np.nan):
         '''This function adds a unit features data set under the given features
         name to the given unit.
 
@@ -649,15 +650,16 @@ class NwbSortingExtractor(se.SortingExtractor):
             The unit id for which the features will be set
         feature_name: str
             The name of the feature to be stored
-        value
+        value :
             The data associated with the given feature name. Could be many
             formats as specified by the user.
+        default_value :
+            Default value of property to be set.
+
         '''
-        # todo
-        return NotImplementedError()
         check_nwb_install()
-        if not isinstance(unit_id, int):
-            raise TypeError("'unit_id' must be an integer")
+        if not isinstance(unit_ids, list):
+            raise TypeError("'unit_ids' must be a list of integers")
         existing_ids = self.get_unit_ids()
         if not isinstance(feature_name, str):
             raise TypeError("'feature_name' must be a string")
