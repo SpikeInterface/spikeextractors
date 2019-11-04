@@ -523,7 +523,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             return get_dynamic_table_property(nwbfile.units, row_ids=unit_ids, property_name=property_name)
 
     def time_to_frame(self, time):
-        return ((time - self._t0) * self.get_sampling_frequency()).astype('int')
+        return np.round((time - self._t0) * self.get_sampling_frequency()).astype('int')
 
     def get_unit_spike_train(self, unit_id, start_frame=0, end_frame=np.Inf):
         check_nwb_install()
