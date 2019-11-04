@@ -74,7 +74,6 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
         The extractor containing all of the probe information.
     '''
     from .subrecordingextractor import SubRecordingExtractor
-    from .subsortingextractor import SubSortingExtractor
     probe_file = Path(probe_file)
     if probe_file.suffix == '.prb':
         probe_dict = read_python(probe_file)
@@ -86,14 +85,10 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                 for key_prop, prop_val in cgroup.items():
                     if key_prop == 'channels':
                         ordered_channels = np.concatenate((ordered_channels, prop_val))
-
-            if list(ordered_channels) == recording.get_channel_ids():
-                subrecording = recording
-            else:
-                if not np.all([chan in recording.get_channel_ids() for chan in ordered_channels]) and verbose:
-                    print('Some channel in PRB file are not in original recording')
-                present_ordered_channels = [chan for chan in ordered_channels if chan in recording.get_channel_ids()]
-                subrecording = SubRecordingExtractor(recording, channel_ids=present_ordered_channels)
+            if not np.all([chan in recording.get_channel_ids() for chan in ordered_channels]) and verbose:
+                print('Some channel in PRB file are not in original recording')
+            present_ordered_channels = [chan for chan in ordered_channels if chan in recording.get_channel_ids()]
+            subrecording = SubRecordingExtractor(recording, channel_ids=present_ordered_channels)
             for cgroup_id in groups:
                 cgroup = probe_dict['channel_groups'][cgroup_id]
                 if 'channels' not in cgroup.keys() and len(groups) > 1:
@@ -148,7 +143,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                 "all channel_ids in 'channel_map' must be in the original recording channel ids"
             subrecording = SubRecordingExtractor(recording, channel_ids=channel_map)
         else:
-            subrecording = recording
+            subrecording = SubRecordingExtractor(recording, channel_ids=recording.get_channel_ids())
         with probe_file.open() as csvfile:
             posreader = csv.reader(csvfile)
             row_count = 0
