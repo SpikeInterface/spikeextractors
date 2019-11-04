@@ -179,7 +179,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             set_dynamic_table_property(nwbfile.electrodes, channel_ids, 'z', locations[:, 2])
 
     def set_channel_groups(self, channel_ids=None, groups=None):
-        # todo
+        # todo. Need 1. create channel groups 2. add reference to channel groups, 3. add names of channel groups
         raise NotImplementedError()
 
     def get_channel_groups(self, channel_ids=None):
@@ -228,26 +228,18 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 raise ValueError("'channel_ids' contains values outside the range of existing ids")
 
         new_property_names = recording.get_shared_channel_property_names()
-        curr_property_names = self.get_shared_channel_property_names()
-        if default_values is None:
-            default_values = [np.nan] * len(new_property_names)
-        else:
-            if len(default_values) != len(new_property_names):
-                raise ValueError("'default_values' list must have length equal to" +
-                                " number of properties to be copied.")
+        if default_values is not None and len(default_values) != len(new_property_names):
+            raise ValueError("'default_values' list must have length equal to "
+                             "number of properties to be copied.")
 
         # Copies only properties that do not exist already in NWB file
         for i, pr in enumerate(new_property_names):
-            if pr in curr_property_names:
-                # todo
-                raise NotImplementedError()
-            else:
-                for channel_id in channel_ids:
-                    pr_value = recording.get_channel_property(channel_id=channel_id,
-                                                              property_name=pr)
-                    self.set_channel_property(channel_id=channel_id,
-                                              property_name=pr,
-                                              value=pr_value)
+            for channel_id in channel_ids:
+                pr_value = recording.get_channel_property(channel_id=channel_id,
+                                                          property_name=pr)
+                self.set_channel_property(channel_id=channel_id,
+                                          property_name=pr,
+                                          value=pr_value)
 
     def add_epoch(self, epoch_name, start_frame, end_frame):
         check_nwb_install()
