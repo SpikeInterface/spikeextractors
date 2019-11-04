@@ -11,10 +11,12 @@ class RecordingExtractor(ABC):
 
  
     '''
-
+    id_counter = 0
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
+        RecordingExtractor.id_counter += 1
+        self.id = RecordingExtractor.id_counter
 
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):

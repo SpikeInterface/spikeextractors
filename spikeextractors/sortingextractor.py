@@ -14,11 +14,14 @@ class SortingExtractor(ABC):
 
     '''
 
+    id_counter = 0
     def __init__(self):
         self._epochs = {}
         self._unit_properties = {}
         self._unit_features = {}
         self._sampling_frequency = None
+        SortingExtractor.id_counter += 1
+        self.id = SortingExtractor.id_counter
 
     @abstractmethod
     def get_unit_ids(self):
