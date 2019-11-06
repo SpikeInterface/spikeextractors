@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import copy
+import random
 from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, get_sub_extractors_by_property
 
 class RecordingExtractor(ABC):
@@ -11,10 +12,10 @@ class RecordingExtractor(ABC):
 
  
     '''
-
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
+        self.id = random.randint(a=0, b=9223372036854775807)
 
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
