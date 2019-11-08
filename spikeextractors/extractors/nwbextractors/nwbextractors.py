@@ -309,6 +309,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         '''
         check_nwb_install()
         n_channels = recording.get_num_channels()
+        channel_ids = recording.get_channel_ids()
 
         if os.path.exists(save_path):
             read_mode = 'r+'
@@ -317,7 +318,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         with NWBHDF5IO(save_path, mode=read_mode) as io:
             if read_mode == 'r+':
-                io = NWBHDF5IO(save_path, 'r+')
                 nwbfile = io.read()
             else:
                 kwargs = {'session_description': 'No description',
@@ -337,6 +337,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             aux = [isinstance(i, ElectrodeGroup) for i in nwbfile.children]
             if any(aux):
                 electrode_group = nwbfile.children[np.where(aux)[0][0]]
+                electrode_table = nwbfile.electrodes
             else:
                 electrode_group = nwbfile.create_electrode_group(
                     name='electrode_group_name',
@@ -359,17 +360,26 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         filtering='none',
                         group=electrode_group,
                     )
+                electrode_table = nwbfile.electrodes
 
-                # add other existing electrode properties
-                properties = recording.get_shared_channel_property_names()
-                properties.remove('location')
-                for pr in properties:
-                    pr_data = [recording.get_channel_property(ind, pr) for ind in range(n_channels)]
+            # add/update electrode properties
+            # property 'group' of RX channels correspond to property 'group_name' of NWB electrodes
+            nwb_electrode_properties = electrode_table.colnames
+            rx_channel_properties = recording.get_shared_channel_property_names()
+            for pr in rx_channel_properties:
+                pr_data = [recording.get_channel_property(ind, pr) for ind in channel_ids]
+                # If new data column
+                if pr not in nwb_electrode_properties:
                     nwbfile.add_electrode_column(
                         name=pr,
                         description='no description',
                         data=pr_data,
                     )
+                # If updated existing property
+                elif pr == 'group':
+                    nwbfile.electrodes['group_name'].data[:] = pr_data
+                else:
+                    nwbfile.electrodes[pr].data[:] = pr_data
 
             # Tests if ElectricalSeries already exists in acquisition
             aux = [isinstance(i, ElectricalSeries) for i in nwbfile.acquisition.values()]
