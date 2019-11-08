@@ -189,55 +189,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     def get_channel_ids(self):
         return self.channel_ids.tolist()
 
-    # def add_epoch(self, epoch_name, start_frame, end_frame):
-    #     check_nwb_install()
-    #     if not isinstance(epoch_name, str):
-    #         raise TypeError("'epoch_name' must be a string")
-    #     if not isinstance(start_frame, int):
-    #         raise TypeError("'start_frame' must be an integer")
-    #     if not isinstance(end_frame, int):
-    #         raise TypeError("'end_frame' must be an integer")
-    #
-    #     with NWBHDF5IO(self._path, 'r+') as io:
-    #         nwbfile = io.read()
-    #         nwbfile.add_epoch(start_time=self.frame_to_time(start_frame),
-    #                           stop_time=self.frame_to_time(end_frame),
-    #                           tags=epoch_name)
-    #         io.write(nwbfile)
-    #
-    # def remove_epoch(self, epoch_name=None):
-    #     # todo
-    #     raise NotImplementedError()
-    #
-    # def get_epoch_names(self):
-    #     check_nwb_install()
-    #     with NWBHDF5IO(self._path, 'r') as io:
-    #         nwbfile = io.read()
-    #         if nwbfile.epochs is None:
-    #             return
-    #         flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
-    #         aux = np.array(flat_list)
-    #         epoch_names = np.unique(aux).tolist()
-    #     return epoch_names
-    #
-    # def get_epoch_info(self, epoch_name):
-    #     check_nwb_install()
-    #     if not isinstance(epoch_name, str):
-    #         raise TypeError("epoch_name must be a string")
-    #     all_epoch_names = self.get_epoch_names()
-    #     if epoch_name not in all_epoch_names:
-    #         raise ValueError("This epoch has not been added")
-    #
-    #     epoch_info = {}
-    #     with NWBHDF5IO(self._path, 'r') as io:
-    #         nwbfile = io.read()
-    #         flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
-    #         for i, tag in enumerate(flat_list):
-    #             if tag == epoch_name:
-    #                 epoch_info['start_frame'] = self.time_to_frame(nwbfile.epochs['start_time'][i])
-    #                 epoch_info['end_frame'] = self.time_to_frame(nwbfile.epochs['stop_time'][i])
-    #     return epoch_info
-
     @staticmethod
     def write_recording(recording, save_path, acquisition_name='ElectricalSeries', **nwbfile_kwargs):
         '''
