@@ -102,17 +102,21 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     self.recording_start_time = 0.
 
             self.num_frames = int(es.data.shape[0])
-            if len(es.data.shape) == 1:
-                self.num_channels = 1
-            else:
-                self.num_channels = es.data.shape[1]
 
+            # Fill channel properties dictionary from electrodes table
             self.channel_ids = es.electrodes.table.id[:]
-            self.geom = np.column_stack([es.electrodes.table[d][:] for d in ('x', 'y', 'z')])
-            self.channel_groups = es.electrodes.table['group_name'][:]
-            self.electrodes_df = es.electrodes.table.to_dataframe()
-
             self._channel_properties = {}
+            for i in self.channel_ids:
+                self._channel_properties[i] = {}
+                for col in nwbfile.electrodes.colnames:
+                    if isinstance(nwbfile.electrodes[col][i], ElectrodeGroup):
+                        pass
+                    elif col == 'group_name':
+                        self._channel_properties[i]['group'] = nwbfile.electrodes[col][i]
+                    else:
+                        self._channel_properties[i][col] = nwbfile.electrodes[col][i]
+
+            # Fill epochs dictionary
             self._epochs = {}
             if nwbfile.epochs is not None:
                 df_epochs = nwbfile.epochs.to_dataframe()
@@ -162,141 +166,135 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     def get_num_frames(self):
         return self.num_frames
 
-    def time_to_frame(self, time):
-        return int(np.round((time - self.recording_start_time) * self.get_sampling_frequency()))
-
-    def frame_to_time(self, frame):
-        return frame / self.get_sampling_frequency() + self.recording_start_time
-
     def get_channel_ids(self):
         return self.channel_ids.tolist()
 
-    def set_channel_locations(self, channel_ids=None, locations=None):
-        with NWBHDF5IO(self._path, 'r+') as io:
-            nwbfile = io.read()
-            set_dynamic_table_property(nwbfile.electrodes, channel_ids, 'x', locations[:, 0])
-            set_dynamic_table_property(nwbfile.electrodes, channel_ids, 'y', locations[:, 1])
-            set_dynamic_table_property(nwbfile.electrodes, channel_ids, 'z', locations[:, 2])
-
-    def set_channel_groups(self, channel_ids=None, groups=None):
-        # todo
-        raise NotImplementedError()
-
-    def get_channel_groups(self, channel_ids=None):
-        with NWBHDF5IO(self._path, 'r') as io:
-            nwbfile = io.read()
-            return get_dynamic_table_property(nwbfile.electrodes, row_ids=channel_ids, property_name='group_name')
-
-    def set_channel_gains(self, channel_ids, gains):
-        self.set_channels_property(channel_ids=channel_ids,
-                                   property_name='gain',
-                                   values=gains,
-                                   default_value=1.)
-
-    def set_channel_property(self, channel_id, property_name=None, value=None, default_value=np.nan,
-                             description='no description'):
-        self.set_channels_property(channel_ids=[channel_id], property_name=property_name, values=[value],
-                                   default_value=default_value, description=description)
-
-    def set_channels_property(self, channel_ids, property_name, values, default_value=np.nan,
-                              description='no description'):
-        with NWBHDF5IO(self._path, 'r+') as io:
-            nwbfile = io.read()
-            set_dynamic_table_property(nwbfile.electrodes, row_ids=channel_ids, property_name=property_name,
-                                       values=values, default_value=default_value, description=description)
-            es = nwbfile.acquisition[self._electrical_series_name]
-            self.electrodes_df = es.electrodes.table.to_dataframe()
-            io.write(nwbfile)
-
-    def get_channel_property(self, channel_id, property_name):
-        return self.electrodes_df[property_name][channel_id]
-
-    def get_channel_property_names(self, channel_id=None):
-        return list(self.electrodes_df.columns)
-
-    def get_shared_channel_property_names(self, channel_ids=None):
-        return list(self.electrodes_df.columns)
-
-    def copy_channel_properties(self, recording, channel_ids=None, default_values=None):
-        if channel_ids is None:
-            channel_ids = recording.get_channel_ids()
-        else:
-            if not isinstance(channel_ids, list) or not all(isinstance(x, int) for x in channel_ids):
-                raise ValueError("'channel_ids' must be a list of integers")
-            existing_ids = self.get_channel_ids()
-            if any(x not in existing_ids for x in channel_ids):
-                raise ValueError("'channel_ids' contains values outside the range of existing ids")
-
-        new_property_names = recording.get_shared_channel_property_names()
-        curr_property_names = self.get_shared_channel_property_names()
-        if default_values is None:
-            default_values = [np.nan] * len(new_property_names)
-        else:
-            if len(default_values) != len(new_property_names):
-                raise ValueError("'default_values' list must have length equal to" +
-                                " number of properties to be copied.")
-
-        # Copies only properties that do not exist already in NWB file
-        for i, pr in enumerate(new_property_names):
-            if pr in curr_property_names:
-                # todo
-                raise NotImplementedError()
-            else:
-                for channel_id in channel_ids:
-                    pr_value = recording.get_channel_property(channel_id=channel_id,
-                                                              property_name=pr)
-                    self.set_channel_property(channel_id=channel_id,
-                                              property_name=pr,
-                                              value=pr_value)
-
-    def add_epoch(self, epoch_name, start_frame, end_frame):
-        check_nwb_install()
-        if not isinstance(epoch_name, str):
-            raise TypeError("'epoch_name' must be a string")
-        if not isinstance(start_frame, int):
-            raise TypeError("'start_frame' must be an integer")
-        if not isinstance(end_frame, int):
-            raise TypeError("'end_frame' must be an integer")
-
-        with NWBHDF5IO(self._path, 'r+') as io:
-            nwbfile = io.read()
-            nwbfile.add_epoch(start_time=self.frame_to_time(start_frame),
-                              stop_time=self.frame_to_time(end_frame),
-                              tags=epoch_name)
-            io.write(nwbfile)
-
-    def remove_epoch(self, epoch_name=None):
-        # todo
-        raise NotImplementedError()
-
-    def get_epoch_names(self):
-        check_nwb_install()
-        with NWBHDF5IO(self._path, 'r') as io:
-            nwbfile = io.read()
-            if nwbfile.epochs is None:
-                return
-            flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
-            aux = np.array(flat_list)
-            epoch_names = np.unique(aux).tolist()
-        return epoch_names
-
-    def get_epoch_info(self, epoch_name):
-        check_nwb_install()
-        if not isinstance(epoch_name, str):
-            raise TypeError("epoch_name must be a string")
-        all_epoch_names = self.get_epoch_names()
-        if epoch_name not in all_epoch_names:
-            raise ValueError("This epoch has not been added")
-
-        epoch_info = {}
-        with NWBHDF5IO(self._path, 'r') as io:
-            nwbfile = io.read()
-            flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
-            for i, tag in enumerate(flat_list):
-                if tag == epoch_name:
-                    epoch_info['start_frame'] = self.time_to_frame(nwbfile.epochs['start_time'][i])
-                    epoch_info['end_frame'] = self.time_to_frame(nwbfile.epochs['stop_time'][i])
-        return epoch_info
+    # def set_channel_locations(self, channel_ids=None, locations=None):
+    #     with NWBHDF5IO(self._path, 'r+') as io:
+    #         nwbfile = io.read()
+    #         set_dynamic_table_property(nwbfile.electrodes, channel_ids, 'x', locations[:, 0])
+    #         set_dynamic_table_property(nwbfile.electrodes, channel_ids, 'y', locations[:, 1])
+    #         set_dynamic_table_property(nwbfile.electrodes, channel_ids, 'z', locations[:, 2])
+    #
+    # def set_channel_groups(self, channel_ids=None, groups=None):
+    #     # todo
+    #     raise NotImplementedError()
+    #
+    # def get_channel_groups(self, channel_ids=None):
+    #     with NWBHDF5IO(self._path, 'r') as io:
+    #         nwbfile = io.read()
+    #         return get_dynamic_table_property(nwbfile.electrodes, row_ids=channel_ids, property_name='group_name')
+    #
+    # def set_channel_gains(self, channel_ids, gains):
+    #     self.set_channels_property(channel_ids=channel_ids,
+    #                                property_name='gain',
+    #                                values=gains,
+    #                                default_value=1.)
+    #
+    # def set_channel_property(self, channel_id, property_name=None, value=None, default_value=np.nan,
+    #                          description='no description'):
+    #     self.set_channels_property(channel_ids=[channel_id], property_name=property_name, values=[value],
+    #                                default_value=default_value, description=description)
+    #
+    # def set_channels_property(self, channel_ids, property_name, values, default_value=np.nan,
+    #                           description='no description'):
+    #     with NWBHDF5IO(self._path, 'r+') as io:
+    #         nwbfile = io.read()
+    #         set_dynamic_table_property(nwbfile.electrodes, row_ids=channel_ids, property_name=property_name,
+    #                                    values=values, default_value=default_value, description=description)
+    #         es = nwbfile.acquisition[self._electrical_series_name]
+    #         self.electrodes_df = es.electrodes.table.to_dataframe()
+    #         io.write(nwbfile)
+    #
+    # def get_channel_property(self, channel_id, property_name):
+    #     return self.electrodes_df[property_name][channel_id]
+    #
+    # def get_channel_property_names(self, channel_id=None):
+    #     return list(self.electrodes_df.columns)
+    #
+    # def get_shared_channel_property_names(self, channel_ids=None):
+    #     return list(self.electrodes_df.columns)
+    #
+    # def copy_channel_properties(self, recording, channel_ids=None, default_values=None):
+    #     if channel_ids is None:
+    #         channel_ids = recording.get_channel_ids()
+    #     else:
+    #         if not isinstance(channel_ids, list) or not all(isinstance(x, int) for x in channel_ids):
+    #             raise ValueError("'channel_ids' must be a list of integers")
+    #         existing_ids = self.get_channel_ids()
+    #         if any(x not in existing_ids for x in channel_ids):
+    #             raise ValueError("'channel_ids' contains values outside the range of existing ids")
+    #
+    #     new_property_names = recording.get_shared_channel_property_names()
+    #     curr_property_names = self.get_shared_channel_property_names()
+    #     if default_values is None:
+    #         default_values = [np.nan] * len(new_property_names)
+    #     else:
+    #         if len(default_values) != len(new_property_names):
+    #             raise ValueError("'default_values' list must have length equal to" +
+    #                             " number of properties to be copied.")
+    #
+    #     # Copies only properties that do not exist already in NWB file
+    #     for i, pr in enumerate(new_property_names):
+    #         if pr in curr_property_names:
+    #             # todo
+    #             raise NotImplementedError()
+    #         else:
+    #             for channel_id in channel_ids:
+    #                 pr_value = recording.get_channel_property(channel_id=channel_id,
+    #                                                           property_name=pr)
+    #                 self.set_channel_property(channel_id=channel_id,
+    #                                           property_name=pr,
+    #                                           value=pr_value)
+    #
+    # def add_epoch(self, epoch_name, start_frame, end_frame):
+    #     check_nwb_install()
+    #     if not isinstance(epoch_name, str):
+    #         raise TypeError("'epoch_name' must be a string")
+    #     if not isinstance(start_frame, int):
+    #         raise TypeError("'start_frame' must be an integer")
+    #     if not isinstance(end_frame, int):
+    #         raise TypeError("'end_frame' must be an integer")
+    #
+    #     with NWBHDF5IO(self._path, 'r+') as io:
+    #         nwbfile = io.read()
+    #         nwbfile.add_epoch(start_time=self.frame_to_time(start_frame),
+    #                           stop_time=self.frame_to_time(end_frame),
+    #                           tags=epoch_name)
+    #         io.write(nwbfile)
+    #
+    # def remove_epoch(self, epoch_name=None):
+    #     # todo
+    #     raise NotImplementedError()
+    #
+    # def get_epoch_names(self):
+    #     check_nwb_install()
+    #     with NWBHDF5IO(self._path, 'r') as io:
+    #         nwbfile = io.read()
+    #         if nwbfile.epochs is None:
+    #             return
+    #         flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
+    #         aux = np.array(flat_list)
+    #         epoch_names = np.unique(aux).tolist()
+    #     return epoch_names
+    #
+    # def get_epoch_info(self, epoch_name):
+    #     check_nwb_install()
+    #     if not isinstance(epoch_name, str):
+    #         raise TypeError("epoch_name must be a string")
+    #     all_epoch_names = self.get_epoch_names()
+    #     if epoch_name not in all_epoch_names:
+    #         raise ValueError("This epoch has not been added")
+    #
+    #     epoch_info = {}
+    #     with NWBHDF5IO(self._path, 'r') as io:
+    #         nwbfile = io.read()
+    #         flat_list = [item for sublist in nwbfile.epochs['tags'][:] for item in sublist]
+    #         for i, tag in enumerate(flat_list):
+    #             if tag == epoch_name:
+    #                 epoch_info['start_frame'] = self.time_to_frame(nwbfile.epochs['start_time'][i])
+    #                 epoch_info['end_frame'] = self.time_to_frame(nwbfile.epochs['stop_time'][i])
+    #     return epoch_info
 
     @staticmethod
     def write_recording(recording, save_path, acquisition_name='ElectricalSeries', **nwbfile_kwargs):
