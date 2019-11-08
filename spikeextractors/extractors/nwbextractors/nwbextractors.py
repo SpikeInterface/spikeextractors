@@ -363,7 +363,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 electrode_table = nwbfile.electrodes
 
             # add/update electrode properties
-            # property 'group' of RX channels correspond to property 'group_name' of NWB electrodes
             nwb_electrode_properties = electrode_table.colnames
             rx_channel_properties = recording.get_shared_channel_property_names()
             for pr in rx_channel_properties:
@@ -375,9 +374,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         description='no description',
                         data=pr_data,
                     )
-                # If updated existing property
+                # property 'group' of RX channels correspond to property 'group_name' of NWB electrodes
                 elif pr == 'group':
                     nwbfile.electrodes['group_name'].data[:] = pr_data
+                # If updated another existing property
                 else:
                     nwbfile.electrodes[pr].data[:] = pr_data
 
