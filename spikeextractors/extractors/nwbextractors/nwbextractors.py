@@ -24,8 +24,8 @@ def check_nwb_install():
     assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
 
 
-def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, default_value=np.nan,
-                               description='no description'):
+def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, index=False,
+                               default_value=np.nan, description='no description'):
     check_nwb_install()
     if not isinstance(row_ids, list) or not all(isinstance(x, int) for x in row_ids):
         raise TypeError("'ids' must be a list of integers")
@@ -34,7 +34,7 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
         raise ValueError("'ids' contains values outside the range of existing ids")
     if not isinstance(property_name, str):
         raise TypeError("'property_name' must be a string")
-    if len(row_ids) != len(values):
+    if len(row_ids) != len(values) and index is False:
         raise ValueError("'ids' and 'values' should be lists of same size")
 
     if property_name in dynamic_table:
@@ -44,7 +44,12 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
         col_data = [default_value] * len(ids)  # init with default val
         for (row_id, value) in zip(row_ids, values):
             col_data[ids.index(row_id)] = value
-        dynamic_table.add_column(name=property_name, description=description, data=col_data)
+        dynamic_table.add_column(
+            name=property_name,
+            description=description,
+            data=col_data,
+            index=index
+        )
 
 
 def get_dynamic_table_property(dynamic_table, *, row_ids=None, property_name):
@@ -70,6 +75,16 @@ def find_all_unit_property_names(properties_dict={}, features_dict={}):
             if ft not in features_list:
                 features_list.append(ft)
     return (properties_list, features_list)
+
+
+def get_nspikes(fpath):
+    """Returns list with the number of spikes for each unit."""
+    # todo: there is a way to do this without reading all of the data if you use spike_times_index
+    check_nwb_install()
+    with NWBHDF5IO(fpath, 'r') as io:
+        nwbfile = io.read()
+        nSpikes = [len(spkt) for spkt in nwbfile.units['spike_times'][:]]
+    return nSpikes
 
 
 def most_relevant_ch(traces):
@@ -439,7 +454,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         check_nwb_install()
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            unit_ids = list(nwbfile.units.id[:])
+            unit_ids = [int(i) for i in nwbfile.units.id[:]]
         return unit_ids
 
     def get_unit_spike_train(self, unit_id, start_frame=0, end_frame=np.Inf):
@@ -457,7 +472,6 @@ class NwbSortingExtractor(se.SortingExtractor):
 
     def frame_to_time(self, frame):
         return frame / self.get_sampling_frequency() + self._t0
-
 
     # def get_unit_property_names(self, unit_id=None):
     #     '''Get a list of property names for a given unit.
@@ -871,6 +885,10 @@ class NwbSortingExtractor(se.SortingExtractor):
 
         ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
+        if hasattr(sorting, '_t0'):
+            t0 = sorting._t0
+        else:
+            t0 = 0.
 
         (all_properties, all_features) = find_all_unit_property_names(
             properties_dict=sorting._unit_properties,
@@ -912,8 +930,43 @@ class NwbSortingExtractor(se.SortingExtractor):
                     description='no description'
                 )
 
+            # Units spike times
+            spks = [sorting.get_unit_spike_train(unit_id=i).tolist() for i in ids]
+            flatten_spks_frame = [item for sublist in spks for item in sublist]
+            flatten_spks_time = [spkf / fs + t0 for spkf in flatten_spks_frame]
+            nspikes_units = [len(i) for i in spks]
+            spikes_index = np.cumsum(nspikes_units)
+            set_dynamic_table_property(
+                dynamic_table=nwbfile.units,
+                row_ids=ids,
+                property_name='spike_times',
+                values=flatten_spks_time,
+                index=spikes_index,
+                default_value=[np.nan],
+                description='no description'
+            )
+
+            # Units spike features
+            for ft in all_features:
+                unit_ids = [int(k) for k, v in sorting._unit_features.items()
+                            if pr in v.keys()]
+                vals = [v[pr] for k, v in sorting._unit_features.items()
+                        if pr in v.keys()]
+                flatten_vals = [item for sublist in vals for item in sublist]
+                nspikes_units = get_nspikes(fpath=save_path)
+                spikes_index = np.cumsum(nspikes_units)
+                set_dynamic_table_property(
+                    dynamic_table=nwbfile.units,
+                    row_ids=unit_ids,
+                    property_name=ft,
+                    values=flatten_vals,
+                    index=spikes_index,
+                    default_value=[np.nan],
+                    description='no description'
+                )
+
+            # Stores average and std of spike traces
             # if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
-            #     # Stores average and std of spike traces
             #     wf = sorting.get_unit_spike_features(unit_id=id,
             #                                          feature_name='waveforms')
             #     relevant_ch = most_relevant_ch(wf)
