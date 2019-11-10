@@ -28,7 +28,7 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
                                description='no description'):
     check_nwb_install()
     if not isinstance(row_ids, list) or not all(isinstance(x, int) for x in row_ids):
-        raise TypeError("'ids' must be an integer or a list of integers")
+        raise TypeError("'ids' must be a list of integers")
     ids = list(dynamic_table.id[:])
     if any([i not in ids for i in row_ids]):
         raise ValueError("'ids' contains values outside the range of existing ids")
@@ -44,7 +44,6 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, de
         col_data = [default_value] * len(ids)  # init with default val
         for (row_id, value) in zip(row_ids, values):
             col_data[ids.index(row_id)] = value
-
         dynamic_table.add_column(name=property_name, description=description, data=col_data)
 
 
@@ -419,7 +418,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                         ind = list(units_ids).index(id)
                         self._unit_properties.update({id: {item: nwbfile.units[item][ind]}})
 
-
             # Fill epochs dictionary
             self._epochs = {}
             if nwbfile.epochs is not None:
@@ -456,6 +454,9 @@ class NwbSortingExtractor(se.SortingExtractor):
 
     def time_to_frame(self, time):
         return np.round((time - self._t0) * self.get_sampling_frequency()).astype('int')
+
+    def frame_to_time(self, frame):
+        return frame / self.get_sampling_frequency() + self._t0
 
 
     # def get_unit_property_names(self, unit_id=None):
@@ -754,8 +755,7 @@ class NwbSortingExtractor(se.SortingExtractor):
     #     '''NWB files do not allow removing features.'''
     #     print(self.clear_units_spike_features.__doc__)
     #
-    # def frame_to_time(self, frame):
-    #     return frame / self.get_sampling_frequency() + self._t0
+    #
     #
     # def add_epoch(self, epoch_name, start_frame, end_frame):
     #     '''This function adds an epoch to the NWB file.
@@ -873,10 +873,9 @@ class NwbSortingExtractor(se.SortingExtractor):
         fs = sorting.get_sampling_frequency()
 
         (all_properties, all_features) = find_all_unit_property_names(
-            properties_dict=self._unit_properties,
-            features_dict=self._unit_features
+            properties_dict=sorting._unit_properties,
+            features_dict=sorting._unit_features
         )
-        all_pr_ft = all_properties + all_features
 
         if os.path.exists(save_path):
             read_mode = 'r+'
@@ -893,23 +892,38 @@ class NwbSortingExtractor(se.SortingExtractor):
                 kwargs.update(**nwbfile_kwargs)
                 nwbfile = NWBFile(**kwargs)
 
-            # Stores spike times for each detected cell (unit)
-            for id in ids:
-                spkt = sorting.get_unit_spike_train(unit_id=id) / fs
-                if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
-                    # Stores average and std of spike traces
-                    wf = sorting.get_unit_spike_features(unit_id=id,
-                                                         feature_name='waveforms')
-                    relevant_ch = most_relevant_ch(wf)
-                    # Spike traces on the most relevant channel
-                    traces = wf[:, relevant_ch, :]
-                    traces_avg = np.mean(traces, axis=0)
-                    traces_std = np.std(traces, axis=0)
-                    nwbfile.add_unit(id=id,
-                                     spike_times=spkt,
-                                     waveform_mean=traces_avg,
-                                     waveform_sd=traces_std)
-                else:
-                    nwbfile.add_unit(id=id, spike_times=spkt)
+            # If no Units present in mwb file
+            if nwbfile.units is None:
+                for id in ids:
+                    nwbfile.add_unit(id=id)
+
+            # Units properties
+            for pr in all_properties:
+                unit_ids = [int(k) for k, v in sorting._unit_properties.items()
+                            if pr in v.keys()]
+                vals = [v[pr] for k, v in sorting._unit_properties.items()
+                        if pr in v.keys()]
+                set_dynamic_table_property(
+                    dynamic_table=nwbfile.units,
+                    row_ids=unit_ids,
+                    property_name=pr,
+                    values=vals,
+                    default_value=np.nan,
+                    description='no description'
+                )
+
+            # if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
+            #     # Stores average and std of spike traces
+            #     wf = sorting.get_unit_spike_features(unit_id=id,
+            #                                          feature_name='waveforms')
+            #     relevant_ch = most_relevant_ch(wf)
+            #     # Spike traces on the most relevant channel
+            #     traces = wf[:, relevant_ch, :]
+            #     traces_avg = np.mean(traces, axis=0)
+            #     traces_std = np.std(traces, axis=0)
+            #     nwbfile.add_unit(id=id,
+            #                      spike_times=spkt,
+            #                      waveform_mean=traces_avg,
+            #                      waveform_sd=traces_std)
 
             io.write(nwbfile)
