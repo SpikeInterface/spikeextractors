@@ -37,19 +37,31 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, in
     if len(row_ids) != len(values) and index is False:
         raise ValueError("'ids' and 'values' should be lists of same size")
 
-    if property_name in dynamic_table:
-        for (row_id, value) in zip(row_ids, values):
-            dynamic_table[property_name].data[ids.index(row_id)] = value
+    if index is False:
+        if property_name in dynamic_table:
+            for (row_id, value) in zip(row_ids, values):
+                dynamic_table[property_name].data[ids.index(row_id)] = value
+        else:
+            col_data = [default_value] * len(ids)  # init with default val
+            for (row_id, value) in zip(row_ids, values):
+                col_data[ids.index(row_id)] = value
+            dynamic_table.add_column(
+                name=property_name,
+                description=description,
+                data=col_data,
+                index=index
+            )
     else:
-        col_data = [default_value] * len(ids)  # init with default val
-        for (row_id, value) in zip(row_ids, values):
-            col_data[ids.index(row_id)] = value
-        dynamic_table.add_column(
-            name=property_name,
-            description=description,
-            data=col_data,
-            index=index
-        )
+        if property_name in dynamic_table:
+            # TODO
+            pass
+        else:
+            dynamic_table.add_column(
+                name=property_name,
+                description=description,
+                data=values,
+                index=index
+            )
 
 
 def get_dynamic_table_property(dynamic_table, *, row_ids=None, property_name):
