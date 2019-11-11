@@ -954,8 +954,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                 property_name='spike_times',
                 values=flatten_spks_time,
                 index=spikes_index,
-                default_value=[np.nan],
-                description='no description'
             )
 
             # Units spike features
@@ -965,7 +963,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                 vals = [v[pr] for k, v in sorting._unit_features.items()
                         if pr in v.keys()]
                 flatten_vals = [item for sublist in vals for item in sublist]
-                nspikes_units = get_nspikes(fpath=save_path)
+                nspikes_units = [len(i) for i in vals]
                 spikes_index = np.cumsum(nspikes_units)
                 set_dynamic_table_property(
                     dynamic_table=nwbfile.units,
@@ -973,8 +971,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                     property_name=ft,
                     values=flatten_vals,
                     index=spikes_index,
-                    default_value=[np.nan],
-                    description='no description'
                 )
 
             # Stores average and std of spike traces
