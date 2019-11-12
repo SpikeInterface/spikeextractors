@@ -78,12 +78,12 @@ def find_all_unit_property_names(properties_dict={}, features_dict={}):
     """
     properties_list = []
     for k, v in properties_dict.items():
-        for pr in v.keys():
+        for pr in v:
             if pr not in properties_list:
                 properties_list.append(pr)
     features_list = []
     for k, v in properties_dict.items():
-        for ft in v.keys():
+        for ft in v:
             if ft not in features_list:
                 features_list.append(ft)
     return (properties_list, features_list)
@@ -146,7 +146,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             if electrical_series_name is not None:
                 self._electrical_series_name = electrical_series_name
             else:
-                a_names = list(nwbfile.acquisition.keys())
+                a_names = list(nwbfile.acquisition)
                 if len(a_names) > 1:
                     raise ValueError('More than one acquisition found. You must specify electrical_series.')
                 if len(a_names) == 0:
@@ -930,9 +930,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             # Units properties
             for pr in all_properties:
                 unit_ids = [int(k) for k, v in sorting._unit_properties.items()
-                            if pr in v.keys()]
+                            if pr in v]
                 vals = [v[pr] for k, v in sorting._unit_properties.items()
-                        if pr in v.keys()]
+                        if pr in v]
                 set_dynamic_table_property(
                     dynamic_table=nwbfile.units,
                     row_ids=unit_ids,
@@ -975,9 +975,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             # Units spike features
             for ft in all_features:
                 unit_ids = [int(k) for k, v in sorting._unit_features.items()
-                            if pr in v.keys()]
+                            if pr in v]
                 vals = [v[pr] for k, v in sorting._unit_features.items()
-                        if pr in v.keys()]
+                        if pr in v]
                 flatten_vals = [item for sublist in vals for item in sublist]
                 nspikes_units = [len(i) for i in vals]
                 spikes_index = np.cumsum(nspikes_units)
