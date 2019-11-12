@@ -91,11 +91,10 @@ def find_all_unit_property_names(properties_dict={}, features_dict={}):
 
 def get_nspikes(fpath):
     """Returns list with the number of spikes for each unit."""
-    # todo: there is a way to do this without reading all of the data if you use spike_times_index
     check_nwb_install()
     with NWBHDF5IO(fpath, 'r') as io:
         nwbfile = io.read()
-        nSpikes = [len(spkt) for spkt in nwbfile.units['spike_times'][:]]
+        nSpikes = np.diff([0] + nwbfile.units['spike_times_index'].data[:].tolist()).tolist()
     return nSpikes
 
 
@@ -925,7 +924,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             # If no Units present in mwb file
             if nwbfile.units is None:
                 for id in ids:
-                    nwbfile.add_unit(id=id)
+                    spkt = sorting.get_unit_spike_train(unit_id=id) / fs
+                    nwbfile.add_unit(id=id, spike_times=spkt)
 
             # Units properties
             for pr in all_properties:
@@ -942,19 +942,35 @@ class NwbSortingExtractor(se.SortingExtractor):
                     description='no description'
                 )
 
-            # Units spike times
-            spks = [sorting.get_unit_spike_train(unit_id=i).tolist() for i in ids]
-            flatten_spks_frame = [item for sublist in spks for item in sublist]
-            flatten_spks_time = [spkf / fs + t0 for spkf in flatten_spks_frame]
-            nspikes_units = [len(i) for i in spks]
-            spikes_index = np.cumsum(nspikes_units)
-            set_dynamic_table_property(
-                dynamic_table=nwbfile.units,
-                row_ids=ids,
-                property_name='spike_times',
-                values=flatten_spks_time,
-                index=spikes_index,
-            )
+            # # Stores average and std of spike traces
+            # if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
+            #     wf = sorting.get_unit_spike_features(unit_id=id,
+            #                                          feature_name='waveforms')
+            #     relevant_ch = most_relevant_ch(wf)
+            #     # Spike traces on the most relevant channel
+            #     traces = wf[:, relevant_ch, :]
+            #     traces_avg = np.mean(traces, axis=0)
+            #     traces_std = np.std(traces, axis=0)
+            #     nwbfile.add_unit(
+            #         id=id,
+            #         spike_times=spkt,
+            #         waveform_mean=traces_avg,
+            #         waveform_sd=traces_std
+            #     )
+            #
+            # # Units spike times
+            # spks = [sorting.get_unit_spike_train(unit_id=i).tolist() for i in ids]
+            # flatten_spks_frame = [item for sublist in spks for item in sublist]
+            # flatten_spks_time = [spkf / fs + t0 for spkf in flatten_spks_frame]
+            # nspikes_units = [len(i) for i in spks]
+            # spikes_index = np.cumsum(nspikes_units)
+            # set_dynamic_table_property(
+            #     dynamic_table=nwbfile.units,
+            #     row_ids=ids,
+            #     property_name='spike_times',
+            #     values=flatten_spks_time,
+            #     index=spikes_index,
+            # )
 
             # Units spike features
             for ft in all_features:
@@ -972,19 +988,5 @@ class NwbSortingExtractor(se.SortingExtractor):
                     values=flatten_vals,
                     index=spikes_index,
                 )
-
-            # Stores average and std of spike traces
-            # if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
-            #     wf = sorting.get_unit_spike_features(unit_id=id,
-            #                                          feature_name='waveforms')
-            #     relevant_ch = most_relevant_ch(wf)
-            #     # Spike traces on the most relevant channel
-            #     traces = wf[:, relevant_ch, :]
-            #     traces_avg = np.mean(traces, axis=0)
-            #     traces_std = np.std(traces, axis=0)
-            #     nwbfile.add_unit(id=id,
-            #                      spike_times=spkt,
-            #                      waveform_mean=traces_avg,
-            #                      waveform_sd=traces_std)
 
             io.write(nwbfile)
