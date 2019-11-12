@@ -5,6 +5,7 @@ import numpy as np
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
+from spikeextractors.extraction_tools import save_to_probe_file
 
 try:
     import hybridizer.io as sbio
@@ -39,31 +40,77 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
             time_axis = 0
 
         # piggyback on binary data recording extractor
-        bindatext = BinDatRecordingExtractor(recording_fn,
-                                             params['fs'],
-                                             nb_channels,
-                                             params['dtype'],
-                                             time_axis=time_axis)
-
-        # attach probe file to binary extractor
-        # TODO why doesn't the load probe file writes the properties of its object?
-        self._extractor_w_prb = bindatext.load_probe_file(params['probe'])
-        # copy properties from sub extractor to current object
-        self.copy_channel_properties(self._extractor_w_prb)
+        self._bindatext = BinDatRecordingExtractor(recording_fn,
+                                                   params['fs'],
+                                                   nb_channels,
+                                                   params['dtype'],
+                                                   time_axis=time_axis)
 
     def get_channel_ids(self):
-        return self._extractor_w_prb.get_channel_ids()
+        return self._bindatext.get_channel_ids()
 
     def get_num_frames(self):
-        return self._extractor_w_prb.get_num_frames()
+        return self._bindatext.get_num_frames()
 
     def get_sampling_frequency(self):
-        return self._extractor_w_prb.get_sampling_frequency()
+        return self._bindatext.get_sampling_frequency()
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        return self._extractor_w_prb.get_traces(channel_ids=channel_ids,
+        return self._bindatext.get_traces(channel_ids=channel_ids,
                                           start_frame=start_frame,
                                           end_frame=end_frame)
+
+    @staticmethod
+    def write_recording(recording, save_path, initial_sorting_fn, dtype='float32'):
+        """ Convert and save the recording extractor to SHYBRID format
+
+        parameters
+        ----------
+        recording: RecordingExtractor
+            The recording extractor to be converted and saved
+        save_path: str
+            Full path to desired target folder
+        initial_sorting_fn: str
+            Full path to the initial sorting csv file (can also be generated
+            using write_sorting static method from the SHYBRIDSortingExtractor)
+        dtype: dtype
+            Type of the saved data. Default float32.
+        """
+        RECORDING_NAME = 'recording.bin'
+        PROBE_NAME = 'probe.prb'
+        PARAMETERS_NAME = 'recording.yml'
+
+        # location information has to be present in order for shybrid to
+        # be able to operate on the recording
+        if 'location' not in recording.get_shared_channel_property_names():
+            raise GeometryNotLoadedError("Channel locations were not found")
+
+        # write recording
+        recording_fn = os.path.join(save_path, RECORDING_NAME)
+        BinDatRecordingExtractor.write_recording(recording, recording_fn,
+                                                 time_axis=0, dtype=dtype)
+
+        # write probe file
+        probe_fn = os.path.join(save_path, PROBE_NAME)
+        save_to_probe_file(recording, probe_fn, format='spyking_circus')
+
+        # create parameters file
+        source_dir, _ = os.path.split(__file__)
+        parameters_template_fn = os.path.join(source_dir, 'parameters_template')
+
+        with open(parameters_template_fn, 'r') as fp:
+            parameters_template = fp.read()
+
+        parameters = parameters_template.format(initial_sorting_fn=initial_sorting_fn,
+                                                data_type=dtype,
+                                                sampling_frequency=str(recording.get_sampling_frequency()),
+                                                byte_ordering='F',
+                                                probe_fn=probe_fn)
+
+        # write parameters file
+        parameters_fn = os.path.join(save_path, PARAMETERS_NAME)
+        with open(parameters_fn, 'w') as fp:
+            fp.write(parameters)
 
 
 class SHYBRIDSortingExtractor(SortingExtractor):
@@ -96,3 +143,32 @@ class SHYBRIDSortingExtractor(SortingExtractor):
 
         idxs = np.where((start_frame <= train) & (train < end_frame))
         return train[idxs]
+
+    @staticmethod
+    def write_sorting(sorting, save_path):
+        """ Convert and save the sorting extractor to SHYBRID CSV format
+
+        parameters
+        ----------
+        sorting : SortingExtractor
+            The sorting extractor to be converted and saved
+        save_path : str
+            Full path to the desired target folder
+        """
+        dump = np.empty((0,2))
+
+        for unit_id in sorting.get_unit_ids():
+            spikes = sorting.get_unit_spike_train(unit_id)[:,np.newaxis]
+            expanded_id = (np.ones(spikes.size) * unit_id)[:,np.newaxis]
+            tmp_concat = np.concatenate((expanded_id, spikes), axis=1)
+
+            dump = np.concatenate((dump, tmp_concat), axis=0)
+
+        sorting_fn = os.path.join(save_path, 'initial_sorting.csv')
+        np.savetxt(sorting_fn, dump, delimiter=',', fmt='%i')
+
+
+class GeometryNotLoadedError(Exception):
+    """ Raised when the recording extractor has no associated channel locations
+    """
+    pass
