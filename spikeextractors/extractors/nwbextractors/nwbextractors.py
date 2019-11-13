@@ -420,7 +420,7 @@ class NwbSortingExtractor(se.SortingExtractor):
     mode = 'file'
     installation_mesg = "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
 
-    def __init__(self, path, electrical_series=None):
+    def __init__(self, path, electrical_series=None, sampling_frequency=None):
         """
 
         Parameters
@@ -433,30 +433,24 @@ class NwbSortingExtractor(se.SortingExtractor):
         self._path = path
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
-            # defines the electrical series from where the sorting came from
-            # important to know the associated fs and t0
-            if electrical_series is None:
-                if len(nwbfile.acquisition) > 1:
-                    raise Exception('More than one acquisition found. You must specify electrical_series.')
-                if len(nwbfile.acquisition) == 0:
-                    raise Exception('No acquisitions found in the .nwb file.')
-                es = list(nwbfile.acquisition.values())[0]
+            if sampling_frequency is None:
+                # defines the electrical series from where the sorting came from
+                # important to know the sampling_frequency
+                if electrical_series is None:
+                    if len(nwbfile.acquisition) > 1:
+                        raise Exception('More than one acquisition found. You must specify electrical_series.')
+                    if len(nwbfile.acquisition) == 0:
+                        raise Exception('No acquisitions found in the .nwb file.')
+                    es = list(nwbfile.acquisition.values())[0]
+                else:
+                    es = electrical_series
+                # get rate
+                if es.rate is not None:
+                    self._sampling_frequency = es.rate
+                else:
+                    self._sampling_frequency = 1 / (es.timestamps[1] - es.timestamps[0])
             else:
-                es = electrical_series
-
-            # get rate
-            if es.rate is not None:
-                self._sampling_frequency = es.rate
-            else:
-                self._sampling_frequency = 1 / (es.timestamps[1] - es.timestamps[0])
-
-            # get t0
-            if hasattr(es, 'starting_time'):
-                self._t0 = es.starting_time
-            elif es.timestamps is not None:
-                self._t0 = es.timestamps[0]
-            else:
-                self._t0 = 0.
+                self._sampling_frequency = sampling_frequency
 
             # get all units ids
             units_ids = nwbfile.units.id[:]
@@ -510,10 +504,10 @@ class NwbSortingExtractor(se.SortingExtractor):
         return frames[(frames > start_frame) & (frames < end_frame)]
 
     def time_to_frame(self, time):
-        return np.round((time - self._t0) * self.get_sampling_frequency()).astype('int')
+        return np.round(time * self.get_sampling_frequency()).astype('int')
 
     def frame_to_time(self, frame):
-        return frame / self.get_sampling_frequency() + self._t0
+        return frame / self.get_sampling_frequency()
 
     # def get_unit_property_names(self, unit_id=None):
     #     '''Get a list of property names for a given unit.
