@@ -19,6 +19,7 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid recording (.bin, .raw, .dat)"},
     ]
+    is_writable = True
 
     def __init__(self, file_path):
         # load params file related to the given shybrid recording
@@ -103,7 +104,7 @@ class SHYBRIDSortingExtractor(SortingExtractor):
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid ground truth labels (.csv)"},
     ]
-    is_writable = False
+    is_writable = True
 
     def __init__(self, file_path, delimiter=','):
         SortingExtractor.__init__(self)
