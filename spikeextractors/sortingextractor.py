@@ -150,11 +150,13 @@ class SortingExtractor(ABC):
                     self._unit_features[unit_id] = {}
                 if isinstance(feature_name, str):
                     if feature_name in self._unit_features[unit_id].keys():
+                        spike_train = self.get_unit_spike_train(unit_id)
                         if start_frame is None:
                             start_frame = 0
                         if end_frame is None:
-                            end_frame = len(self.get_unit_spike_train(unit_id))
-                        return self._unit_features[unit_id][feature_name][start_frame:end_frame]
+                            end_frame = np.inf
+                        spike_indices =  np.where(np.logical_and(spike_train >= start_frame, spike_train < end_frame)) 
+                        return self._unit_features[unit_id][feature_name][spike_indices]
                     else:
                         raise ValueError(str(feature_name) + " has not been added to unit " + str(unit_id))
                 else:

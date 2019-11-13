@@ -25,7 +25,7 @@ class SubSortingExtractor(SortingExtractor):
         for i in range(len(self._unit_ids)):
             self._original_unit_id_lookup[self._renamed_unit_ids[i]] = self._unit_ids[i]
         self.copy_unit_properties(parent_sorting, unit_ids=self._renamed_unit_ids)
-        self.copy_unit_spike_features(parent_sorting, unit_ids=self._renamed_unit_ids)
+        self.copy_unit_spike_features(parent_sorting, unit_ids=self._renamed_unit_ids, start_frame=start_frame, end_frame=end_frame)
 
     def get_unit_ids(self):
         return list(self._renamed_unit_ids)
@@ -75,7 +75,7 @@ class SubSortingExtractor(SortingExtractor):
                     value = sorting.get_unit_property(unit_id=sorting_unit_id, property_name=curr_property_name)
                     self.set_unit_property(unit_id=unit_id, property_name=curr_property_name, value=value)
 
-    def copy_unit_spike_features(self, sorting, unit_ids=None):
+    def copy_unit_spike_features(self, sorting, unit_ids=None, start_frame=None, end_frame=None):
         if unit_ids is None:
             unit_ids = self.get_unit_ids()
         if isinstance(unit_ids, int):
@@ -84,7 +84,7 @@ class SubSortingExtractor(SortingExtractor):
                 sorting_unit_id = self.get_original_unit_ids(unit_ids)
             curr_feature_names = sorting.get_unit_spike_feature_names(unit_id=sorting_unit_id)
             for curr_feature_name in curr_feature_names:
-                value = sorting.get_unit_spike_features(unit_id=sorting_unit_id, feature_name=curr_feature_name)
+                value = sorting.get_unit_spike_features(unit_id=sorting_unit_id, feature_name=curr_feature_name, start_frame=start_frame, end_frame=end_frame)
                 self.set_unit_spike_features(unit_id=unit_ids, feature_name=curr_feature_name, value=value)
         else:
             for unit_id in unit_ids:
@@ -93,7 +93,7 @@ class SubSortingExtractor(SortingExtractor):
                     sorting_unit_id = self.get_original_unit_ids(unit_id)
                 curr_feature_names = sorting.get_unit_spike_feature_names(unit_id=sorting_unit_id)
                 for curr_feature_name in curr_feature_names:
-                    value = sorting.get_unit_spike_features(unit_id=sorting_unit_id, feature_name=curr_feature_name)
+                    value = sorting.get_unit_spike_features(unit_id=sorting_unit_id, feature_name=curr_feature_name, start_frame=start_frame, end_frame=end_frame)
                     self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name, value=value)
 
     def get_original_unit_ids(self, unit_ids):
