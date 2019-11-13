@@ -304,17 +304,17 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             else:
                 nwb_elec_ids = []
 
-            # add electrodes with id, (x, y, z), impedence and groups
-            for m in range(n_channels):
-                if channel_ids[m] not in nwb_elec_ids:
+            # add new electrodes with id, (x, y, z) and groups
+            for m in channel_ids:
+                if m not in nwb_elec_ids:
                     location = recording.get_channel_property(m, 'location')
                     while len(location) < 3:
                         location = np.append(location, [0])
                     impedence = -1.0
-                    grp_name = recording.get_channel_groups(channel_ids=[channel_ids[m]])
+                    grp_name = recording.get_channel_groups(channel_ids=[m])
                     grp = nwbfile.electrode_groups[str(grp_name[0])]
                     nwbfile.add_electrode(
-                        id=channel_ids[m],
+                        id=m,
                         x=float(location[0]), y=float(location[1]), z=float(location[2]),
                         imp=impedence,
                         location='unknown',
