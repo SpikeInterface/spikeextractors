@@ -13,12 +13,12 @@ class SortingExtractor(ABC):
 
 
     '''
-
     def __init__(self):
         self._epochs = {}
         self._unit_properties = {}
         self._unit_features = {}
         self._sampling_frequency = None
+        self.id = np.random.randint(low=0, high=9223372036854775807)
 
     @abstractmethod
     def get_unit_ids(self):
@@ -150,11 +150,13 @@ class SortingExtractor(ABC):
                     self._unit_features[unit_id] = {}
                 if isinstance(feature_name, str):
                     if feature_name in self._unit_features[unit_id].keys():
+                        spike_train = self.get_unit_spike_train(unit_id)
                         if start_frame is None:
                             start_frame = 0
                         if end_frame is None:
-                            end_frame = len(self.get_unit_spike_train(unit_id))
-                        return self._unit_features[unit_id][feature_name][start_frame:end_frame]
+                            end_frame = np.inf
+                        spike_indices =  np.where(np.logical_and(spike_train >= start_frame, spike_train < end_frame)) 
+                        return self._unit_features[unit_id][feature_name][spike_indices]
                     else:
                         raise ValueError(str(feature_name) + " has not been added to unit " + str(unit_id))
                 else:
@@ -170,7 +172,7 @@ class SortingExtractor(ABC):
         Parameters
         ----------
         unit_id: int
-            The id that specifies a unit in the recording.
+            The id that specifies a unit in the sorting.
         feature_name: string
             The name of the feature to be cleared.
         '''
@@ -184,7 +186,7 @@ class SortingExtractor(ABC):
         Parameters
         ----------
         unit_ids: list
-            A list of ids that specifies a set of units in the recording.
+            A list of ids that specifies a set of units in the sorting.
         feature_name: string
             The name of the feature to be cleared.
         '''
@@ -434,7 +436,7 @@ class SortingExtractor(ABC):
         Parameters
         ----------
         unit_id: int
-            The id that specifies a unit in the recording.
+            The id that specifies a unit in the sorting.
         property_name: string
             The name of the property to be cleared.
         '''
@@ -448,7 +450,7 @@ class SortingExtractor(ABC):
         Parameters
         ----------
         unit_ids: list
-            A list of ids that specifies a set of units in the recording.
+            A list of ids that specifies a set of units in the sorting.
         property_name: string
             The name of the property to be cleared.
         '''

@@ -74,7 +74,6 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
         The extractor containing all of the probe information.
     '''
     from .subrecordingextractor import SubRecordingExtractor
-    from .subsortingextractor import SubSortingExtractor
     probe_file = Path(probe_file)
     if probe_file.suffix == '.prb':
         probe_dict = read_python(probe_file)
@@ -86,14 +85,10 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                 for key_prop, prop_val in cgroup.items():
                     if key_prop == 'channels':
                         ordered_channels = np.concatenate((ordered_channels, prop_val))
-
-            if list(ordered_channels) == recording.get_channel_ids():
-                subrecording = recording
-            else:
-                if not np.all([chan in recording.get_channel_ids() for chan in ordered_channels]) and verbose:
-                    print('Some channel in PRB file are not in original recording')
-                present_ordered_channels = [chan for chan in ordered_channels if chan in recording.get_channel_ids()]
-                subrecording = SubRecordingExtractor(recording, channel_ids=present_ordered_channels)
+            if not np.all([chan in recording.get_channel_ids() for chan in ordered_channels]) and verbose:
+                print('Some channel in PRB file are not in original recording')
+            present_ordered_channels = [chan for chan in ordered_channels if chan in recording.get_channel_ids()]
+            subrecording = SubRecordingExtractor(recording, channel_ids=present_ordered_channels)
             for cgroup_id in groups:
                 cgroup = probe_dict['channel_groups'][cgroup_id]
                 if 'channels' not in cgroup.keys() and len(groups) > 1:
@@ -148,7 +143,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                 "all channel_ids in 'channel_map' must be in the original recording channel ids"
             subrecording = SubRecordingExtractor(recording, channel_ids=channel_map)
         else:
-            subrecording = recording
+            subrecording = SubRecordingExtractor(recording, channel_ids=recording.get_channel_ids())
         with probe_file.open() as csvfile:
             posreader = csv.reader(csvfile)
             row_count = 0
@@ -169,6 +164,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 
     return subrecording
+
 
 
 def save_to_probe_file(recording, probe_file, format=None, radius=100, dimensions=None, verbose=False):
@@ -242,14 +238,14 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
         if time_axis == 0:
             samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
                                 shape=(nsamples, numchan))
-            samples = np.transpose(samples)
+            samples = np.memmap.transpose(samples)
         else:
             samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
                                 shape=(numchan, nsamples))
     return samples
 
 
-def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunksize=None):
+def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunk_size=None):
     '''Saves the traces of a recording extractor in binary .dat format.
 
     Parameters
@@ -263,7 +259,7 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
     dtype: dtype
         Type of the saved data. Default float32.
-    chunksize: None or int
+    chunk_size: None or int
         If not None then the copy done by chunk size.
         This avoid to much memory consumption for big files.
     '''
@@ -272,7 +268,7 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         # when suffix is already raw/bin/dat do not change it.
         save_path = save_path.parent / (save_path.name + '.dat')
 
-    if chunksize is None:
+    if chunk_size is None:
         traces = recording.get_traces()
         if dtype is not None:
             traces = traces.astype(dtype)
@@ -284,13 +280,13 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         assert time_axis ==0, 'chunked writting work only with time_axis 0'
         n_sample = recording.get_num_frames()
         n_chan = recording.get_num_channels()
-        n_chunk = n_sample // chunksize
-        if n_sample % chunksize > 0:
+        n_chunk = n_sample // chunk_size
+        if n_sample % chunk_size > 0:
             n_chunk += 1
         with save_path.open('wb') as f:
             for i in range(n_chunk):
-                traces = recording.get_traces(start_frame=i*chunksize,
-                                              end_frame=min((i+1)*chunksize, n_sample))
+                traces = recording.get_traces(start_frame=i*chunk_size,
+                                              end_frame=min((i+1)*chunk_size, n_sample))
                 if dtype is not None:
                     traces = traces.astype(dtype)
                 if time_axis == 0:

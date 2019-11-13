@@ -72,7 +72,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         return recordings
 
     @staticmethod
-    def write_recording(recording, save_path, time_axis=0, dtype=None, chunksize=None):
+    def write_recording(recording, save_path, time_axis=0, dtype=None, chunk_size=None):
         '''Saves the traces of a recording extractor in binary .dat format.
 
         Parameters
@@ -86,8 +86,8 @@ class BinDatRecordingExtractor(RecordingExtractor):
             If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
         dtype: dtype
             Type of the saved data. Default float32.
-        chunksize: None or int
+        chunk_size: None or int
             If not None then the copy done by chunk size.
             This avoid to much memory consumption for big files.
         '''
-        write_to_binary_dat_format(recording, save_path, time_axis=time_axis, dtype=dtype, chunksize=chunksize)
+        write_to_binary_dat_format(recording, save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size)

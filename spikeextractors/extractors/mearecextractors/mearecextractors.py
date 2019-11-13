@@ -29,6 +29,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._fs = None
         self._positions = None
         self._recordings = None
+        self._recgen = None
         self._locs_2d = locs_2d
         self._locations = None
         self._initialize()
@@ -77,10 +78,13 @@ class MEArecRecordingExtractor(RecordingExtractor):
             end_frame = self.get_num_frames()
         if channel_ids is None:
             channel_ids = list(range(self.get_num_channels()))
-        if np.any(np.diff(channel_ids) < 0):
-            sorted_idx = np.argsort(channel_ids)
-            recordings = self._recordings[np.sort(channel_ids), start_frame:end_frame]
-            return recordings[sorted_idx]
+        if np.array(channel_ids).size > 1:
+            if np.any(np.diff(channel_ids) < 0):
+                sorted_idx = np.argsort(channel_ids)
+                recordings = self._recordings[np.sort(channel_ids), start_frame:end_frame]
+                return recordings[sorted_idx]
+            else:
+                return self._recordings[np.array(channel_ids), start_frame:end_frame]
         else:
             return self._recordings[np.array(channel_ids), start_frame:end_frame]
 
@@ -201,6 +205,10 @@ class MEArecSortingExtractor(SortingExtractor):
                                     t_stop=np.max(sorting.get_unit_spike_train(u) / float(sampling_frequency)) * pq.s)
                 st.annotate(unit_id=u)
                 spiketrains.append(st)
+
+            assert len(spiketrains) > 0, """
+                The sorting for output contains no unit, please check the sorting.
+            """
 
             duration = np.max([st.t_stop.magnitude for st in spiketrains])
             info = {'recordings': {'fs': sampling_frequency}, 'spiketrains': {'duration': duration}}
