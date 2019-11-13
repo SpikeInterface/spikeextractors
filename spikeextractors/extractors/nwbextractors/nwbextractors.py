@@ -174,7 +174,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     if isinstance(nwbfile.electrodes[col][i], ElectrodeGroup):
                         pass
                     elif col == 'group_name':
-                        self._channel_properties[i]['group'] = nwbfile.electrodes[col][i]
+                        self._channel_properties[i]['group'] = int(nwbfile.electrodes[col][i])
                     else:
                         self._channel_properties[i][col] = nwbfile.electrodes[col][i]
 
@@ -268,43 +268,75 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             else:
                 device = nwbfile.create_device(name='Device')
 
-            # Tests if ElectrodeGroup already exists
-            aux = [isinstance(i, ElectrodeGroup) for i in nwbfile.children]
-            if any(aux):
-                electrode_group = nwbfile.children[np.where(aux)[0][0]]
-                electrode_table = nwbfile.electrodes
+            # Check if 'groups' property exist for channels in Recording
+            if 'group' in recording.get_shared_channel_property_names():
+                el_groups_names = np.unique(recording.get_channel_groups()).tolist()
+                # Creates electrode groups for groups names in Recording
+                for grp_name in el_groups_names:
+                    if str(grp_name) not in nwbfile.electrode_groups:
+                        elec_group = nwbfile.create_electrode_group(
+                            name=str(grp_name),
+                            location="electrode_group_location",
+                            device=device,
+                            description="electrode_group_description"
+                        )
             else:
-                electrode_group = nwbfile.create_electrode_group(
-                    name='electrode_group_name',
-                    location="electrode_group_location",
-                    device=device,
-                    description="electrode_group_description"
-                )
+                if len(nwbfile.electrode_groups) > 0:
+                    el_groups_names = list(nwbfile.electrode_groups)
+                    electrode_group = nwbfile.electrode_groups[el_groups_names[0]]
+                else:
+                    el_groups_names = ["0"]
+                    elec_group = nwbfile.create_electrode_group(
+                        name="0",
+                        location="electrode_group_location",
+                        device=device,
+                        description="electrode_group_description"
+                    )
+                # Electrode groups are required for NWB, for consistency we create group for Recording channels
+                ids = recording.get_channel_ids()
+                vals = [0] * len(ids)
+                recording.set_channel_groups(channel_ids=ids, groups=vals)
 
-                # add electrodes with locations
-                for m in range(n_channels):
+
+            # Check for existing electrodes
+            if nwbfile.electrodes is not None:
+                nwb_elec_ids = nwbfile.electrodes.id.data[:]
+            else:
+                nwb_elec_ids = []
+
+            # add electrodes with id, (x, y, z), impedence and groups
+            for m in range(n_channels):
+                if channel_ids[m] not in nwb_elec_ids:
                     location = recording.get_channel_property(m, 'location')
-                    impedence = -1.0
                     while len(location) < 3:
                         location = np.append(location, [0])
+                    impedence = -1.0
+                    grp_name = recording.get_channel_groups(channel_ids=[channel_ids[m]])
+                    grp = nwbfile.electrode_groups[str(grp_name[0])]
                     nwbfile.add_electrode(
                         id=channel_ids[m],
                         x=float(location[0]), y=float(location[1]), z=float(location[2]),
                         imp=impedence,
                         location='unknown',
                         filtering='none',
-                        group=electrode_group,
+                        group=grp,
                     )
-                electrode_table = nwbfile.electrodes
+            electrode_table = nwbfile.electrodes
 
             # add/update electrode properties
             for ch in channel_ids:
                 rx_channel_properties = recording.get_channel_property_names(channel_id=ch)
                 for pr in rx_channel_properties:
                     val = recording.get_channel_property(ch, pr)
-                    # property 'group' of RX channels correspond to property 'group_name' of NWB electrodes
+                    # group property of electrodes can not be updated
                     if pr == 'group':
-                        pr = 'group_name'
+                        continue
+                    # property 'location' of RX channels corresponds to x, y, z of NWB electrodes
+                    if pr == 'location':
+                        continue
+                    # property 'brain_area' of RX channels corresponds to 'location' of NWB electrodes
+                    if pr == 'brain_area':
+                        pr = 'location'
                     set_dynamic_table_property(
                         dynamic_table=electrode_table,
                         row_ids=[ch],
@@ -321,7 +353,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     list(range(n_channels)),
                     'electrode_table_region'
                 )
-
                 rate = recording.get_sampling_frequency()
                 if 'gain' in recording.get_shared_channel_property_names():
                     gains = np.array(recording.get_channel_gains())
