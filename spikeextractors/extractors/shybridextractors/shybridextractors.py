@@ -17,12 +17,12 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
     extractor_name = 'SHYBRIDRecordingExtractor'
     installed = HAVE_SBEX
     extractor_gui_params = [
-        {'name': 'recording_fn', 'type': 'file', 'title': "Full path to hybrid recording (.bin)"},
+        {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid recording (.bin, .raw, .dat)"},
     ]
 
-    def __init__(self, recording_fn):
+    def __init__(self, file_path):
         # load params file related to the given shybrid recording
-        params = sbio.get_params(recording_fn)['data']
+        params = sbio.get_params(file_path)['data']
 
         # create a shybrid probe object
         probe = sbprb.Probe(params['probe'])
@@ -38,7 +38,7 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
 
         # piggyback on binary data recording extractor
         BinDatRecordingExtractor.__init__(self,
-                                          recording_fn,
+                                          file_path,
                                           params['fs'],
                                           nb_channels,
                                           params['dtype'],
@@ -101,18 +101,18 @@ class SHYBRIDSortingExtractor(SortingExtractor):
     extractor_name = 'SHYBRIDSortingExtractor'
     installed = HAVE_SBEX
     extractor_gui_params = [
-        {'name': 'gt_fn', 'type': 'file', 'title': "Full path to hybrid ground truth labels (.csv)"},
+        {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid ground truth labels (.csv)"},
     ]
     is_writable = False
 
-    def __init__(self, gt_fn, delimiter=','):
+    def __init__(self, file_path, delimiter=','):
         SortingExtractor.__init__(self)
 
-        if os.path.isfile(gt_fn):
+        if os.path.isfile(file_path):
             self._spike_clusters = sbio.SpikeClusters()
-            self._spike_clusters.fromCSV(gt_fn, None, delimiter=delimiter)
+            self._spike_clusters.fromCSV(file_path, None, delimiter=delimiter)
         else:
-            raise FileNotFoundError('the ground truth file "{}" could not be found'.format(gt_fn))
+            raise FileNotFoundError('the ground truth file "{}" could not be found'.format(file_path))
 
     def get_unit_ids(self):
         return self._spike_clusters.keys()
