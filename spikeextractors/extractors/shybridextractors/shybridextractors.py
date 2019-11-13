@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 
-from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 from spikeextractors.extraction_tools import save_to_probe_file
@@ -14,7 +13,7 @@ try:
 except ImportError:
     HAVE_SBEX = False
 
-class SHYBRIDRecordingExtractor(RecordingExtractor):
+class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
     extractor_name = 'SHYBRIDRecordingExtractor'
     installed = HAVE_SBEX
     extractor_gui_params = [
@@ -22,8 +21,6 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
     ]
 
     def __init__(self, recording_fn):
-        RecordingExtractor.__init__(self)
-
         # load params file related to the given shybrid recording
         params = sbio.get_params(recording_fn)['data']
 
@@ -40,25 +37,12 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
             time_axis = 0
 
         # piggyback on binary data recording extractor
-        self._bindatext = BinDatRecordingExtractor(recording_fn,
-                                                   params['fs'],
-                                                   nb_channels,
-                                                   params['dtype'],
-                                                   time_axis=time_axis)
-
-    def get_channel_ids(self):
-        return self._bindatext.get_channel_ids()
-
-    def get_num_frames(self):
-        return self._bindatext.get_num_frames()
-
-    def get_sampling_frequency(self):
-        return self._bindatext.get_sampling_frequency()
-
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        return self._bindatext.get_traces(channel_ids=channel_ids,
-                                          start_frame=start_frame,
-                                          end_frame=end_frame)
+        BinDatRecordingExtractor.__init__(self,
+                                          recording_fn,
+                                          params['fs'],
+                                          nb_channels,
+                                          params['dtype'],
+                                          time_axis=time_axis)
 
     @staticmethod
     def write_recording(recording, save_path, initial_sorting_fn, dtype='float32'):
