@@ -288,11 +288,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                             description="electrode_group_description"
                         )
             else:
-                if len(nwbfile.electrode_groups) > 0:
-                    el_groups_names = list(nwbfile.electrode_groups)
-                    electrode_group = nwbfile.electrode_groups[el_groups_names[0]]
-                else:
-                    el_groups_names = ["0"]
+                if "0" not in nwbfile.electrode_groups:
                     elec_group = nwbfile.create_electrode_group(
                         name="0",
                         location="electrode_group_location",
