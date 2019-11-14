@@ -166,8 +166,8 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
     return subrecording
 
 
-
-def save_to_probe_file(recording, probe_file, format=None, radius=100, dimensions=None, verbose=False):
+def save_to_probe_file(recording, probe_file, grouping_property=None, radius=None,
+                       graph=True, geometry=True, verbose=False):
     '''Saves probe file from the channel information of the given recording
     extractor.
 
@@ -177,8 +177,14 @@ def save_to_probe_file(recording, probe_file, format=None, radius=100, dimension
         The recording extractor to save probe file from
     probe_file: str
         file name of .prb or .csv file to save probe information to
-    format: str (optional)
-        Format for .prb file. It can be either 'klusta' or 'spyking_circus'. Default is None.
+    grouping_property: str (default None)
+        If grouping_property is a shared_channel_property, different groups are saved based on the property.
+    radius: float (default None)
+        Adjacency radius (used by some sorters). If None it is not saved to the probe file.
+    graph: bool
+        If True, the adjacency graph is saved (default=True)
+    geometry: bool
+        If True, the geometry is saved (default=True)
     verbose: bool
         If True, output is verbose
     '''
@@ -208,7 +214,8 @@ def save_to_probe_file(recording, probe_file, format=None, radius=100, dimension
                 raise AttributeError("Recording extractor needs to have "
                                      "'location' property to save .csv probe file")
     elif probe_file.suffix == '.prb':
-        _export_prb_file(recording, probe_file, format, radius=radius, dimensions=dimensions, verbose=verbose)
+        _export_prb_file(recording, probe_file, grouping_property=grouping_property, radius=radius, graph=graph,
+                         geometry=geometry, verbose=verbose)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be saved.")
 
@@ -277,9 +284,8 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         with save_path.open('wb') as f:
             traces.tofile(f)
     else:
-        assert time_axis ==0, 'chunked writting work only with time_axis 0'
+        assert time_axis == 0, 'chunked writing work only with time_axis 0'
         n_sample = recording.get_num_frames()
-        n_chan = recording.get_num_channels()
         n_chunk = n_sample // chunk_size
         if n_sample % chunk_size > 0:
             n_chunk += 1
@@ -356,8 +362,8 @@ def get_sub_extractors_by_property(extractor, property_name, return_property_lis
         raise ValueError("'extractor' must be a RecordingExtractor or a SortingExtractor")
 
 
-def _export_prb_file(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100,
-                     dimensions='all', verbose=False):
+def _export_prb_file(recording, file_name, grouping_property=None, graph=True, geometry=True,
+                     radius=None, adjacency_distance=100, verbose=False):
     '''Exports .prb file
 
     Parameters
@@ -366,37 +372,29 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
         The recording extractor to save probe file from
     file_name: str
         probe filename to be exported to
-    format: str
-        'klusta' | 'spiking_circus' (defualt=None)
-    adjacency_distance: float
-        distance to consider 2 channels adjacent (if 'location' is a property)
+    grouping_property: str (default None)
+        If grouping_property is a shared_channel_property, different groups are saved based on the property.
+    radius: float (default None)
+        Adjacency radius (used by some sorters). If None it is not saved to the probe file.
     graph: bool
-        if True graph information is extracted and saved
-    geometry:
-        if True geometry is saved
-    radius: float
-        radius for template-matching (if format is 'spyking_circus')
+        If True, the adjacency graph is saved (default=True)
+    geometry: bool
+        If True, the geometry is saved (default=True)
+    adjacency_distance: float
+        Distance to consider two channels to adjacent (if 'location' is a property). If radius is given,
+        then adjacency_distance is set to the radius.
     '''
-    if format == 'klusta':
-        graph = True
-        geometry = False
-    elif format == 'spyking_circus':
-        graph = False
-        geometry = True
-    else:
-        graph = True
-        geometry = True
-
     file_name = Path(file_name)
     assert file_name is not None
     abspath = file_name.absolute()
+
+    if radius is not None:
+        adjacency_distance = radius
 
     if geometry:
         if 'location' in recording.get_shared_channel_property_names():
             positions = np.array([recording.get_channel_property(chan, 'location')
                                   for chan in recording.get_channel_ids()])
-            if dimensions is not None:
-                positions = positions[:, dimensions]
         else:
             if verbose:
                 print("'location' property is not available and it will not be saved.")
@@ -405,14 +403,19 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
     else:
         positions = None
 
-    if 'group' in recording.get_shared_channel_property_names():
-        groups = np.array([recording.get_channel_property(chan, 'group') for chan in recording.get_channel_ids()])
-        channel_groups = np.unique([groups])
+    if grouping_property is not None:
+        if grouping_property in recording.get_shared_channel_property_names():
+            grouping_property_groups = np.array([recording.get_channel_property(chan, grouping_property)
+                                                 for chan in recording.get_channel_ids()])
+            channel_groups = np.unique([grouping_property_groups])
+        else:
+            if verbose:
+                print(f"{grouping_property} property is not available and it will not be saved.")
+            channel_groups = [0]
+            grouping_property_groups = np.array([0] * recording.get_num_channels())
     else:
-        if verbose:
-            print("'group' property is not available and it will not be saved.")
         channel_groups = [0]
-        groups = np.array([0] * recording.get_num_channels())
+        grouping_property_groups = np.array([0] * recording.get_num_channels())
 
     n_elec = recording.get_num_channels()
 
@@ -422,7 +425,7 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
             adj_graph = []
             for chg in channel_groups:
                 group_graph = []
-                elecs = list(np.where(groups == chg)[0])
+                elecs = list(np.where(grouping_property_groups == chg)[0])
                 for i in range(len(elecs)):
                     for j in range(i, len(elecs)):
                         if elecs[i] != elecs[j]:
@@ -434,7 +437,7 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
             adj_graph = []
             for chg in channel_groups:
                 group_graph = []
-                elecs = list(np.where(groups == chg)[0])
+                elecs = list(np.where(grouping_property_groups == chg)[0])
                 for i in range(len(elecs)):
                     for j in range(i, len(elecs)):
                         if elecs[i] != elecs[j]:
@@ -442,15 +445,14 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
                 adj_graph.append(group_graph)
 
     with abspath.open('w') as f:
-        f.write('\n')
-        if format == 'spyking_circus':
-            f.write('total_nb_channels = ' + str(n_elec) + '\n')
+        f.write('total_nb_channels = ' + str(n_elec) + '\n')
+        if radius is not None:
             f.write('radius = ' + str(radius) + '\n')
         f.write('channel_groups = {\n')
         if len(channel_groups) > 0:
             for i_chg, chg in enumerate(channel_groups):
                 f.write("     " + str(int(chg)) + ": ")
-                elecs = list(np.where(groups == chg)[0])
+                elecs = list(np.where(grouping_property_groups == chg)[0])
                 f.write("\n        {\n")
                 f.write("           'channels': " + str(elecs) + ',\n')
                 if graph:
@@ -458,8 +460,6 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
                         f.write("           'graph':  " + str(adj_graph[0]) + ',\n')
                     else:
                         f.write("           'graph':  " + str(adj_graph[i_chg]) + ',\n')
-                else:
-                    f.write("           'graph':  [],\n")
                 if geometry:
                     f.write("           'geometry':  {\n")
                     for i, pos in enumerate(positions[elecs]):
