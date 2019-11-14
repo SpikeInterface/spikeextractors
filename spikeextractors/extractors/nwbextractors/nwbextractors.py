@@ -170,11 +170,20 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             self._channel_properties = {}
             for i in self.channel_ids:
                 self._channel_properties[i] = {}
+                self._channel_properties[i]['location'] = [
+                    nwbfile.electrodes['x'][i],
+                    nwbfile.electrodes['y'][i],
+                    nwbfile.electrodes['z'][i]
+                ]
                 for col in nwbfile.electrodes.colnames:
                     if isinstance(nwbfile.electrodes[col][i], ElectrodeGroup):
-                        pass
+                        continue
                     elif col == 'group_name':
                         self._channel_properties[i]['group'] = int(nwbfile.electrodes[col][i])
+                    elif col == 'location':
+                        self._channel_properties[i]['brain_area'] = nwbfile.electrodes[col][i]
+                    elif col in ['x', 'y', 'z']:
+                        continue
                     else:
                         self._channel_properties[i][col] = nwbfile.electrodes[col][i]
 
@@ -328,11 +337,21 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 rx_channel_properties = recording.get_channel_property_names(channel_id=ch)
                 for pr in rx_channel_properties:
                     val = recording.get_channel_property(ch, pr)
-                    # group property of electrodes can not be updated
-                    if pr == 'group':
-                        continue
                     # property 'location' of RX channels corresponds to x, y, z of NWB electrodes
                     if pr == 'location':
+                        names = ['x', 'y', 'z']
+                        for (nm, v) in zip(names, val):
+                            set_dynamic_table_property(
+                                dynamic_table=electrode_table,
+                                row_ids=[ch],
+                                property_name=nm,
+                                values=[float(v)],
+                                default_value=np.nan,
+                                description='no description'
+                            )
+                        continue
+                    # group property of electrodes can not be updated
+                    if pr == 'group':
                         continue
                     # property 'brain_area' of RX channels corresponds to 'location' of NWB electrodes
                     if pr == 'brain_area':
