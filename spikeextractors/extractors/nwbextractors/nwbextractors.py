@@ -213,8 +213,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if end_frame is not None:
             if not isinstance(end_frame, (int, np.integer)):
                 raise TypeError("'end_frame' must be an integer")
-        else:
-            end_frame = None #-1
 
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
