@@ -1,6 +1,7 @@
 import os
 import uuid
 from datetime import datetime
+from collections import defaultdict
 
 import numpy as np
 from hdmf.data_utils import DataChunkIterator
@@ -167,9 +168,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
             # Fill channel properties dictionary from electrodes table
             self.channel_ids = es.electrodes.table.id[:]
-            self._channel_properties = {}
+            self._channel_properties = defaultdict(dict)
             for i in self.channel_ids:
-                self._channel_properties[i] = {}
                 self._channel_properties[i]['location'] = [
                     nwbfile.electrodes['x'][i],
                     nwbfile.electrodes['y'][i],
