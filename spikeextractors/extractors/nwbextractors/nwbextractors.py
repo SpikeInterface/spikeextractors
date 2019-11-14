@@ -372,11 +372,16 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     list(range(n_channels)),
                     'electrode_table_region'
                 )
+
+                # sampling rate
                 rate = recording.get_sampling_frequency()
-                if 'gain' in recording.get_shared_channel_property_names():
-                    gains = np.array(recording.get_channel_gains())
-                else:
-                    gains = np.ones(n_channels)
+
+                # channels gains
+                gains = np.squeeze([recording.get_channel_gains(channel_ids=[ch])
+                         if 'gain' in recording.get_channel_property_names(channel_id=ch) else 1
+                         for ch in channel_ids])
+                if all(gains==1):
+                    gains = None
 
                 def data_generator(recording, num_channels):
                     #  generates data chunks for iterator
