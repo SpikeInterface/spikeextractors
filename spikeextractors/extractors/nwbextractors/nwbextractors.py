@@ -77,26 +77,26 @@ def find_all_unit_property_names(properties_dict={}, features_dict={}):
     Finds all existing units properties and units spikes features in the sorting
     dictionaries.
     """
-    properties_list = []
+    properties_set = set()
     for k, v in properties_dict.items():
-        for pr in v:
-            if pr not in properties_list:
-                properties_list.append(pr)
-    features_list = []
-    for k, v in properties_dict.items():
-        for ft in v:
-            if ft not in features_list:
-                features_list.append(ft)
-    return (properties_list, features_list)
+        properties_set.update(list(v.keys()))
+
+    features_set = set()
+    for k, v in features_dict.items():
+        features_set.update(list(v.keys()))
+
+    return (properties_set, features_set)
 
 
-def get_nspikes(fpath):
-    """Returns list with the number of spikes for each unit."""
+def get_nspikes(units_table, unit_id):
+    """Returns the number of spikes for chosen unit."""
     check_nwb_install()
-    with NWBHDF5IO(fpath, 'r') as io:
-        nwbfile = io.read()
-        nSpikes = np.diff([0] + nwbfile.units['spike_times_index'].data[:].tolist()).tolist()
-    return nSpikes
+    if unit_id not in units_table.id[:]:
+        raise ValueError(str(unit_id) + " is an invalid unit_id. "
+                         "Valid ids: " + str(units_table.id[:].tolist()))
+    nSpikes = np.diff([0] + list(units_table['spike_times_index'].data[:])).tolist()
+    ind = np.where(np.array(units_table.id[:]) == unit_id)[0][0]
+    return nSpikes[ind]
 
 
 def most_relevant_ch(traces):
@@ -606,17 +606,16 @@ class NwbSortingExtractor(se.SortingExtractor):
             #     )
 
             # Units spike features
+            nspikes = {k: get_nspikes(nwbfile.units, int(k)) for k in ids}
             for ft in all_features:
-                unit_ids = [int(k) for k, v in sorting._unit_features.items()
-                            if pr in v]
-                vals = [v[pr] for k, v in sorting._unit_features.items()
-                        if pr in v]
+                vals = [v[ft] if ft in v else [np.nan] * nspikes[int(k)]
+                        for k, v in sorting._unit_features.items()]
                 flatten_vals = [item for sublist in vals for item in sublist]
-                nspikes_units = [len(i) for i in vals]
-                spikes_index = np.cumsum(nspikes_units)
+                nspks_list = [sp for sp in nspikes.values()]
+                spikes_index = np.cumsum(nspks_list).tolist()
                 set_dynamic_table_property(
                     dynamic_table=nwbfile.units,
-                    row_ids=unit_ids,
+                    row_ids=ids,
                     property_name=ft,
                     values=flatten_vals,
                     index=spikes_index,
