@@ -275,31 +275,24 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             else:
                 device = nwbfile.create_device(name='Device')
 
-            # Check if 'groups' property exist for channels in Recording
+            # Check if 'groups' property exists for channels in Recording
             if 'group' in recording.get_shared_channel_property_names():
                 el_groups_names = np.unique(recording.get_channel_groups()).tolist()
-                # Creates electrode groups for groups names in Recording
-                for grp_name in el_groups_names:
-                    if str(grp_name) not in nwbfile.electrode_groups:
-                        elec_group = nwbfile.create_electrode_group(
-                            name=str(grp_name),
-                            location="electrode_group_location",
-                            device=device,
-                            description="electrode_group_description"
-                        )
             else:
-                if "0" not in nwbfile.electrode_groups:
-                    elec_group = nwbfile.create_electrode_group(
-                        name="0",
-                        location="electrode_group_location",
-                        device=device,
-                        description="electrode_group_description"
-                    )
+                el_groups_names = ["0"]
                 # Electrode groups are required for NWB, for consistency we create group for Recording channels
                 ids = recording.get_channel_ids()
                 vals = [0] * len(ids)
                 recording.set_channel_groups(channel_ids=ids, groups=vals)
-
+            # Creates electrode groups for groups names in Recording
+            for grp_name in el_groups_names:
+                if str(grp_name) not in nwbfile.electrode_groups:
+                    elec_group = nwbfile.create_electrode_group(
+                        name=str(grp_name),
+                        location="electrode_group_location",
+                        device=device,
+                        description="electrode_group_description"
+                    )
 
             # Check for existing electrodes
             if nwbfile.electrodes is not None:
