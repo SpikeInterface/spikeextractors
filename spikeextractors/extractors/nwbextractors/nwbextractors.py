@@ -55,7 +55,7 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, in
     else:
         if property_name in dynamic_table:
             # TODO
-            pass
+            raise NotImplementedError
         else:
             dynamic_table.add_column(
                 name=property_name,
@@ -331,6 +331,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 rx_channel_properties = recording.get_channel_property_names(channel_id=ch)
                 for pr in rx_channel_properties:
                     val = recording.get_channel_property(ch, pr)
+                    desc = 'no description'
                     # property 'location' of RX channels corresponds to x, y, z of NWB electrodes
                     if pr == 'location':
                         names = ['x', 'y', 'z']
@@ -341,7 +342,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                 property_name=nm,
                                 values=[float(v)],
                                 default_value=np.nan,
-                                description='no description'
+                                description=nm+' coordinate location on the implant'
                             )
                         continue
                     # group property of electrodes can not be updated
@@ -350,13 +351,14 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     # property 'brain_area' of RX channels corresponds to 'location' of NWB electrodes
                     if pr == 'brain_area':
                         pr = 'location'
+                        desc = 'brain area location'
                     set_dynamic_table_property(
                         dynamic_table=electrode_table,
                         row_ids=[ch],
                         property_name=pr,
                         values=[val],
                         default_value=np.nan,
-                        description='no description'
+                        description=desc
                     )
 
             # Tests if ElectricalSeries already exists in acquisition
