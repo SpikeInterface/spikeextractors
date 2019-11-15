@@ -382,7 +382,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                          if 'gain' in recording.get_channel_property_names(channel_id=ch) else 1
                          for ch in channel_ids])
                 if len(np.unique(gains)) == 1:  # if all gains are equal
-                    scalar_conversion = np.unique(gains)*1e-6
+                    scalar_conversion = np.unique(gains)[0]*1e-6
                     channel_conversion = None
                 else:
                     scalar_conversion = 1.
