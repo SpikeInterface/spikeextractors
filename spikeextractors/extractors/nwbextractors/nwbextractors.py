@@ -165,27 +165,35 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     self.recording_start_time = 0.
 
             self.num_frames = int(es.data.shape[0])
+            num_channels = len(es.electrodes.table.id[:])
+
+            # Channels gains - for RecordingExtractor, these are values to cast traces to uV
+            if es.channel_conversion is not None:
+                gains = es.conversion * es.channel_conversion[:] * 1e6
+            else:
+                gains = es.conversion * np.ones(num_channels) * 1e6
 
             # Fill channel properties dictionary from electrodes table
             self.channel_ids = es.electrodes.table.id[:]
             self._channel_properties = defaultdict(dict)
-            for i in self.channel_ids:
+            for ind, i in enumerate(self.channel_ids):
+                self._channel_properties[i]['gain'] = gains[ind]
                 self._channel_properties[i]['location'] = [
-                    nwbfile.electrodes['x'][i],
-                    nwbfile.electrodes['y'][i],
-                    nwbfile.electrodes['z'][i]
+                    nwbfile.electrodes['x'][ind],
+                    nwbfile.electrodes['y'][ind],
+                    nwbfile.electrodes['z'][ind]
                 ]
                 for col in nwbfile.electrodes.colnames:
-                    if isinstance(nwbfile.electrodes[col][i], ElectrodeGroup):
+                    if isinstance(nwbfile.electrodes[col][ind], ElectrodeGroup):
                         continue
                     elif col == 'group_name':
-                        self._channel_properties[i]['group'] = int(nwbfile.electrodes[col][i])
+                        self._channel_properties[i]['group'] = int(nwbfile.electrodes[col][ind])
                     elif col == 'location':
-                        self._channel_properties[i]['brain_area'] = nwbfile.electrodes[col][i]
+                        self._channel_properties[i]['brain_area'] = nwbfile.electrodes[col][ind]
                     elif col in ['x', 'y', 'z']:
                         continue
                     else:
-                        self._channel_properties[i][col] = nwbfile.electrodes[col][i]
+                        self._channel_properties[i][col] = nwbfile.electrodes[col][ind]
 
             # Fill epochs dictionary
             self._epochs = {}
@@ -338,8 +346,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                 description=nm+' coordinate location on the implant'
                             )
                         continue
-                    # group property of electrodes can not be updated
+                    # property 'group' of electrodes can not be updated
                     if pr == 'group':
+                        continue
+                    # property 'gain' should not be in the NWB electrodes_table
+                    if pr == 'gain':
                         continue
                     # property 'brain_area' of RX channels corresponds to 'location' of NWB electrodes
                     if pr == 'brain_area':
@@ -365,12 +376,17 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 # sampling rate
                 rate = recording.get_sampling_frequency()
 
-                # channels gains
+                # channels gains - for RecordingExtractor, these are values to cast traces to uV
+                # for nwb, the conversions (gains) cast the data to Volts
                 gains = np.squeeze([recording.get_channel_gains(channel_ids=[ch])
                          if 'gain' in recording.get_channel_property_names(channel_id=ch) else 1
                          for ch in channel_ids])
-                if all(gains==1):
-                    gains = None
+                if len(np.unique(gains)) == 1:  # if all gains are equal
+                    scalar_conversion = np.unique(gains)*1e-6
+                    channel_conversion = None
+                else:
+                    scalar_conversion = 1.
+                    channel_conversion = gains*1e-6
 
                 def data_generator(recording, num_channels):
                     #  generates data chunks for iterator
@@ -389,8 +405,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     electrodes=electrode_table_region,
                     starting_time=recording.frame_to_time(0),
                     rate=rate,
-                    conversion=1e-6,
-                    channel_conversion=gains,
+                    conversion=scalar_conversion,
+                    channel_conversion=channel_conversion,
                     comments='Generated from SpikeInterface::NwbRecordingExtractor',
                     description='acquisition_description'
                 )
