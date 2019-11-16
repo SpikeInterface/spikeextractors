@@ -6,6 +6,9 @@ def synthesize_random_waveforms(*, M=5, T=500, K=20, upsamplefac=13, timeshift_f
                                 seed=None):
     if seed is not None:
         np.random.seed(seed)
+        seeds = np.random.RandomState(seed=seed).randint(0, 2147483647, K)
+    else:
+        seeds = np.random.randint(0, 2147483647, K)
     geometry = None
     avg_durations = [200, 10, 30, 200]
     avg_amps = [0.5, 10, -1, 0]
@@ -31,16 +34,16 @@ def synthesize_random_waveforms(*, M=5, T=500, K=20, upsamplefac=13, timeshift_f
     ## The waveforms_out
     WW = np.zeros((M, T * upsamplefac, K))
 
-    for k in range(1, K + 1):
+    for i, k in enumerate(range(1, K + 1)):
         for m in range(1, M + 1):
             diff = neuron_locations[:, k - 1] - geometry[:, m - 1]
             dist = np.sqrt(np.sum(diff ** 2))
             durations0 = np.maximum(np.ones(avg_durations.shape),
-                                    avg_durations + np.random.randn(1, 4) * rand_durations_stdev) * upsamplefac
-            amps0 = avg_amps + np.random.randn(1, 4) * rand_amps_stdev
+                                    avg_durations + np.random.RandomState(seed=seeds[i]).randn(1, 4) * rand_durations_stdev) * upsamplefac
+            amps0 = avg_amps + np.random.RandomState(seed=seeds[i]).randn(1, 4) * rand_amps_stdev
             waveform0 = synthesize_single_waveform(N=T * upsamplefac, durations=durations0, amps=amps0)
             waveform0 = np.roll(waveform0, int(timeshift_factor * dist * upsamplefac))
-            waveform0 = waveform0 * np.random.uniform(rand_amp_factor_range[0], rand_amp_factor_range[1])
+            waveform0 = waveform0 * np.random.RandomState(seed=seeds[i]).uniform(rand_amp_factor_range[0], rand_amp_factor_range[1])
             WW[m - 1, :, k - 1] = waveform0 / (geom_spread_coef1 + dist * geom_spread_coef2)
 
     peaks = np.max(np.abs(WW), axis=(0, 1))

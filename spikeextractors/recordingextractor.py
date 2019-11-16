@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import copy
+import random
 from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, get_sub_extractors_by_property
 
 class RecordingExtractor(ABC):
@@ -11,10 +12,10 @@ class RecordingExtractor(ABC):
 
  
     '''
-
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
+        self.id = random.randint(a=0, b=9223372036854775807)
 
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
@@ -621,20 +622,27 @@ class RecordingExtractor(ABC):
                                        channel_groups=channel_groups, verbose=verbose)
         return subrecording
 
-    def save_to_probe_file(self, probe_file, format=None, radius=100, dimensions=None, verbose=False):
+    def save_to_probe_file(self, probe_file, grouping_property=None, radius=None,
+                           graph=True, geometry=True, verbose=False):
         '''Saves probe file from the channel information of this recording extractor.
 
         Parameters
         ----------
         probe_file: str
             file name of .prb or .csv file to save probe information to
-        format: str (optional)
-            Format for .prb file. It can be either 'klusta' or 'spyking_circus'. Default is None.
+        grouping_property: str (default None)
+            If grouping_property is a shared_channel_property, different groups are saved based on the property.
+        radius: float (default None)
+            Adjacency radius (used by some sorters). If None it is not saved to the probe file.
+        graph: bool
+            If True, the adjacency graph is saved (default=True)
+        geometry: bool
+            If True, the geometry is saved (default=True)
         verbose: bool
             If True, output is verbose
         '''
-        save_to_probe_file(self, probe_file, format=format, radius=radius, dimensions=dimensions,
-                           verbose=verbose)
+        save_to_probe_file(self, probe_file, grouping_property=grouping_property, radius=radius,
+                           graph=graph, geometry=geometry, verbose=verbose)
 
     def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None):
         '''Saves the traces of this recording extractor into binary .dat format.

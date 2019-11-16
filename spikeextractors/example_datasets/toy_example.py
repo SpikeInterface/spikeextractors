@@ -15,7 +15,7 @@ def toy_example(duration=10, num_channels=4, sampling_frequency=30000.0, K=10, s
     SX = se.NumpySortingExtractor()
     SX.set_times_labels(times, labels)
     X = synthesize_timeseries(sorting=SX, waveforms=waveforms, noise_level=10, sampling_frequency=sampling_frequency, duration=duration,
-                              waveform_upsamplefac=upsamplefac)
+                              waveform_upsamplefac=upsamplefac, seed=seed)
     SX.set_sampling_frequency(sampling_frequency)
 
     RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)

@@ -206,6 +206,10 @@ class MEArecSortingExtractor(SortingExtractor):
                 st.annotate(unit_id=u)
                 spiketrains.append(st)
 
+            assert len(spiketrains) > 0, """
+                The sorting for output contains no unit, please check the sorting.
+            """
+
             duration = np.max([st.t_stop.magnitude for st in spiketrains])
             info = {'recordings': {'fs': sampling_frequency}, 'spiketrains': {'duration': duration}}
             rec_dict = {'spiketrains': spiketrains}
