@@ -247,15 +247,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return self.channel_ids.tolist()
 
     @staticmethod
-    def write_recording(recording, save_path, acquisition_name='ElectricalSeries', **nwbfile_kwargs):
+    def write_recording(recording, save_path, metadata={}):
         '''
 
         Parameters
         ----------
         recording: RecordingExtractor
         save_path: str
-        acquisition_name: str (default 'ElectricalSeries')
-        nwbfile_kwargs: optional, pynwb.NWBFile args
+        metadata: dict
+            metadata info for constructing the nwb file
         '''
         check_nwb_install()
         n_channels = recording.get_num_channels()
@@ -270,36 +270,49 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             if read_mode == 'r+':
                 nwbfile = io.read()
             else:
-                kwargs = {'session_description': 'No description',
-                          'identifier': str(uuid.uuid4()),
-                          'session_start_time': datetime.now()}
-                kwargs.update(**nwbfile_kwargs)
-                nwbfile = NWBFile(**kwargs)
+                if 'NWBFile' not in metadata:
+                    metadata['NWBFile'] = {'session_description': 'no description',
+                                           'identifier': str(uuid.uuid4()),
+                                           'session_start_time': datetime.now()}
+                nwbfile = NWBFile(**metadata['NWBFile'])
 
-            # Tests if Device already exists
-            aux = [isinstance(i, Device) for i in nwbfile.children]
-            if any(aux):
-                device = nwbfile.children[np.where(aux)[0][0]]
-            else:
-                device = nwbfile.create_device(name='Device')
+            # Devices
+            if 'Ecephys' not in metadata:
+                metadata['Ecephys'] = dict()
+            if 'Device' not in metadata['Ecephys']:
+                metadata['Ecephys']['Device'] = [{'name': 'Device'}]
+            # Tests if devices exist in nwbfile, if not create them from metadata
+            for dev in metadata['Ecephys']['Device']:
+                if dev['name'] not in nwbfile.devices:
+                    nwbfile.create_device(name=dev['name'])
 
-            # Check if 'groups' property exists for channels in Recording
-            if 'group' in recording.get_shared_channel_property_names():
-                el_groups_names = np.unique(recording.get_channel_groups()).tolist()
-            else:
-                el_groups_names = ["0"]
-                # Electrode groups are required for NWB, for consistency we create group for Recording channels
-                ids = recording.get_channel_ids()
-                vals = [0] * len(ids)
-                recording.set_channel_groups(channel_ids=ids, groups=vals)
-            # Creates electrode groups for groups names in Recording
-            for grp_name in el_groups_names:
-                if str(grp_name) not in nwbfile.electrode_groups:
+            # Electrode groups
+            if 'ElectrodeGroup' not in metadata['Ecephys']:
+                metadata['Ecephys']['ElectrodeGroup'] = []
+                # Check if 'groups' property exists in self._channel_properties
+                if 'group' in recording.get_shared_channel_property_names():
+                    el_groups_names = np.unique(recording.get_channel_groups()).tolist()
+                else:
+                    el_groups_names = ["0"]
+                    # Electrode groups are required for NWB, for consistency we create group for Recording channels
+                    ids = recording.get_channel_ids()
+                    vals = [0] * len(ids)
+                    recording.set_channel_groups(channel_ids=ids, groups=vals)
+                for grp_name in el_groups_names:
+                    metadata['Ecephys']['ElectrodeGroup'].append({
+                        'name': grp_name,
+                        'description': 'electrode_group_description',
+                        'location': 'electrode_group_location',
+                        'device': metadata['Ecephys']['Device'][0]['name']
+                    })
+            # Tests if electrode groups exist in nwbfile, if not create them from metadata
+            for grp in metadata['Ecephys']['ElectrodeGroup']:
+                if str(grp['name']) not in nwbfile.electrode_groups:
                     elec_group = nwbfile.create_electrode_group(
-                        name=str(grp_name),
-                        location="electrode_group_location",
-                        device=device,
-                        description="electrode_group_description"
+                        name=str(grp['name']),
+                        location=grp['location'],
+                        device=nwbfile.devices[grp['device']],
+                        description=grp['description']
                     )
 
             # Check for existing electrodes
@@ -365,6 +378,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         description=desc
                     )
 
+            # ElectricalSeries
+            if 'ElectricalSeries' not in metadata['Ecephys']:
+                # TODO: search for electrodes info in self._channel_properties
+                metadata['Ecephys']['ElectricalSeries'] = [{'name': 'ElectricalSeries',
+                                                            'electrodes': '',
+                                                            'description': 'no description'}]
             # Tests if ElectricalSeries already exists in acquisition
             aux = [isinstance(i, ElectricalSeries) for i in nwbfile.acquisition.values()]
             if not any(aux):
