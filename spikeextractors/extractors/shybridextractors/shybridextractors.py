@@ -100,6 +100,7 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
 
 class SHYBRIDSortingExtractor(SortingExtractor):
     extractor_name = 'SHYBRIDSortingExtractor'
+    exporter_name = 'SHYBRIDSortingExporter'
     installed = HAVE_SBEX
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid ground truth labels (.csv)"},
