@@ -79,7 +79,7 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
 
         # write probe file
         probe_fn = os.path.join(save_path, PROBE_NAME)
-        save_to_probe_file(recording, probe_fn, format='spyking_circus')
+        save_to_probe_file(recording, probe_fn)
 
         # create parameters file
         source_dir, _ = os.path.split(__file__)
