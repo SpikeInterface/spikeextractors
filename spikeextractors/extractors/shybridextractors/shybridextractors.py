@@ -4,7 +4,7 @@ import numpy as np
 
 from spikeextractors import SortingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
-from spikeextractors.extraction_tools import save_to_probe_file
+from spikeextractors.extraction_tools import save_to_probe_file, load_probe_file
 
 try:
     import hybridizer.io as sbio
@@ -44,6 +44,8 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
                                           nb_channels,
                                           params['dtype'],
                                           time_axis=time_axis)
+
+        self = load_probe_file(self, params['probe'])
 
     @staticmethod
     def write_recording(recording, save_path, initial_sorting_fn, dtype='float32'):
