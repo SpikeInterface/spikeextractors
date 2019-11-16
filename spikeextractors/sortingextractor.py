@@ -18,7 +18,7 @@ class SortingExtractor(ABC):
         self._unit_properties = {}
         self._unit_features = {}
         self._sampling_frequency = None
-        self.id = np.random.randint(low=0, high=9223372036854775807)
+        self.id = np.random.randint(low=0, high=9223372036854775807, dtype='int64')
 
     @abstractmethod
     def get_unit_ids(self):
@@ -155,7 +155,7 @@ class SortingExtractor(ABC):
                             start_frame = 0
                         if end_frame is None:
                             end_frame = np.inf
-                        spike_indices =  np.where(np.logical_and(spike_train >= start_frame, spike_train < end_frame)) 
+                        spike_indices =  np.where(np.logical_and(spike_train >= start_frame, spike_train < end_frame))
                         return self._unit_features[unit_id][feature_name][spike_indices]
                     else:
                         raise ValueError(str(feature_name) + " has not been added to unit " + str(unit_id))
@@ -216,7 +216,7 @@ class SortingExtractor(ABC):
                 raise ValueError(str(unit_id) + " is not a valid unit_id")
         else:
             raise ValueError(str(unit_id) + " must be an int")
-        
+
     def get_shared_unit_spike_feature_names(self, unit_ids=None):
         '''Get the intersection of unit feature names for a given set of units or for all units if unit_ids is None.
          Parameters
@@ -383,7 +383,7 @@ class SortingExtractor(ABC):
                 raise ValueError(str(unit_id) + " is not a valid unit id")
         else:
             raise TypeError(str(unit_id) + " must be an int")
-        
+
     def get_shared_unit_property_names(self, unit_ids=None):
         '''Get the intersection of unit property names for a given set of units or for all units if unit_ids is None.
          Parameters
@@ -608,11 +608,11 @@ class SortingExtractor(ABC):
 
         '''
         if return_property_list:
-            sub_list, prop_list = get_sub_extractors_by_property(self, property_name=property_name, 
+            sub_list, prop_list = get_sub_extractors_by_property(self, property_name=property_name,
                                                                 return_property_list=return_property_list)
             return sub_list, prop_list
         else:
-            sub_list = get_sub_extractors_by_property(self, property_name=property_name, 
+            sub_list = get_sub_extractors_by_property(self, property_name=property_name,
                                                       return_property_list=return_property_list)
             return sub_list
 
