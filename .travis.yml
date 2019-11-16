@@ -9,6 +9,7 @@ install:
 - pip install mountainlab_pytools pynwb pyopenephys kbucket h5py MEArec exdir ruamel.yaml nixio
 - pip install .
 - pip install pytest==3.6
+- pip install https://github.com/jwouters91/shybrid/archive/master.zip
 script: pytest
 deploy:
   provider: pypi
