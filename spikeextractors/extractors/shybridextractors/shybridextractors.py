@@ -82,17 +82,11 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
         save_to_probe_file(recording, probe_fn)
 
         # create parameters file
-        source_dir, _ = os.path.split(__file__)
-        parameters_template_fn = os.path.join(source_dir, 'parameters_template')
-
-        with open(parameters_template_fn, 'r') as fp:
-            parameters_template = fp.read()
-
-        parameters = parameters_template.format(initial_sorting_fn=initial_sorting_fn,
-                                                data_type=dtype,
-                                                sampling_frequency=str(recording.get_sampling_frequency()),
-                                                byte_ordering='F',
-                                                probe_fn=probe_fn)
+        parameters = params_template.format(initial_sorting_fn=initial_sorting_fn,
+                                            data_type=dtype,
+                                            sampling_frequency=str(recording.get_sampling_frequency()),
+                                            byte_ordering='F',
+                                            probe_fn=probe_fn)
 
         # write parameters file
         parameters_fn = os.path.join(save_path, PARAMETERS_NAME)
@@ -160,3 +154,13 @@ class GeometryNotLoadedError(Exception):
     """ Raised when the recording extractor has no associated channel locations
     """
     pass
+
+params_template = \
+"""clusters:
+  csv: {initial_sorting_fn}
+data:
+  dtype: {data_type}
+  fs: {sampling_frequency}
+  order: {byte_ordering}
+  probe: {probe_fn}
+"""

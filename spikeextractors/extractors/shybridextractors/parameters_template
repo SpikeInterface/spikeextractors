@@ -1,7 +1,0 @@
-clusters:
-  csv: {initial_sorting_fn}
-data:
-  dtype: {data_type}
-  fs: {sampling_frequency}
-  order: {byte_ordering}
-  probe: {probe_fn}
