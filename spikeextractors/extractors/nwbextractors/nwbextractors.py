@@ -225,12 +225,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             es = nwbfile.acquisition[self._electrical_series_name]
+            table_ids = [list(es.electrodes.data[:]).index(id) for id in channel_ids]
             if np.array(channel_ids).size > 1 and np.any(np.diff(channel_ids) < 0):
-                sorted_idx = np.argsort(channel_ids)
-                recordings = es.data[start_frame:end_frame, np.sort(channel_ids)].T
+                sorted_idx = np.argsort(table_ids)
+                recordings = es.data[start_frame:end_frame, np.sort(table_ids)].T
                 traces = recordings[sorted_idx, :]
             else:
-                traces = es.data[start_frame:end_frame, channel_ids].T
+                traces = es.data[start_frame:end_frame, table_ids].T
             # This DatasetView and lazy operations will only work within context
             # We're keeping the non-lazy version for now
             # es_view = DatasetView(es.data)  # es is an instantiated h5py dataset
@@ -377,13 +378,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         description=desc
                     )
 
-            # aux = [isinstance(i, ElectricalSeries) for i in nwbfile.acquisition.values()]
-            # if not any(aux):
-                # electrode_table_region = nwbfile.create_electrode_table_region(
-                #     list(range(n_channels)),
-                #     'electrode_table_region'
-                # )
-
             # ElectricalSeries
             if 'ElectricalSeries' not in metadata['Ecephys']:
                 metadata['Ecephys']['ElectricalSeries'] = [{'name': 'ElectricalSeries',
@@ -392,12 +386,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             # Tests if ElectricalSeries already exists in acquisition
             nwb_es_names = [ac for ac in nwbfile.acquisition]
             for es in metadata['Ecephys']['ElectricalSeries']:
-                print(es)
                 if es['name'] not in nwb_es_names:
                     # Creates an electrode table region with specified ids
                     curr_ids = es['electrodes']
+                    table_ids = [list(nwbfile.electrodes.id[:]).index(id) for id in curr_ids]
                     electrode_table_region = nwbfile.create_electrode_table_region(
-                        region=curr_ids,
+                        region=table_ids,
                         description='electrode_table_region'
                     )
 
