@@ -20,6 +20,7 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
         {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid recording (.bin, .raw, .dat)"},
     ]
     is_writable = True
+    installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
 
     def __init__(self, file_path):
         # load params file related to the given shybrid recording
@@ -102,6 +103,7 @@ class SHYBRIDSortingExtractor(SortingExtractor):
         {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid ground truth labels (.csv)"},
     ]
     is_writable = True
+    installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
 
     def __init__(self, file_path, delimiter=','):
         SortingExtractor.__init__(self)
