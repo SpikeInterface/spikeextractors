@@ -204,6 +204,38 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     'end_frame': self.time_to_frame(row['stop_time'])}
                     for _, row in df_epochs.iterrows()}
 
+            # Metadata dictionary - useful for constructing a nwb file
+            self.nwb_metadata = dict()
+            self.nwb_metadata['NWBFile'] = {
+                        'session_description': nwbfile.session_description,
+                        'identifier': nwbfile.identifier,
+                        'session_start_time': nwbfile.session_start_time,
+                        'institution': nwbfile.institution,
+                        'lab': nwbfile.lab,
+                        'lab_meta_data': nwbfile.lab_meta_data
+            }
+            self.nwb_metadata['Ecephys'] = dict()
+            # Update metadata with Device info
+            self.nwb_metadata['Ecephys']['Device'] = []
+            for dev in nwbfile.devices:
+                self.nwb_metadata['Ecephys']['Device'].append({'name': dev})
+            # Update metadata with ElectrodeGroup info
+            self.nwb_metadata['Ecephys']['ElectrodeGroup'] = []
+            for k, v in nwbfile.electrode_groups.items():
+                self.nwb_metadata['Ecephys']['ElectrodeGroup'].append({
+                    'name': v.name,
+                    'description': v.description,
+                    'location': v.location,
+                    'device': v.device.name
+                })
+            # Update metadata with ElectricalSeries info
+            self.nwb_metadata['Ecephys']['ElectricalSeries'] = []
+            self.nwb_metadata['Ecephys']['ElectricalSeries'].append({
+                'name': es.name,
+                'electrodes': es.electrodes.data[:],
+                'description': es.description
+            })
+
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         check_nwb_install()
         if channel_ids is not None:
@@ -269,7 +301,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         # Update any previous metadata with user passed dictionary
         if hasattr(recording, 'nwb_metadata'):
-            metadata = recording.nwb_metadata.update(metadata)
+            recording.nwb_metadata.update(metadata)
+            metadata = recording.nwb_metadata
 
         with NWBHDF5IO(save_path, mode=read_mode) as io:
             if read_mode == 'r+':
