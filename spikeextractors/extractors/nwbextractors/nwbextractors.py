@@ -211,8 +211,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         'identifier': nwbfile.identifier,
                         'session_start_time': nwbfile.session_start_time,
                         'institution': nwbfile.institution,
-                        'lab': nwbfile.lab,
-                        'lab_meta_data': nwbfile.lab_meta_data
+                        'lab': nwbfile.lab
             }
             self.nwb_metadata['Ecephys'] = dict()
             # Update metadata with Device info
