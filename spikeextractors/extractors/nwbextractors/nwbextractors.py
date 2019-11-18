@@ -267,6 +267,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         else:
             read_mode = 'w'
 
+        # Update any previous metadata with user passed dictionary
+        if hasattr(recording, 'nwb_metadata'):
+            metadata = recording.nwb_metadata.update(metadata)
+
         with NWBHDF5IO(save_path, mode=read_mode) as io:
             if read_mode == 'r+':
                 nwbfile = io.read()
