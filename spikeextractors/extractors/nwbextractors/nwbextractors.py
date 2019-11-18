@@ -295,9 +295,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 else:
                     el_groups_names = ["0"]
                     # Electrode groups are required for NWB, for consistency we create group for Recording channels
-                    ids = recording.get_channel_ids()
-                    vals = [0] * len(ids)
-                    recording.set_channel_groups(channel_ids=ids, groups=vals)
+                    vals = [0] * len(channel_ids)
+                    recording.set_channel_groups(channel_ids=channel_ids, groups=vals)
                 for grp_name in el_groups_names:
                     metadata['Ecephys']['ElectrodeGroup'].append({
                         'name': grp_name,
@@ -378,58 +377,68 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         description=desc
                     )
 
+            # aux = [isinstance(i, ElectricalSeries) for i in nwbfile.acquisition.values()]
+            # if not any(aux):
+                # electrode_table_region = nwbfile.create_electrode_table_region(
+                #     list(range(n_channels)),
+                #     'electrode_table_region'
+                # )
+
             # ElectricalSeries
             if 'ElectricalSeries' not in metadata['Ecephys']:
-                # TODO: search for electrodes info in self._channel_properties
                 metadata['Ecephys']['ElectricalSeries'] = [{'name': 'ElectricalSeries',
-                                                            'electrodes': '',
-                                                            'description': 'no description'}]
+                                                            'electrodes': channel_ids,
+                                                            'description': 'electrical_series_description'}]
             # Tests if ElectricalSeries already exists in acquisition
-            aux = [isinstance(i, ElectricalSeries) for i in nwbfile.acquisition.values()]
-            if not any(aux):
-                electrode_table_region = nwbfile.create_electrode_table_region(
-                    list(range(n_channels)),
-                    'electrode_table_region'
-                )
+            nwb_es_names = [ac for ac in nwbfile.acquisition]
+            for es in metadata['Ecephys']['ElectricalSeries']:
+                print(es)
+                if es['name'] not in nwb_es_names:
+                    # Creates an electrode table region with specified ids
+                    curr_ids = es['electrodes']
+                    electrode_table_region = nwbfile.create_electrode_table_region(
+                        region=curr_ids,
+                        description='electrode_table_region'
+                    )
 
-                # sampling rate
-                rate = recording.get_sampling_frequency()
+                    # sampling rate
+                    rate = recording.get_sampling_frequency()
 
-                # channels gains - for RecordingExtractor, these are values to cast traces to uV
-                # for nwb, the conversions (gains) cast the data to Volts
-                gains = np.squeeze([recording.get_channel_gains(channel_ids=[ch])
-                         if 'gain' in recording.get_channel_property_names(channel_id=ch) else 1
-                         for ch in channel_ids])
-                if len(np.unique(gains)) == 1:  # if all gains are equal
-                    scalar_conversion = np.unique(gains)[0]*1e-6
-                    channel_conversion = None
-                else:
-                    scalar_conversion = 1.
-                    channel_conversion = gains*1e-6
+                    # channels gains - for RecordingExtractor, these are values to cast traces to uV
+                    # for nwb, the conversions (gains) cast the data to Volts
+                    gains = np.squeeze([recording.get_channel_gains(channel_ids=[ch])
+                             if 'gain' in recording.get_channel_property_names(channel_id=ch) else 1
+                             for ch in curr_ids])
+                    if len(np.unique(gains)) == 1:  # if all gains are equal
+                        scalar_conversion = np.unique(gains)[0]*1e-6
+                        channel_conversion = None
+                    else:
+                        scalar_conversion = 1.
+                        channel_conversion = gains*1e-6
 
-                def data_generator(recording, num_channels):
-                    #  generates data chunks for iterator
-                    for id in range(0, num_channels):
-                        data = recording.get_traces(channel_ids=[id]).flatten()
-                        yield data
+                    def data_generator(recording, channels_ids):
+                        #  generates data chunks for iterator
+                        for id in channels_ids:
+                            data = recording.get_traces(channel_ids=[id]).flatten()
+                            yield data
 
-                data = data_generator(recording=recording, num_channels=n_channels)
-                ephys_data = DataChunkIterator(data=data, iter_axis=1)
-                acquisition_name = 'ElectricalSeries'
+                    data = data_generator(recording=recording, channels_ids=curr_ids)
+                    ephys_data = DataChunkIterator(data=data, iter_axis=1)
+                    acquisition_name = es['name']
 
-                # If traces are stored as 'int16', then to get Volts = data*channel_conversion*conversion
-                ephys_ts = ElectricalSeries(
-                    name=acquisition_name,
-                    data=ephys_data,
-                    electrodes=electrode_table_region,
-                    starting_time=recording.frame_to_time(0),
-                    rate=rate,
-                    conversion=scalar_conversion,
-                    channel_conversion=channel_conversion,
-                    comments='Generated from SpikeInterface::NwbRecordingExtractor',
-                    description='acquisition_description'
-                )
-                nwbfile.add_acquisition(ephys_ts)
+                    # To get traces in Volts = data*channel_conversion*conversion
+                    ephys_ts = ElectricalSeries(
+                        name=acquisition_name,
+                        data=ephys_data,
+                        electrodes=electrode_table_region,
+                        starting_time=recording.frame_to_time(0),
+                        rate=rate,
+                        conversion=scalar_conversion,
+                        channel_conversion=channel_conversion,
+                        comments='Generated from SpikeInterface::NwbRecordingExtractor',
+                        description='acquisition_description'
+                    )
+                    nwbfile.add_acquisition(ephys_ts)
 
             # add/update epochs
             for (name, ep) in recording._epochs.items():
