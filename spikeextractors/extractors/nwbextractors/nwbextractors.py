@@ -279,7 +279,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return self.channel_ids.tolist()
 
     @staticmethod
-    def write_recording(recording, save_path, metadata={}):
+    def write_recording(recording, save_path, metadata=None):
         '''
 
         Parameters
@@ -297,6 +297,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             read_mode = 'r+'
         else:
             read_mode = 'w'
+
+        if metadata is None:
+            metadata = dict()
 
         # Update any previous metadata with user passed dictionary
         if hasattr(recording, 'nwb_metadata'):
