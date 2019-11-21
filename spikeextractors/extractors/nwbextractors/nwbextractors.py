@@ -72,7 +72,7 @@ def get_dynamic_table_property(dynamic_table, *, row_ids=None, property_name):
     return [dynamic_table[property_name][all_row_ids.index(x)] for x in row_ids]
 
 
-def find_all_unit_property_names(properties_dict={}, features_dict={}):
+def find_all_unit_property_names(properties_dict: dict, features_dict: dict):
     """
     Finds all existing units properties and units spikes features in the sorting
     dictionaries.
@@ -85,7 +85,7 @@ def find_all_unit_property_names(properties_dict={}, features_dict={}):
     for k, v in features_dict.items():
         features_set.update(list(v.keys()))
 
-    return (properties_set, features_set)
+    return properties_set, features_set
 
 
 def get_nspikes(units_table, unit_id):
@@ -178,11 +178,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             self._channel_properties = defaultdict(dict)
             for ind, i in enumerate(self.channel_ids):
                 self._channel_properties[i]['gain'] = gains[ind]
-                self._channel_properties[i]['location'] = [
-                    nwbfile.electrodes['x'][ind],
-                    nwbfile.electrodes['y'][ind],
-                    nwbfile.electrodes['z'][ind]
-                ]
+                this_loc = []
+                if 'rel_x' in nwbfile.electrodes:
+                    this_loc.append(nwbfile.electrodes['rel_x'][ind])
+                    if 'rel_y' in nwbfile.electrodes:
+                        this_loc.append(nwbfile.electrodes['rel_y'][ind])
+                    else:
+                        this_loc.append(0)
+                    self._channel_properties[i]['location'] = this_loc
+
                 for col in nwbfile.electrodes.colnames:
                     if isinstance(nwbfile.electrodes[col][ind], ElectrodeGroup):
                         continue
@@ -190,8 +194,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         self._channel_properties[i]['group'] = int(nwbfile.electrodes[col][ind])
                     elif col == 'location':
                         self._channel_properties[i]['brain_area'] = nwbfile.electrodes[col][ind]
-                    elif col in ['x', 'y', 'z']:
-                        continue
                     else:
                         self._channel_properties[i][col] = nwbfile.electrodes[col][ind]
 
@@ -309,17 +311,22 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 nwb_elec_ids = []
 
             # add new electrodes with id, (x, y, z) and groups
+            if nwbfile.electrodes is None or 'rel_x' not in nwbfile.electrodes.colnames:
+                nwbfile.add_electrode_column('rel_x', 'x position of electrode in electrode group')
+            if nwbfile.electrodes is None or 'rel_y' not in nwbfile.electrodes.colnames:
+                nwbfile.add_electrode_column('rel_y', 'y position of electrode in electrode group')
             for m in channel_ids:
                 if m not in nwb_elec_ids:
                     location = recording.get_channel_property(m, 'location')
-                    while len(location) < 3:
+                    while len(location) < 2:
                         location = np.append(location, [0])
                     impedence = -1.0
                     grp_name = recording.get_channel_groups(channel_ids=[m])
                     grp = nwbfile.electrode_groups[str(grp_name[0])]
                     nwbfile.add_electrode(
                         id=m,
-                        x=float(location[0]), y=float(location[1]), z=float(location[2]),
+                        x=np.nan, y=np.nan, z=np.nan,
+                        rel_x=float(location[0]), rel_y=float(location[1]),
                         imp=impedence,
                         location='unknown',
                         filtering='none',
@@ -335,7 +342,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     desc = 'no description'
                     # property 'location' of RX channels corresponds to x, y, z of NWB electrodes
                     if pr == 'location':
-                        names = ['x', 'y', 'z']
+                        names = ['rel_x', 'rel_y']
                         for (nm, v) in zip(names, val):
                             set_dynamic_table_property(
                                 dynamic_table=electrode_table,
