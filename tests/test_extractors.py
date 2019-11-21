@@ -278,6 +278,23 @@ class TestExtractors(unittest.TestCase):
         self._check_sorting_return_types(SX_nixio)
         self._check_sortings_equal(self.SX, SX_nixio)
 
+    def test_shybrid_extractors(self):
+        # test sorting extractor
+        se.SHYBRIDSortingExtractor.write_sorting(self.SX, self.test_dir)
+        initial_sorting_file = os.path.join(self.test_dir, 'initial_sorting.csv')
+        SX_shybrid = se.SHYBRIDSortingExtractor(initial_sorting_file)
+        self._check_sorting_return_types(SX_shybrid)
+        self._check_sortings_equal(self.SX, SX_shybrid)
+
+        # test recording extractor
+        se.SHYBRIDRecordingExtractor.write_recording(self.RX,
+                                                     self.test_dir,
+                                                     initial_sorting_file)
+        RX_shybrid = se.SHYBRIDRecordingExtractor(os.path.join(self.test_dir,
+                                                               'recording.bin'))
+        self._check_recording_return_types(RX_shybrid)
+        self._check_recordings_equal(self.RX, RX_shybrid)
+
     def _check_recordings_equal(self, RX1, RX2):
         M = RX1.get_num_channels()
         N = RX1.get_num_frames()
