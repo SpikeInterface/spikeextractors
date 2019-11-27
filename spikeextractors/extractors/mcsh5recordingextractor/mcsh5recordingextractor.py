@@ -71,29 +71,32 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         if end_frame is None:
             end_frame = self.get_num_frames()
         if channel_ids is None:
-            channel_ids = self._channel_ids
+            channel_idxs = []
+            for m in self._channel_ids:
+                assert m in self._channel_ids, 'channel_id {} not found'.format(m)
+                channel_idxs.append(np.where(np.array(self._channel_ids) == m)[0][0])
         else:
             if isinstance(channel_ids, (int, np.integer)):
                 assert channel_ids in self._channel_ids, 'channel_id {} not found'.format(channel_ids)
-                channel_ids = np.where(np.array(self._channel_ids) == channel_ids)[0][0]
+                channel_idxs = np.where(np.array(self._channel_ids) == channel_ids)[0][0]
             else:
-                channel_ids = []
+                channel_idxs = []
                 for m in channel_ids:
                     assert m in self._channel_ids, 'channel_id {} not found'.format(m)
-                    channel_ids.append(np.where(np.array(self._channel_ids) == m)[0][0])
+                    channel_idxs.append(np.where(np.array(self._channel_ids) == m)[0][0])
 
         stream = self._rf.require_group('/Data/Recording_0/AnalogStream/Stream_' + str(self._stream_id))
         conv = self._convFact.astype(float) * (10.0 ** self._exponent)
 
-        if np.array(channel_ids).size > 1:
-            if np.any(np.diff(channel_ids) < 0):
-                sorted_idx = np.argsort(channel_ids)
-                recordings = stream.get('ChannelData')[np.sort(channel_ids), start_frame:end_frame]
+        if np.array(channel_idxs).size > 1:
+            if np.any(np.diff(channel_idxs) < 0):
+                sorted_idx = np.argsort(channel_idxs)
+                recordings = stream.get('ChannelData')[np.sort(channel_idxs), start_frame:end_frame]
                 return recordings[sorted_idx] * conv
             else:
-                return stream.get('ChannelData')[np.sort(channel_ids), start_frame:end_frame] * conv
+                return stream.get('ChannelData')[np.sort(channel_idxs), start_frame:end_frame] * conv
         else:
-            return stream.get('ChannelData')[np.array(channel_ids), start_frame:end_frame] * conv
+            return stream.get('ChannelData')[np.array(channel_idxs), start_frame:end_frame] * conv
 
 
     @staticmethod
