@@ -259,7 +259,9 @@ class TestExtractors(unittest.TestCase):
         # create new
         path2 = self.test_dir + '/firings_true.nwb'
         se.NwbSortingExtractor.write_sorting(self.SX, path2, session_description='second',
-                                                 identifier='19475')
+                                             identifier='19475')
+        SX_nwb = se.NwbSortingExtractor(path1)
+        self._check_sortings_equal(self.SX, SX_nwb)
 
     def test_nixio_extractor(self):
         path1 = os.path.join(self.test_dir, 'raw.nix')
@@ -307,8 +309,6 @@ class TestExtractors(unittest.TestCase):
         # get_sampling_frequency
         self.assertEqual(RX1.get_sampling_frequency(), RX2.get_sampling_frequency())
         # get_traces
-        tmp1 = RX1.get_traces()
-        tmp2 = RX2.get_traces()
         self.assertTrue(np.allclose(
             RX1.get_traces(),
             RX2.get_traces()
