@@ -4,7 +4,7 @@ from datetime import datetime
 from collections import defaultdict
 
 import numpy as np
-from hdmf.data_utils import DataChunkIterator
+
 
 import spikeextractors as se
 
@@ -15,6 +15,8 @@ try:
     from pynwb.ecephys import ElectrodeGroup
     from pynwb.device import Device
     from pynwb.misc import Units
+    
+    from hdmf.data_utils import DataChunkIterator
 
     HAVE_NWB = True
 except ModuleNotFoundError:
