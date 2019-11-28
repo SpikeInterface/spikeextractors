@@ -249,17 +249,15 @@ class TestExtractors(unittest.TestCase):
         self._check_recordings_equal(self.RX, RX_nwb)
         del RX_nwb
         # overwrite
-        se.NwbRecordingExtractor.write_recording(self.RX, path1, session_description='second',
-                                                 identifier='19475')
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1)
         RX_nwb = se.NwbRecordingExtractor(path1)
         self._check_recording_return_types(RX_nwb)
         self._check_recordings_equal(self.RX, RX_nwb)
         # add sorting to existing
-        se.NwbSortingExtractor.write_sorting(self.SX, path1)
+        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1)
         # create new
         path2 = self.test_dir + '/firings_true.nwb'
-        se.NwbSortingExtractor.write_sorting(self.SX, path2, session_description='second',
-                                             identifier='19475')
+        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2)
         SX_nwb = se.NwbSortingExtractor(path1)
         self._check_sortings_equal(self.SX, SX_nwb)
 
