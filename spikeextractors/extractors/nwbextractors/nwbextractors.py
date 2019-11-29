@@ -206,7 +206,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         self._channel_properties[i]['group'] = int(unique_grp_names.index(nwbfile.electrodes[col][ind]))
                     elif col == 'location':
                         self._channel_properties[i]['brain_area'] = nwbfile.electrodes[col][ind]
-                    elif col in ['x', 'y', 'z']:
+                    elif col in ['x', 'y', 'z', 'rel_x', 'rel_y']:
                         continue
                     else:
                         self._channel_properties[i][col] = nwbfile.electrodes[col][ind]
