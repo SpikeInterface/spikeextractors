@@ -191,11 +191,14 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             self._channel_properties = defaultdict(dict)
             for ind, i in enumerate(self.channel_ids):
                 self._channel_properties[i]['gain'] = gains[ind]
-                self._channel_properties[i]['location'] = [
-                    nwbfile.electrodes['x'][ind],
-                    nwbfile.electrodes['y'][ind],
-                    nwbfile.electrodes['z'][ind]
-                ]
+                this_loc = []
+                if 'rel_x' in nwbfile.electrodes:
+                    this_loc.append(nwbfile.electrodes['rel_x'][ind])
+                    if 'rel_y' in nwbfile.electrodes:
+                        this_loc.append(nwbfile.electrodes['rel_y'][ind])
+                    else:
+                        this_loc.append(0)
+                    self._channel_properties[i]['location'] = this_loc
                 for col in nwbfile.electrodes.colnames:
                     if isinstance(nwbfile.electrodes[col][ind], ElectrodeGroup):
                         continue
@@ -374,18 +377,27 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             # Number code for Nwb electrodes groups
             nwb_groups_names = [str(grp['name']) for grp in metadata['Ecephys']['ElectrodeGroup']]
 
-            # add new electrodes with id, (x, y, z) and groups
+            # add new electrodes with id, (rel_x, rel_y) and groups
+            if nwbfile.electrodes is None or 'rel_x' not in nwbfile.electrodes.colnames:
+                nwbfile.add_electrode_column('rel_x', 'x position of electrode in electrode group')
+            if nwbfile.electrodes is None or 'rel_y' not in nwbfile.electrodes.colnames:
+                nwbfile.add_electrode_column('rel_y', 'y position of electrode in electrode group')
+
             for m in channel_ids:
                 if m not in nwb_elec_ids:
-                    location = recording.get_channel_property(m, 'location')
-                    while len(location) < 3:
-                        location = np.append(location, [0])
+                    if 'location' in recording.get_channel_property_names(m):
+                        location = recording.get_channel_property(m, 'location')
+                        while len(location) < 2:
+                            location = np.append(location, [0])
+                    else:
+                        location = [np.nan, np.nan]
                     impedence = -1.0
                     grp_name = recording.get_channel_groups(channel_ids=[m])
                     grp = nwbfile.electrode_groups[nwb_groups_names[grp_name[0]]]
                     nwbfile.add_electrode(
                         id=m,
-                        x=float(location[0]), y=float(location[1]), z=float(location[2]),
+                        x=np.nan, y=np.nan, z=np.nan,
+                        rel_x=float(location[0]), rel_y=float(location[1]),
                         imp=impedence,
                         location='unknown',
                         filtering='none',
@@ -399,9 +411,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 for pr in rx_channel_properties:
                     val = recording.get_channel_property(ch, pr)
                     desc = 'no description'
-                    # property 'location' of RX channels corresponds to x, y, z of NWB electrodes
+                    # property 'location' of RX channels corresponds to rel_x and rel_ y of NWB electrodes
                     if pr == 'location':
-                        names = ['x', 'y', 'z']
+                        names = ['rel_x', 'rel_y']
                         for (nm, v) in zip(names, val):
                             set_dynamic_table_property(
                                 dynamic_table=electrode_table,
