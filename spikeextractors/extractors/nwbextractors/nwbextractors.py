@@ -173,6 +173,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             else:
                 gains = es.conversion * np.ones(num_channels) * 1e6
 
+            # Extractors channel groups must be integers, but Nwb electrodes group_name can be strings
+            if 'group_name' in nwbfile.electrodes.colnames:
+                unique_grp_names = list(np.unique(nwbfile.electrodes['group_name'][:]))
+
             # Fill channel properties dictionary from electrodes table
             self.channel_ids = es.electrodes.table.id[:]
             self._channel_properties = defaultdict(dict)
@@ -187,7 +191,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     if isinstance(nwbfile.electrodes[col][ind], ElectrodeGroup):
                         continue
                     elif col == 'group_name':
-                        self._channel_properties[i]['group'] = int(nwbfile.electrodes[col][ind])
+                        self._channel_properties[i]['group'] = int(unique_grp_names.index(nwbfile.electrodes[col][ind]))
                     elif col == 'location':
                         self._channel_properties[i]['brain_area'] = nwbfile.electrodes[col][ind]
                     elif col in ['x', 'y', 'z']:
