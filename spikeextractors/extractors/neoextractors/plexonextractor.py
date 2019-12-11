@@ -13,8 +13,3 @@ class PlexonSortingExtractor(NeoBaseSortingExtractor):
     mode = 'file'
     NeoRawIOClass = neo.rawio.PlexonRawIO
     
-    def _handle_sampling_frequency(self):
-        # in plexon the is only one sampling rate
-        # so easy
-        self._sampling_frequency = self.neo_reader._global_ssampling_rate
-        self._time_start = 0.

@@ -109,10 +109,18 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         #self._sampling_frequency = None
     
     def _handle_sampling_frequency(self):
-        # must handle :
-        #   _sampling_frequency
-        #   _time_stamp0
-        raise(NotImplementedError)
+        #  handle :
+        #   _sig_sampling_rate
+        #   _sig_time_start
+        # bacause neo handle limts in times (s, ms) but spikeextractors in frames.
+        # but spike can have diffrents sampling rate than signals
+        # so conversion from signals frames to times is
+        # format dependent
+        
+        # here the generic case
+        # all channels are in the same neo group so
+        self._sig_sampling_rate = self.neo_reader.header['signal_channels']['sampling_rate'][0]
+        self. _sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index, channel_indexes=None)
     
     def get_unit_ids(self):
         # should be this
@@ -124,16 +132,16 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         neo_unit_id = self.neo_reader.header['unit_channels']['id'][unit_id]
         
-        # neo handle limts in times (s, ms) but spikeextractors in frames.
-        # but spike can have diffrents sampling rate than signals
-        # so conversion from signals frames to times is
-        # format dependent
         assert start_frame is None , 'Do not handle slice of spikes'
         assert end_frame is None, 'Do not handle slice of spikes'
         
+        # in neo can be a sample, or hiher sample rate or even float
         spike_timestamps = self.neo_reader.get_spike_timestamps(block_index=self.block_index, seg_index=self.seg_index,
                             unit_index=neo_unit_id, t_start=None, t_stop=None)
+                            
+        # convert to second second
         spike_times = self.neo_reader.rescale_spike_timestamp(spike_timestamps, dtype='float64')
         
-        spike_indexes = ((spike_times - self._time_start) * self._sampling_rate).astype('int64')
+        # convert to sample related to recording signals
+        spike_indexes = ((spike_times - self._sig_time_start) * self._sig_sampling_rate).astype('int64')
         return spike_indexes
