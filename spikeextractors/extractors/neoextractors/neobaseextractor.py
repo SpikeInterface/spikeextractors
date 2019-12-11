@@ -13,11 +13,14 @@ class _NeoBaseExtractor:
     extractor_gui_params = []
     
     def __init__(self, block_index=None, seg_index=None, **kargs):
+        """
+        if block_index is None then check if only one block
+        if seg_index is None then check if only one segment
+        
+        """
         self.neo_reader = self.NeoRawIOClass(**kargs)
         self.neo_reader.parse_header()
         
-        # TODO propose a meachanisim to select the appropriate segment
-        # in case there are several
         if block_index is None:
             # auto select first block
             num_block = self.neo_reader.block_count()
@@ -49,6 +52,10 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         # spikeextractor for units to be uV implicitly
         # check that units are V, mV or uV
         # otherwise raise error
+        # @alessio @cole : this can be a problem in extractor evrything is base
+        #                     on the fact that the get_traces() give microVolt
+        #                     some file don't have units
+        #                     do we allow this ?
         units = self.neo_reader.header['signal_channels']['units']
         assert np.all(np.isin(units, ['V', 'mV', 'uV'])), 'Signal units no Volt compatible'
         self.additional_gain = np.ones(units.size, dtype='float')
@@ -64,7 +71,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
                                 i_start=start_frame, i_stop=end_frame,
                                channel_indexes=None, channel_names=None, channel_ids=channel_ids)
         
-        # rescale gtrace to natural units
+        # rescale traces to natural units (can be anything)
         scaled_traces = self.neo_reader.rescale_signal_raw_to_float(raw_traces, dtype='float32',
                                     channel_indexes=None, channel_names=None, channel_ids=channel_ids)
         # and then to uV
@@ -112,16 +119,11 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         # neo handle this but not spikeextractors
         
         self._handle_sampling_frequency()
-        #self._sampling_frequency = None
     
     def _handle_sampling_frequency(self):
-        #  handle :
-        #   _sig_sampling_rate
-        #   _sig_time_start
-        # bacause neo handle limts in times (s, ms) but spikeextractors in frames.
-        # but spike can have diffrents sampling rate than signals
-        # so conversion from signals frames to times is
-        # format dependent
+        # bacause neo handle spike in times (s or ms) but spikeextractors in frames related to signals.
+        # In neo spikes can have diffrents sampling rate than signals so conversion from 
+        # signals frames to times is format dependent
         
         # here the generic case
         # all channels are in the same neo group so
@@ -129,9 +131,12 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         self. _neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index, channel_indexes=None)
         
         self.set_sampling_frequency(self._neo_sig_sampling_rate)
-    
+        
+        # For some IOs when there is no signals at inside the dataset this could not work
+        # in that case the extractor class must overwrite this method
+        
     def get_unit_ids(self):
-        # should be this
+        # should be this but this is strings in neo
         # unit_ids = self.neo_reader.header['unit_channels']['id']
         
         # in neo unit_ids are string so here we take unit_index
