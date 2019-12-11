@@ -12,20 +12,26 @@ class _NeoBaseExtractor:
     is_writable = False
     extractor_gui_params = []
     
-    def __init__(self, **kargs):
-        self.neo_reader = self.NeoRawIOClass(**kkargs)
+    def __init__(self, block_index=None, seg_index=None, **kargs):
+        self.neo_reader = self.NeoRawIOClass(**kargs)
         self.neo_reader.parse_header()
         
         # TODO propose a meachanisim to select the appropriate segment
         # in case there are several
-        num_block = self.neo_reader.block_count()
-        assert num_block == 1, 'This file is multi block spikeextractors support only one segment'
-        num_seg = self.neo_reader.segment_count()
-        assert num_seg == 1, 'This file is multi segment spikeextractors support only one segment'
+        if block_index is None:
+            # auto select first block
+            num_block = self.neo_reader.block_count()
+            assert num_block == 1, 'This file is multi block spikeextractors support only one segment'
+            block_index = 0
         
-        # select first block first segment
-        self.block_index = 0
-        self.seg_index = 0
+        if seg_index is None:
+            # auto select first segment
+            num_seg = self.neo_reader.segment_count(block_index)
+            assert num_seg == 1, 'This file is multi segment spikeextractors support only one segment'
+            seg_index = 0
+        
+        self.block_index = block_index
+        self.seg_index = seg_index
     
 
 class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
@@ -49,12 +55,12 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         self.additional_gain[units == 'V'] = 1e6
         self.additional_gain[units == 'mV'] =  1e3
         self.additional_gain[units == 'uV'] = 1.
-        self.additional_gain =self.additional_gain.reshape(-1, 1)
+        self.additional_gain =self.additional_gain.reshape(1, -1)
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         # in neo rawio channel can acces by names/ids/indexes
         # there is no garranty that ids/names are unique on some formats
-        raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.clock_index, seg_index=self.seg_index,
+        raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
                                 i_start=start_frame, i_stop=end_frame,
                                channel_indexes=None, channel_names=None, channel_ids=channel_ids)
         
@@ -119,29 +125,36 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         
         # here the generic case
         # all channels are in the same neo group so
-        self._sig_sampling_rate = self.neo_reader.header['signal_channels']['sampling_rate'][0]
-        self. _sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index, channel_indexes=None)
+        self._neo_sig_sampling_rate = self.neo_reader.header['signal_channels']['sampling_rate'][0]
+        self. _neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index, channel_indexes=None)
+        
+        self.set_sampling_frequency(self._neo_sig_sampling_rate)
     
     def get_unit_ids(self):
         # should be this
-        unit_ids = self.neo_reader.header['unit_channels']['id']
-        # in neo unit_ids are string so here we take index
-        unit_ids = np.arange(unit_ids.size, dtype='int64')
+        # unit_ids = self.neo_reader.header['unit_channels']['id']
+        
+        # in neo unit_ids are string so here we take unit_index
+        unit_ids = np.arange(self.neo_reader.header['unit_channels'].size, dtype='int64')
         return unit_ids
     
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        neo_unit_id = self.neo_reader.header['unit_channels']['id'][unit_id]
+        # this is a string
+        # neo_unit_id = self.neo_reader.header['unit_channels']['id'][unit_id]
+        
+        # this is an int
+        unit_index = unit_id
         
         assert start_frame is None , 'Do not handle slice of spikes'
         assert end_frame is None, 'Do not handle slice of spikes'
         
         # in neo can be a sample, or hiher sample rate or even float
         spike_timestamps = self.neo_reader.get_spike_timestamps(block_index=self.block_index, seg_index=self.seg_index,
-                            unit_index=neo_unit_id, t_start=None, t_stop=None)
+                            unit_index=unit_index, t_start=None, t_stop=None)
                             
         # convert to second second
         spike_times = self.neo_reader.rescale_spike_timestamp(spike_timestamps, dtype='float64')
         
         # convert to sample related to recording signals
-        spike_indexes = ((spike_times - self._sig_time_start) * self._sig_sampling_rate).astype('int64')
+        spike_indexes = ((spike_times - self._neo_sig_time_start) * self._neo_sig_sampling_rate).astype('int64')
         return spike_indexes

@@ -20,7 +20,8 @@ from .extractors.npzsortingextractor.npzsortingextractor import NpzSortingExtrac
 from .extractors.mcsh5recordingextractor.mcsh5recordingextractor import MCSH5RecordingExtractor
 from .extractors.shybridextractors import SHYBRIDRecordingExtractor, SHYBRIDSortingExtractor
 from .extractors.nixioextractors.nixioextractors import NIXIORecordingExtractor, NIXIOSortingExtractor
-from .extractors.neoextractors import (PlexonRecordingExtractor, PlexonSortingExtractor)
+from .extractors.neoextractors import (PlexonRecordingExtractor, PlexonSortingExtractor,
+                                                                NeuralynxRecordingExtractor, NeuralynxSortingExtractor)
 
 
 recording_extractor_full_list = [
