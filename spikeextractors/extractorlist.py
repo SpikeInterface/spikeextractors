@@ -18,6 +18,7 @@ from .extractors.spikeglxrecordingextractor.spikeglxrecordingextractor import Sp
 from .extractors.tridescloussortingextractor.tridescloussortingextractor import TridesclousSortingExtractor
 from .extractors.npzsortingextractor.npzsortingextractor import NpzSortingExtractor
 from .extractors.mcsh5recordingextractor.mcsh5recordingextractor import MCSH5RecordingExtractor
+from .extractors.shybridextractors import SHYBRIDRecordingExtractor, SHYBRIDSortingExtractor
 from .extractors.nixioextractors.nixioextractors import NIXIORecordingExtractor, NIXIOSortingExtractor
 from .extractors.neoextractors import (PlexonRecordingExtractor, PlexonSortingExtractor)
 
@@ -37,6 +38,7 @@ recording_extractor_full_list = [
     PhyRecordingExtractor,
     MaxOneRecordingExtractor,
     MCSH5RecordingExtractor,
+    SHYBRIDRecordingExtractor,
     NIXIORecordingExtractor,
     PlexonRecordingExtractor,
 ]
@@ -56,6 +58,7 @@ sorting_extractor_full_list = [
     SpykingCircusSortingExtractor,
     TridesclousSortingExtractor,
     NpzSortingExtractor,
+    SHYBRIDSortingExtractor,
     NIXIOSortingExtractor,
     PlexonSortingExtractor,
 ]

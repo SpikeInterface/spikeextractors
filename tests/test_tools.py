@@ -2,6 +2,7 @@ import numpy as np
 import unittest
 import tempfile, shutil
 import spikeextractors as se
+from copy import copy
 from pathlib import Path
 
 
@@ -29,8 +30,26 @@ class TestTools(unittest.TestCase):
         sub_RX.save_to_probe_file(Path(self.test_dir) / 'geom.csv')
         # load csv locations
         sub_RX_load = sub_RX.load_probe_file(Path(self.test_dir) / 'geom.csv')
-        position_loaded = [sub_RX_load.get_channel_property(chan, 'location') for chan in range(sub_RX_load.get_num_channels())]
+        position_loaded = [sub_RX_load.get_channel_property(chan, 'location') for
+                           chan in range(sub_RX_load.get_num_channels())]
         self.assertTrue(np.allclose(positions[10], position_loaded[10]))
+
+        # prb file
+        RX = copy(self.RX)
+        channel_groups = []
+        n_group = 4
+        for i in RX.get_channel_ids():
+            channel_groups.append(i // n_group)
+        RX.set_channel_groups(RX.get_channel_ids(), channel_groups)
+        RX.save_to_probe_file('tests/probe_test_no_groups.prb')
+        RX.save_to_probe_file('tests/probe_test_groups.prb', grouping_property='group')
+
+        # load
+        RX_loaded_no_groups = se.load_probe_file(RX, 'tests/probe_test_no_groups.prb')
+        RX_loaded_groups = se.load_probe_file(RX, 'tests/probe_test_groups.prb')
+
+        assert len(np.unique(RX_loaded_no_groups.get_channel_groups())) == 1
+        assert len(np.unique(RX_loaded_groups.get_channel_groups())) == RX.get_num_channels() // n_group
 
     def test_write_dat_file(self):
         nb_sample = self.RX.get_num_frames()

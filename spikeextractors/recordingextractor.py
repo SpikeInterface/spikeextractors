@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import copy
+import random
 from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, get_sub_extractors_by_property
 
 class RecordingExtractor(ABC):
@@ -11,10 +12,10 @@ class RecordingExtractor(ABC):
 
  
     '''
-
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
+        self.id = random.randint(a=0, b=9223372036854775807)
 
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
@@ -97,6 +98,9 @@ class RecordingExtractor(ABC):
         # print('WARNING: this is a temporary warning. You should use get_channel_ids() to iterate through the channels. '
         #       'This warning will be removed in future versions of SpikeInterface.')
         return len(self.get_channel_ids())
+
+    def get_dtype(self):
+        return self.get_traces(channel_ids=self.get_channel_ids()[0], start_frame=0, end_frame=1).dtype
 
     def frame_to_time(self, frame):
         '''This function converts a user-inputted frame index to a time with units of seconds.
@@ -208,7 +212,7 @@ class RecordingExtractor(ABC):
         channel_ids: array_like
             The channel ids (ints) for which the locations will be specified
         locations: array_like
-            A list of corresonding locations (array_like) for the given channel_ids
+            A list of corresponding locations (array_like) for the given channel_ids
         '''
         if len(channel_ids) == len(locations):
             for i in range(len(channel_ids)):
@@ -381,21 +385,17 @@ class RecordingExtractor(ABC):
             The data associated with the given property name. Could be many
             formats as specified by the user.
         '''
-        if isinstance(channel_id, (int, np.integer)):
-            if channel_id in self.get_channel_ids():
-                if channel_id not in self._channel_properties:
-                    self._channel_properties[channel_id] = {}
-                if isinstance(property_name, str):
-                    if property_name in list(self._channel_properties[channel_id].keys()):
-                        return self._channel_properties[channel_id][property_name]
-                    else:
-                        raise RuntimeError(str(property_name) + " has not been added to channel " + str(channel_id))
-                else:
-                    raise TypeError(str(property_name) + " must be a string")
-            else:
-                raise ValueError(str(channel_id) + " is not a valid channel_id")
-        else:
+        if not isinstance(channel_id, (int, np.integer)):
             raise TypeError(str(channel_id) + " must be an int")
+        if channel_id not in self.get_channel_ids():
+            raise ValueError(str(channel_id) + " is not a valid channel_id")
+        if channel_id not in self._channel_properties:
+            raise ValueError('no properties found for channel' + str(channel_id))
+        if property_name not in self._channel_properties[channel_id]:
+            raise RuntimeError(str(property_name) + " has not been added to channel " + str(channel_id))
+        if not isinstance(property_name, str):
+            raise TypeError(str(property_name) + " must be a string")
+        return self._channel_properties[channel_id][property_name]
 
     def get_channel_property_names(self, channel_id):
         '''Get a list of property names for a given channel.
@@ -625,20 +625,27 @@ class RecordingExtractor(ABC):
                                        channel_groups=channel_groups, verbose=verbose)
         return subrecording
 
-    def save_to_probe_file(self, probe_file, format=None, radius=100, dimensions=None, verbose=False):
+    def save_to_probe_file(self, probe_file, grouping_property=None, radius=None,
+                           graph=True, geometry=True, verbose=False):
         '''Saves probe file from the channel information of this recording extractor.
 
         Parameters
         ----------
         probe_file: str
             file name of .prb or .csv file to save probe information to
-        format: str (optional)
-            Format for .prb file. It can be either 'klusta' or 'spyking_circus'. Default is None.
+        grouping_property: str (default None)
+            If grouping_property is a shared_channel_property, different groups are saved based on the property.
+        radius: float (default None)
+            Adjacency radius (used by some sorters). If None it is not saved to the probe file.
+        graph: bool
+            If True, the adjacency graph is saved (default=True)
+        geometry: bool
+            If True, the geometry is saved (default=True)
         verbose: bool
             If True, output is verbose
         '''
-        save_to_probe_file(self, probe_file, format=format, radius=radius, dimensions=dimensions,
-                           verbose=verbose)
+        save_to_probe_file(self, probe_file, grouping_property=grouping_property, radius=radius,
+                           graph=graph, geometry=geometry, verbose=verbose)
 
     def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None):
         '''Saves the traces of this recording extractor into binary .dat format.
