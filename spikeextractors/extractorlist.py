@@ -21,7 +21,7 @@ from .extractors.mcsh5recordingextractor.mcsh5recordingextractor import MCSH5Rec
 from .extractors.shybridextractors import SHYBRIDRecordingExtractor, SHYBRIDSortingExtractor
 from .extractors.nixioextractors.nixioextractors import NIXIORecordingExtractor, NIXIOSortingExtractor
 from .extractors.neoextractors import (PlexonRecordingExtractor, PlexonSortingExtractor,
-                                                                NeuralynxRecordingExtractor, NeuralynxSortingExtractor)
+                                        NeuralynxRecordingExtractor, NeuralynxSortingExtractor)
 
 
 recording_extractor_full_list = [
@@ -41,7 +41,11 @@ recording_extractor_full_list = [
     MCSH5RecordingExtractor,
     SHYBRIDRecordingExtractor,
     NIXIORecordingExtractor,
+    
+    # neo based
     PlexonRecordingExtractor,
+    NeuralynxRecordingExtractor
+    
 ]
 
 recording_extractor_dict = {recording_class.extractor_name: recording_class for recording_class in recording_extractor_full_list}
@@ -61,7 +65,11 @@ sorting_extractor_full_list = [
     NpzSortingExtractor,
     SHYBRIDSortingExtractor,
     NIXIOSortingExtractor,
+    
+    # neo based
     PlexonSortingExtractor,
+    NeuralynxSortingExtractor,
+    
 ]
 
 installed_sorting_extractor_list = [sx for sx in sorting_extractor_full_list if sx.installed]
