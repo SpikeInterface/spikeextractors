@@ -6,12 +6,12 @@ import neo
 class PlexonRecordingExtractor(NeoBaseRecordingExtractor):
     extractor_name = 'plexon'
     mode = 'file'
-    NeoRawIOClass = neo.rawio.PleonRawIO
+    NeoRawIOClass = neo.rawio.PlexonRawIO
 
 class PlexonSortingExtractor(NeoBaseSortingExtractor):
     extractor_name = 'plexon'
     mode = 'file'
-    NeoRawIOClass = neo.rawio.PleonRawIO
+    NeoRawIOClass = neo.rawio.PlexonRawIO
     
     def _handle_sampling_frequency(self):
         # in plexon the is only one sampling rate

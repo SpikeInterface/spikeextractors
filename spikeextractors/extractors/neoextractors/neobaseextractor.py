@@ -1,8 +1,8 @@
 import numpy as np
 import neo
 
-from ..recordingextractor import RecordingExtractor
-from ..sortingextractor import SortingExtractor
+from spikeextractors import RecordingExtractor
+from spikeextractors import SortingExtractor
 
 
 class _NeoBaseExtractor:
@@ -36,7 +36,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         
         # TODO propose a meachanisim to select the appropriate channel groups
         # in neo one channel group have the same dtype/sampling_rate/group_id
-        num_chan_group = self.neo_reader.get_group_channel_indexes()
+        num_chan_group = len(self.neo_reader.get_group_channel_indexes())
         assert num_chan_group == 1, 'This file have several channel groups spikeextractors support only one groups'
         
         
