@@ -150,13 +150,18 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         # this is an int
         unit_index = unit_id
         
-        assert start_frame is None , 'Do not handle slice of spikes'
-        assert end_frame is None, 'Do not handle slice of spikes'
-        
         # in neo can be a sample, or hiher sample rate or even float
         spike_timestamps = self.neo_reader.get_spike_timestamps(block_index=self.block_index, seg_index=self.seg_index,
                             unit_index=unit_index, t_start=None, t_stop=None)
-                            
+        
+        if start_frame is not None:
+            spike_timestamps = spike_timestamps[spike_timestamps>=start_frame]
+
+        if end_frame is not None:
+            spike_timestamps = spike_timestamps[spike_timestamps<=end_frame]
+        
+        
+        
         # convert to second second
         spike_times = self.neo_reader.rescale_spike_timestamp(spike_timestamps, dtype='float64')
         
