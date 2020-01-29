@@ -278,6 +278,12 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         # when suffix is already raw/bin/dat do not change it.
         save_path = save_path.parent / (save_path.name + '.dat')
 
+    if chunk_size is not None or chunk_mb is not None:
+        if time_axis == 1:
+            print("Chunking disabled due to 'time_axis' == 1")
+            chunk_size = None
+            chunk_mb = None
+
     if chunk_size is None and chunk_mb is None:
         traces = recording.get_traces()
         if dtype is not None:
