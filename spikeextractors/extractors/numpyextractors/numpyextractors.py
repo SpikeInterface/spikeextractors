@@ -12,6 +12,7 @@ like any other Recording/SortingExtractor.
 class NumpyRecordingExtractor(RecordingExtractor):
     extractor_name = 'NumpyRecordingExtractor'
     is_writable = True
+    is_dumpable = False
     def __init__(self, timeseries, sampling_frequency, geom=None):
         if isinstance(timeseries, str):
             if Path(timeseries).is_file():
@@ -55,6 +56,8 @@ class NumpyRecordingExtractor(RecordingExtractor):
 class NumpySortingExtractor(SortingExtractor):
     extractor_name = 'NumpySortingExtractor'
     is_writable = False
+    is_dumpable = False
+
     def __init__(self):
         SortingExtractor.__init__(self)
         self._units = {}
