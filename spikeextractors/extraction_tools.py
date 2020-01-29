@@ -3,7 +3,8 @@ import csv
 import os
 import sys
 from pathlib import Path
-
+import json
+import spikeextractors
 
 def read_python(path):
     '''Parses python scripts in a dictionary
@@ -475,3 +476,31 @@ def _export_prb_file(recording, file_name, grouping_property=None, graph=True, g
                 f.write("           'graph':  [],\n")
                 f.write('        },\n')
             f.write('}\n')
+
+
+def load_extractor_from_json(json_file):
+    '''
+    Instantiates extractor from json file
+
+    Parameters
+    ----------
+    json_file: str or Path
+        Path to json file
+
+    Returns
+    -------
+    extractor: RecordingExtractor or SortingExtractor
+        The loaded extractor object
+    '''
+    with open(str(json_file), 'r') as f:
+        d = json.load(f)
+
+    extractor = None
+    # find extractor class
+    if d['class'] in spikeextractors.recording_extractor_dict.keys():
+        reccls = spikeextractors.recording_extractor_dict[d['class']]
+        extractor = reccls(**d['kwargs'])
+    elif d['class'] in spikeextractors.sorting_extractor_dict.keys():
+        sortcls = spikeextractors.sorting_extractor_dict[d['class']]
+        extractor = sortcls(**d['kwargs'])
+    return extractor

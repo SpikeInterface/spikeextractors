@@ -11,6 +11,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
     has_default_locations = False
     installed = True  # check at class level if installed or not
     is_writable = True
+    is_dumpable = True
     mode = 'file'      
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.dat)"},
@@ -34,6 +35,9 @@ class BinDatRecordingExtractor(RecordingExtractor):
         self._sampling_frequency = float(sampling_frequency)
         self._gain = gain
         self._geom = geom
+        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'sampling_frequency': sampling_frequency,
+                       'numchan': numchan, 'dtype': str(dtype), 'recording_channels': recording_channels,
+                       'time_axis': time_axis, 'geom': geom, 'offset': offset, 'gain': gain}
 
         if recording_channels is not None:
             assert len(recording_channels) == self._timeseries.shape[0], \

@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import copy
+import json
+import os
+from pathlib import Path
 import random
-from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, get_sub_extractors_by_property
+from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, \
+    get_sub_extractors_by_property
 
 class RecordingExtractor(ABC):
     '''A class that contains functions for extracting important information
@@ -15,6 +18,7 @@ class RecordingExtractor(ABC):
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
+        self.kwargs = {}
         self.id = random.randint(a=0, b=9223372036854775807)
 
     @abstractmethod
@@ -713,3 +717,23 @@ class RecordingExtractor(ABC):
         '''
         raise NotImplementedError("The write_recording function is not \
                                   implemented for this extractor")
+
+    def dump(self, output_folder=None):
+        '''
+        Dumps recording extractor to json file.
+        The extractor can be re-loaded with spikeextractors.load_extractor_from_json(json_file)
+
+        Parameters
+        ----------
+        output_folder: str or Path
+            Path to output_folder
+        '''
+        if self.is_dumpable:
+            class_type = self.extractor_name
+            d = {'class': class_type, 'kwargs': self.kwargs}
+            if output_folder is None:
+                output_folder = Path(os.getcwd())
+            with open(str(output_folder / 'spikeinterface_recording.json'), 'w', encoding='utf8') as f:
+                json.dump(d, f, indent=4)
+        else:
+            raise ValueError("The recording extractor cannot be dumped to json.")

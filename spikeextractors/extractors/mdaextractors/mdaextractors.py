@@ -13,6 +13,7 @@ class MdaRecordingExtractor(RecordingExtractor):
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = True
+    is_dumpable = True
     mode = 'folder'
     extractor_gui_params = [
         {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
@@ -39,6 +40,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         for m in range(self._num_channels):
             self.set_channel_property(m, 'location', self._geom[m, :])
+        self.kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
     def get_channel_ids(self):
         return list(range(self._num_channels))
@@ -96,6 +98,7 @@ class MdaSortingExtractor(SortingExtractor):
     ]
     installed = True  # check at class level if installed or not
     is_writable = True
+    is_dumpable = True
     mode = 'file'
     installation_mesg = ""  # error message when not installed
 
@@ -113,6 +116,7 @@ class MdaSortingExtractor(SortingExtractor):
             inds = np.where(self._labels == unit_id)
             max_channels = self._max_channels[inds].astype(int)
             self.set_unit_property(unit_id, 'max_channel', max_channels[0])
+        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'sampling_frequency': sampling_frequency}
 
     def get_unit_ids(self):
         return list(self._unit_ids)

@@ -6,7 +6,7 @@ import os, shutil
 
 class CacheRecordingExtractor(BinDatRecordingExtractor):
 
-    extractor_name = 'CacheRecordingExtractor'
+    extractor_name = 'BinDatRecordingExtractor'
 
     def __init__(self, recording, chunk_size=None, output_folder=None):
         self._recording = recording
@@ -34,3 +34,4 @@ class CacheRecordingExtractor(BinDatRecordingExtractor):
             save_path = save_path.with_suffix('.dat')
         shutil.move(self._tmp_file, str(save_path))
         self._tmp_file = str(save_path)
+        self.kwargs['file_path'] = str(Path(self._tmp_file).absolute())
