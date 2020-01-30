@@ -284,7 +284,15 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
             chunk_size = None
             chunk_mb = None
 
-    if chunk_size is None and chunk_mb is None:
+    # set chunk size
+    if chunk_size is not None:
+        chunk_size = int(chunk_size)
+    elif chunk_mb is not None:
+        n_bytes = recording.get_dtype().itemsize
+        max_size = int(chunk_mb * 1e6)  # set Mb per chunk
+        chunk_size = max_size // (recording.get_num_channels() * n_bytes)
+
+    if chunk_size is None:
         traces = recording.get_traces()
         if dtype is not None:
             traces = traces.astype(dtype)
@@ -292,9 +300,8 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
             traces = traces.T
         with save_path.open('wb') as f:
             traces.tofile(f)
-    elif chunk_size is not None:
-        chunk_size = int(chunk_size)
-        assert time_axis == 0, 'chunked writing work only with time_axis 0'
+    else:
+        # chunk size is not None
         n_sample = recording.get_num_frames()
         n_chunk = n_sample // chunk_size
         if n_sample % chunk_size > 0:
@@ -308,27 +315,6 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
                 if time_axis == 0:
                     traces = traces.T
                 f.write(traces.tobytes())
-    elif chunk_mb is not None:
-        assert time_axis == 0, 'chunked writing work only with time_axis 0'
-        n_bytes = recording.get_dtype().itemsize
-        n_sample = recording.get_num_frames()
-        max_size = int(chunk_mb * 1e6)  # set 500 Mb per chunk
-
-        chunk_size = max_size // (recording.get_num_channels() * n_bytes)
-        n_chunk = n_sample // chunk_size
-        if n_sample % chunk_size > 0:
-            n_chunk += 1
-        with save_path.open('wb') as f:
-            for i in range(n_chunk):
-                traces = recording.get_traces(start_frame=i*chunk_size,
-                                              end_frame=min((i+1)*chunk_size, n_sample))
-                if dtype is not None:
-                    traces = traces.astype(dtype)
-                if time_axis == 0:
-                    traces = traces.T
-                f.write(traces.tobytes())
-    else:
-        raise AttributeError("'chunk_size' can be None, int, or 'auto'")
     return save_path
 
 
