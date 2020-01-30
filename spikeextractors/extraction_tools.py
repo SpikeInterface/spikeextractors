@@ -252,7 +252,7 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
     return samples
 
 
-def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunk_size=None):
+def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
     '''Saves the traces of a recording extractor in binary .dat format.
 
     Parameters
@@ -267,13 +267,30 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
     dtype: dtype
         Type of the saved data. Default float32.
     chunk_size: None or int
-        If not None then the copy done by chunk size.
+        If not None then the file is saved in chunks.
         This avoid to much memory consumption for big files.
+        If 'auto' the file is saved in chunks of ~ 500Mb
+    chunk_mb: None or int
+        Chunk size in Mb (default 500Mb)
     '''
     save_path = Path(save_path)
     if save_path.suffix == '':
         # when suffix is already raw/bin/dat do not change it.
         save_path = save_path.parent / (save_path.name + '.dat')
+
+    if chunk_size is not None or chunk_mb is not None:
+        if time_axis == 1:
+            print("Chunking disabled due to 'time_axis' == 1")
+            chunk_size = None
+            chunk_mb = None
+
+    # set chunk size
+    if chunk_size is not None:
+        chunk_size = int(chunk_size)
+    elif chunk_mb is not None:
+        n_bytes = recording.get_dtype().itemsize
+        max_size = int(chunk_mb * 1e6)  # set Mb per chunk
+        chunk_size = max_size // (recording.get_num_channels() * n_bytes)
 
     if chunk_size is None:
         traces = recording.get_traces()
@@ -284,15 +301,15 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         with save_path.open('wb') as f:
             traces.tofile(f)
     else:
-        assert time_axis == 0, 'chunked writing work only with time_axis 0'
+        # chunk size is not None
         n_sample = recording.get_num_frames()
         n_chunk = n_sample // chunk_size
         if n_sample % chunk_size > 0:
             n_chunk += 1
         with save_path.open('wb') as f:
             for i in range(n_chunk):
-                traces = recording.get_traces(start_frame=i*chunk_size,
-                                              end_frame=min((i+1)*chunk_size, n_sample))
+                traces = recording.get_traces(start_frame=i * chunk_size,
+                                              end_frame=min((i + 1) * chunk_size, n_sample))
                 if dtype is not None:
                     traces = traces.astype(dtype)
                 if time_axis == 0:

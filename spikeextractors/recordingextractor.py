@@ -647,7 +647,7 @@ class RecordingExtractor(ABC):
         save_to_probe_file(self, probe_file, grouping_property=grouping_property, radius=radius,
                            graph=graph, geometry=geometry, verbose=verbose)
 
-    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None):
+    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
         '''Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
@@ -660,10 +660,14 @@ class RecordingExtractor(ABC):
         dtype: dtype
             Type of the saved data. Default float32
         chunk_size: None or int
-            If not None then the copy done by chunk size.
+            If not None then the file is saved in chunks.
             This avoid to much memory consumption for big files.
+            If 'auto' the file is saved in chunks of ~ 500Mb
+        chunk_mb: None or int
+            Chunk size in Mb (default 500Mb)
         '''
-        write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size)
+        write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size,
+                                   chunk_mb=chunk_mb)
    
     def get_sub_extractors_by_property(self, property_name, return_property_list=False):
         '''Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given
