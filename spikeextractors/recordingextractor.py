@@ -100,7 +100,7 @@ class RecordingExtractor(ABC):
         return len(self.get_channel_ids())
 
     def get_dtype(self):
-        return self.get_traces(channel_ids=self.get_channel_ids()[0], start_frame=0, end_frame=1).dtype
+        return self.get_traces(channel_ids=[self.get_channel_ids()[0]], start_frame=0, end_frame=1).dtype
 
     def frame_to_time(self, frame):
         '''This function converts a user-inputted frame index to a time with units of seconds.
