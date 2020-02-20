@@ -19,15 +19,7 @@ class HS2SortingExtractor(SortingExtractor):
     mode = 'file'
     installation_mesg = "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-    def __init__(self, recording_file, load_unit_info=False):
-=======
     def __init__(self, file_path, load_unit_info=True):
->>>>>>> Stashed changes
-=======
-    def __init__(self, file_path, load_unit_info=False):
->>>>>>> origin/master
         assert HAVE_HS2SX, "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"
         SortingExtractor.__init__(self)
         self._recording_file = file_path
