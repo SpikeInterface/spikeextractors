@@ -13,21 +13,24 @@ except ImportError:
 class BiocamRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'BiocamRecordingExtractor'
-    has_locations = True
+    has_default_locations = True
     installed = HAVE_BIOCAM  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'recording_file', 'type': 'path', 'title': "Path to file"},
+    is_writable = True
+    mode = 'file'
+    extractor_gui_params = [       
+        {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
+        {'name': 'mea_pitch', 'type': 'int', 'value': 42, 'default': 42, 'title': "The pitch of the MEA"},
     ]
     installation_mesg = "To use the BiocamRecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
-    def __init__(self, recording_file, verbose=False, mea_pitch=42):
+    def __init__(self, file_path, verbose=False, mea_pitch=42):
         assert HAVE_BIOCAM, "To use the BiocamRecordingExtractor install h5py: \n\n pip install h5py\n\n"
-        RecordingExtractor.__init__(self)
         self._mea_pitch = mea_pitch
-        self._recording_file = recording_file
+        self._recording_file = file_path
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, self._chIndices, \
         self._file_format, self._signalInv, self._positions, self._read_function = openBiocamFile(
             self._recording_file, self._mea_pitch, verbose)
+        RecordingExtractor.__init__(self)
         for m in range(self._nRecCh):
             self.set_channel_property(m, 'location', self._positions[m])
 
@@ -110,7 +113,7 @@ def openBiocamFile(filename,  mea_pitch, verbose=False):
     file_format = rf['3BData'].attrs.get('Version')
     if file_format == 100:
         nRecCh = len(rf['3BData/Raw'][0])
-    elif file_format == 101:
+    elif (file_format == 101) or (file_format == 102):
         nRecCh = int(1. * rf['3BData/Raw'].shape[0] / nFrames)
     else:
         raise Exception('Unknown data file format.')
@@ -131,10 +134,16 @@ def openBiocamFile(filename,  mea_pitch, verbose=False):
     if verbose:
         print("# Signal inversion is " + str(signalInv) + ".")
         print("# If your spike sorting results look wrong, invert the signal.")
-    if file_format == 100:
+    if (file_format == 100)&(signalInv == 1):
         read_function = readHDF5t_100
-    else:
+    elif (file_format == 100)&(signalInv == -1):
+        read_function = readHDF5t_100_i
+    if ((file_format == 101)|(file_format == 102))&(signalInv == 1):
         read_function = readHDF5t_101
+    elif ((file_format == 101)|(file_format == 102))&(signalInv == -1):
+        read_function = readHDF5t_101_i
+    else:
+        raise RuntimeError("File format unknown.")
     return (rf, nFrames, samplingRate, nRecCh, chIndices, file_format, signalInv, rawIndices, read_function)
 
 
@@ -145,12 +154,23 @@ def readHDF5t_100(rf, t0, t1, nch):
         raise Exception('Reading backwards? Not sure about this.')
         return rf['3BData/Raw'][t1:t0]
 
+def readHDF5t_100_i(rf, t0, t1, nch):
+    if t0 <= t1:
+        return 4096-rf['3BData/Raw'][t0:t1]
+    else:  # Reversed read
+        raise Exception('Reading backwards? Not sure about this.')
+        return 4096-rf['3BData/Raw'][t1:t0]
 
 def readHDF5t_101(rf, t0, t1, nch):
     if t0 <= t1:
-        d = rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1-t0, nch), order='C')
-        return d
+        return rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1-t0, nch), order='C')
     else:  # Reversed read
         raise Exception('Reading backwards? Not sure about this.')
-        d = rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1-t0, nch), order='C')
-        return d
+        return rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1-t0, nch), order='C')
+
+def readHDF5t_101_i(rf, t0, t1, nch):
+    if t0 <= t1:
+        return 4096-rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1-t0, nch), order='C')
+    else:  # Reversed read
+        raise Exception('Reading backwards? Not sure about this.')
+        return 4096-rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1-t0, nch), order='C')

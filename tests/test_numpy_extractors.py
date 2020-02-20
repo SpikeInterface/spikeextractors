@@ -7,13 +7,13 @@ class TestNumpyExtractors(unittest.TestCase):
     def setUp(self):
         M = 4
         N = 10000
-        samplerate = 30000
+        sampling_frequency = 30000
         X = np.random.normal(0, 1, (M, N))
         geom = np.random.normal(0, 1, (M, 2))
         self._X = X
         self._geom = geom
-        self._samplerate = samplerate
-        self.RX = se.NumpyRecordingExtractor(timeseries=X, samplerate=samplerate, geom=geom)
+        self._sampling_frequency = sampling_frequency
+        self.RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
         self.SX = se.NumpySortingExtractor()
         L = 200
         self._train1 = np.rint(np.random.uniform(0, N, L)).astype(int)
@@ -32,7 +32,7 @@ class TestNumpyExtractors(unittest.TestCase):
         # get_num_frames
         self.assertEqual(self.RX.get_num_frames(), self._X.shape[1])
         # get_sampling_frequency
-        self.assertEqual(self.RX.get_sampling_frequency(), self._samplerate)
+        self.assertEqual(self.RX.get_sampling_frequency(), self._sampling_frequency)
         # get_traces
         self.assertTrue(np.allclose(self.RX.get_traces(), self._X))
         self.assertTrue(

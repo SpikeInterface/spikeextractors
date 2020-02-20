@@ -13,14 +13,17 @@ except ImportError:
 class SpykingCircusRecordingExtractor(NumpyRecordingExtractor):
 
     extractor_name = 'SpykingCircusRecordingExtractor'
+    has_default_locations = False
     installed = True  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'spykingcircus_folder', 'type': 'path', 'title': "Path to folder"},
+    is_writable = False
+    mode = 'folder'
+    extractor_gui_params = [
+        {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
     ]
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, spykingcircus_folder):
-        spykingcircus_folder = Path(spykingcircus_folder)
+    def __init__(self, folder_path):
+        spykingcircus_folder = Path(folder_path)
         listfiles = spykingcircus_folder.iterdir()
         sample_rate = None
         recording_file = None
@@ -53,17 +56,21 @@ class SpykingCircusRecordingExtractor(NumpyRecordingExtractor):
 class SpykingCircusSortingExtractor(SortingExtractor):
 
     extractor_name = 'SpykingCircusSortingExtractor'
+    exporter_name = 'SpykingCircusSortingExporter'
     installed = HAVE_SCSX  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'spykingcircus_folder', 'type': 'path', 'title': "Path to folder"},
+    is_writable = True
+    mode = 'folder'
+    exporter_gui_params = [
+        {'name': 'save_path', 'type': 'file_or_folder', 'title': "Path to file or folder (file must end with is either"
+                                                                 " a folder or an hdf5 file ending with 'result.hdf5'"
+                                                                 " or 'result-merged.hdf5'"},
     ]
     installation_mesg = "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
-                               # error message when not installed
 
-    def __init__(self, spykingcircus_folder):
+    def __init__(self, folder_path):
         assert HAVE_SCSX, "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
         SortingExtractor.__init__(self)
-        spykingcircus_folder = Path(spykingcircus_folder)
+        spykingcircus_folder = Path(folder_path)
         listfiles = spykingcircus_folder.iterdir()
         results = None
         sample_rate = None
@@ -107,7 +114,7 @@ class SpykingCircusSortingExtractor(SortingExtractor):
         self._spiketrains = []
         self._unit_ids = []
         for temp in f_results['spiketimes'].keys():
-            self._spiketrains.append(f_results['spiketimes'][temp])
+            self._spiketrains.append(np.array(f_results['spiketimes'][temp]).astype('int64'))
             self._unit_ids.append(int(temp.split('_')[-1]))
 
     def get_unit_ids(self):
@@ -118,7 +125,7 @@ class SpykingCircusSortingExtractor(SortingExtractor):
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        times = np.array(self._spiketrains[self.get_unit_ids().index(unit_id)])
+        times = self._spiketrains[self.get_unit_ids().index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
 

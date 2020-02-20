@@ -15,24 +15,25 @@ class ExdirRecordingExtractor(RecordingExtractor):
     extractor_name = 'ExdirRecordingExtractor'
     has_default_locations = False
     installed = HAVE_EXDIR  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'exdir_file', 'type': 'path', 'title': "Path to file"},
-        {'name': 'probe_path', 'type': 'str', 'title': "Path to probe file (csv or prb)"},
+    is_writable = True
+    mode = 'folder'
+    extractor_gui_params = [
+        {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
     ]
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
-    def __init__(self, exdir_file):
+    def __init__(self, folder_path):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
-        RecordingExtractor.__init__(self)
-        self._exdir_file = exdir_file
-        exdir_group = exdir.File(exdir_file, plugins=[exdir.plugins.quantities])
+        self._exdir_file = folder_path
+        exdir_group = exdir.File(folder_path, plugins=[exdir.plugins.quantities])
 
         self._recordings = exdir_group['acquisition']['timeseries']
-        self._samplerate = float(self._recordings.attrs['sample_rate'].rescale('Hz').magnitude)
+        self._sampling_frequency = float(self._recordings.attrs['sample_rate'].rescale('Hz').magnitude)
 
         self._num_channels = self._recordings.shape[0]
-        self._num_timepoints = self._recordings.shape[1]
-
+        self._num_timepoints = self._recordings.shape[1]   
+        RecordingExtractor.__init__(self)
+        
     def get_channel_ids(self):
         return list(range(self._num_channels))
 
@@ -40,7 +41,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
         return self._num_timepoints
 
     def get_sampling_frequency(self):
-        return self._samplerate
+        return self._sampling_frequency
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if start_frame is None:
@@ -52,11 +53,11 @@ class ExdirRecordingExtractor(RecordingExtractor):
         return self._recordings.data[np.array(channel_ids), start_frame:end_frame]
 
     @staticmethod
-    def write_recording(recording, exdir_file, lfp=False, mua=False):
+    def write_recording(recording, save_path, lfp=False, mua=False):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         channel_ids = recording.get_channel_ids()
         raw = recording.get_traces()
-        exdir_group = exdir.File(exdir_file, plugins=[exdir.plugins.quantities])
+        exdir_group = exdir.File(save_path, plugins=[exdir.plugins.quantities])
 
         if not lfp and not mua:
             acq = exdir_group.require_group('acquisition')
@@ -67,7 +68,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
         elif lfp:
             ephys = exdir_group.require_group('processing').require_group('electrophysiology')
             ephys.attrs['sample_rate'] = recording.get_sampling_frequency() * pq.Hz
-            if 'group' in recording.get_channel_property_names():
+            if 'group' in recording.get_shared_channel_property_names():
                 channel_groups = np.unique([recording.get_channel_property(ch, 'group')
                                             for ch in recording.get_channel_ids()])
             else:
@@ -130,7 +131,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
         elif mua:
             ephys = exdir_group.require_group('processing').require_group('electrophysiology')
             ephys.attrs['sample_rate'] = recording.get_sampling_frequency() * pq.Hz
-            if 'group' in recording.get_channel_property_names():
+            if 'group' in recording.get_shared_channel_property_names():
                 channel_groups = np.unique([recording.get_channel_property(ch, 'group')
                                             for ch in recording.get_channel_ids()])
             else:
@@ -194,21 +195,21 @@ class ExdirRecordingExtractor(RecordingExtractor):
 class ExdirSortingExtractor(SortingExtractor):
 
     extractor_name = 'ExdirSortingExtractor'
-    installed = HAVE_EXDIR  # check at class level if installed or not
-    _gui_params = [
-        {'name': 'exdir_file', 'type': 'file_path', 'title': "str, Path to file"},
-        {'name': 'sample_rate', 'type': 'float', 'title': "Sampling rate of recording. "
-                                                          "It will be overwritten if exdir_file contains this info."},
-        {'name': 'channel_group', 'type': 'int', 'title': "Channel group to load spike trains from."},
-        {'name': 'load_waveforms', 'type': 'bool', 'title': "if True, waveforms are loaded."},
+    exporter_name = 'ExdirSortingExporter'
+    exporter_gui_params = [
+        {'name': 'save_path', 'type': 'folder', 'title': "Save path"},
+        {'name': 'save_waveforms', 'type': 'bool',  'value': False, 'default': False, 'title': "Save path"},
     ]
+    installed = HAVE_EXDIR  # check at class level if installed or not
+    is_writable = True
+    mode = 'folder'
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
-    def __init__(self, exdir_file, sample_rate=None, channel_group=None, load_waveforms=False):
+    def __init__(self, folder_path, sampling_frequency=None, channel_group=None, load_waveforms=False):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
         SortingExtractor.__init__(self)
-        self._exdir_file = exdir_file
-        exdir_group = exdir.File(exdir_file, plugins=exdir.plugins.quantities)
+        self._exdir_file = folder_path
+        exdir_group = exdir.File(folder_path, plugins=exdir.plugins.quantities)
 
         electrophysiology = None
         if 'processing' in exdir_group.keys():
@@ -216,14 +217,14 @@ class ExdirSortingExtractor(SortingExtractor):
                 electrophysiology = exdir_group['processing']['electrophysiology']
                 ephys_attrs = electrophysiology.attrs
                 if 'sample_rate' in ephys_attrs:
-                    sample_rate = ephys_attrs['sample_rate']
+                    sampling_frequency = ephys_attrs['sample_rate']
         else:
-            if sample_rate is None:
-                raise Exception("Sampling rate information not found. Please provide it wiht the 'sample_rate' "
+            if sampling_frequency is None:
+                raise Exception("Sampling rate information not found. Please provide it with the 'sampling_frequency' "
                                 "argument")
             else:
-                sample_rate = sample_rate * pq.Hz
-        self._sampling_frequency = float(sample_rate.rescale('Hz').magnitude)
+                sampling_frequency = sampling_frequency * pq.Hz
+        self._sampling_frequency = float(sampling_frequency.rescale('Hz').magnitude)
 
         if electrophysiology is None:
             raise Exception("'electrophysiology' group not found!")
@@ -246,7 +247,7 @@ class ExdirSortingExtractor(SortingExtractor):
                 if 'UnitTimes' in channel.keys():
                     for unit, unit_times in channel['UnitTimes'].items():
                         self._unit_ids.append(current_unit)
-                        self._spike_trains.append((unit_times['times'].data.rescale('s')*sample_rate).magnitude)
+                        self._spike_trains.append((unit_times['times'].data.rescale('s')*sampling_frequency).magnitude)
                         attrs = unit_times.attrs
                         for k, v in attrs.items():
                             self.set_unit_property(current_unit, k, v)
@@ -269,26 +270,26 @@ class ExdirSortingExtractor(SortingExtractor):
         return np.rint(times[inds]).astype(int)
 
     @staticmethod
-    def write_sorting(sorting, exdir_file, recording=None, sample_rate=None, save_waveforms=False, verbose=False):
+    def write_sorting(sorting, save_path, recording=None, sampling_frequency=None, save_waveforms=False, verbose=False):
         assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
-        if sample_rate is None and recording is None:
-            raise Exception("Provide 'sample_rate' argument (Hz)")
+        if sampling_frequency is None and recording is None:
+            raise Exception("Provide 'sampling_frequency' argument (Hz)")
         else:
             if recording is None:
-                sample_rate = sample_rate * pq.Hz
+                sampling_frequency = sampling_frequency * pq.Hz
             else:
-                sample_rate = recording.get_sampling_frequency() * pq.Hz
+                sampling_frequency = recording.get_sampling_frequency() * pq.Hz
 
-        exdir_group = exdir.File(exdir_file, plugins=exdir.plugins.quantities)
+        exdir_group = exdir.File(save_path, plugins=exdir.plugins.quantities)
         ephys = exdir_group.require_group('processing').require_group('electrophysiology')
-        ephys.attrs['sample_rate'] = sample_rate
+        ephys.attrs['sample_rate'] = sampling_frequency
 
-        if 'group' in sorting.get_unit_property_names():
+        if 'group' in sorting.get_shared_unit_property_names():
             channel_groups = np.unique([sorting.get_unit_property(unit, 'group') for unit in sorting.get_unit_ids()])
         else:
             channel_groups = [0]
 
-        if len(channel_groups) == 1:
+        if len(channel_groups) == 1 and channel_groups[0] == 0:
             chan = 0
             if verbose:
                 print("Single group: ", chan)
@@ -300,7 +301,7 @@ class ExdirSortingExtractor(SortingExtractor):
             except Exception as e:
                 pass
             unittimes = ch_group.require_group('UnitTimes')
-            unit_stop_time = np.max([(np.max(sorting.get_unit_spike_train(u).astype(float) / sample_rate).rescale('s'))
+            unit_stop_time = np.max([(np.max(sorting.get_unit_spike_train(u).astype(float) / sampling_frequency).rescale('s'))
                                      for u in sorting.get_unit_ids()]) * pq.s
             recording_stop_time = None
             if recording is not None:
@@ -314,7 +315,7 @@ class ExdirSortingExtractor(SortingExtractor):
                 unittimes.attrs['electrode_identities'] = np.array([])
                 unittimes.attrs['electrode_idx'] = np.array(recording.get_channel_ids())
                 unittimes.attrs['start_time'] = 0 * pq.s
-            ch_group.attrs['sample_rate'] = sample_rate
+            ch_group.attrs['sample_rate'] = sampling_frequency
 
             if recording_stop_time is not None:
                 unittimes.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
@@ -329,13 +330,13 @@ class ExdirSortingExtractor(SortingExtractor):
                 unit_group = unittimes.require_group(str(unit))
                 unit_group.require_dataset('times',
                                            data=(sorting.get_unit_spike_train(unit).astype(float)
-                                                 / sample_rate).rescale('s'))
+                                                 / sampling_frequency).rescale('s'))
                 unit_group.attrs['cluster_group'] = 'unsorted'
                 unit_group.attrs['group_id'] = chan
                 unit_group.attrs['name'] = 'unit #' + str(unit)
 
                 timestamps = np.concatenate((timestamps, (sorting.get_unit_spike_train(unit).astype(float)
-                                                          / sample_rate).rescale('s')))
+                                                          / sampling_frequency).rescale('s')))
                 nums = np.concatenate((nums, [unit] * len(sorting.get_unit_spike_train(unit))))
 
                 if 'waveforms' in sorting.get_unit_spike_feature_names(unit):
@@ -347,13 +348,13 @@ class ExdirSortingExtractor(SortingExtractor):
             if save_waveforms:
                 if verbose:
                     print("Saving EventWaveforms")
-                if 'waveforms' in sorting.get_unit_spike_feature_names():
+                if 'waveforms' in sorting.get_shared_unit_spike_feature_names():
                     eventwaveform = ch_group.require_group('EventWaveform')
                     waveform_ts = eventwaveform.require_group('waveform_timeseries')
                     data = waveform_ts.require_dataset('data', data=waveforms)
                     waveform_ts.attrs['electrode_group_id'] = chan
                     data.attrs['num_samples'] = len(waveforms)
-                    data.attrs['sample_rate'] = sample_rate
+                    data.attrs['sample_rate'] = sampling_frequency
                     data.attrs['unit'] = pq.dimensionless
                     times = waveform_ts.require_dataset('timestamps', data=timestamps)
                     times.attrs['num_samples'] = len(timestamps)
@@ -365,7 +366,7 @@ class ExdirSortingExtractor(SortingExtractor):
                         if recording_stop_time is not None:
                             waveform_ts.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
                                 else unit_stop_time
-                        waveform_ts.attrs['sample_rate'] = sample_rate
+                        waveform_ts.attrs['sample_rate'] = sampling_frequency
                         waveform_ts.attrs['sample_length'] = waveforms.shape[1]
                         waveform_ts.attrs['num_samples'] = len(waveforms)
                 if verbose:
@@ -398,7 +399,7 @@ class ExdirSortingExtractor(SortingExtractor):
                     print("Group: ", chan)
                 ch_group = ephys.require_group('channel_group_' + str(chan))
                 unittimes = ch_group.require_group('UnitTimes')
-                unit_stop_time = np.max([(np.max(sorting.get_unit_spike_train(u).astype(float) / sample_rate).rescale('s'))
+                unit_stop_time = np.max([(np.max(sorting.get_unit_spike_train(u).astype(float) / sampling_frequency).rescale('s'))
                                          for u in sorting.get_unit_ids()]) * pq.s
                 recording_stop_time = None
                 if recording is not None:
@@ -415,7 +416,7 @@ class ExdirSortingExtractor(SortingExtractor):
                     ch_group.attrs['electrode_idx'] = np.array([i_c for i_c, ch in enumerate(recording.get_channel_ids())
                                                                 if recording.get_channel_property(ch, 'group') == chan])
                     ch_group.attrs['start_time'] = 0 * pq.s
-                ch_group.attrs['sample_rate'] = sample_rate
+                ch_group.attrs['sample_rate'] = sampling_frequency
 
                 if recording_stop_time is not None:
                     unittimes.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
@@ -432,13 +433,13 @@ class ExdirSortingExtractor(SortingExtractor):
                         unit_group = unittimes.require_group(str(unit))
                         unit_group.require_dataset('times',
                                                    data=(sorting.get_unit_spike_train(unit).astype(float)
-                                                         / sample_rate).rescale('s'))
+                                                         / sampling_frequency).rescale('s'))
                         unit_group.attrs['cluster_group'] = 'unsorted'
                         unit_group.attrs['group_id'] = chan
                         unit_group.attrs['name'] = 'unit #' + str(unit)
 
                         timestamps = np.concatenate((timestamps, (sorting.get_unit_spike_train(unit).astype(float)
-                                                         / sample_rate).rescale('s')))
+                                                         / sampling_frequency).rescale('s')))
                         nums = np.concatenate((nums, [unit]*len(sorting.get_unit_spike_train(unit))))
 
                         if 'waveforms' in sorting.get_unit_spike_feature_names(unit):
@@ -449,12 +450,12 @@ class ExdirSortingExtractor(SortingExtractor):
                 if save_waveforms:
                     if verbose:
                         print("Saving EventWaveforms")
-                    if 'waveforms' in sorting.get_unit_spike_feature_names():
+                    if 'waveforms' in sorting.get_shared_unit_spike_feature_names():
                         eventwaveform = ch_group.require_group('EventWaveform')
                         waveform_ts = eventwaveform.require_group('waveform_timeseries')
                         data = waveform_ts.require_dataset('data', data=waveforms)
                         data.attrs['num_samples'] = len(waveforms)
-                        data.attrs['sample_rate'] = sample_rate
+                        data.attrs['sample_rate'] = sampling_frequency
                         data.attrs['unit'] = pq.dimensionless
                         times = waveform_ts.require_dataset('timestamps', data=timestamps)
                         times.attrs['num_samples'] = len(timestamps)
@@ -469,7 +470,7 @@ class ExdirSortingExtractor(SortingExtractor):
                             if recording_stop_time is not None:
                                 waveform_ts.attrs['stop_time'] = recording_stop_time if recording_stop_time > unit_stop_time \
                                     else unit_stop_time
-                            waveform_ts.attrs['sample_rate'] = sample_rate
+                            waveform_ts.attrs['sample_rate'] = sampling_frequency
                             waveform_ts.attrs['sample_length'] = waveforms.shape[1]
                             waveform_ts.attrs['num_samples'] = len(waveforms)
                 if verbose:

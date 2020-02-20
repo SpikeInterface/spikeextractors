@@ -1,4 +1,4 @@
-from .RecordingExtractor import RecordingExtractor
+from .recordingextractor import RecordingExtractor
 import numpy as np
 
 
@@ -7,7 +7,6 @@ import numpy as np
 class SubRecordingExtractor(RecordingExtractor):
     def __init__(self, parent_recording, *, channel_ids=None, renamed_channel_ids=None, start_frame=None,
                  end_frame=None):
-        RecordingExtractor.__init__(self)
         self._parent_recording = parent_recording
         self._channel_ids = channel_ids
         self._renamed_channel_ids = renamed_channel_ids
@@ -24,6 +23,7 @@ class SubRecordingExtractor(RecordingExtractor):
         self._original_channel_id_lookup = {}
         for i in range(len(self._channel_ids)):
             self._original_channel_id_lookup[self._renamed_channel_ids[i]] = self._channel_ids[i]
+        RecordingExtractor.__init__(self)
         self.copy_channel_properties(parent_recording, channel_ids=self._renamed_channel_ids)
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
@@ -42,7 +42,11 @@ class SubRecordingExtractor(RecordingExtractor):
         return self._renamed_channel_ids
 
     def get_num_frames(self):
-        return self._end_frame - self._start_frame
+        if self._end_frame == np.inf:
+            end_frame = self._parent_recording.get_num_frames()
+        else:
+            end_frame = self._end_frame
+        return end_frame - self._start_frame
 
     def get_sampling_frequency(self):
         return self._parent_recording.get_sampling_frequency()
@@ -62,11 +66,11 @@ class SubRecordingExtractor(RecordingExtractor):
     def get_snippets(self, *, reference_frames, snippet_len, channel_ids=None):
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
-        cf = self._start_frame + np.array(reference_frames)
+        reference_frames_shift = self._start_frame + np.array(reference_frames)
         original_ch_ids = []
         original_ch_ids = self.get_original_channel_ids(channel_ids)
-        return self._parent_recording.get_snippets(reference_frames=reference_frames, snippet_len=snippet_len,
-                                                  channel_ids=original_ch_ids)
+        return self._parent_recording.get_snippets(reference_frames=reference_frames_shift, snippet_len=snippet_len,
+                                                   channel_ids=original_ch_ids)
 
     def copy_channel_properties(self, recording, channel_ids=None):
         if channel_ids is None:

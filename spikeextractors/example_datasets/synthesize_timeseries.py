@@ -1,8 +1,8 @@
 import numpy as np
 
 
-def synthesize_timeseries(*, sorting, waveforms, noise_level=1, samplerate=30000.0, duration=60, waveform_upsamplefac=13):
-    num_timepoints = np.int64(samplerate * duration)
+def synthesize_timeseries(*, sorting, waveforms, noise_level=1, sampling_frequency=30000.0, duration=60, waveform_upsamplefac=13, seed=None):
+    num_timepoints = np.int64(sampling_frequency * duration)
     waveform_upsamplefac = int(waveform_upsamplefac)
     W = waveforms
 
@@ -12,7 +12,10 @@ def synthesize_timeseries(*, sorting, waveforms, noise_level=1, samplerate=30000
 
     N = num_timepoints
 
-    X = np.random.randn(M, N) * noise_level
+    if seed is not None:
+        X = np.random.RandomState(seed=seed).randn(M, N) * noise_level
+    else:
+        X = np.random.randn(M, N) * noise_level
 
     unit_ids = sorting.get_unit_ids()
     for k0 in unit_ids:
