@@ -468,7 +468,7 @@ def _export_prb_file(recording, file_name, grouping_property=None, graph=True, g
         f.write('channel_groups = {\n')
         if len(channel_groups) > 0:
             for i_chg, chg in enumerate(channel_groups):
-                f.write("     " + str(int(chg)) + ": ")
+                f.write("     " + str(chg) + ": ")
                 elecs = list(np.where(grouping_property_groups == chg)[0])
                 f.write("\n        {\n")
                 f.write("           'channels': " + str(elecs) + ',\n')
