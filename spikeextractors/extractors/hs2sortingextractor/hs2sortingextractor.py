@@ -89,12 +89,29 @@ class HS2SortingExtractor(SortingExtractor):
             labels_list.append(np.ones(times.shape, dtype=int) * unit)
         all_times = np.concatenate(times_list)
         all_labels = np.concatenate(labels_list)
+        
         rf = h5py.File(save_path, mode='w')
-        # for now only create the entries required by any RecordingExtractor
         if sorting.get_sampling_frequency() is not None:
             rf.create_dataset("Sampling", data=sorting.get_sampling_frequency())
         else:
             rf.create_dataset("Sampling", data=0)
+        if 'unit_location' in sorting.get_shared_unit_property_names():
+            spike_centres = [sorting.get_unit_property(u,'unit_location') for u in sorting.get_unit_ids()]
+            spike_centres = np.array(spike_centres)
+            rf.create_dataset("centres", data=spike_centres)
+        if 'spike_location' in sorting.get_shared_unit_spike_feature_names():
+            spike_loc_x = []
+            spike_loc_y = []
+            for u in sorting.get_unit_ids():
+                l = sorting.get_unit_spike_features(u,'spike_location')
+                spike_loc_x.append(l[:,0])
+                spike_loc_y.append(l[:,1])        
+            spike_loc = np.vstack((np.concatenate(spike_loc_x),np.concatenate(spike_loc_y)))
+            rf.create_dataset("data", data=spike_loc)
+        if 'max_channel' in sorting.get_shared_unit_spike_feature_names():
+            spike_max_channel = np.concatenate([sorting.get_unit_spike_features(u,'max_channel') for u in sorting.get_unit_ids()])
+            rf.create_dataset("ch", data=spike_max_channel)
+            
         rf.create_dataset("times", data=all_times)
         rf.create_dataset("cluster_id", data=all_labels)
         rf.close()
