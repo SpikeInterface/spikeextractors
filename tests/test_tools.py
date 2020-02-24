@@ -10,8 +10,9 @@ class TestTools(unittest.TestCase):
     def setUp(self):
         M = 32
         N = 10000
+        seed = 0
         sampling_frequency = 30000
-        X = np.random.normal(0, 1, (M, N))
+        X = np.random.RandomState(seed=seed).normal(0, 1, (M, N))
         self._X = X
         self._sampling_frequency = sampling_frequency
         self.RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency)

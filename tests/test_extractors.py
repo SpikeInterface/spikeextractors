@@ -9,7 +9,7 @@ import spikeextractors as se
 
 class TestExtractors(unittest.TestCase):
     def setUp(self):
-        self.RX, self.RX2, self.RX3, self.SX, self.SX2, self.SX3, self.example_info = self._create_example()
+        self.RX, self.RX2, self.RX3, self.SX, self.SX2, self.SX3, self.example_info = self._create_example(seed=0)
         self.test_dir = tempfile.mkdtemp()
         # self.test_dir = '.'
 
@@ -18,31 +18,31 @@ class TestExtractors(unittest.TestCase):
         shutil.rmtree(self.test_dir)
         # pass
 
-    def _create_example(self):
+    def _create_example(self, seed):
         channel_ids = [0, 1, 2, 3]
         num_channels = 4
         num_frames = 10000
         sampling_frequency = 30000
-        X = np.random.normal(0, 1, (num_channels, num_frames))
-        geom = np.random.normal(0, 1, (num_channels, 2))
+        X = np.random.RandomState(seed=seed).normal(0, 1, (num_channels, num_frames))
+        geom = np.random.RandomState(seed=seed).normal(0, 1, (num_channels, 2))
         X = (X * 100).astype(int)
         RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
         RX2 = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
         RX3 = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
         SX = se.NumpySortingExtractor()
         spike_times = [200, 300, 400]
-        train1 = np.sort(np.rint(np.random.uniform(0, num_frames, spike_times[0])).astype(int))
+        train1 = np.sort(np.rint(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times[0])).astype(int))
         SX.add_unit(unit_id=1, times=train1)
-        SX.add_unit(unit_id=2, times=np.sort(np.random.uniform(0, num_frames, spike_times[1])))
-        SX.add_unit(unit_id=3, times=np.sort(np.random.uniform(0, num_frames, spike_times[2])))
+        SX.add_unit(unit_id=2, times=np.sort(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times[1])))
+        SX.add_unit(unit_id=3, times=np.sort(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times[2])))
         SX.set_unit_property(unit_id=1, property_name='stability', value=80)
         SX.set_sampling_frequency(sampling_frequency)
         SX2 = se.NumpySortingExtractor()
         spike_times2 = [100, 150, 450]
-        train2 = np.rint(np.random.uniform(0, num_frames, spike_times2[0])).astype(int)
+        train2 = np.rint(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times2[0])).astype(int)
         SX2.add_unit(unit_id=3, times=train2)
-        SX2.add_unit(unit_id=4, times=np.random.uniform(0, num_frames, spike_times2[1]))
-        SX2.add_unit(unit_id=5, times=np.random.uniform(0, num_frames, spike_times2[2]))
+        SX2.add_unit(unit_id=4, times=np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times2[1]))
+        SX2.add_unit(unit_id=5, times=np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times2[2]))
         SX2.set_unit_property(unit_id=4, property_name='stability', value=80)
         SX2.set_unit_spike_features(unit_id=3, feature_name='widths', value=np.asarray([3] * spike_times2[0]))
         RX.set_channel_property(channel_id=0, property_name='location', value=(0, 0))
