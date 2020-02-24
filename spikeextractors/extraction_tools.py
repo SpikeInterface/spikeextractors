@@ -252,7 +252,8 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
     return samples
 
 
-def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
+                               time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
     '''Saves the traces of a recording extractor in binary .dat format.
 
     Parameters
@@ -261,22 +262,27 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         The recording extractor object to be saved in .dat format
     save_path: str
         The path to the file.
+    file_handle: file handle
+        The file handle to dump data. This can be used to append data to an header. In case file_handle is given,
+        the file is NOT closed after writing the binary data.
     time_axis: 0 (default) or 1
         If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
         If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
     dtype: dtype
         Type of the saved data. Default float32.
     chunk_size: None or int
-        If not None then the file is saved in chunks.
-        This avoid to much memory consumption for big files.
-        If 'auto' the file is saved in chunks of ~ 500Mb
+        Number of chunks to save the file in. This avoid to much memory consumption for big files.
+        If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
     chunk_mb: None or int
         Chunk size in Mb (default 500Mb)
     '''
-    save_path = Path(save_path)
-    if save_path.suffix == '':
-        # when suffix is already raw/bin/dat do not change it.
-        save_path = save_path.parent / (save_path.name + '.dat')
+    assert save_path is not None or file_handle is not None, "Provide 'save_path' or 'file handle'"
+
+    if save_path is not None:
+        save_path = Path(save_path)
+        if save_path.suffix == '':
+            # when suffix is already raw/bin/dat do not change it.
+            save_path = save_path.parent / (save_path.name + '.dat')
 
     if chunk_size is not None or chunk_mb is not None:
         if time_axis == 1:
@@ -298,15 +304,28 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
             traces = traces.astype(dtype)
         if time_axis == 0:
             traces = traces.T
-        with save_path.open('wb') as f:
-            traces.tofile(f)
+        if save_path is not None:
+            with save_path.open('wb') as f:
+                traces.tofile(f)
+        else:
+            traces.tofile(file_handle)
     else:
         # chunk size is not None
         n_sample = recording.get_num_frames()
         n_chunk = n_sample // chunk_size
         if n_sample % chunk_size > 0:
             n_chunk += 1
-        with save_path.open('wb') as f:
+        if save_path is not None:
+            with save_path.open('wb') as f:
+                for i in range(n_chunk):
+                    traces = recording.get_traces(start_frame=i * chunk_size,
+                                                  end_frame=min((i + 1) * chunk_size, n_sample))
+                    if dtype is not None:
+                        traces = traces.astype(dtype)
+                    if time_axis == 0:
+                        traces = traces.T
+                    f.write(traces.tobytes())
+        else:
             for i in range(n_chunk):
                 traces = recording.get_traces(start_frame=i * chunk_size,
                                               end_frame=min((i + 1) * chunk_size, n_sample))
@@ -314,7 +333,7 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
                     traces = traces.astype(dtype)
                 if time_axis == 0:
                     traces = traces.T
-                f.write(traces.tobytes())
+                file_handle.write(traces.tobytes())
     return save_path
 
 
