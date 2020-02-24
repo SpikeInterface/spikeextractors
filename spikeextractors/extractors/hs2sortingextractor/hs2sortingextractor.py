@@ -38,7 +38,7 @@ class HS2SortingExtractor(SortingExtractor):
             self.load_unit_info()
 
     def load_unit_info(self):
-        if 'centres' in self._rf.keys():
+        if ('centres' in self._rf.keys()) and (len(self._times)>0):
             self._unit_locs = self._rf['centres'][()]  # cache for faster access
             if self._unit_locs.shape[0] < 5:  # check if old, transposed format
                 self._unit_locs = self._unit_locs.T
@@ -48,7 +48,7 @@ class HS2SortingExtractor(SortingExtractor):
         inds = []  # get these only once
         for unit_id in self._unit_ids:
             inds.append(np.where(self._cluster_id==unit_id)[0])
-        if 'data' in self._rf.keys():
+        if ('data' in self._rf.keys()) and (len(self._times)>0):
             d = self._rf['data'][()]
             for i, unit_id in enumerate(self._unit_ids):
                 self._unit_features[unit_id] = {}
@@ -56,7 +56,7 @@ class HS2SortingExtractor(SortingExtractor):
         else:
             for i, unit_id in enumerate(self._unit_ids):
                 self._unit_features[unit_id] = {}
-        if 'ch' in self._rf.keys():
+        if ('ch' in self._rf.keys()) and (len(self._times)>0):
             d = self._rf['ch'][()]
             for i, unit_id in enumerate(self._unit_ids):
                 self._unit_features[unit_id]['max_channel'] = d[inds[i]]
