@@ -4,7 +4,9 @@ import os
 import sys
 from pathlib import Path
 import json
+import datetime
 import spikeextractors
+
 
 def read_python(path):
     '''Parses python scripts in a dictionary
@@ -476,6 +478,22 @@ def _export_prb_file(recording, file_name, grouping_property=None, graph=True, g
                 f.write("           'graph':  [],\n")
                 f.write('        },\n')
             f.write('}\n')
+
+
+def _check_json(d):
+    # quick hack to ensure json writable
+
+    for k, v in d.items():
+        if isinstance(v, Path):
+            d[k] = str(v)
+        elif isinstance(v, (np.int, np.int32, np.int64)):
+            d[k] = int(v)
+        elif isinstance(v,  (np.float, np.float32, np.float64)):
+            d[k] = float(v)
+        elif isinstance(v, datetime.datetime):
+            d[k] = v.isoformat()
+
+    return d
 
 
 def load_extractor_from_json(json_file):
