@@ -5,7 +5,7 @@ from ...extraction_tools import write_to_binary_dat_format
 import json
 import numpy as np
 from pathlib import Path
-from .mdaio import DiskReadMda, readmda, writemda, writemda32, writemda64, MdaHeader
+from .mdaio import DiskReadMda, readmda, writemda64, MdaHeader
 import os
 
 

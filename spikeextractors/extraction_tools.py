@@ -264,7 +264,7 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
         The path to the file.
     file_handle: file handle
         The file handle to dump data. This can be used to append data to an header. In case file_handle is given,
-        the file is closed after writing the binary data.
+        the file is NOT closed after writing the binary data.
     time_axis: 0 (default) or 1
         If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
         If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
