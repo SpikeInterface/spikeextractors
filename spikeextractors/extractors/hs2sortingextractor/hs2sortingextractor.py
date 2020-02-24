@@ -41,8 +41,7 @@ class HS2SortingExtractor(SortingExtractor):
         if ('centres' in self._rf.keys()) and (len(self._times)>0):
             self._unit_locs = self._rf['centres'][()]  # cache for faster access
             for u_i, unit_id in enumerate(self._unit_ids):
-                self._unit_properties[unit_id] = {}
-                self._unit_properties[unit_id]['unit_location'] = self._unit_locs[u_i]
+                self.set_unit_property(unit_id, property_name='unit_location', value=self._unit_locs[u_i])
         inds = []  # get these only once
         for unit_id in self._unit_ids:
             inds.append(np.where(self._cluster_id==unit_id)[0])
