@@ -40,8 +40,6 @@ class HS2SortingExtractor(SortingExtractor):
     def load_unit_info(self):
         if ('centres' in self._rf.keys()) and (len(self._times)>0):
             self._unit_locs = self._rf['centres'][()]  # cache for faster access
-            if self._unit_locs.shape[0] < 5:  # check if old, transposed format
-                self._unit_locs = self._unit_locs.T
             for u_i, unit_id in enumerate(self._unit_ids):
                 self._unit_properties[unit_id] = {}
                 self._unit_properties[unit_id]['unit_location'] = self._unit_locs[u_i]
