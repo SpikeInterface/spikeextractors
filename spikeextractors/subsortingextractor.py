@@ -25,7 +25,8 @@ class SubSortingExtractor(SortingExtractor):
         for i in range(len(self._unit_ids)):
             self._original_unit_id_lookup[self._renamed_unit_ids[i]] = self._unit_ids[i]
         self.copy_unit_properties(parent_sorting, unit_ids=self._renamed_unit_ids)
-        self.copy_unit_spike_features(parent_sorting, unit_ids=self._renamed_unit_ids, start_frame=start_frame, end_frame=end_frame)
+        self.copy_unit_spike_features(parent_sorting, unit_ids=self._renamed_unit_ids, start_frame=start_frame,
+                                      end_frame=end_frame)
 
     def get_unit_ids(self):
         return list(self._renamed_unit_ids)
