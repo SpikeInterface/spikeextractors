@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import copy
+from pathlib import Path
+import shutil
 from .extraction_tools import get_sub_extractors_by_property
-
 
 
 class SortingExtractor(ABC):
@@ -17,8 +18,16 @@ class SortingExtractor(ABC):
         self._epochs = {}
         self._unit_properties = {}
         self._unit_features = {}
+        self._tmp_folder = None
         self._sampling_frequency = None
         self.id = np.random.randint(low=0, high=9223372036854775807, dtype='int64')
+
+    def __del__(self):
+        if self._tmp_folder is not None:
+            try:
+                shutil.rmtree(self._tmp_folder)
+            except Exception as e:
+                print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
 
     @abstractmethod
     def get_unit_ids(self):
@@ -83,6 +92,7 @@ class SortingExtractor(ABC):
         '''
         self._sampling_frequency = sampling_frequency
 
+    # add idxs option!
     def set_unit_spike_features(self, unit_id, feature_name, value):
         '''This function adds a unit features data set under the given features
         name to the given unit.
@@ -102,7 +112,7 @@ class SortingExtractor(ABC):
                 if unit_id not in self._unit_features.keys():
                     self._unit_features[unit_id] = {}
                 if isinstance(feature_name, str) and len(value) == len(self.get_unit_spike_train(unit_id)):
-                    self._unit_features[unit_id][feature_name] = np.asarray(value)
+                    self._unit_features[unit_id][feature_name] = value  # np.asarray(value) this is to keep memmap object
                 else:
                     if not isinstance(feature_name, str):
                         raise ValueError("feature_name must be a string")
@@ -155,8 +165,13 @@ class SortingExtractor(ABC):
                             start_frame = 0
                         if end_frame is None:
                             end_frame = np.inf
-                        spike_indices =  np.where(np.logical_and(spike_train >= start_frame, spike_train < end_frame))
-                        return self._unit_features[unit_id][feature_name][spike_indices]
+                        if start_frame == 0 and end_frame == np.inf:
+                            # keep memmap objects
+                            return self._unit_features[unit_id][feature_name]
+                        else:
+                            spike_indices = np.where(np.logical_and(spike_train >= start_frame,
+                                                                    spike_train < end_frame))
+                            return self._unit_features[unit_id][feature_name][spike_indices]
                     else:
                         raise ValueError(str(feature_name) + " has not been added to unit " + str(unit_id))
                 else:
@@ -609,12 +624,34 @@ class SortingExtractor(ABC):
         '''
         if return_property_list:
             sub_list, prop_list = get_sub_extractors_by_property(self, property_name=property_name,
-                                                                return_property_list=return_property_list)
+                                                                 return_property_list=return_property_list)
             return sub_list, prop_list
         else:
             sub_list = get_sub_extractors_by_property(self, property_name=property_name,
                                                       return_property_list=return_property_list)
             return sub_list
+
+    def get_tmp_folder(self):
+        '''
+        Returns temporary folder associated to the sorting extractor
+
+        Returns
+        -------
+        temp_folder: Path
+            The temporary folder
+        '''
+        return self._tmp_folder
+
+    def set_tmp_folder(self, folder):
+        '''
+        Sets temporary folder
+
+        Parameters
+        ----------
+        folder: str or Path
+            The temporary folder
+        '''
+        self._tmp_folder = Path(folder)
 
     @staticmethod
     def write_sorting(sorting, save_path):

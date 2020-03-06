@@ -356,10 +356,8 @@ def get_sub_extractors_by_property(extractor, property_name, return_property_lis
     sub_list, prop_list
         If return_property_list is True, the property list will be returned as well.
     '''
-    from .recordingextractor import RecordingExtractor
-    from .sortingextractor import SortingExtractor
-    from .subrecordingextractor import SubRecordingExtractor
-    from .subsortingextractor import SubSortingExtractor
+    from spikeextractors import RecordingExtractor, SortingExtractor, SubRecordingExtractor, SubSortingExtractor
+
     if isinstance(extractor, RecordingExtractor):
         if property_name not in extractor.get_shared_channel_property_names():
             raise ValueError("'property_name' must be must be a property of the recording channels")
