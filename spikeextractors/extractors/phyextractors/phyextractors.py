@@ -101,17 +101,17 @@ class PhySortingExtractor(SortingExtractor):
                     for row in csv_reader:
                         if line_count == 0:
                             tokens = row[0].split("\t")
-                            property = tokens[1]
+                            property_name = tokens[1]
                         else:
                             tokens = row[0].split("\t")
                             if int(tokens[0]) in self.get_unit_ids():
                                 if 'cluster_group' in str(f):
                                     self.set_unit_property(int(tokens[0]), 'quality', tokens[1])
-                                elif property == 'chan_grp':
+                                elif property_name == 'chan_grp':
                                     self.set_unit_property(int(tokens[0]), 'group', tokens[1])
                                 else:
                                     if isinstance(tokens[1], (int, np.int, float, np.float, str)):
-                                        self.set_unit_property(int(tokens[0]), property, tokens[1])
+                                        self.set_unit_property(int(tokens[0]), property_name, tokens[1])
                             line_count += 1
             elif f.suffix == '.tsv':
                 with f.open() as csv_file:
@@ -119,16 +119,16 @@ class PhySortingExtractor(SortingExtractor):
                     line_count = 0
                     for row in csv_reader:
                         if line_count == 0:
-                            property = row[1]
+                            property_name = row[1]
                         else:
                             if int(row[0]) in self.get_unit_ids():
                                 if 'cluster_group' in str(f):
                                     self.set_unit_property(int(row[0]), 'quality', row[1])
-                                elif property == 'chan_grp':
+                                elif property_name == 'chan_grp':
                                     self.set_unit_property(int(row[0]), 'group', row[1])
                                 else:
-                                    if isinstance(row[1], (int, np.int, float, np.float, str)):
-                                        self.set_unit_property(int(row[0]), property, row[1])
+                                    if isinstance(row[1], (int, np.int, float, np.float, str)) and len(row) == 2:
+                                        self.set_unit_property(int(row[0]), property_name, row[1])
                         line_count += 1
 
         for unit in self.get_unit_ids():

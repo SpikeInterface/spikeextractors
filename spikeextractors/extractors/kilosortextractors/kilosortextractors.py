@@ -28,14 +28,15 @@ class KiloSortSortingExtractor(PhySortingExtractor):
     is_writable = True
     mode = 'folder'
 
-    def __init__(self, folder_path, exclude_cluster_groups=None, load_waveforms=False, keep_good_only=True,
+    def __init__(self, folder_path, exclude_cluster_groups=None, load_waveforms=False, keep_good_only=False,
                  verbose=False):
         PhySortingExtractor.__init__(self, folder_path, exclude_cluster_groups, load_waveforms, verbose)
         self._keep_good_only = keep_good_only
         self._good_units = []
 
-        if 'KSLabel' in self.get_shared_unit_property_names() and keep_good_only:
+        if keep_good_only:
             for u in self.get_unit_ids():
-                if self.get_unit_property(u, 'KSLabel') == 'good':
-                    self._good_units.append(u)
+                if 'KSLabel' in self.get_unit_property_names(u):
+                    if self.get_unit_property(u, 'KSLabel') == 'good':
+                        self._good_units.append(u)
             self._unit_ids = self._good_units
