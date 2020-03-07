@@ -176,14 +176,8 @@ class RecordingExtractor(ABC):
         num_channels = len(channel_ids)
         num_frames = self.get_num_frames()
         snippet_len_total = snippet_len_before + snippet_len_after
-        # snippets = []
         snippets = np.zeros((num_snippets, num_channels, snippet_len_total))
-        #TODO extract all waveforms in a chunk
-        pad_first = False
-        pad_last = False
-        pad_samples_first = 0
-        pad_samples_last = 0
-        snippet_idxs = np.array([], dtype=int)
+
         for i in range(num_snippets):
             snippet_chunk = np.zeros((num_channels, snippet_len_total))
             if (0 <= reference_frames[i]) and (reference_frames[i] < num_frames):
