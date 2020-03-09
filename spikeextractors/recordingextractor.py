@@ -2,20 +2,33 @@ from abc import ABC, abstractmethod
 import numpy as np
 import copy
 import random
-from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, get_sub_extractors_by_property
+import string
+import tempfile
+import shutil
+import random
+from pathlib import Path
+from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, \
+    get_sub_extractors_by_property
+
 
 class RecordingExtractor(ABC):
     '''A class that contains functions for extracting important information
     from recorded extracellular data. It is an abstract class so all
     functions with the @abstractmethod tag must be implemented for the
     initialization to work.
-
- 
     '''
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
+        self._tmp_folder = None
         self.id = random.randint(a=0, b=9223372036854775807)
+
+    def __del__(self):
+        if self._tmp_folder is not None:
+            try:
+                shutil.rmtree(self._tmp_folder)
+            except Exception as e:
+                print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
 
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
@@ -691,6 +704,60 @@ class RecordingExtractor(ABC):
             sub_list = get_sub_extractors_by_property(self, property_name=property_name, 
                                                       return_property_list=return_property_list)
             return sub_list
+
+    def get_tmp_folder(self):
+        '''
+        Returns temporary folder associated to the recording extractor
+
+        Returns
+        -------
+        temp_folder: Path
+            The temporary folder
+        '''
+        if self._tmp_folder is None:
+            self._tmp_folder = Path(tempfile.mkdtemp())
+        return self._tmp_folder
+
+    def set_tmp_folder(self, folder):
+        '''
+        Sets temporary folder
+
+        Parameters
+        ----------
+        folder: str or Path
+            The temporary folder
+        '''
+        self._tmp_folder = Path(folder)
+
+    def allocate_array(self, shape, dtype, memmap, name=None):
+        '''
+        Allocates a memory or memmap array
+
+        Parameters
+        ----------
+        shape: tuple
+            Shape of the array
+        dtype: dtype
+            Dtype of the array
+        memmap: bool
+            If True, array is memmaped
+        name: str
+            Name (root) of the file (if memmap is True)
+
+        Returns
+        -------
+        arr: np.array or np.memmap
+            The allocated memory or memmap array
+        '''
+        if memmap:
+            tmp_folder = self.get_tmp_folder()
+            if name is None:
+                name = ''.join([random.choice(string.ascii_letters) for i in range(5)])
+            arr = np.memmap(tmp_folder / (name + '.raw'), shape=shape, dtype=dtype)
+            arr[:] = 0
+        else:
+            arr = np.zeros(shape, dtype=dtype)
+        return arr
 
     @staticmethod
     def write_recording(recording, save_path):

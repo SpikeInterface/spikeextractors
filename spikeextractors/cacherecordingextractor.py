@@ -1,7 +1,8 @@
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 import tempfile
 from pathlib import Path
-import os, shutil
+import os
+import shutil
 
 
 class CacheRecordingExtractor(BinDatRecordingExtractor):
@@ -22,8 +23,8 @@ class CacheRecordingExtractor(BinDatRecordingExtractor):
     def __del__(self):
         try:
             os.remove(self._tmp_file)
-        except Exception:
-            print("Unable to remove temporary file")
+        except Exception as e:
+            print("Unable to remove temporary file", e)
 
     def get_filename(self):
         return self._tmp_file

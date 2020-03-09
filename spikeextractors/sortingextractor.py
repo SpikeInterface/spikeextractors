@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import copy
+import random
+import string
+import tempfile
 from pathlib import Path
 import shutil
 from .extraction_tools import get_sub_extractors_by_property
@@ -640,6 +643,8 @@ class SortingExtractor(ABC):
         temp_folder: Path
             The temporary folder
         '''
+        if self._tmp_folder is None:
+            self._tmp_folder = Path(tempfile.mkdtemp())
         return self._tmp_folder
 
     def set_tmp_folder(self, folder):
@@ -652,6 +657,36 @@ class SortingExtractor(ABC):
             The temporary folder
         '''
         self._tmp_folder = Path(folder)
+
+    def allocate_array(self, shape, dtype, memmap, name=None):
+        '''
+        Allocates a memory or memmap array
+
+        Parameters
+        ----------
+        shape: tuple
+            Shape of the array
+        dtype: dtype
+            Dtype of the array
+        memmap: bool
+            If True, array is memmaped
+        name: str
+            Name (root) of the file (if memmap is True)
+
+        Returns
+        -------
+        arr: np.array or np.memmap
+            The allocated memory or memmap array
+        '''
+        if memmap:
+            tmp_folder = self.get_tmp_folder()
+            if name is None:
+                name = ''.join([random.choice(string.ascii_letters) for i in range(5)])
+            arr = np.memmap(tmp_folder / (name + '.raw'), shape=shape, dtype=dtype)
+            arr[:] = 0
+        else:
+            arr = np.zeros(shape, dtype=dtype)
+        return arr
 
     @staticmethod
     def write_sorting(sorting, save_path):
