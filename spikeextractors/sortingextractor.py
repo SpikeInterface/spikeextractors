@@ -486,7 +486,7 @@ class SortingExtractor(ABC):
                     self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name, value=value)
 
     def add_epoch(self, epoch_name, start_frame, end_frame):
-        '''This function adds an epoch to your sorting extractor that tracks
+        '''This function adds an epoch to your recording extractor that tracks
         a certain time period in your recording. It is stored in an internal
         dictionary of start and end frame tuples.
 
@@ -497,17 +497,13 @@ class SortingExtractor(ABC):
         start_frame: int
             The start frame of the epoch to be added (inclusive)
         end_frame: int
-            The end frame of the epoch to be added (exclusive)
-
+            The end frame of the epoch to be added (exclusive). If set to -1, it will include the entire
+            recording after the start_frame.
         '''
-        # Default implementation only allows for frame info. Can override to put more info
         if isinstance(epoch_name, str):
-            if end_frame == np.inf:
-                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': end_frame}
-            else:
-                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
+            self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
         else:
-            raise ValueError("epoch_name must be a string")
+            raise TypeError("epoch_name must be a string")
 
     def remove_epoch(self, epoch_name):
         '''This function removes an epoch from your sorting extractor.

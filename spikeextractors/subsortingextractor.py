@@ -20,7 +20,7 @@ class SubSortingExtractor(SortingExtractor):
         if self._start_frame is None:
             self._start_frame = 0
         if self._end_frame is None:
-            self._end_frame = float("inf")
+            self._end_frame = np.Inf
         self._original_unit_id_lookup = {}
         for i in range(len(self._unit_ids)):
             self._original_unit_id_lookup[self._renamed_unit_ids[i]] = self._unit_ids[i]
