@@ -669,8 +669,8 @@ class SortingExtractor(ABC):
         dtype: dtype
             Dtype of the array
         memmap: bool
-            If True, array is memmaped
-        name: str
+            If True, a memmap array is created in the sorting temporary folder
+        name: str or None
             Name (root) of the file (if memmap is True)
 
         Returns
@@ -681,8 +681,13 @@ class SortingExtractor(ABC):
         if memmap:
             tmp_folder = self.get_tmp_folder()
             if name is None:
-                name = ''.join([random.choice(string.ascii_letters) for i in range(5)])
-            arr = np.memmap(tmp_folder / (name + '.raw'), shape=shape, dtype=dtype)
+                tmp_file = tempfile.NamedTemporaryFile(suffix=".raw", dir=tmp_folder).name
+            else:
+                if Path(name).suffix == '':
+                    tmp_file = tmp_folder / (name + '.raw')
+                else:
+                    tmp_file = tmp_folder / name
+            arr = np.memmap(tmp_file, mode='w+', shape=shape, dtype=dtype)
             arr[:] = 0
         else:
             arr = np.zeros(shape, dtype=dtype)

@@ -114,7 +114,7 @@ class TestExtractors(unittest.TestCase):
         self._check_recordings_equal(self.RX, cache_extractor)
         cache_extractor.save_to_file('cache')
 
-        assert cache_extractor.get_filename() == 'cache.dat'
+        assert cache_extractor.filename == 'cache.dat'
         del cache_extractor
         assert not Path('cache.dat').is_file()
 
