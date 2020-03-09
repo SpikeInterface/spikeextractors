@@ -508,11 +508,14 @@ class RecordingExtractor(ABC):
         start_frame: int
             The start frame of the epoch to be added (inclusive)
         end_frame: int
-            The end frame of the epoch to be added (exclusive). If set to -1, it will include the entire
+            The end frame of the epoch to be added (exclusive). If set to None, it will include the entire
             recording after the start_frame.
         '''
         if isinstance(epoch_name, str):
-            self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
+            if isinstance(end_frame, (int, type(None))) and isinstance(end_frame, int):
+                self._epochs[epoch_name] = {'start_frame': start_frame, 'end_frame': end_frame}
+            else:
+                raise TypeError("start_frame must be an int and end_frame must be an int or None")
         else:
             raise TypeError("epoch_name must be a string")
 
@@ -593,8 +596,6 @@ class RecordingExtractor(ABC):
         epoch_info = self.get_epoch_info(epoch_name)
         start_frame = epoch_info['start_frame']
         end_frame = epoch_info['end_frame']
-        if end_frame == -1:
-            end_frame = None
         from .subrecordingextractor import SubRecordingExtractor
         return SubRecordingExtractor(parent_recording=self, start_frame=start_frame,
                                      end_frame=end_frame)
