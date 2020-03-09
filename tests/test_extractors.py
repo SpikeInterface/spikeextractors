@@ -108,6 +108,30 @@ class TestExtractors(unittest.TestCase):
 
         self._check_recording_return_types(self.RX)
 
+    def test_allocate_arrays(self):
+        shape = (30, 1000)
+        dtype = 'int16'
+
+        arr_in_memory = self.RX.allocate_array(shape=shape, dtype=dtype, memmap=False)
+        arr_memmap = self.RX.allocate_array(shape=shape, dtype=dtype, memmap=True)
+
+        assert isinstance(arr_in_memory, np.ndarray)
+        assert isinstance(arr_memmap, np.memmap)
+        assert arr_in_memory.shape == shape
+        assert arr_memmap.shape == shape
+        assert arr_in_memory.dtype == dtype
+        assert arr_memmap.dtype == dtype
+
+        arr_in_memory = self.SX.allocate_array(shape=shape, dtype=dtype, memmap=False)
+        arr_memmap = self.SX.allocate_array(shape=shape, dtype=dtype, memmap=True)
+
+        assert isinstance(arr_in_memory, np.ndarray)
+        assert isinstance(arr_memmap, np.memmap)
+        assert arr_in_memory.shape == shape
+        assert arr_memmap.shape == shape
+        assert arr_in_memory.dtype == dtype
+        assert arr_memmap.dtype == dtype
+
     def test_cache_extractor(self):
         cache_extractor = se.CacheRecordingExtractor(self.RX)
         self._check_recording_return_types(cache_extractor)

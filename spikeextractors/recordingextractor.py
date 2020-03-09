@@ -729,20 +729,23 @@ class RecordingExtractor(ABC):
         '''
         self._tmp_folder = Path(folder)
 
-    def allocate_array(self, shape, dtype, memmap, name=None):
+    def allocate_array(self, memmap, shape=None, dtype=None, name=None, array=None):
         '''
         Allocates a memory or memmap array
 
         Parameters
         ----------
-        shape: tuple
-            Shape of the array
-        dtype: dtype
-            Dtype of the array
         memmap: bool
-            If True, a memmap array is created in the recording temporary folder
+            If True, a memmap array is created in the sorting temporary folder
+        shape: tuple
+            Shape of the array. If None array must be given
+        dtype: dtype
+            Dtype of the array. If None array must be given
         name: str or None
-            Name (root) of the file (if memmap is True)
+            Name (root) of the file (if memmap is True). If None, a random name is generated
+        array: np.array
+            If array is given, shape and dtype are initialized based on the array. If memmap is True, the array is then
+            deleted to clear memory
 
         Returns
         -------
@@ -751,6 +754,11 @@ class RecordingExtractor(ABC):
         '''
         if memmap:
             tmp_folder = self.get_tmp_folder()
+            if array is not None:
+                shape = array.shape
+                dtype = array.dtype
+            else:
+                assert shape is not None and dtype is not None, "Pass 'shape' and 'dtype' arguments"
             if name is None:
                 tmp_file = tempfile.NamedTemporaryFile(suffix=".raw", dir=tmp_folder).name
             else:
@@ -759,9 +767,16 @@ class RecordingExtractor(ABC):
                 else:
                     tmp_file = tmp_folder / name
             arr = np.memmap(tmp_file, mode='w+', shape=shape, dtype=dtype)
-            arr[:] = 0
+            if array is not None:
+                arr[:] = array
+                del array
+            else:
+                arr[:] = 0
         else:
-            arr = np.zeros(shape, dtype=dtype)
+            if array is not None:
+                arr = array
+            else:
+                arr = np.zeros(shape, dtype=dtype)
         return arr
 
     @staticmethod

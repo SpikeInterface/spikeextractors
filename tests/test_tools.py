@@ -86,19 +86,5 @@ class TestTools(unittest.TestCase):
         assert np.allclose(data, self.RX.get_traces())
         del (data)  # this close the file
 
-    def test_allocate_arrays(self):
-        shape = (30, 1000)
-        dtype = 'int16'
-
-        arr_in_memory = self.RX.allocate_array(shape=shape, dtype=dtype, memmap=False)
-        arr_memmap = self.RX.allocate_array(shape=shape, dtype=dtype, memmap=True)
-
-        assert isinstance(arr_in_memory, np.ndarray)
-        assert isinstance(arr_memmap, np.memmap)
-        assert arr_in_memory.shape == shape
-        assert arr_memmap.shape == shape
-        assert arr_in_memory.dtype == dtype
-        assert arr_memmap.dtype == dtype
-
 if __name__ == '__main__':
     unittest.main()
