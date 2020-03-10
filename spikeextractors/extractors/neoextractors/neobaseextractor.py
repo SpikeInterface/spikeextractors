@@ -65,6 +65,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         self.additional_gain =self.additional_gain.reshape(1, -1)
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         # in neo rawio channel can acces by names/ids/indexes
         # there is no garranty that ids/names are unique on some formats
         raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
@@ -144,6 +145,7 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         return unit_ids
     
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         # this is a string
         # neo_unit_id = self.neo_reader.header['unit_channels']['id'][unit_id]
         
