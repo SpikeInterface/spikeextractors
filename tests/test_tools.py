@@ -86,6 +86,5 @@ class TestTools(unittest.TestCase):
         assert np.allclose(data, self.RX.get_traces())
         del (data)  # this close the file
 
-
 if __name__ == '__main__':
     unittest.main()

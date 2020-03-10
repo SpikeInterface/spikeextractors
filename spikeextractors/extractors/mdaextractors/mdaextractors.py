@@ -7,6 +7,7 @@ import numpy as np
 from pathlib import Path
 from .mdaio import DiskReadMda, readmda, writemda64, MdaHeader
 import os
+import shutil
 
 
 class MdaRecordingExtractor(RecordingExtractor):
@@ -61,6 +62,41 @@ class MdaRecordingExtractor(RecordingExtractor):
         recordings = X.readChunk(i1=0, i2=start_frame, N1=X.N1(), N2=end_frame - start_frame)
         recordings = recordings[channel_ids, :]
         return recordings
+
+    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+        '''Saves the traces of this recording extractor into binary .dat format.
+
+        Parameters
+        ----------
+        save_path: str
+            The path to the file.
+        time_axis: 0 (default) or 1
+            If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
+            If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
+        dtype: dtype
+            Type of the saved data. Default float32
+        chunk_size: None or int
+            If not None then the file is saved in chunks.
+            This avoid to much memory consumption for big files.
+            If 'auto' the file is saved in chunks of ~ 500Mb
+        chunk_mb: None or int
+            Chunk size in Mb (default 500Mb)
+        '''
+        X = DiskReadMda(self._timeseries_path)
+        header_size = X._header.header_size
+        if dtype is None or dtype == self.get_dtype():
+            try:
+                with open(self._timeseries_path, 'rb') as src, open(save_path, 'wb') as dst:
+                    src.seek(header_size)
+                    shutil.copyfileobj(src, dst)
+            except Exception as e:
+                print('Error occurred while copying:', e)
+                print('Writing to binary')
+                write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
+                                           chunk_size=chunk_size, chunk_mb=chunk_mb)
+        else:
+            write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
+                                       chunk_size=chunk_size, chunk_mb=chunk_mb)
 
     @staticmethod
     def write_recording(recording, save_path, params=dict(), raw_fname='raw.mda', params_fname='params.json',

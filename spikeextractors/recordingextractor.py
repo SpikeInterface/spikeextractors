@@ -2,20 +2,33 @@ from abc import ABC, abstractmethod
 import numpy as np
 import copy
 import random
-from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, get_sub_extractors_by_property
+import string
+import tempfile
+import shutil
+import random
+from pathlib import Path
+from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, \
+    get_sub_extractors_by_property
+
 
 class RecordingExtractor(ABC):
     '''A class that contains functions for extracting important information
     from recorded extracellular data. It is an abstract class so all
     functions with the @abstractmethod tag must be implemented for the
     initialization to work.
-
- 
     '''
     def __init__(self):
         self._epochs = {}
         self._channel_properties = {}
+        self._tmp_folder = None
         self.id = random.randint(a=0, b=9223372036854775807)
+
+    def __del__(self):
+        if self._tmp_folder is not None:
+            try:
+                shutil.rmtree(self._tmp_folder)
+            except Exception as e:
+                print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
 
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
@@ -176,14 +189,8 @@ class RecordingExtractor(ABC):
         num_channels = len(channel_ids)
         num_frames = self.get_num_frames()
         snippet_len_total = snippet_len_before + snippet_len_after
-        # snippets = []
         snippets = np.zeros((num_snippets, num_channels, snippet_len_total))
-        #TODO extract all waveforms in a chunk
-        pad_first = False
-        pad_last = False
-        pad_samples_first = 0
-        pad_samples_last = 0
-        snippet_idxs = np.array([], dtype=int)
+
         for i in range(num_snippets):
             snippet_chunk = np.zeros((num_channels, snippet_len_total))
             if (0 <= reference_frames[i]) and (reference_frames[i] < num_frames):
@@ -697,6 +704,80 @@ class RecordingExtractor(ABC):
             sub_list = get_sub_extractors_by_property(self, property_name=property_name, 
                                                       return_property_list=return_property_list)
             return sub_list
+
+    def get_tmp_folder(self):
+        '''
+        Returns temporary folder associated to the recording extractor
+
+        Returns
+        -------
+        temp_folder: Path
+            The temporary folder
+        '''
+        if self._tmp_folder is None:
+            self._tmp_folder = Path(tempfile.mkdtemp())
+        return self._tmp_folder
+
+    def set_tmp_folder(self, folder):
+        '''
+        Sets temporary folder
+
+        Parameters
+        ----------
+        folder: str or Path
+            The temporary folder
+        '''
+        self._tmp_folder = Path(folder)
+
+    def allocate_array(self, memmap, shape=None, dtype=None, name=None, array=None):
+        '''
+        Allocates a memory or memmap array
+
+        Parameters
+        ----------
+        memmap: bool
+            If True, a memmap array is created in the sorting temporary folder
+        shape: tuple
+            Shape of the array. If None array must be given
+        dtype: dtype
+            Dtype of the array. If None array must be given
+        name: str or None
+            Name (root) of the file (if memmap is True). If None, a random name is generated
+        array: np.array
+            If array is given, shape and dtype are initialized based on the array. If memmap is True, the array is then
+            deleted to clear memory
+
+        Returns
+        -------
+        arr: np.array or np.memmap
+            The allocated memory or memmap array
+        '''
+        if memmap:
+            tmp_folder = self.get_tmp_folder()
+            if array is not None:
+                shape = array.shape
+                dtype = array.dtype
+            else:
+                assert shape is not None and dtype is not None, "Pass 'shape' and 'dtype' arguments"
+            if name is None:
+                tmp_file = tempfile.NamedTemporaryFile(suffix=".raw", dir=tmp_folder).name
+            else:
+                if Path(name).suffix == '':
+                    tmp_file = tmp_folder / (name + '.raw')
+                else:
+                    tmp_file = tmp_folder / name
+            arr = np.memmap(tmp_file, mode='w+', shape=shape, dtype=dtype)
+            if array is not None:
+                arr[:] = array
+                del array
+            else:
+                arr[:] = 0
+        else:
+            if array is not None:
+                arr = array
+            else:
+                arr = np.zeros(shape, dtype=dtype)
+        return arr
 
     @staticmethod
     def write_recording(recording, save_path):
