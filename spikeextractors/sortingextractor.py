@@ -487,8 +487,8 @@ class SortingExtractor(ABC):
                     self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name, value=value)
 
     def add_epoch(self, epoch_name, start_frame, end_frame):
-        '''This function adds an epoch to your recording extractor that tracks
-        a certain time period in your recording. It is stored in an internal
+        '''This function adds an epoch to your sorting extractor that tracks
+        a certain time period in your sorting. It is stored in an internal
         dictionary of start and end frame tuples.
 
         Parameters
@@ -499,7 +499,7 @@ class SortingExtractor(ABC):
             The start frame of the epoch to be added (inclusive)
         end_frame: int
             The end frame of the epoch to be added (exclusive). If set to None, it will include the entire
-            recording after the start_frame.
+            sorting after the start_frame.
         '''
         if isinstance(epoch_name, str):
             start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
