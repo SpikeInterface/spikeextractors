@@ -121,6 +121,7 @@ class SHYBRIDSortingExtractor(SortingExtractor):
         return self._spike_clusters.keys()
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         train = self._spike_clusters[unit_id].get_actual_spike_train().spikes
 
         if start_frame is None:

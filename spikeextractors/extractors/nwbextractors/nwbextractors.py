@@ -210,6 +210,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         check_nwb_install()
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if channel_ids is not None:
             if not isinstance(channel_ids, (list, np.ndarray)):
                 raise TypeError("'channel_ids' must be a list or array of integers.")
@@ -533,7 +534,12 @@ class NwbSortingExtractor(se.SortingExtractor):
             unit_ids = [int(i) for i in nwbfile.units.id[:]]
         return unit_ids
 
-    def get_unit_spike_train(self, unit_id, start_frame=0, end_frame=np.Inf):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
+        if start_frame is None:
+            start_frame = 0
+        if end_frame is None:
+            end_frame = np.Inf
         check_nwb_install()
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()

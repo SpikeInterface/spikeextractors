@@ -8,6 +8,7 @@ class SubSortingExtractor(SortingExtractor):
 
     def __init__(self, parent_sorting, *, unit_ids=None, renamed_unit_ids=None, start_frame=None, end_frame=None):
         SortingExtractor.__init__(self)
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         self._parent_sorting = parent_sorting
         self._unit_ids = unit_ids
         self._renamed_unit_ids = renamed_unit_ids
@@ -20,7 +21,7 @@ class SubSortingExtractor(SortingExtractor):
         if self._start_frame is None:
             self._start_frame = 0
         if self._end_frame is None:
-            self._end_frame = float("inf")
+            self._end_frame = np.Inf
         self._original_unit_id_lookup = {}
         for i in range(len(self._unit_ids)):
             self._original_unit_id_lookup[self._renamed_unit_ids[i]] = self._unit_ids[i]
@@ -32,6 +33,7 @@ class SubSortingExtractor(SortingExtractor):
         return list(self._renamed_unit_ids)
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
@@ -49,6 +51,8 @@ class SubSortingExtractor(SortingExtractor):
             sf = self._start_frame
         if ef > self._end_frame:
             ef = self._end_frame
+        if ef == np.Inf:
+            ef = None
         return self._parent_sorting.get_unit_spike_train(unit_id=original_unit_id, start_frame=sf,
                                                          end_frame=ef) - self._start_frame
 
@@ -77,6 +81,7 @@ class SubSortingExtractor(SortingExtractor):
                     self.set_unit_property(unit_id=unit_id, property_name=curr_property_name, value=value)
 
     def copy_unit_spike_features(self, sorting, unit_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if unit_ids is None:
             unit_ids = self.get_unit_ids()
         if isinstance(unit_ids, int):

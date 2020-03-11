@@ -515,15 +515,12 @@ class RecordingExtractor(ABC):
         start_frame: int
             The start frame of the epoch to be added (inclusive)
         end_frame: int
-            The end frame of the epoch to be added (exclusive)
-
+            The end frame of the epoch to be added (exclusive). If set to None, it will include the entire
+            recording after the start_frame.
         '''
-        # Default implementation only allows for frame info. Can override to put more info
         if isinstance(epoch_name, str):
-            if end_frame == np.inf:
-                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': end_frame}
-            else:
-                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
+            start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
+            self._epochs[epoch_name] = {'start_frame': start_frame, 'end_frame': end_frame}
         else:
             raise TypeError("epoch_name must be a string")
 
@@ -798,3 +795,18 @@ class RecordingExtractor(ABC):
         '''
         raise NotImplementedError("The write_recording function is not \
                                   implemented for this extractor")
+
+    def _cast_start_end_frame(self, start_frame, end_frame):
+        if isinstance(start_frame, (float, np.float)):
+            start_frame = int(start_frame)
+        elif isinstance(start_frame, (int, np.integer, type(None))):
+            start_frame = start_frame
+        else:
+            raise ValueError("start_frame must be an int, float (not infinity), or None")
+        if isinstance(end_frame, (float, np.float)):
+            end_frame = int(end_frame)
+        elif isinstance(end_frame, (int, np.integer, type(None))):
+            end_frame = end_frame
+        else:
+            raise ValueError("end_frame must be an int, float (not infinity), or None")
+        return start_frame, end_frame

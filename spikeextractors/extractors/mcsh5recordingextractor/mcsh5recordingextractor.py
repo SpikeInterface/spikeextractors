@@ -66,6 +66,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
             return list(range(len(analog_stream_names)))
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

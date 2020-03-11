@@ -59,6 +59,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
         return sampling_frequency
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if channel_ids:
             channels = np.array([self._traces[cid] for cid in channel_ids])
         else:
@@ -176,6 +177,7 @@ class NIXIOSortingExtractor(SortingExtractor):
         return [int(da.label) for da in self._spike_das]
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         name = "spikes-{}".format(unit_id)
         da = self._spike_das[name]
         return da[start_frame:end_frame]

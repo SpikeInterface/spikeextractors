@@ -38,6 +38,7 @@ class TridesclousSortingExtractor(SortingExtractor):
         return list(labels)
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         spikes = self.dataio.get_spikes(seg_num=0, chan_grp=self.chan_grp, i_start=None, i_stop=None)
         spikes = spikes[spikes['cluster_label'] == unit_id]
         spike_times = spikes['index']

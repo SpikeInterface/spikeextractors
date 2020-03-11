@@ -157,6 +157,7 @@ class SortingExtractor(ABC):
             An array containing all the features for each spike in the
             specified unit given the range of start and end frames.
         '''
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.get_unit_ids():
                 if unit_id not in self._unit_features.keys():
@@ -505,7 +506,7 @@ class SortingExtractor(ABC):
 
     def add_epoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to your sorting extractor that tracks
-        a certain time period in your recording. It is stored in an internal
+        a certain time period in your sorting. It is stored in an internal
         dictionary of start and end frame tuples.
 
         Parameters
@@ -515,17 +516,14 @@ class SortingExtractor(ABC):
         start_frame: int
             The start frame of the epoch to be added (inclusive)
         end_frame: int
-            The end frame of the epoch to be added (exclusive)
-
+            The end frame of the epoch to be added (exclusive). If set to None, it will include the entire
+            sorting after the start_frame.
         '''
-        # Default implementation only allows for frame info. Can override to put more info
         if isinstance(epoch_name, str):
-            if end_frame == np.inf:
-                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': end_frame}
-            else:
-                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
+            start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
+            self._epochs[epoch_name] = {'start_frame': start_frame, 'end_frame': end_frame}
         else:
-            raise ValueError("epoch_name must be a string")
+            raise TypeError("epoch_name must be a string")
 
     def remove_epoch(self, epoch_name):
         '''This function removes an epoch from your sorting extractor.
@@ -727,3 +725,18 @@ class SortingExtractor(ABC):
         '''
         raise NotImplementedError("The write_sorting function is not \
                                   implemented for this extractor")
+
+    def _cast_start_end_frame(self, start_frame, end_frame):
+        if isinstance(start_frame, (float, np.float)):
+            start_frame = int(start_frame)
+        elif isinstance(start_frame, (int, np.integer, type(None))):
+            start_frame = start_frame
+        else:
+            raise ValueError("start_frame must be an int, float (not infinity), or None")
+        if isinstance(end_frame, (float, np.float)):
+            end_frame = int(end_frame)
+        elif isinstance(end_frame, (int, np.integer, type(None))):
+            end_frame = end_frame
+        else:
+            raise ValueError("end_frame must be an int, float (not infinity), or None")
+        return start_frame, end_frame
