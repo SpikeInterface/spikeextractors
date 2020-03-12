@@ -9,18 +9,19 @@ import random
 from pathlib import Path
 from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, \
     get_sub_extractors_by_property
+from .baseextractor import BaseExtractor
 
 
-class RecordingExtractor(ABC):
+class RecordingExtractor(ABC, BaseExtractor):
     '''A class that contains functions for extracting important information
     from recorded extracellular data. It is an abstract class so all
     functions with the @abstractmethod tag must be implemented for the
     initialization to work.
     '''
     def __init__(self):
+        BaseExtractor.__init__(self)
         self._epochs = {}
         self._channel_properties = {}
-        self.kwargs = {}
         self._tmp_folder = None
         self.id = random.randint(a=0, b=9223372036854775807)
 
@@ -796,54 +797,6 @@ class RecordingExtractor(ABC):
         '''
         raise NotImplementedError("The write_recording function is not \
                                   implemented for this extractor")
-
-    def append_to_dump_dict(self):
-        try:
-            self._dump_dict
-        except:
-            self._dump_dict = {}
-        keys = self._dump_dict.keys()
-
-        if len(keys) == 0:
-            current_key = 0
-        else:
-            current_key = max(keys) + 1
-
-        # extractors
-        try:
-            self._dump_dict[current_key] = {'name': self.extractor_name, 'type': 'extractor',
-                                            'kwargs': self.kwargs}
-        except:
-            pass
-        # preprocessors
-        try:
-            self._dump_dict[current_key] = {'name': self.preprocessor_name, 'type': 'preprocessor',
-                                            'kwargs': self.kwargs}
-        except:
-            pass
-
-    def dump(self, output_folder=None, output_filename=None):
-        '''
-        Dumps recording extractor to json file.
-        The extractor can be re-loaded with spikeextractors.load_extractor_from_json(json_file)
-
-        Parameters
-        ----------
-        output_folder: str or Path
-            Path to output_folder
-        output_filename: str
-            Filename
-        '''
-        if output_folder is None:
-            output_folder = Path(os.getcwd())
-        else:
-            output_folder = Path(output_folder)
-        if output_filename is None:
-            output_filename = 'spikeinterface_recording.json'
-        elif Path(output_filename).suffix == '':
-            output_filename = output_filename + '.json'
-        with open(str(output_folder / output_filename), 'w', encoding='utf8') as f:
-            json.dump(self._dump_dict, f, indent=4)
 
 
     def _cast_start_end_frame(self, start_frame, end_frame):

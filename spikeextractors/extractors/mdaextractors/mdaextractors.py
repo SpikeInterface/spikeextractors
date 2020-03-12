@@ -42,8 +42,8 @@ class MdaRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         for m in range(self._num_channels):
             self.set_channel_property(m, 'location', self._geom[m, :])
-        self.kwargs = {'folder_path': str(Path(folder_path).absolute())}
-        self.append_to_dump_dict()
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
+        #self.append_to_dump_dict()
 
     def get_channel_ids(self):
         return list(range(self._num_channels))
