@@ -1,4 +1,5 @@
 from spikeextractors import RecordingExtractor, SortingExtractor
+from pathlib import Path
 import numpy as np
 
 
@@ -8,15 +9,17 @@ try:
 except ImportError:
     HAVE_OE = False
 
+
 class OpenEphysRecordingExtractor(RecordingExtractor):
 
-    extractor_name = 'OpenEphysRecordingExtractor'
+    extractor_name = 'OpenEphysRecording'
     has_default_locations = False
     installed = HAVE_OE  # check at class level if installed or not
     is_writable = False
-    mode = 'file'
+    is_dumpable = True
+    mode = 'folder'
     extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "str, Path to file"},
+        {'name': 'folder_path', 'type': 'folder', 'title': "str, Path to folder_path"},
         {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
         {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
         {'name': 'dtype', 'type': 'str',  'value':'float', 'default':'float', 'title':"dtype ('float' or 'int')"},
@@ -24,13 +27,16 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
 
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
 
-    def __init__(self, file_path, *, experiment_id=0, recording_id=0, dtype='float'):
+    def __init__(self, folder_path, *, experiment_id=0, recording_id=0, dtype='float'):
         assert HAVE_OE, "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"
         assert dtype == 'int16' or 'float' in dtype, "'dtype' can be int16 (memory map) or 'float' (load into memory)"
         RecordingExtractor.__init__(self)
-        self._recording_file = file_path
-        self._recording = pyopenephys.File(file_path).experiments[experiment_id].recordings[recording_id]
+        self._recording_file = folder_path
+        self._recording = pyopenephys.File(folder_path).experiments[experiment_id].recordings[recording_id]
         self._dtype = dtype
+        self.kwargs = {'folder_path': str(Path(folder_path).absolute()), 'experiment_id': experiment_id,
+                       'recording_id': recording_id, 'dtype': dtype}
+        self.append_to_dump_dict()
 
     def get_channel_ids(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))

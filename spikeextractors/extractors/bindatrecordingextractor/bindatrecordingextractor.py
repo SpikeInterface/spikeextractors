@@ -36,9 +36,6 @@ class BinDatRecordingExtractor(RecordingExtractor):
         self._sampling_frequency = float(sampling_frequency)
         self._gain = gain
         self._geom = geom
-        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'sampling_frequency': sampling_frequency,
-                       'numchan': numchan, 'dtype': str(dtype), 'recording_channels': recording_channels,
-                       'time_axis': time_axis, 'geom': geom, 'offset': offset, 'gain': gain}
 
         if recording_channels is not None:
             assert len(recording_channels) == self._timeseries.shape[0], \
@@ -50,6 +47,10 @@ class BinDatRecordingExtractor(RecordingExtractor):
         if geom is not None:
             for idx, channel in enumerate(self._channels):
                 self.set_channel_property(channel, 'location', self._geom[idx, :])
+        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'sampling_frequency': sampling_frequency,
+                       'numchan': numchan, 'dtype': str(dtype), 'recording_channels': recording_channels,
+                       'time_axis': time_axis, 'geom': geom, 'offset': offset, 'gain': gain}
+        self.append_to_dump_dict()
 
     def get_channel_ids(self):
         return self._channels

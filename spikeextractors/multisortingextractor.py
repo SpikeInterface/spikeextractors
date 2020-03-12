@@ -6,6 +6,8 @@ import numpy as np
 # Encapsulates a grouping of non-continuous sorting extractors
 
 class MultiSortingExtractor(SortingExtractor):
+    extractor_name = 'MultiSorting'
+
     def __init__(self, sortings):
         SortingExtractor.__init__(self)
         self._sortings = sortings

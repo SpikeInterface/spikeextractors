@@ -8,7 +8,7 @@ import shutil
 
 class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
 
-    extractor_name = 'BinDatRecordingExtractor'
+    extractor_name = 'BinDatRecording'
 
     def __init__(self, recording, chunk_size=None):
         RecordingExtractor.__init__(self)  # init tmp folder before constructing BinDatRecordingExtractor

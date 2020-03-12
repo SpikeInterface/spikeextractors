@@ -728,25 +728,53 @@ class SortingExtractor(ABC):
         raise NotImplementedError("The write_sorting function is not \
                                   implemented for this extractor")
 
-    def dump(self, output_folder=None):
+    def append_to_dump_dict(self):
+        try:
+            self._dump_dict
+        except:
+            self._dump_dict = {}
+        keys = self._dump_dict.keys()
+
+        if len(keys) == 0:
+            current_key = 0
+        else:
+            current_key = max(keys) + 1
+
+        # extractors
+        try:
+            self._dump_dict[current_key] = {'name': self.extractor_name, 'type': 'extractor',
+                                            'kwargs': self.kwargs}
+        except:
+            pass
+        # curators
+        try:
+            self._dump_dict[current_key] = {'name': self.curator_name, 'type': 'curator',
+                                            'kwargs': self.kwargs}
+        except:
+            pass
+
+    def dump(self, output_folder=None, output_filename=None):
         '''
-        Dumps sorting extractor to json file.
+        Dumps recording extractor to json file.
         The extractor can be re-loaded with spikeextractors.load_extractor_from_json(json_file)
 
         Parameters
         ----------
         output_folder: str or Path
             Path to output_folder
+        output_filename: str
+            Filename
         '''
-        if self.is_dumpable:
-            class_type = self.extractor_name
-            d = {'class': class_type, 'kwargs': self.kwargs}
-            if output_folder is None:
-                output_folder = Path(os.getcwd())
-            with open(str(output_folder / 'spikeinterface_sorting.json'), 'w', encoding='utf8') as f:
-                json.dump(d, f, indent=4)
+        if output_folder is None:
+            output_folder = Path(os.getcwd())
         else:
-            raise ValueError("The recording extractor cannot be dumped to json.")
+            output_folder = Path(output_folder)
+        if output_filename is None:
+            output_filename = 'spikeinterface_recording.json'
+        elif Path(output_filename).suffix == '':
+            output_filename = output_filename + '.json'
+        with open(str(output_folder / output_filename), 'w', encoding='utf8') as f:
+            json.dump(self._dump_dict, f, indent=4)
 
     def _cast_start_end_frame(self, start_frame, end_frame):
         if isinstance(start_frame, (float, np.float)):

@@ -526,15 +526,37 @@ def load_extractor_from_json(json_file):
     extractor: RecordingExtractor or SortingExtractor
         The loaded extractor object
     '''
+    import spiketoolkit
     with open(str(json_file), 'r') as f:
-        d = json.load(f)
+        chain = json.load(f)
 
+    ordered_keys = sorted([k for k in chain.keys()])
     extractor = None
-    # find extractor class
-    if d['class'] in spikeextractors.recording_extractor_dict.keys():
-        reccls = spikeextractors.recording_extractor_dict[d['class']]
-        extractor = reccls(**d['kwargs'])
-    elif d['class'] in spikeextractors.sorting_extractor_dict.keys():
-        sortcls = spikeextractors.sorting_extractor_dict[d['class']]
-        extractor = sortcls(**d['kwargs'])
+    for k in ordered_keys:
+        d = chain[k]
+        if int(k) == 0:
+            # first step MUST BE an extractor
+            assert d['type'] == 'extractor', "First element of the dictionary should be an extractor!"
+            if d['name'] in spikeextractors.recording_extractor_dict.keys():
+                reccls = spikeextractors.recording_extractor_dict[d['name']]
+                extractor = reccls(**d['kwargs'])
+            elif d['name'] in spikeextractors.sorting_extractor_dict.keys():
+                sortcls = spikeextractors.sorting_extractor_dict[d['name']]
+                extractor = sortcls(**d['kwargs'])
+        else:
+            if 'preprocessor' == d['type']:
+                if d['name'] in spiketoolkit.preprocessing.preprocesser_dict.keys():
+                    tlkclass = spiketoolkit.preprocessing.preprocesser_dict[d['name']]
+                    extractor = tlkclass(extractor, **d['kwargs'])
+            elif 'curator' == d['type']:
+                if d['name'] in spiketoolkit.validation.curation_dict.keys():
+                    tlkclass = spiketoolkit.validation.curation_dict[d['name']]
+                    extractor = tlkclass(extractor, **d['kwargs'])
+            else:
+                if 'SubRecording' in d['name']:
+                    extractor = spikeextractors.SubRecordingExtractor(extractor, **d['kwargs'])
+                elif 'SubSorting' in d['name']:
+                    extractor = spikeextractors.SubSortingExtractor(extractor, **d['kwargs'])
+                elif 'Multi' in d['name']:
+                    raise NotImplementedError("Multi recording and sorting cannot be dumped to json")
     return extractor

@@ -5,6 +5,7 @@ import numpy as np
 # Encapsulates a subset of a spike sorted data file
 
 class SubSortingExtractor(SortingExtractor):
+    extractor_name = 'SubSorting'
 
     def __init__(self, parent_sorting, *, unit_ids=None, renamed_unit_ids=None, start_frame=None, end_frame=None):
         SortingExtractor.__init__(self)

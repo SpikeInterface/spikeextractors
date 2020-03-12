@@ -1,6 +1,7 @@
 from spikeextractors import RecordingExtractor
 
 import numpy as np
+from pathlib import Path
 import ctypes
 
 
@@ -12,10 +13,11 @@ except ImportError:
 
 class BiocamRecordingExtractor(RecordingExtractor):
 
-    extractor_name = 'BiocamRecordingExtractor'
+    extractor_name = 'BiocamRecording'
     has_default_locations = True
     installed = HAVE_BIOCAM  # check at class level if installed or not
     is_writable = True
+    is_dumpable = True
     mode = 'file'
     extractor_gui_params = [       
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
@@ -33,6 +35,10 @@ class BiocamRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         for m in range(self._nRecCh):
             self.set_channel_property(m, 'location', self._positions[m])
+
+        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'mea_pitch': mea_pitch,
+                       'verbose': verbose}
+        self.append_to_dump_dict()
 
     def __del__(self):
         self._rf.close()

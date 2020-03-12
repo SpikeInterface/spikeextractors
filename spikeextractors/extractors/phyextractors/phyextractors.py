@@ -8,10 +8,11 @@ import csv
 
 class PhyRecordingExtractor(BinDatRecordingExtractor):
 
-    extractor_name = 'PhyRecordingExtractor'
+    extractor_name = 'PhyRecording'
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = False
+    is_dumpable = True
     mode = 'folder'
     extractor_gui_params = [
         {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
@@ -49,6 +50,9 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
             assert len(channel_locations) == self.get_num_channels()
             for (ch, loc) in zip(self.get_channel_ids(), channel_locations):
                 self.set_channel_property(ch, 'location', loc)
+
+        self.kwargs = {'folder_path': str(Path(folder_path).absolute())}
+        self.append_to_dump_dict()
 
 
 class PhySortingExtractor(SortingExtractor):
