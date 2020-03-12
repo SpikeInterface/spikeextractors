@@ -2,16 +2,14 @@ from abc import ABC, abstractmethod
 import numpy as np
 import json
 import os
-import copy
-import random
-import string
 import tempfile
 from pathlib import Path
 import shutil
 from .extraction_tools import get_sub_extractors_by_property
+from .baseextractor import BaseExtractor
 
 
-class SortingExtractor(ABC):
+class SortingExtractor(ABC, BaseExtractor):
     '''A class that contains functions for extracting important information
     from spiked sorted data given a spike sorting software. It is an abstract
     class so all functions with the @abstractmethod tag must be implemented for
@@ -20,6 +18,7 @@ class SortingExtractor(ABC):
 
     '''
     def __init__(self):
+        BaseExtractor.__init__(self)
         self._epochs = {}
         self._unit_properties = {}
         self._unit_features = {}
@@ -727,54 +726,6 @@ class SortingExtractor(ABC):
         '''
         raise NotImplementedError("The write_sorting function is not \
                                   implemented for this extractor")
-
-    def append_to_dump_dict(self):
-        try:
-            self._dump_dict
-        except:
-            self._dump_dict = {}
-        keys = self._dump_dict.keys()
-
-        if len(keys) == 0:
-            current_key = 0
-        else:
-            current_key = max(keys) + 1
-
-        # extractors
-        try:
-            self._dump_dict[current_key] = {'name': self.extractor_name, 'type': 'extractor',
-                                            'kwargs': self.kwargs}
-        except:
-            pass
-        # curators
-        try:
-            self._dump_dict[current_key] = {'name': self.curator_name, 'type': 'curator',
-                                            'kwargs': self.kwargs}
-        except:
-            pass
-
-    def dump(self, output_folder=None, output_filename=None):
-        '''
-        Dumps recording extractor to json file.
-        The extractor can be re-loaded with spikeextractors.load_extractor_from_json(json_file)
-
-        Parameters
-        ----------
-        output_folder: str or Path
-            Path to output_folder
-        output_filename: str
-            Filename
-        '''
-        if output_folder is None:
-            output_folder = Path(os.getcwd())
-        else:
-            output_folder = Path(output_folder)
-        if output_filename is None:
-            output_filename = 'spikeinterface_recording.json'
-        elif Path(output_filename).suffix == '':
-            output_filename = output_filename + '.json'
-        with open(str(output_folder / output_filename), 'w', encoding='utf8') as f:
-            json.dump(self._dump_dict, f, indent=4)
 
     def _cast_start_end_frame(self, start_frame, end_frame):
         if isinstance(start_frame, (float, np.float)):
