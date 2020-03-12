@@ -30,11 +30,10 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         self._verbose = verbose
         self._available_stream_ids = self.get_available_stream_ids()
         self.set_stream_id(stream_id)
-        
+
         RecordingExtractor.__init__(self)
-        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'stream_id': stream_id,
-                       'verbose': verbose}
-        self.append_to_dump_dict()
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'stream_id': stream_id,
+                        'verbose': verbose}
 
     def __del__(self):
         self._rf.close()
@@ -49,9 +48,9 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         return self._samplingRate
 
     def set_stream_id(self, stream_id):
-        assert stream_id in self._available_stream_ids,  "The specified stream ID is unavailable."
+        assert stream_id in self._available_stream_ids, "The specified stream ID is unavailable."
         self._stream_id = stream_id
-        
+
         if hasattr(self, '_rf'):
             self._rf.close()
 
@@ -104,7 +103,6 @@ class MCSH5RecordingExtractor(RecordingExtractor):
                 return stream.get('ChannelData')[np.sort(channel_idxs), start_frame:end_frame] * conv
         else:
             return stream.get('ChannelData')[np.array(channel_idxs), start_frame:end_frame] * conv
-
 
     @staticmethod
     def write_recording(recording, save_path):

@@ -209,8 +209,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     'start_frame': self.time_to_frame(row['start_time']),
                     'end_frame': self.time_to_frame(row['stop_time'])}
                     for _, row in df_epochs.iterrows()}
-        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'electrical_series_name': electrical_series_name}
-        self.append_to_dump_dict()
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'electrical_series_name': electrical_series_name}
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         check_nwb_install()

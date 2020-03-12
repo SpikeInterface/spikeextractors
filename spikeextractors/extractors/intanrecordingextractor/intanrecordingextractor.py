@@ -28,8 +28,7 @@ class IntanRecordingExtractor(RecordingExtractor):
             "Only '.rhd' and '.rhs' files are supported"
         self._recording_file = file_path
         self._recording = pyintan.File(file_path, verbose)
-        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'verbose': verbose}
-        self.append_to_dump_dict()
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'verbose': verbose}
 
     def get_channel_ids(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))

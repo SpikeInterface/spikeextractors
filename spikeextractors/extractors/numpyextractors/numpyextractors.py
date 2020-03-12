@@ -17,6 +17,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
     def __init__(self, timeseries, sampling_frequency, geom=None):
         if isinstance(timeseries, str):
             if Path(timeseries).is_file():
+                self.is_dumpable = True
                 self._timeseries = np.load(timeseries)
         elif isinstance(timeseries, np.ndarray):
             self._timeseries = timeseries

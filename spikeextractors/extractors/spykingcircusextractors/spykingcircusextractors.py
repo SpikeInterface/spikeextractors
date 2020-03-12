@@ -52,8 +52,7 @@ class SpykingCircusRecordingExtractor(NumpyRecordingExtractor):
             if f.suffix == '.npy':
                 recording_file = str(f)
         NumpyRecordingExtractor.__init__(self, recording_file, sample_rate)
-        self.kwargs = {'folder_path': str(Path(folder_path).absolute())}
-        self.append_to_dump_dict()
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
 
 class SpykingCircusSortingExtractor(SortingExtractor):

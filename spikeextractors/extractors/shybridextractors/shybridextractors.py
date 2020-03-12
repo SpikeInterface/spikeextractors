@@ -50,8 +50,7 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
                                           time_axis=time_axis)
 
         self = load_probe_file(self, params['probe'])
-        self.kwargs = {'file_path': str(Path(file_path).absolute())}
-        self.append_to_dump_dict()
+        self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
     @staticmethod
     def write_recording(recording, save_path, initial_sorting_fn, dtype='float32'):

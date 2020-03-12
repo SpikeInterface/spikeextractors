@@ -2,16 +2,15 @@ from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
 
-
 try:
     import pyopenephys
+
     HAVE_OE = True
 except ImportError:
     HAVE_OE = False
 
 
 class OpenEphysRecordingExtractor(RecordingExtractor):
-
     extractor_name = 'OpenEphysRecording'
     has_default_locations = False
     installed = HAVE_OE  # check at class level if installed or not
@@ -20,9 +19,9 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     mode = 'folder'
     extractor_gui_params = [
         {'name': 'folder_path', 'type': 'folder', 'title': "str, Path to folder_path"},
-        {'name': 'experiment_id', 'type': 'int', 'value':0, 'default':0, 'title': "Experiment ID"},
-        {'name': 'recording_id', 'type': 'int', 'value':0, 'default':0, 'title': "Recording ID"},
-        {'name': 'dtype', 'type': 'str',  'value':'float', 'default':'float', 'title':"dtype ('float' or 'int')"},
+        {'name': 'experiment_id', 'type': 'int', 'value': 0, 'default': 0, 'title': "Experiment ID"},
+        {'name': 'recording_id', 'type': 'int', 'value': 0, 'default': 0, 'title': "Recording ID"},
+        {'name': 'dtype', 'type': 'str', 'value': 'float', 'default': 'float', 'title': "dtype ('float' or 'int')"},
     ]
 
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
@@ -34,9 +33,8 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         self._recording_file = folder_path
         self._recording = pyopenephys.File(folder_path).experiments[experiment_id].recordings[recording_id]
         self._dtype = dtype
-        self.kwargs = {'folder_path': str(Path(folder_path).absolute()), 'experiment_id': experiment_id,
-                       'recording_id': recording_id, 'dtype': dtype}
-        self.append_to_dump_dict()
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute()), 'experiment_id': experiment_id,
+                        'recording_id': recording_id, 'dtype': dtype}
 
     def get_channel_ids(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))
@@ -63,7 +61,6 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
 
 
 class OpenEphysSortingExtractor(SortingExtractor):
-
     extractor_name = 'OpenEphysSortingExtractor'
     installed = HAVE_OE  # check at class level if installed or not
     is_writable = False

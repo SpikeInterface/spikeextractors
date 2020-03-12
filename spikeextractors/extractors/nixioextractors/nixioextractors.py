@@ -35,8 +35,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         self._file = nix.File.open(file_path, nix.FileMode.ReadOnly)
         self._load_properties()
-        self.kwargs = {'file_path': str(Path(file_path).absolute())}
-        self.append_to_dump_dict()
+        self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
     def __del__(self):
         self._file.close()

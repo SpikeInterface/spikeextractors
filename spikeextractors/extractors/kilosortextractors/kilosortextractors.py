@@ -11,16 +11,15 @@ class KiloSortRecordingExtractor(PhyRecordingExtractor):
 
     mode = 'folder'
     extractor_gui_params = [
-        {'name': 'folder_path', 'type': 'folder', 'title': "str, Path to folder"},        
+        {'name': 'folder_path', 'type': 'folder', 'title': "str, Path to folder"},
     ]
     installation_mesg = ""  # error message when not installed
-    
+
     def __init__(self, folder_path):
         PhyRecordingExtractor.__init__(self, folder_path)
 
 
 class KiloSortSortingExtractor(PhySortingExtractor):
-
     extractor_name = 'KiloSortSortingExtractor'
     exporter_name = 'KiloSortSortingExporter'
     exporter_gui_params = [
@@ -44,7 +43,6 @@ class KiloSortSortingExtractor(PhySortingExtractor):
                         self._good_units.append(u)
             self._unit_ids = self._good_units
 
-        self.kwargs = {'folder_path': str(Path(folder_path).absolute()),
-                       'exclude_cluster_groups': exclude_cluster_groups, 'keep_good_only': keep_good_only,
-                       'verbose': verbose}
-        self.append_to_dump_dict()
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute()),
+                        'exclude_cluster_groups': exclude_cluster_groups, 'keep_good_only': keep_good_only,
+                        'verbose': verbose}

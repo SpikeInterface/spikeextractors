@@ -65,71 +65,40 @@ class BaseExtractor:
         extractor: RecordingExtractor or SortingExtractor
             The loaded extractor object
         '''
-        extractor = None
         with open(str(json_file), 'r') as f:
             d = json.load(f)
-
             extractor = _load_extractor_from_dict(d)
-
-        # import spiketoolkit
-
-        #
-        # ordered_keys = sorted([k for k in chain.keys()])
-        # extractor = None
-        # for k in ordered_keys:
-        #     d = chain[k]
-        #     if int(k) == 0:
-        #         # first step MUST BE an extractor
-        #         assert d['type'] == 'extractor', "First element of the dictionary should be an extractor!"
-        #         if d['name'] in spikeextractors.recording_extractor_dict.keys():
-        #             reccls = spikeextractors.recording_extractor_dict[d['name']]
-        #             extractor = reccls(**d['kwargs'])
-        #         elif d['name'] in spikeextractors.sorting_extractor_dict.keys():
-        #             sortcls = spikeextractors.sorting_extractor_dict[d['name']]
-        #             extractor = sortcls(**d['kwargs'])
-        #     else:
-        #         if 'preprocessor' == d['type']:
-        #             if d['name'] in spiketoolkit.preprocessing.preprocesser_dict.keys():
-        #                 tlkclass = spiketoolkit.preprocessing.preprocesser_dict[d['name']]
-        #                 extractor = tlkclass(extractor, **d['kwargs'])
-        #         elif 'curator' == d['type']:
-        #             if d['name'] in spiketoolkit.validation.curation_dict.keys():
-        #                 tlkclass = spiketoolkit.validation.curation_dict[d['name']]
-        #                 extractor = tlkclass(extractor, **d['kwargs'])
-        #         else:
-        #             if 'SubRecording' in d['name']:
-        #                 extractor = spikeextractors.SubRecordingExtractor(extractor, **d['kwargs'])
-        #             elif 'SubSorting' in d['name']:
-        #                 extractor = spikeextractors.SubSortingExtractor(extractor, **d['kwargs'])
-        #             elif 'Multi' in d['name']:
-        #                 raise NotImplementedError("Multi recording and sorting cannot be dumped to json")
         return extractor
 
 
 def _load_extractor_from_dict(dic, check_version=False):
-    # tODO fix this!
     extractor = None
-    if np.any([isinstance(v, dict) for v in dic.values()]):
-        for k in dic.keys():
-            if isinstance(dic[k], dict):
-                print(dic[k].keys())
-                if 'module' in dic[k].keys() \
-                    and 'class' in dic[k].keys() and 'version' in dic[k].keys():
-                    print('ciao')
-                    extractor = _load_extractor_from_dict(dic[k])
-                    cls = _get_class_from_string(dic['class'])
-                    # TODO add version check
-                    extractor = cls(extractor, **dic['kwargs'])
+    kwargs = dic['kwargs']
+    if np.any([isinstance(v, dict) for v in kwargs.values()]):
+        for k in kwargs.keys():
+            if isinstance(kwargs[k], dict):
+                if 'module' in kwargs[k].keys() and 'class' in kwargs[k].keys() and 'version' in kwargs[k].keys():
+                    extractor = _load_extractor_from_dict(kwargs[k])
+                    class_name = dic['class']
+                    cls = _get_class_from_string(class_name)
+                    if not _check_same_version(class_name, dic['version']):
+                        print('Versions are not the same. This might lead to errors.')
+                        print('Use ', class_name.split('.')[0], 'version', dic['version'])
+                    kwargs[k] = extractor
+                    extractor = cls(**kwargs)
     else:
-        cls = _get_class_from_string(dic['class'])
-        # TODO add version check
+        class_name = dic['class']
+        cls = _get_class_from_string(class_name)
+        if not _check_same_version(class_name, dic['version']):
+            print('Versions are not the same. This might lead to errors.')
+            print('Use ', class_name.split('.')[0], 'version', dic['version'])
         extractor = cls(**dic['kwargs'])
     return extractor
 
 
 def _get_class_from_string(class_string):
-    module = class_string.split('.')[0]
     class_name = class_string.split('.')[-1]
+    module = '.'.join(class_string.split('.')[:-1])
     imported_module = importlib.import_module(module)
 
     try:
@@ -138,3 +107,10 @@ def _get_class_from_string(class_string):
         imported_class = None
 
     return imported_class
+
+
+def _check_same_version(class_string, version):
+    module = class_string.split('.')[0]
+    imported_module = importlib.import_module(module)
+
+    return imported_module.__version__ == version

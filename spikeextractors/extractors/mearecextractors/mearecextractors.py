@@ -42,8 +42,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
             for chan, pos in enumerate(self._locations):
                 self.set_channel_property(chan, 'location', pos)
 
-        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'locs_2d': locs_2d}
-        self.append_to_dump_dict()
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'locs_2d': locs_2d}
 
     def _initialize(self):
         assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"

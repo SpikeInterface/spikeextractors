@@ -51,8 +51,7 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
             for (ch, loc) in zip(self.get_channel_ids(), channel_locations):
                 self.set_channel_property(ch, 'location', loc)
 
-        self.kwargs = {'folder_path': str(Path(folder_path).absolute())}
-        self.append_to_dump_dict()
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
 
 class PhySortingExtractor(SortingExtractor):

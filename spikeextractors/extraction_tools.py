@@ -532,4 +532,4 @@ def _check_json(d):
 
 
 def load_extractor_from_json(json_file):
-    BaseExtractor.load_extractor_from_json(json_file)
+    return BaseExtractor.load_extractor_from_json(json_file)

@@ -36,9 +36,8 @@ class ExdirRecordingExtractor(RecordingExtractor):
         self._num_timepoints = self._recordings.shape[1]   
         RecordingExtractor.__init__(self)
 
-        self.kwargs = {'folder_path': str(Path(folder_path).absolute())}
-        self.append_to_dump_dict()
-        
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
+
     def get_channel_ids(self):
         return list(range(self._num_channels))
 

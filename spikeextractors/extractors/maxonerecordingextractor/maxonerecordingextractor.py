@@ -30,8 +30,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._filehandle = None
         self._mapping = None
         self._initialize()
-        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'verbose': verbose}
-        self.append_to_dump_dict()
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'verbose': verbose}
 
     def _initialize(self):
         self._filehandle = h5py.File(self._file_path)

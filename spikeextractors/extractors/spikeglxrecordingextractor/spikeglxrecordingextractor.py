@@ -65,9 +65,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # set gains - convert from int16 to uVolt
         self.set_channel_gains(self._channels, gains*1e6)
-        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'x_pitch': x_pitch,
-                       'y_pitch': y_pitch}
-        self.append_to_dump_dict()
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'x_pitch': x_pitch, 'y_pitch': y_pitch}
 
 
     def get_channel_ids(self):
