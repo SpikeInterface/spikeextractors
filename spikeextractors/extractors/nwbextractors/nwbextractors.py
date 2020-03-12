@@ -2,6 +2,7 @@ import os
 import uuid
 from datetime import datetime
 from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
 
@@ -121,10 +122,11 @@ def most_relevant_ch(traces):
 
 
 class NwbRecordingExtractor(se.RecordingExtractor):
-    extractor_name = 'NwbRecordingExtractor'
+    extractor_name = 'NwbRecording'
     has_default_locations = True
     installed = HAVE_NWB  # check at class level if installed or not
     is_writable = True
+    is_dumpable = True
     mode = 'file'
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
@@ -133,17 +135,17 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     ]
     installation_mesg = "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
 
-    def __init__(self, path, electrical_series_name='ElectricalSeries'):
+    def __init__(self, file_path, electrical_series_name='ElectricalSeries'):
         """
 
         Parameters
         ----------
-        path: path to NWB file
+        file_path: path to NWB file
         electrical_series_name: str, optional
         """
         check_nwb_install()
         se.RecordingExtractor.__init__(self)
-        self._path = path
+        self._path = file_path
         with NWBHDF5IO(self._path, 'a') as io:
             nwbfile = io.read()
             if electrical_series_name is not None:
@@ -207,9 +209,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     'start_frame': self.time_to_frame(row['start_time']),
                     'end_frame': self.time_to_frame(row['stop_time'])}
                     for _, row in df_epochs.iterrows()}
+        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'electrical_series_name': electrical_series_name}
+        self.append_to_dump_dict()
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         check_nwb_install()
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if channel_ids is not None:
             if not isinstance(channel_ids, (list, np.ndarray)):
                 raise TypeError("'channel_ids' must be a list or array of integers.")
@@ -533,7 +538,12 @@ class NwbSortingExtractor(se.SortingExtractor):
             unit_ids = [int(i) for i in nwbfile.units.id[:]]
         return unit_ids
 
-    def get_unit_spike_train(self, unit_id, start_frame=0, end_frame=np.Inf):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
+        if start_frame is None:
+            start_frame = 0
+        if end_frame is None:
+            end_frame = np.Inf
         check_nwb_install()
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()

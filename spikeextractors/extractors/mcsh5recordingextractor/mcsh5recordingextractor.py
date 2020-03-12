@@ -1,5 +1,6 @@
 from spikeextractors import RecordingExtractor
 import numpy as np
+from pathlib import Path
 
 try:
     import h5py
@@ -14,6 +15,8 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     has_default_locations = False
     installed = HAVE_MCSH5  # check at class level if installed or not
     is_writable = False
+    is_dumpable = True
+
     mode = 'file'
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
@@ -29,6 +32,9 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         self.set_stream_id(stream_id)
         
         RecordingExtractor.__init__(self)
+        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'stream_id': stream_id,
+                       'verbose': verbose}
+        self.append_to_dump_dict()
 
     def __del__(self):
         self._rf.close()
@@ -66,6 +72,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
             return list(range(len(analog_stream_names)))
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

@@ -1,6 +1,7 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 import numpy as np
+from pathlib import Path
 
 try:
     import exdir
@@ -12,9 +13,10 @@ except ImportError:
 
 
 class ExdirRecordingExtractor(RecordingExtractor):
-    extractor_name = 'ExdirRecordingExtractor'
+    extractor_name = 'ExdirRecording'
     has_default_locations = False
     installed = HAVE_EXDIR  # check at class level if installed or not
+    is_dumpable = True
     is_writable = True
     mode = 'folder'
     extractor_gui_params = [
@@ -33,6 +35,9 @@ class ExdirRecordingExtractor(RecordingExtractor):
         self._num_channels = self._recordings.shape[0]
         self._num_timepoints = self._recordings.shape[1]   
         RecordingExtractor.__init__(self)
+
+        self.kwargs = {'folder_path': str(Path(folder_path).absolute())}
+        self.append_to_dump_dict()
         
     def get_channel_ids(self):
         return list(range(self._num_channels))
@@ -44,6 +49,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
@@ -261,6 +267,7 @@ class ExdirSortingExtractor(SortingExtractor):
         return self._unit_ids
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

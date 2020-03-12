@@ -1,5 +1,5 @@
 import os
-
+from pathlib import Path
 import numpy as np
 
 from spikeextractors import SortingExtractor
@@ -14,12 +14,14 @@ except ImportError:
     HAVE_SBEX = False
 
 class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
-    extractor_name = 'SHYBRIDRecordingExtractor'
+    extractor_name = 'SHYBRIDRecording'
     installed = HAVE_SBEX
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid recording (.bin, .raw, .dat)"},
     ]
     is_writable = True
+    is_dumpable = True
+    mode = 'file'
     installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
 
     def __init__(self, file_path):
@@ -48,6 +50,8 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
                                           time_axis=time_axis)
 
         self = load_probe_file(self, params['probe'])
+        self.kwargs = {'file_path': str(Path(file_path).absolute())}
+        self.append_to_dump_dict()
 
     @staticmethod
     def write_recording(recording, save_path, initial_sorting_fn, dtype='float32'):
@@ -121,6 +125,7 @@ class SHYBRIDSortingExtractor(SortingExtractor):
         return self._spike_clusters.keys()
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         train = self._spike_clusters[unit_id].get_actual_spike_train().spikes
 
         if start_frame is None:

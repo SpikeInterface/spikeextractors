@@ -37,11 +37,13 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._locations = None
         self._initialize()
         RecordingExtractor.__init__(self)
-        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'locs_2d': locs_2d}
 
         if self._locations is not None:
             for chan, pos in enumerate(self._locations):
                 self.set_channel_property(chan, 'location', pos)
+
+        self.kwargs = {'file_path': str(Path(file_path).absolute()), 'locs_2d': locs_2d}
+        self.append_to_dump_dict()
 
     def _initialize(self):
         assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
@@ -76,6 +78,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         return self._fs
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
@@ -172,6 +175,7 @@ class MEArecSortingExtractor(SortingExtractor):
         return self._num_units
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

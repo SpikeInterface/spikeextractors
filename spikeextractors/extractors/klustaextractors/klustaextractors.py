@@ -17,6 +17,8 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
     has_default_locations = False
     installed = HAVE_KLSX  # check at class level if installed or not
     is_writable = True
+    is_dumpable = True
+
     mode = 'folder'
     extractor_gui_params = [
         {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
@@ -36,6 +38,9 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
 
         BinDatRecordingExtractor.__init__(self, file_path=dat_file, sampling_frequency=sampling_frequency, numchan=n_channels,
                                           dtype=dtype)
+
+        self.kwargs = {'folder_path': str(Path(folder_path).absolute())}
+        self.append_to_dump_dict()
 
 
 class KlustaSortingExtractor(SortingExtractor):
@@ -109,6 +114,7 @@ class KlustaSortingExtractor(SortingExtractor):
         return list(self._unit_ids)
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
