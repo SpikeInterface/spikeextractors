@@ -144,7 +144,7 @@ class MEArecSortingExtractor(SortingExtractor):
         self._unit_ids = None
         self._fs = None
         self._initialize()
-        self.kwargs = {'file_path': str(Path(file_path).absolute())}
+        self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
     def _initialize(self):
         assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"

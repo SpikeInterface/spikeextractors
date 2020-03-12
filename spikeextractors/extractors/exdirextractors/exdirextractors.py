@@ -261,6 +261,8 @@ class ExdirSortingExtractor(SortingExtractor):
                             wf = waveforms[unit_idxs]
                             self.set_unit_spike_features(current_unit, 'waveforms', wf)
                         current_unit += 1
+        self._kwargs = {'folder_path': folder_path, 'sampling_frequency': sampling_frequency,
+                        'channel_group': channel_group, 'load_waveforms': load_waveforms}
 
     def get_unit_ids(self):
         return self._unit_ids

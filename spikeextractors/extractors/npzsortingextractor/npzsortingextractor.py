@@ -38,6 +38,7 @@ class NpzSortingExtractor(SortingExtractor):
             self._sampling_frequency = float(npz['sampling_frequency'][0])
         else:
             self._sampling_frequency = None
+        self._kwargs = {'file_path': file_path}
 
     def get_unit_ids(self):
         return list(self.unit_ids)

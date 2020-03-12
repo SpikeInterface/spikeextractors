@@ -110,6 +110,9 @@ class KlustaSortingExtractor(SortingExtractor):
         for i, u in enumerate(self._unit_ids):
             self.set_unit_property(u, 'group', groups[i])
 
+        self._kwargs = {'file_or_folder_path': file_or_folder_path}
+
+
     def get_unit_ids(self):
         return list(self._unit_ids)
 

@@ -168,6 +168,7 @@ class NIXIOSortingExtractor(SortingExtractor):
             sfreq = md["sampling_frequency"]
             self._sampling_frequency = sfreq
         self._load_properties()
+        self._kwargs = {'file_path': file_path}
 
     def __del__(self):
         self._file.close()

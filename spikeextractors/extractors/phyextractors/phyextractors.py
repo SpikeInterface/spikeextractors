@@ -201,6 +201,8 @@ class PhySortingExtractor(SortingExtractor):
                     wf = recording.get_snippets(reference_frames=spiketrain,
                                                 snippet_len=[int(frames_before), int(frames_after)])
                     self.set_unit_spike_features(u, 'waveforms', wf)
+        self._kwargs = {'folder_path': folder_path, 'exclude_cluster_groups': exclude_cluster_groups,
+                        'load_waveforms': load_waveforms, 'verbose': verbose}
 
     def get_unit_ids(self):
         return list(self._unit_ids)

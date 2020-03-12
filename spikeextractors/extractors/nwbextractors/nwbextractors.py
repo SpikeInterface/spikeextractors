@@ -462,7 +462,7 @@ class NwbSortingExtractor(se.SortingExtractor):
     mode = 'file'
     installation_mesg = "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
 
-    def __init__(self, path, electrical_series=None, sampling_frequency=None):
+    def __init__(self, file_path, electrical_series=None, sampling_frequency=None):
         """
 
         Parameters
@@ -472,7 +472,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         """
         check_nwb_install()
         se.SortingExtractor.__init__(self)
-        self._path = path
+        self._path = file_path
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             if sampling_frequency is None:
@@ -521,6 +521,9 @@ class NwbSortingExtractor(se.SortingExtractor):
                     'start_frame': self.time_to_frame(row['start_time']),
                     'end_frame': self.time_to_frame(row['stop_time'])}
                     for _, row in df_epochs.iterrows()}
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'electrical_series': electrical_series,
+                        'sampling_frequency': sampling_frequency}
+
 
 
     def get_unit_ids(self):

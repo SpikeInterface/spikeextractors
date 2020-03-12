@@ -40,4 +40,4 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
             save_path = save_path.with_suffix('.dat')
         shutil.move(self._tmp_file, str(save_path))
         self._tmp_file = str(save_path)
-        self.kwargs['file_path'] = str(Path(self._tmp_file).absolute())
+        self._kwargs['file_path'] = str(Path(self._tmp_file).absolute())

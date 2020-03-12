@@ -41,6 +41,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         else:
             self._spiketrains = []
             self._unit_ids = []
+        self._kwargs = {'resfile': resfile, 'clufile': clufile}
+
 
     def get_unit_ids(self):
         return list(self._unit_ids)
