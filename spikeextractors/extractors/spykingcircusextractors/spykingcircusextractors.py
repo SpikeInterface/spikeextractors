@@ -119,7 +119,7 @@ class SpykingCircusSortingExtractor(SortingExtractor):
             self._spiketrains.append(np.array(f_results['spiketimes'][temp]).astype('int64'))
             self._unit_ids.append(int(temp.split('_')[-1]))
 
-        self._kwargs = {'folder_path': folder_path}
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
     def get_unit_ids(self):
         return list(self._unit_ids)

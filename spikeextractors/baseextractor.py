@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import importlib
 import numpy as np
-import spikeextractors
+import datetime
 
 
 class BaseExtractor:
@@ -46,7 +46,7 @@ class BaseExtractor:
         dump_dict = self.make_serialized_dict()
         if self.is_dumpable:
             with open(str(output_folder / output_filename), 'w', encoding='utf8') as f:
-                json.dump(dump_dict, f, indent=4)
+                json.dump(_check_json(dump_dict), f, indent=4)
         else:
             raise Exception(f"Object {str(type(self))} is not dumpable to json")
 
@@ -70,8 +70,26 @@ class BaseExtractor:
             extractor = _load_extractor_from_dict(d)
         return extractor
 
+    @staticmethod
+    def load_extractor_from_dict(d):
+        '''
+        Instantiates extractor from dictionary
 
-def _load_extractor_from_dict(dic, check_version=False):
+        Parameters
+        ----------
+        d: dictionary
+            Python dictionary
+
+        Returns
+        -------
+        extractor: RecordingExtractor or SortingExtractor
+            The loaded extractor object
+        '''
+        extractor = _load_extractor_from_dict(d)
+        return extractor
+
+
+def _load_extractor_from_dict(dic):
     extractor = None
     kwargs = dic['kwargs']
     if np.any([isinstance(v, dict) for v in kwargs.values()]):
@@ -114,3 +132,26 @@ def _check_same_version(class_string, version):
     imported_module = importlib.import_module(module)
 
     return imported_module.__version__ == version
+
+
+def _check_json(d):
+    # quick hack to ensure json writable
+    for k, v in d.items():
+        if isinstance(v, Path):
+            d[k] = str(v)
+        elif isinstance(v, (np.int, np.int32, np.int64)):
+            d[k] = int(v)
+        elif isinstance(v, (np.float, np.float32, np.float64)):
+            d[k] = float(v)
+        elif isinstance(v, datetime.datetime):
+            d[k] = v.isoformat()
+        elif isinstance(v, np.ndarray):
+            if len(v.shape) == 1:
+                d[k] = list(v)
+            elif len(v.shape) == 2:
+                d[k] = list([list(i) for i in v])
+            else:
+                raise ValueError("Only 1D and 2D arrays can be serialized")
+        elif isinstance(v, dict):
+            d[k] = _check_json(v)
+    return d

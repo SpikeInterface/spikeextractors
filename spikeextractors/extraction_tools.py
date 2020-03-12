@@ -532,4 +532,34 @@ def _check_json(d):
 
 
 def load_extractor_from_json(json_file):
+    '''
+    Instantiates extractor from json file
+
+    Parameters
+    ----------
+    json_file: str or Path
+        Path to json file
+
+    Returns
+    -------
+    extractor: RecordingExtractor or SortingExtractor
+        The loaded extractor object
+    '''
     return BaseExtractor.load_extractor_from_json(json_file)
+
+
+def load_extractor_from_dict(d):
+    '''
+    Instantiates extractor from dictionary
+
+    Parameters
+    ----------
+    d: dictionary
+        Python dictionary
+
+    Returns
+    -------
+    extractor: RecordingExtractor or SortingExtractor
+        The loaded extractor object
+    '''
+    return BaseExtractor.load_extractor_from_dict(d)

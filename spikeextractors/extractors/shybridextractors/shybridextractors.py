@@ -119,7 +119,7 @@ class SHYBRIDSortingExtractor(SortingExtractor):
             self._spike_clusters.fromCSV(file_path, None, delimiter=delimiter)
         else:
             raise FileNotFoundError('the ground truth file "{}" could not be found'.format(file_path))
-        self._kwargs = {'file_path': file_path, 'delimiter': delimiter}
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'delimiter': delimiter}
 
     def get_unit_ids(self):
         return self._spike_clusters.keys()

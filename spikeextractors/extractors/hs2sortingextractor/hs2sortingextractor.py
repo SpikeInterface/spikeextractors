@@ -1,5 +1,6 @@
 from spikeextractors import SortingExtractor
 import numpy as np
+from pathlib import Path
 
 try:
     import h5py
@@ -37,7 +38,7 @@ class HS2SortingExtractor(SortingExtractor):
         if load_unit_info:
             self.load_unit_info()
 
-        self._kwargs = {'file_path': file_path, 'load_unit_info': load_unit_info}
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'load_unit_info': load_unit_info}
 
     def load_unit_info(self):
         if ('centres' in self._rf.keys()) and (len(self._times)>0):
