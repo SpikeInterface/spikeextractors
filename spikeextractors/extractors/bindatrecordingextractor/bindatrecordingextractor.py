@@ -1,6 +1,7 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors.extraction_tools import read_binary, write_to_binary_dat_format
 import os
+import shutil
 import numpy as np
 from pathlib import Path
 
@@ -60,6 +61,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
@@ -76,6 +78,37 @@ class BinDatRecordingExtractor(RecordingExtractor):
         if self._gain is not None:
             recordings = recordings * self._gain
         return recordings
+
+    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+        '''Saves the traces of this recording extractor into binary .dat format.
+
+        Parameters
+        ----------
+        save_path: str
+            The path to the file.
+        time_axis: 0 (default) or 1
+            If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
+            If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
+        dtype: dtype
+            Type of the saved data. Default float32
+        chunk_size: None or int
+            If not None then the file is saved in chunks.
+            This avoid to much memory consumption for big files.
+            If 'auto' the file is saved in chunks of ~ 500Mb
+        chunk_mb: None or int
+            Chunk size in Mb (default 500Mb)
+        '''
+        if dtype is None or dtype == self.get_dtype():
+            try:
+                shutil.copy(self._datfile, save_path)
+            except Exception as e:
+                print('Error occurred while copying:', e)
+                print('Writing to binary')
+                write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
+                                           chunk_size=chunk_size, chunk_mb=chunk_mb)
+        else:
+            write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
+                                       chunk_size=chunk_size, chunk_mb=chunk_mb)
 
     @staticmethod
     def write_recording(recording, save_path, time_axis=0, dtype=None, chunk_size=None):
