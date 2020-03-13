@@ -13,6 +13,7 @@ try:
 except ImportError:
     HAVE_SBEX = False
 
+
 class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
     extractor_name = 'SHYBRIDRecording'
     installed = HAVE_SBEX
@@ -48,9 +49,9 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
                                           nb_channels,
                                           params['dtype'],
                                           time_axis=time_axis)
-
-        self = load_probe_file(self, params['probe'])
         self._kwargs = {'file_path': str(Path(file_path).absolute())}
+        self = load_probe_file(self, params['probe'])
+
 
     @staticmethod
     def write_recording(recording, save_path, initial_sorting_fn, dtype='float32'):

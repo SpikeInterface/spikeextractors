@@ -2,6 +2,7 @@ from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 import numpy as np
 from pathlib import Path
+from copy import copy
 
 try:
     import exdir
@@ -217,19 +218,20 @@ class ExdirSortingExtractor(SortingExtractor):
         exdir_group = exdir.File(folder_path, plugins=exdir.plugins.quantities)
 
         electrophysiology = None
+        sf = copy(sampling_frequency)
         if 'processing' in exdir_group.keys():
             if 'electrophysiology' in exdir_group['processing']:
                 electrophysiology = exdir_group['processing']['electrophysiology']
                 ephys_attrs = electrophysiology.attrs
                 if 'sample_rate' in ephys_attrs:
-                    sampling_frequency = ephys_attrs['sample_rate']
+                    sf = ephys_attrs['sample_rate']
         else:
-            if sampling_frequency is None:
+            if sf is None:
                 raise Exception("Sampling rate information not found. Please provide it with the 'sampling_frequency' "
                                 "argument")
             else:
-                sampling_frequency = sampling_frequency * pq.Hz
-        self._sampling_frequency = float(sampling_frequency.rescale('Hz').magnitude)
+                sf = sf * pq.Hz
+        self._sampling_frequency = float(sf.rescale('Hz').magnitude)
 
         if electrophysiology is None:
             raise Exception("'electrophysiology' group not found!")
@@ -252,7 +254,7 @@ class ExdirSortingExtractor(SortingExtractor):
                 if 'UnitTimes' in channel.keys():
                     for unit, unit_times in channel['UnitTimes'].items():
                         self._unit_ids.append(current_unit)
-                        self._spike_trains.append((unit_times['times'].data.rescale('s')*sampling_frequency).magnitude)
+                        self._spike_trains.append((unit_times['times'].data.rescale('s')*sf).magnitude)
                         attrs = unit_times.attrs
                         for k, v in attrs.items():
                             self.set_unit_property(current_unit, k, v)

@@ -19,11 +19,6 @@ class BaseExtractor:
         imported_module = importlib.import_module(module)
 
         if self.is_dumpable:
-            if 'CacheRecording' in class_name:
-                print("Warning: dumping a CacheRecordingExtractor. The path to the tmp binary file will be lost in "
-                      "further sessions. To prevent this, use the "
-                      "'CacheRecordingExtractor.save_to_file('path-to-file)' function")
-
             dump_dict = {'class': class_name, 'module': module, 'kwargs': self._kwargs,
                          'version': imported_module.__version__, 'dumpable': True}
 
@@ -211,18 +206,21 @@ def _check_json(d):
             if len(v_arr.shape) == 1:
                 if 'int' in str(v_arr.dtype):
                     v_arr = [int(v_el) for v_el in v_arr]
+                    d[k] = v_arr
                 elif 'float' in str(v_arr.dtype):
                     v_arr = [float(v_el) for v_el in v_arr]
+                    d[k] = v_arr
                 else:
-                    raise ValueError("Only int of float can be serialized")
+                    print('Skipping field: only int or float can be serialized')
             elif len(v_arr.shape) == 2:
                 if 'int' in str(v_arr.dtype):
                     v_arr = [[int(v_el) for v_el in v_row] for v_row in v_arr]
+                    d[k] = v_arr
                 elif 'float' in str(v_arr.dtype):
                     v_arr = [[float(v_el) for v_el in v_row] for v_row in v_arr]
+                    d[k] = v_arr
                 else:
-                    raise ValueError("Only int of float can be serialized")
+                    print('Skipping field: only int or float can be serialized')
             else:
-                raise ValueError("Only 1D and 2D arrays can be serialized")
-            d[k] = v_arr
+                print("Skipping field: only 1D and 2D arrays can be serialized")
     return d

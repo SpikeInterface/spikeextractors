@@ -168,7 +168,6 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 
     subrecording._kwargs['probe_file'] = str(probe_file.absolute())
-
     return subrecording
 
 
