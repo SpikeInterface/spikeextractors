@@ -41,7 +41,7 @@ class TestTools(unittest.TestCase):
         n_group = 4
         for i in RX.get_channel_ids():
             channel_groups.append(i // n_group)
-        RX.set_channel_groups(RX.get_channel_ids(), channel_groups)
+        RX.set_channel_groups(channel_groups)
         RX.save_to_probe_file('tests/probe_test_no_groups.prb')
         RX.save_to_probe_file('tests/probe_test_groups.prb', grouping_property='group')
 

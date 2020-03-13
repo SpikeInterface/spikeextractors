@@ -167,6 +167,8 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 
+    subrecording._kwargs['probe_file'] = str(probe_file.absolute())
+
     return subrecording
 
 
@@ -517,7 +519,6 @@ def _export_prb_file(recording, file_name, grouping_property=None, graph=True, g
 
 def _check_json(d):
     # quick hack to ensure json writable
-
     for k, v in d.items():
         if isinstance(v, Path):
             d[k] = str(v)

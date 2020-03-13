@@ -38,7 +38,7 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
                 for i, group in enumerate(groups):
                     recording = recordings[i]                    
                     channel_ids = recording.get_channel_ids()
-                    recording.set_channel_groups(channel_ids, groups=np.repeat(group,len(channel_ids)))
+                    recording.set_channel_groups(channel_ids=channel_ids, groups=np.repeat(group,len(channel_ids)))
             else:
                 raise ValueError("recordings and groups must have same length")
 

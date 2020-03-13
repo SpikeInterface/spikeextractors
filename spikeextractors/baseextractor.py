@@ -11,44 +11,65 @@ class BaseExtractor:
 
     def __init__(self):
         self._kwargs = {}
-        self._dump_dict = {}
+        self._tmp_folder = None
 
     def make_serialized_dict(self):
         class_name = str(type(self)).replace("<class '", "").replace("'>", '')
         module = class_name.split('.')[0]
         imported_module = importlib.import_module(module)
 
-        dump_dict = {'class': class_name, 'module': module, 'kwargs': self._kwargs,
-                     'version': imported_module.__version__}
+        if self.is_dumpable:
+            if 'CacheRecording' in class_name:
+                print("Warning: dumping a CacheRecordingExtractor. The path to the tmp binary file will be lost in "
+                      "further sessions. To prevent this, use the "
+                      "'CacheRecordingExtractor.save_to_file('path-to-file)' function")
+
+            dump_dict = {'class': class_name, 'module': module, 'kwargs': self._kwargs,
+                         'version': imported_module.__version__, 'dumpable': True}
+
+            if 'Recording' in class_name:
+                if 'group' in self.get_shared_channel_property_names():
+                    groups = self.get_channel_groups()
+                    dump_dict['groups'] = groups
+                if 'location' in self.get_shared_channel_property_names():
+                    locations = self.get_channel_locations()
+                    dump_dict['locations'] = locations
+            elif 'Sorting' in class_name:
+                if 'group' in self.get_shared_unit_property_names():
+                    groups = [self.get_unit_property(u, 'group') for u in self.get_unit_ids()]
+                    dump_dict['groups'] = groups
+        else:
+            dump_dict = {'class': class_name, 'module': module, 'kwargs': {},
+                         'version': imported_module.__version__, 'dumpable': False}
 
         return dump_dict
 
-    def dump(self, output_folder=None, output_filename=None):
+    def dump(self, folder_path=None, file_name=None):
         '''
         Dumps recording extractor to json file.
         The extractor can be re-loaded with spikeextractors.load_extractor_from_json(json_file)
 
         Parameters
         ----------
-        output_folder: str or Path
+        folder_path: str or Path
             Path to output_folder
-        output_filename: str
+        file_name: str
             Filename
         '''
-        if output_folder is None:
-            output_folder = Path(os.getcwd())
-        else:
-            output_folder = Path(output_folder)
-        if output_filename is None:
-            output_filename = 'spikeinterface_recording.json'
-        elif Path(output_filename).suffix == '':
-            output_filename = output_filename + '.json'
-        dump_dict = self.make_serialized_dict()
-        if self.is_dumpable:
-            with open(str(output_folder / output_filename), 'w', encoding='utf8') as f:
+        if self.check_if_dumpable():
+            if folder_path is None:
+                folder_path = Path(os.getcwd())
+            else:
+                folder_path = Path(folder_path)
+            if file_name is None:
+                file_name = 'spikeinterface_recording.json'
+            elif Path(file_name).suffix == '':
+                file_name = file_name + '.json'
+            dump_dict = self.make_serialized_dict()
+            with open(str(folder_path / file_name), 'w', encoding='utf8') as f:
                 json.dump(_check_json(dump_dict), f, indent=4)
         else:
-            raise Exception(f"Object {str(type(self))} is not dumpable to json")
+            raise Exception(f"The extractor is not dumpable to to json")
 
     @staticmethod
     def load_extractor_from_json(json_file):
@@ -88,9 +109,14 @@ class BaseExtractor:
         extractor = _load_extractor_from_dict(d)
         return extractor
 
+    def check_if_dumpable(self):
+        return _check_if_dumpable(self.make_serialized_dict())
+
 
 def _load_extractor_from_dict(dic):
-    extractor = None
+    cls = None
+    class_name = None
+    probe_file = None
     kwargs = dic['kwargs']
     if np.any([isinstance(v, dict) for v in kwargs.values()]):
         for k in kwargs.keys():
@@ -99,18 +125,41 @@ def _load_extractor_from_dict(dic):
                     extractor = _load_extractor_from_dict(kwargs[k])
                     class_name = dic['class']
                     cls = _get_class_from_string(class_name)
-                    if not _check_same_version(class_name, dic['version']):
-                        print('Versions are not the same. This might lead to errors.')
-                        print('Use ', class_name.split('.')[0], 'version', dic['version'])
                     kwargs[k] = extractor
-                    extractor = cls(**kwargs)
+                    break
     else:
         class_name = dic['class']
         cls = _get_class_from_string(class_name)
-        if not _check_same_version(class_name, dic['version']):
-            print('Versions are not the same. This might lead to errors.')
-            print('Use ', class_name.split('.')[0], 'version', dic['version'])
-        extractor = cls(**dic['kwargs'])
+
+    assert cls is not None and class_name is not None, "Could not load spikeinterface class"
+    if not _check_same_version(class_name, dic['version']):
+        print('Versions are not the same. This might lead to errors. Use ', class_name.split('.')[0],
+              'version', dic['version'])
+
+    if 'probe_file' in kwargs.keys():
+        probe_file = kwargs.pop('probe_file')
+
+    # instantiate extrator object
+    extractor = cls(**kwargs)
+
+    # load properties and probe file
+    if 'Recording' in class_name:
+        if 'groups' in dic.keys():
+            groups = dic['groups']
+            for i, ch in enumerate(extractor.get_channel_ids()):
+                extractor.set_channel_property(ch, 'group', groups[i])
+        if 'locations' in dic.keys():
+            locations = dic['locations']
+            for i, ch in enumerate(extractor.get_channel_ids()):
+                extractor.set_channel_property(ch, 'location', np.array(locations[i]))
+    elif 'Sorting' in class_name:
+        if 'groups' in dic.keys():
+            groups = dic['groups']
+            for i, unit in enumerate(extractor.get_unit_ids()):
+                extractor.set_unit_property(unit, 'group', groups[i])
+    if probe_file is not None:
+        assert 'Recording' in class_name, "Only recording extractors can have probe files"
+        extractor = extractor.load_probe_file(probe_file=probe_file)
     return extractor
 
 
@@ -134,24 +183,46 @@ def _check_same_version(class_string, version):
     return imported_module.__version__ == version
 
 
+def _check_if_dumpable(d):
+    kwargs = d['kwargs']
+    if np.any([isinstance(v, dict) and 'dumpable' in v.keys() for (k, v) in kwargs.items()]):
+        for k, v in kwargs.items():
+            if 'dumpable' in v.keys():
+                return _check_if_dumpable(v)
+    else:
+        return d['dumpable']
+
+
 def _check_json(d):
     # quick hack to ensure json writable
     for k, v in d.items():
-        if isinstance(v, Path):
-            d[k] = str(v)
+        if isinstance(v, dict):
+            d[k] = _check_json(v)
+        elif isinstance(v, Path):
+            d[k] = str(v.absolute())
         elif isinstance(v, (np.int, np.int32, np.int64)):
             d[k] = int(v)
         elif isinstance(v, (np.float, np.float32, np.float64)):
             d[k] = float(v)
         elif isinstance(v, datetime.datetime):
             d[k] = v.isoformat()
-        elif isinstance(v, np.ndarray):
-            if len(v.shape) == 1:
-                d[k] = list(v)
-            elif len(v.shape) == 2:
-                d[k] = list([list(i) for i in v])
+        elif isinstance(v, (np.ndarray, list)):
+            v_arr = np.array(v)
+            if len(v_arr.shape) == 1:
+                if 'int' in str(v_arr.dtype):
+                    v_arr = [int(v_el) for v_el in v_arr]
+                elif 'float' in str(v_arr.dtype):
+                    v_arr = [float(v_el) for v_el in v_arr]
+                else:
+                    raise ValueError("Only int of float can be serialized")
+            elif len(v_arr.shape) == 2:
+                if 'int' in str(v_arr.dtype):
+                    v_arr = [[int(v_el) for v_el in v_row] for v_row in v_arr]
+                elif 'float' in str(v_arr.dtype):
+                    v_arr = [[float(v_el) for v_el in v_row] for v_row in v_arr]
+                else:
+                    raise ValueError("Only int of float can be serialized")
             else:
                 raise ValueError("Only 1D and 2D arrays can be serialized")
-        elif isinstance(v, dict):
-            d[k] = _check_json(v)
+            d[k] = v_arr
     return d

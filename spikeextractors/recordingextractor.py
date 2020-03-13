@@ -19,7 +19,6 @@ class RecordingExtractor(ABC, BaseExtractor):
         BaseExtractor.__init__(self)
         self._epochs = {}
         self._channel_properties = {}
-        self._tmp_folder = None
         self.id = random.randint(a=0, b=9223372036854775807)
 
     def __del__(self):
@@ -251,19 +250,21 @@ class RecordingExtractor(ABC, BaseExtractor):
         for channel_id in channel_ids:
             location = self.get_channel_property(channel_id, 'location')
             locations.append(location)
-        return locations
+        return np.array(locations)
 
-    def set_channel_groups(self, channel_ids, groups):
+    def set_channel_groups(self, groups, channel_ids=None):
         '''This function sets the group property of each specified channel
         id with the corresponding group of the passed in groups list.
 
         Parameters
         ----------
-        channel_ids: array_like
-            The channel ids (ints) for which the groups will be specified
         groups: array_like
-            A list of corresonding groups (ints) for the given channel_ids
+            A list of groups (ints) for the channel_ids
+        channel_ids: array_like or None
+            The channel ids (ints) for which the groups will be specified. If None, all channel ids are assumed
         '''
+        if channel_ids is None:
+            channel_ids = self.get_channel_ids()
         if len(channel_ids) == len(groups):
             for i in range(len(channel_ids)):
                 if isinstance(groups[i], (int, np.integer)):

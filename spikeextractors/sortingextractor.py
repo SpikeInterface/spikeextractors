@@ -22,7 +22,6 @@ class SortingExtractor(ABC, BaseExtractor):
         self._epochs = {}
         self._unit_properties = {}
         self._unit_features = {}
-        self._tmp_folder = None
         self._sampling_frequency = None
         self.id = np.random.randint(low=0, high=9223372036854775807, dtype='int64')
 

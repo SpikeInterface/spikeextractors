@@ -35,6 +35,8 @@ class _NeoBaseExtractor:
 
         self.block_index = block_index
         self.seg_index = seg_index
+        self._kwargs = kargs
+        self._kwargs.update({'seg_index': seg_index, 'block_index': block_index})
 
 
 class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
