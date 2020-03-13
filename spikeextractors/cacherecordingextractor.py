@@ -78,17 +78,17 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
 
         return dump_dict
 
-    def dump(self, folder_path=None, file_name=None):
+    def dump(self, file_name=None, folder_path=None):
         '''
         Dumps recording extractor to json file.
         The extractor can be re-loaded with spikeextractors.load_extractor_from_json(json_file)
 
         Parameters
         ----------
-        folder_path: str or Path
-            Path to output_folder
         file_name: str
             Filename
+        folder_path: str or Path
+            Path to output_folder
         '''
         if folder_path is None:
             folder_path = Path(os.getcwd())

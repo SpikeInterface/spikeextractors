@@ -282,6 +282,27 @@ class TestExtractors(unittest.TestCase):
         SX_sub1 = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0, end_frame=N)
         self._check_sortings_equal(SX_multi, SX_sub1)
 
+    def test_dump_load_multi_sub_extractor(self):
+        # generate dumpable formats
+        path1 = self.test_dir + '/mda'
+        path2 = path1 + '/firings_true.mda'
+        se.MdaRecordingExtractor.write_recording(self.RX, path1)
+        se.MdaSortingExtractor.write_sorting(self.SX, path2)
+        RX_mda = se.MdaRecordingExtractor(path1)
+        SX_mda = se.MdaSortingExtractor(path2)
+
+        RX_multi_chan = se.MultiRecordingChannelExtractor(recordings=[RX_mda, RX_mda, RX_mda])
+        self._check_dumping(RX_multi_chan)
+        RX_multi_time = se.MultiRecordingTimeExtractor(recordings=[RX_mda, RX_mda, RX_mda],)
+        self._check_dumping(RX_multi_time)
+        RX_multi_chan = se.SubRecordingExtractor(RX_mda, channel_ids=[0, 1])
+        self._check_dumping(RX_multi_chan)
+
+        SX_sub = se.SubSortingExtractor(SX_mda, unit_ids=[1, 2])
+        self._check_dumping(SX_sub)
+        SX_multi = se.MultiSortingExtractor(sortings=[SX_mda, SX_mda, SX_mda])
+        self._check_dumping(SX_multi)
+
     def test_nwb_extractor(self):
         path1 = self.test_dir + '/test.nwb'
         se.NwbRecordingExtractor.write_recording(self.RX, path1)

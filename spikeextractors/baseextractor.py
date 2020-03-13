@@ -21,7 +21,6 @@ class BaseExtractor:
         if self.is_dumpable:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': self._kwargs,
                          'version': imported_module.__version__, 'dumpable': True}
-
             if 'Recording' in class_name:
                 if 'group' in self.get_shared_channel_property_names():
                     groups = self.get_channel_groups()
@@ -39,17 +38,17 @@ class BaseExtractor:
 
         return dump_dict
 
-    def dump(self, folder_path=None, file_name=None):
+    def dump(self, file_name=None, folder_path=None):
         '''
         Dumps recording extractor to json file.
         The extractor can be re-loaded with spikeextractors.load_extractor_from_json(json_file)
 
         Parameters
         ----------
-        folder_path: str or Path
-            Path to output_folder
         file_name: str
             Filename
+        folder_path: str or Path
+            Path to output_folder
         '''
         if self.check_if_dumpable():
             if folder_path is None:
@@ -114,6 +113,7 @@ def _load_extractor_from_dict(dic):
     probe_file = None
     kwargs = dic['kwargs']
     if np.any([isinstance(v, dict) for v in kwargs.values()]):
+        # nested
         for k in kwargs.keys():
             if isinstance(kwargs[k], dict):
                 if 'module' in kwargs[k].keys() and 'class' in kwargs[k].keys() and 'version' in kwargs[k].keys():
@@ -122,6 +122,19 @@ def _load_extractor_from_dict(dic):
                     cls = _get_class_from_string(class_name)
                     kwargs[k] = extractor
                     break
+    elif np.any([isinstance(v, list) and isinstance(v[0], dict) for v in kwargs.values()]):
+        # multi
+        for k in kwargs.keys():
+            if isinstance(kwargs[k], list) and isinstance(kwargs[k][0], dict):
+                extractors = []
+                for kw in kwargs[k]:
+                    if 'module' in kw.keys() and 'class' in kw.keys() and 'version' in kw.keys():
+                        extr = _load_extractor_from_dict(kw)
+                        extractors.append(extr)
+                class_name = dic['class']
+                cls = _get_class_from_string(class_name)
+                kwargs[k] = extractors
+                break
     else:
         class_name = dic['class']
         cls = _get_class_from_string(class_name)
@@ -202,25 +215,29 @@ def _check_json(d):
         elif isinstance(v, datetime.datetime):
             d[k] = v.isoformat()
         elif isinstance(v, (np.ndarray, list)):
-            v_arr = np.array(v)
-            if len(v_arr.shape) == 1:
-                if 'int' in str(v_arr.dtype):
-                    v_arr = [int(v_el) for v_el in v_arr]
-                    d[k] = v_arr
-                elif 'float' in str(v_arr.dtype):
-                    v_arr = [float(v_el) for v_el in v_arr]
-                    d[k] = v_arr
-                else:
-                    print('Skipping field: only int or float can be serialized')
-            elif len(v_arr.shape) == 2:
-                if 'int' in str(v_arr.dtype):
-                    v_arr = [[int(v_el) for v_el in v_row] for v_row in v_arr]
-                    d[k] = v_arr
-                elif 'float' in str(v_arr.dtype):
-                    v_arr = [[float(v_el) for v_el in v_row] for v_row in v_arr]
-                    d[k] = v_arr
-                else:
-                    print('Skipping field: only int or float can be serialized')
+            if isinstance(v[0], dict):
+                # these must be extractors for multi extractors
+                d[k] = [_check_json(v_el) for v_el in v]
             else:
-                print("Skipping field: only 1D and 2D arrays can be serialized")
+                v_arr = np.array(v)
+                if len(v_arr.shape) == 1:
+                    if 'int' in str(v_arr.dtype):
+                        v_arr = [int(v_el) for v_el in v_arr]
+                        d[k] = v_arr
+                    elif 'float' in str(v_arr.dtype):
+                        v_arr = [float(v_el) for v_el in v_arr]
+                        d[k] = v_arr
+                    else:
+                        print('Skipping field: only int or float can be serialized')
+                elif len(v_arr.shape) == 2:
+                    if 'int' in str(v_arr.dtype):
+                        v_arr = [[int(v_el) for v_el in v_row] for v_row in v_arr]
+                        d[k] = v_arr
+                    elif 'float' in str(v_arr.dtype):
+                        v_arr = [[float(v_el) for v_el in v_row] for v_row in v_arr]
+                        d[k] = v_arr
+                    else:
+                        print('Skipping field: only int or float can be serialized')
+                else:
+                    print("Skipping field: only 1D and 2D arrays can be serialized")
     return d

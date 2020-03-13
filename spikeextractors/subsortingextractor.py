@@ -29,6 +29,8 @@ class SubSortingExtractor(SortingExtractor):
         self.copy_unit_properties(parent_sorting, unit_ids=self._renamed_unit_ids)
         self.copy_unit_spike_features(parent_sorting, unit_ids=self._renamed_unit_ids, start_frame=start_frame,
                                       end_frame=end_frame)
+        self._kwargs = {'parent_sorting': parent_sorting.make_serialized_dict(), 'unit_ids': unit_ids,
+                        'renamed_unit_ids': renamed_unit_ids, 'start_frame': start_frame, 'end_frame': end_frame}
 
     def get_unit_ids(self):
         return list(self._renamed_unit_ids)
