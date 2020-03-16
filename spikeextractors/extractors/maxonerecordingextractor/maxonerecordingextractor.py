@@ -1,4 +1,5 @@
 from spikeextractors import RecordingExtractor
+from pathlib import Path
 
 try:
     import h5py
@@ -9,10 +10,11 @@ except ImportError:
 
 class MaxOneRecordingExtractor(RecordingExtractor):
 
-    extractor_name = 'MaxOneRecordingExtractor'
+    extractor_name = 'MaxOneRecording'
     has_default_locations = True
     installed = HAVE_MAX  # check at class level if installed or not
     is_writable = False
+    is_dumpable = True
     mode = 'file'
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
@@ -28,6 +30,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._filehandle = None
         self._mapping = None
         self._initialize()
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'verbose': verbose}
 
     def _initialize(self):
         self._filehandle = h5py.File(self._file_path)

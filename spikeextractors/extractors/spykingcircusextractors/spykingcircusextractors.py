@@ -16,6 +16,7 @@ class SpykingCircusRecordingExtractor(NumpyRecordingExtractor):
     has_default_locations = False
     installed = True  # check at class level if installed or not
     is_writable = False
+    is_dumpable = True
     mode = 'folder'
     extractor_gui_params = [
         {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
@@ -51,6 +52,7 @@ class SpykingCircusRecordingExtractor(NumpyRecordingExtractor):
             if f.suffix == '.npy':
                 recording_file = str(f)
         NumpyRecordingExtractor.__init__(self, recording_file, sample_rate)
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
 
 class SpykingCircusSortingExtractor(SortingExtractor):
@@ -116,6 +118,8 @@ class SpykingCircusSortingExtractor(SortingExtractor):
         for temp in f_results['spiketimes'].keys():
             self._spiketrains.append(np.array(f_results['spiketimes'][temp]).astype('int64'))
             self._unit_ids.append(int(temp.split('_')[-1]))
+
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
     def get_unit_ids(self):
         return list(self._unit_ids)

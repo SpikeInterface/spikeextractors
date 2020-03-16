@@ -1,5 +1,6 @@
 from spikeextractors import RecordingExtractor
 import numpy as np
+from pathlib import Path
 
 try:
     import h5py
@@ -14,6 +15,8 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     has_default_locations = False
     installed = HAVE_MCSH5  # check at class level if installed or not
     is_writable = False
+    is_dumpable = True
+
     mode = 'file'
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
@@ -27,8 +30,10 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         self._verbose = verbose
         self._available_stream_ids = self.get_available_stream_ids()
         self.set_stream_id(stream_id)
-        
+
         RecordingExtractor.__init__(self)
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'stream_id': stream_id,
+                        'verbose': verbose}
 
     def __del__(self):
         self._rf.close()
@@ -43,9 +48,9 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         return self._samplingRate
 
     def set_stream_id(self, stream_id):
-        assert stream_id in self._available_stream_ids,  "The specified stream ID is unavailable."
+        assert stream_id in self._available_stream_ids, "The specified stream ID is unavailable."
         self._stream_id = stream_id
-        
+
         if hasattr(self, '_rf'):
             self._rf.close()
 
@@ -98,7 +103,6 @@ class MCSH5RecordingExtractor(RecordingExtractor):
                 return stream.get('ChannelData')[np.sort(channel_idxs), start_frame:end_frame] * conv
         else:
             return stream.get('ChannelData')[np.array(channel_idxs), start_frame:end_frame] * conv
-
 
     @staticmethod
     def write_recording(recording, save_path):

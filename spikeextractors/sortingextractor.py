@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import copy
-import random
-import string
+import json
+import os
 import tempfile
 from pathlib import Path
 import shutil
 from .extraction_tools import get_sub_extractors_by_property
+from .baseextractor import BaseExtractor
 
 
-class SortingExtractor(ABC):
+class SortingExtractor(ABC, BaseExtractor):
     '''A class that contains functions for extracting important information
     from spiked sorted data given a spike sorting software. It is an abstract
     class so all functions with the @abstractmethod tag must be implemented for
@@ -18,10 +18,10 @@ class SortingExtractor(ABC):
 
     '''
     def __init__(self):
+        BaseExtractor.__init__(self)
         self._epochs = {}
         self._unit_properties = {}
         self._unit_features = {}
-        self._tmp_folder = None
         self._sampling_frequency = None
         self.id = np.random.randint(low=0, high=9223372036854775807, dtype='int64')
 

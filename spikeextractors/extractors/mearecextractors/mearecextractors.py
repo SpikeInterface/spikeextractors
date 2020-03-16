@@ -12,15 +12,18 @@ try:
 except ImportError:
     HAVE_MREX = False
 
+
 class MEArecRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'MEArecRecordingExtractor'
     has_default_locations = True
     installed = HAVE_MREX  # check at class level if installed or not
     is_writable = True
+    is_dumpable = True
     mode = 'file'
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
+        {'name': 'locs_2d', 'type': 'bool', 'title': "If True 3d locations are converted to 2d"},
     ]
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
 
@@ -38,6 +41,8 @@ class MEArecRecordingExtractor(RecordingExtractor):
         if self._locations is not None:
             for chan, pos in enumerate(self._locations):
                 self.set_channel_property(chan, 'location', pos)
+
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'locs_2d': locs_2d}
 
     def _initialize(self):
         assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
@@ -127,6 +132,7 @@ class MEArecSortingExtractor(SortingExtractor):
     ]
     installed = HAVE_MREX  # check at class level if installed or not
     is_writable = True
+    is_dumpable = True
     mode = 'file'
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
 
@@ -138,6 +144,7 @@ class MEArecSortingExtractor(SortingExtractor):
         self._unit_ids = None
         self._fs = None
         self._initialize()
+        self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
     def _initialize(self):
         assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"

@@ -31,6 +31,7 @@ class TridesclousSortingExtractor(SortingExtractor):
         self.catalogue = self.dataio.load_catalogue(name='initial', chan_grp=chan_grp)
         
         self._sampling_frequency = self.dataio.sample_rate
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute()), 'chan_grp': chan_grp}
 
     def get_unit_ids(self):
         labels = self.catalogue['clusters']['cluster_label']

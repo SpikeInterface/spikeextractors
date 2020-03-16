@@ -4,12 +4,11 @@ import neo
 
 
 class PlexonRecordingExtractor(NeoBaseRecordingExtractor):
-    extractor_name = 'plexon'
+    extractor_name = 'PlexonRecording'
     mode = 'file'
     NeoRawIOClass = neo.rawio.PlexonRawIO
 
 class PlexonSortingExtractor(NeoBaseSortingExtractor):
-    extractor_name = 'plexon'
+    extractor_name = 'PlexonSorting'
     mode = 'file'
     NeoRawIOClass = neo.rawio.PlexonRawIO
-    

@@ -8,10 +8,11 @@ import csv
 
 class PhyRecordingExtractor(BinDatRecordingExtractor):
 
-    extractor_name = 'PhyRecordingExtractor'
+    extractor_name = 'PhyRecording'
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = False
+    is_dumpable = True
     mode = 'folder'
     extractor_gui_params = [
         {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
@@ -49,6 +50,8 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
             assert len(channel_locations) == self.get_num_channels()
             for (ch, loc) in zip(self.get_channel_ids(), channel_locations):
                 self.set_channel_property(ch, 'location', loc)
+
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
 
 class PhySortingExtractor(SortingExtractor):
@@ -198,6 +201,9 @@ class PhySortingExtractor(SortingExtractor):
                     wf = recording.get_snippets(reference_frames=spiketrain,
                                                 snippet_len=[int(frames_before), int(frames_after)])
                     self.set_unit_spike_features(u, 'waveforms', wf)
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute()),
+                        'exclude_cluster_groups': exclude_cluster_groups,
+                        'load_waveforms': load_waveforms, 'verbose': verbose}
 
     def get_unit_ids(self):
         return list(self._unit_ids)

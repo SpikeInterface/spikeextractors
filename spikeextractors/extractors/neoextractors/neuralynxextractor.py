@@ -4,12 +4,11 @@ import neo
 
 
 class NeuralynxRecordingExtractor(NeoBaseRecordingExtractor):
-    extractor_name = 'neuralynx'
+    extractor_name = 'NeuralynxRecording'
     mode = 'folder'
     NeoRawIOClass = neo.rawio.NeuralynxRawIO
 
 class NeuralynxSortingExtractor(NeoBaseSortingExtractor):
-    extractor_name = 'neuralynx'
+    extractor_name = 'NeuralynxSorting'
     mode = 'folder'
     NeoRawIOClass = neo.rawio.NeuralynxRawIO
-    

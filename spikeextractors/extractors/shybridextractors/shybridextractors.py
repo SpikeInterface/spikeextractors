@@ -1,5 +1,5 @@
 import os
-
+from pathlib import Path
 import numpy as np
 
 from spikeextractors import SortingExtractor
@@ -13,13 +13,16 @@ try:
 except ImportError:
     HAVE_SBEX = False
 
+
 class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
-    extractor_name = 'SHYBRIDRecordingExtractor'
+    extractor_name = 'SHYBRIDRecording'
     installed = HAVE_SBEX
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid recording (.bin, .raw, .dat)"},
     ]
     is_writable = True
+    is_dumpable = True
+    mode = 'file'
     installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
 
     def __init__(self, file_path):
@@ -46,8 +49,9 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
                                           nb_channels,
                                           params['dtype'],
                                           time_axis=time_axis)
-
+        self._kwargs = {'file_path': str(Path(file_path).absolute())}
         self = load_probe_file(self, params['probe'])
+
 
     @staticmethod
     def write_recording(recording, save_path, initial_sorting_fn, dtype='float32'):
@@ -116,6 +120,7 @@ class SHYBRIDSortingExtractor(SortingExtractor):
             self._spike_clusters.fromCSV(file_path, None, delimiter=delimiter)
         else:
             raise FileNotFoundError('the ground truth file "{}" could not be found'.format(file_path))
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'delimiter': delimiter}
 
     def get_unit_ids(self):
         return self._spike_clusters.keys()

@@ -6,6 +6,8 @@ import numpy as np
 # Encapsulates a grouping of non-continuous sorting extractors
 
 class MultiSortingExtractor(SortingExtractor):
+    extractor_name = 'MultiSorting'
+
     def __init__(self, sortings):
         SortingExtractor.__init__(self)
         self._sortings = sortings
@@ -19,6 +21,7 @@ class MultiSortingExtractor(SortingExtractor):
                 self._all_unit_ids.append(u_id)
                 self._unit_map[u_id] = {'sorting_id': s_i, 'unit_id': unit_id}
                 u_id += 1
+        self._kwargs = {'sortings': [sort.make_serialized_dict() for sort in sortings]}
 
     def get_unit_ids(self):
         return list(self._all_unit_ids)

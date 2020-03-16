@@ -1,26 +1,24 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import copy
-import random
-import string
 import tempfile
 import shutil
 import random
 from pathlib import Path
 from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, \
     get_sub_extractors_by_property
+from .baseextractor import BaseExtractor
 
 
-class RecordingExtractor(ABC):
+class RecordingExtractor(ABC, BaseExtractor):
     '''A class that contains functions for extracting important information
     from recorded extracellular data. It is an abstract class so all
     functions with the @abstractmethod tag must be implemented for the
     initialization to work.
     '''
     def __init__(self):
+        BaseExtractor.__init__(self)
         self._epochs = {}
         self._channel_properties = {}
-        self._tmp_folder = None
         self.id = random.randint(a=0, b=9223372036854775807)
 
     def __del__(self):
@@ -252,19 +250,21 @@ class RecordingExtractor(ABC):
         for channel_id in channel_ids:
             location = self.get_channel_property(channel_id, 'location')
             locations.append(location)
-        return locations
+        return np.array(locations)
 
-    def set_channel_groups(self, channel_ids, groups):
+    def set_channel_groups(self, groups, channel_ids=None):
         '''This function sets the group property of each specified channel
         id with the corresponding group of the passed in groups list.
 
         Parameters
         ----------
-        channel_ids: array_like
-            The channel ids (ints) for which the groups will be specified
         groups: array_like
-            A list of corresonding groups (ints) for the given channel_ids
+            A list of groups (ints) for the channel_ids
+        channel_ids: array_like or None
+            The channel ids (ints) for which the groups will be specified. If None, all channel ids are assumed
         '''
+        if channel_ids is None:
+            channel_ids = self.get_channel_ids()
         if len(channel_ids) == len(groups):
             for i in range(len(channel_ids)):
                 if isinstance(groups[i], (int, np.integer)):
@@ -795,6 +795,7 @@ class RecordingExtractor(ABC):
         '''
         raise NotImplementedError("The write_recording function is not \
                                   implemented for this extractor")
+
 
     def _cast_start_end_frame(self, start_frame, end_frame):
         if isinstance(start_frame, (float, np.float)):

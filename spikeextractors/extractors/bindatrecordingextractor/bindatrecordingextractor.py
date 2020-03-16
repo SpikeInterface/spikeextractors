@@ -12,6 +12,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
     has_default_locations = False
     installed = True  # check at class level if installed or not
     is_writable = True
+    is_dumpable = True
     mode = 'file'      
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.dat)"},
@@ -46,6 +47,10 @@ class BinDatRecordingExtractor(RecordingExtractor):
         if geom is not None:
             for idx, channel in enumerate(self._channels):
                 self.set_channel_property(channel, 'location', self._geom[idx, :])
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'sampling_frequency': sampling_frequency,
+                        'numchan': numchan, 'dtype': str(dtype), 'recording_channels': recording_channels,
+                        'time_axis': time_axis, 'geom': geom, 'offset': offset, 'gain': gain}
+
 
     def get_channel_ids(self):
         return self._channels
