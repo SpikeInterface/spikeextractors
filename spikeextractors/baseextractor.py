@@ -9,9 +9,17 @@ import datetime
 class BaseExtractor:
     is_dumpable = True
 
-    def __init__(self):
+    def __init__(self, *args, **kargs):
         self._kwargs = {}
         self._tmp_folder = None
+        
+        self.
+    
+    def _init_extractor(self, *args, **kargs):
+        # this remplace the init in each class
+        # this is call both at __init__ but also in __setstate__ (when pickle.load)
+        raise NotImplementedError
+    
 
     def make_serialized_dict(self):
         class_name = str(type(self)).replace("<class '", "").replace("'>", '')
@@ -105,6 +113,12 @@ class BaseExtractor:
 
     def check_if_dumpable(self):
         return _check_if_dumpable(self.make_serialized_dict())
+    
+    def __getstate__(self):
+        return self.make_serialized_dict()
+
+    def __setstate__(self, d):
+        self._init_extractor(**d)
 
 
 def _load_extractor_from_dict(dic):

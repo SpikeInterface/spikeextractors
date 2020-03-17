@@ -4,6 +4,8 @@ from pathlib import Path
 import unittest
 import tempfile
 import shutil
+import pickle
+
 import spikeextractors as se
 
 
@@ -424,6 +426,7 @@ class TestExtractors(unittest.TestCase):
             self.assertTrue(np.array_equal(train1, train2))
 
     def _check_dumping(self, extractor):
+        # json style
         extractor.dump(file_name='test.json')
         extractor_loaded = se.load_extractor_from_json('test.json')
 
@@ -431,6 +434,12 @@ class TestExtractors(unittest.TestCase):
             self._check_recordings_equal(extractor, extractor_loaded)
         elif 'Sorting' in str(type(extractor)):
             self._check_sortings_equal(extractor, extractor_loaded)
+        
+        
+        # with pickle
+        s = pickle.dumps(extractor)
+        extractor2 = pickle.loads(s)
+        
 
 
 if __name__ == '__main__':
