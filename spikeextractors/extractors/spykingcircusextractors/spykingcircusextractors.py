@@ -112,7 +112,7 @@ class SpykingCircusSortingExtractor(SortingExtractor):
 
         if results is None:
             raise Exception(spykingcircus_folder, " is not a spyking circus folder")
-        f_results = h5py.File(results)
+        f_results = h5py.File(results, 'r')
         self._spiketrains = []
         self._unit_ids = []
         for temp in f_results['spiketimes'].keys():

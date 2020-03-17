@@ -78,7 +78,7 @@ class KlustaSortingExtractor(SortingExtractor):
         except Exception as e:
             print("Could not load sampling frequency info")
 
-        F = h5py.File(kwikfile)
+        F = h5py.File(kwikfile, 'r')
         channel_groups = F.get('channel_groups')
         self._spiketrains = []
         self._unit_ids = []
