@@ -9,6 +9,7 @@ from .extractors.kilosortextractors.kilosortextractors import KiloSortSortingExt
 from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor, NumpySortingExtractor
 from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor, NwbSortingExtractor
 from .extractors.maxonerecordingextractor import MaxOneRecordingExtractor
+from .extractors.mea1krecordingextractor import Mea1kRecordingExtractor
 from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
 from .extractors.phyextractors.phyextractors import PhyRecordingExtractor, PhySortingExtractor
 from .extractors.bindatrecordingextractor.bindatrecordingextractor import BinDatRecordingExtractor
@@ -38,6 +39,7 @@ recording_extractor_full_list = [
     SpikeGLXRecordingExtractor,
     PhyRecordingExtractor,
     MaxOneRecordingExtractor,
+    Mea1kRecordingExtractor,
     MCSH5RecordingExtractor,
     SHYBRIDRecordingExtractor,
     NIXIORecordingExtractor,
