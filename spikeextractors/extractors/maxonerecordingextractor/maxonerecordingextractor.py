@@ -34,7 +34,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
     def _initialize(self):
-        self._filehandle = h5py.File(self._file_path)
+        self._filehandle = h5py.File(self._file_path, 'r')
         self._mapping = self._filehandle['mapping']
         self._channel_ids = self._mapping['channel']
         self._num_channels = len(self._channel_ids)
