@@ -36,7 +36,10 @@ class MaxOneRecordingExtractor(RecordingExtractor):
     def _initialize(self):
         self._filehandle = h5py.File(self._file_path, 'r')
         self._mapping = self._filehandle['mapping']
-        self._channel_ids = self._mapping['channel']
+        channels = np.array(self._mapping['channel'])
+        electrodes = np.array(self._mapping['channel'])
+        # remove unused channels
+        self._channel_ids = list(channels[np.where(electrodes < 0)])
         self._num_channels = len(self._channel_ids)
         self._fs = float(20000)
         self._signals = self._filehandle.get('sig')
