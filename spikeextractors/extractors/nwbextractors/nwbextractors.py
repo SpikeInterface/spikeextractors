@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import datetime
-from collections import defaultdict
+from collections import defaultdict, abc
 from pathlib import Path
 
 import numpy as np
@@ -14,9 +14,6 @@ try:
     from pynwb import NWBFile
     from pynwb.ecephys import ElectricalSeries
     from pynwb.ecephys import ElectrodeGroup
-    from pynwb.device import Device
-    from pynwb.misc import Units
-
     from hdmf.data_utils import DataChunkIterator
 
     HAVE_NWB = True
@@ -224,7 +221,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     'start_frame': self.time_to_frame(row['start_time']),
                     'end_frame': self.time_to_frame(row['stop_time'])}
                     for _, row in df_epochs.iterrows()}
-        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'electrical_series_name': electrical_series_name}
+
+            self._kwargs = {'file_path': str(Path(file_path).absolute()), 'electrical_series_name': electrical_series_name}
 
             # Metadata dictionary - useful for constructing a nwb file
             self.nwb_metadata = dict()
@@ -312,7 +310,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             metadata info for constructing the nwb file
         '''
         check_nwb_install()
-        n_channels = recording.get_num_channels()
+        # n_channels = recording.get_num_channels()
         channel_ids = recording.get_channel_ids()
 
         if os.path.exists(save_path):
@@ -367,7 +365,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             # Tests if electrode groups exist in nwbfile, if not create them from metadata
             for grp in metadata['Ecephys']['ElectrodeGroup']:
                 if str(grp['name']) not in nwbfile.electrode_groups:
-                    elec_group = nwbfile.create_electrode_group(
+                    nwbfile.create_electrode_group(
                         name=str(grp['name']),
                         location=grp['location'],
                         device=nwbfile.devices[grp['device']],
