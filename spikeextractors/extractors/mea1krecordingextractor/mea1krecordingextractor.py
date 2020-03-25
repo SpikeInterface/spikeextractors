@@ -40,7 +40,7 @@ class Mea1kRecordingExtractor(RecordingExtractor):
         channels = np.array(self._mapping['channel'])
         electrodes = np.array(self._mapping['channel'])
         # remove unused channels
-        self._channel_ids = list(channels[np.where(electrodes < 0)])
+        self._channel_ids = list(channels[np.where(electrodes > 0)])
         self._num_channels = len(self._channel_ids)
         self._fs = float(self._filehandle['ephys']['frame_rate'][()])
         self._signals = self._filehandle['ephys']['signal']
