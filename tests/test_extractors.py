@@ -9,7 +9,7 @@ import spikeextractors as se
 
 class TestExtractors(unittest.TestCase):
     def setUp(self):
-        self.RX, self.RX2, self.RX3, self.SX, self.SX2, self.SX3, self.example_info = self._create_example()
+        self.RX, self.RX2, self.RX3, self.SX, self.SX2, self.SX3, self.example_info = self._create_example(seed=0)
         self.test_dir = tempfile.mkdtemp()
         # self.test_dir = '.'
 
@@ -18,31 +18,31 @@ class TestExtractors(unittest.TestCase):
         shutil.rmtree(self.test_dir)
         # pass
 
-    def _create_example(self):
+    def _create_example(self, seed):
         channel_ids = [0, 1, 2, 3]
         num_channels = 4
         num_frames = 10000
         sampling_frequency = 30000
-        X = np.random.normal(0, 1, (num_channels, num_frames))
-        geom = np.random.normal(0, 1, (num_channels, 2))
+        X = np.random.RandomState(seed=seed).normal(0, 1, (num_channels, num_frames))
+        geom = np.random.RandomState(seed=seed).normal(0, 1, (num_channels, 2))
         X = (X * 100).astype(int)
         RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
         RX2 = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
         RX3 = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
         SX = se.NumpySortingExtractor()
         spike_times = [200, 300, 400]
-        train1 = np.sort(np.rint(np.random.uniform(0, num_frames, spike_times[0])).astype(int))
+        train1 = np.sort(np.rint(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times[0])).astype(int))
         SX.add_unit(unit_id=1, times=train1)
-        SX.add_unit(unit_id=2, times=np.sort(np.random.uniform(0, num_frames, spike_times[1])))
-        SX.add_unit(unit_id=3, times=np.sort(np.random.uniform(0, num_frames, spike_times[2])))
+        SX.add_unit(unit_id=2, times=np.sort(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times[1])))
+        SX.add_unit(unit_id=3, times=np.sort(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times[2])))
         SX.set_unit_property(unit_id=1, property_name='stability', value=80)
         SX.set_sampling_frequency(sampling_frequency)
         SX2 = se.NumpySortingExtractor()
         spike_times2 = [100, 150, 450]
-        train2 = np.rint(np.random.uniform(0, num_frames, spike_times2[0])).astype(int)
+        train2 = np.rint(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times2[0])).astype(int)
         SX2.add_unit(unit_id=3, times=train2)
-        SX2.add_unit(unit_id=4, times=np.random.uniform(0, num_frames, spike_times2[1]))
-        SX2.add_unit(unit_id=5, times=np.random.uniform(0, num_frames, spike_times2[2]))
+        SX2.add_unit(unit_id=4, times=np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times2[1]))
+        SX2.add_unit(unit_id=5, times=np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times2[2]))
         SX2.set_unit_property(unit_id=4, property_name='stability', value=80)
         SX2.set_unit_spike_features(unit_id=3, feature_name='widths', value=np.asarray([3] * spike_times2[0]))
         RX.set_channel_property(channel_id=0, property_name='location', value=(0, 0))
@@ -54,9 +54,9 @@ class TestExtractors(unittest.TestCase):
             RX.set_channel_property(channel_id=channel_id, property_name='shared_channel_prop', value=i)
 
         SX3 = se.NumpySortingExtractor()
-        train3= np.asarray([1,20,21,35,38,45,46,47])
+        train3 = np.asarray([1, 20, 21, 35, 38, 45, 46, 47])
         SX3.add_unit(unit_id=0, times=train3)
-        features3 = np.asarray([0,5,10,15,20,25,30,35])
+        features3 = np.asarray([0, 5, 10, 15, 20, 25, 30, 35])
         SX3.set_unit_spike_features(unit_id=0, feature_name='dummy', value=features3)
 
         example_info = dict(
@@ -96,17 +96,46 @@ class TestExtractors(unittest.TestCase):
 
         print(self.SX3.get_unit_spike_features(0, 'dummy'))
         self.assertTrue(np.array_equal(self.SX3.get_unit_spike_features(0, 'dummy'), self.example_info['features3']))
-        self.assertTrue(np.array_equal(self.SX3.get_unit_spike_features(0, 'dummy', start_frame=4), self.example_info['features3'][1:]))
-        self.assertTrue(np.array_equal(self.SX3.get_unit_spike_features(0, 'dummy', end_frame=4), self.example_info['features3'][:1]))
-        self.assertTrue(np.array_equal(self.SX3.get_unit_spike_features(0, 'dummy', start_frame=20, end_frame=46), self.example_info['features3'][1:6]))
+        self.assertTrue(np.array_equal(self.SX3.get_unit_spike_features(0, 'dummy', start_frame=4),
+                                       self.example_info['features3'][1:]))
+        self.assertTrue(np.array_equal(self.SX3.get_unit_spike_features(0, 'dummy', end_frame=4),
+                                       self.example_info['features3'][:1]))
+        self.assertTrue(np.array_equal(self.SX3.get_unit_spike_features(0, 'dummy', start_frame=20, end_frame=46),
+                                       self.example_info['features3'][1:6]))
 
         sub_extractor_full = se.SubSortingExtractor(self.SX3)
         sub_extractor_partial = se.SubSortingExtractor(self.SX3, start_frame=20, end_frame=46)
 
-        self.assertTrue(np.array_equal(sub_extractor_full.get_unit_spike_features(0, 'dummy'), self.SX3.get_unit_spike_features(0, 'dummy')))
-        self.assertTrue(np.array_equal(sub_extractor_partial.get_unit_spike_features(0, 'dummy'), self.SX3.get_unit_spike_features(0, 'dummy', start_frame=20, end_frame=46)))
+        self.assertTrue(np.array_equal(sub_extractor_full.get_unit_spike_features(0, 'dummy'),
+                                       self.SX3.get_unit_spike_features(0, 'dummy')))
+        self.assertTrue(np.array_equal(sub_extractor_partial.get_unit_spike_features(0, 'dummy'),
+                                       self.SX3.get_unit_spike_features(0, 'dummy', start_frame=20, end_frame=46)))
 
         self._check_recording_return_types(self.RX)
+
+    def test_allocate_arrays(self):
+        shape = (30, 1000)
+        dtype = 'int16'
+
+        arr_in_memory = self.RX.allocate_array(shape=shape, dtype=dtype, memmap=False)
+        arr_memmap = self.RX.allocate_array(shape=shape, dtype=dtype, memmap=True)
+
+        assert isinstance(arr_in_memory, np.ndarray)
+        assert isinstance(arr_memmap, np.memmap)
+        assert arr_in_memory.shape == shape
+        assert arr_memmap.shape == shape
+        assert arr_in_memory.dtype == dtype
+        assert arr_memmap.dtype == dtype
+
+        arr_in_memory = self.SX.allocate_array(shape=shape, dtype=dtype, memmap=False)
+        arr_memmap = self.SX.allocate_array(shape=shape, dtype=dtype, memmap=True)
+
+        assert isinstance(arr_in_memory, np.ndarray)
+        assert isinstance(arr_memmap, np.memmap)
+        assert arr_in_memory.shape == shape
+        assert arr_memmap.shape == shape
+        assert arr_in_memory.dtype == dtype
+        assert arr_memmap.dtype == dtype
 
     def test_cache_extractor(self):
         cache_extractor = se.CacheRecordingExtractor(self.RX)
@@ -114,7 +143,8 @@ class TestExtractors(unittest.TestCase):
         self._check_recordings_equal(self.RX, cache_extractor)
         cache_extractor.save_to_file('cache')
 
-        assert cache_extractor.get_filename() == 'cache.dat'
+        assert cache_extractor.filename == 'cache.dat'
+        self._check_dumping(cache_extractor)
         del cache_extractor
         assert not Path('cache.dat').is_file()
 
@@ -129,6 +159,8 @@ class TestExtractors(unittest.TestCase):
         self._check_recordings_equal(self.RX, RX_mda)
         self._check_sorting_return_types(SX_mda)
         self._check_sortings_equal(self.SX, SX_mda)
+        self._check_dumping(RX_mda)
+        self._check_dumping(SX_mda)
 
     def _check_recording_return_types(self, RX):
         channel_ids = RX.get_channel_ids()
@@ -148,6 +180,7 @@ class TestExtractors(unittest.TestCase):
         RX_biocam = se.BiocamRecordingExtractor(path1)
         self._check_recording_return_types(RX_biocam)
         self._check_recordings_equal(self.RX, RX_biocam)
+        self._check_dumping(RX_biocam)
 
     def test_mearec_extractors(self):
         path1 = self.test_dir + '/raw.h5'
@@ -156,12 +189,14 @@ class TestExtractors(unittest.TestCase):
         tr = RX_mearec.get_traces(channel_ids=[0, 1], end_frame=1000)
         self._check_recording_return_types(RX_mearec)
         self._check_recordings_equal(self.RX, RX_mearec)
+        self._check_dumping(RX_mearec)
 
         path2 = self.test_dir + '/firings_true.h5'
         se.MEArecSortingExtractor.write_sorting(self.SX, path2, self.RX.get_sampling_frequency())
         SX_mearec = se.MEArecSortingExtractor(path2)
         self._check_sorting_return_types(SX_mearec)
         self._check_sortings_equal(self.SX, SX_mearec)
+        self._check_dumping(SX_mearec)
 
     def test_hs2_extractor(self):
         path1 = self.test_dir + '/firings_true.hdf5'
@@ -170,6 +205,7 @@ class TestExtractors(unittest.TestCase):
         self._check_sorting_return_types(SX_hs2)
         self._check_sortings_equal(self.SX, SX_hs2)
         self.assertEqual(SX_hs2.get_sampling_frequency(), self.SX.get_sampling_frequency())
+        self._check_dumping(SX_hs2)
 
     def test_exdir_extractors(self):
         path1 = self.test_dir + '/raw.exdir'
@@ -177,12 +213,14 @@ class TestExtractors(unittest.TestCase):
         RX_exdir = se.ExdirRecordingExtractor(path1)
         self._check_recording_return_types(RX_exdir)
         self._check_recordings_equal(self.RX, RX_exdir)
+        self._check_dumping(RX_exdir)
 
         path2 = self.test_dir + '/firings.exdir'
         se.ExdirSortingExtractor.write_sorting(self.SX, path2, self.RX)
         SX_exdir = se.ExdirSortingExtractor(path2)
         self._check_sorting_return_types(SX_exdir)
         self._check_sortings_equal(self.SX, SX_exdir)
+        self._check_dumping(SX_exdir)
 
     def test_kilosort_extractor(self):
         path1 = self.test_dir + '/ks'
@@ -190,6 +228,7 @@ class TestExtractors(unittest.TestCase):
         SX_ks = se.KiloSortSortingExtractor(path1)
         self._check_sorting_return_types(SX_ks)
         self._check_sortings_equal(self.SX, SX_ks)
+        self._check_dumping(SX_ks)
 
     def test_klusta_extractor(self):
         path1 = self.test_dir + '/firings_true.kwik'
@@ -197,6 +236,7 @@ class TestExtractors(unittest.TestCase):
         SX_kl = se.KlustaSortingExtractor(path1)
         self._check_sorting_return_types(SX_kl)
         self._check_sortings_equal(self.SX, SX_kl)
+        self._check_dumping(SX_kl)
 
     def test_spykingcircus_extractor(self):
         path1 = self.test_dir + '/sc'
@@ -204,6 +244,7 @@ class TestExtractors(unittest.TestCase):
         SX_spy = se.SpykingCircusSortingExtractor(path1)
         self._check_sorting_return_types(SX_spy)
         self._check_sortings_equal(self.SX, SX_spy)
+        self._check_dumping(SX_spy)
 
     def test_multi_sub_recording_extractor(self):
         RX_multi = se.MultiRecordingTimeExtractor(
@@ -241,18 +282,43 @@ class TestExtractors(unittest.TestCase):
         SX_sub1 = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0, end_frame=N)
         self._check_sortings_equal(SX_multi, SX_sub1)
 
+    def test_dump_load_multi_sub_extractor(self):
+        # generate dumpable formats
+        path1 = self.test_dir + '/mda'
+        path2 = path1 + '/firings_true.mda'
+        se.MdaRecordingExtractor.write_recording(self.RX, path1)
+        se.MdaSortingExtractor.write_sorting(self.SX, path2)
+        RX_mda = se.MdaRecordingExtractor(path1)
+        SX_mda = se.MdaSortingExtractor(path2)
+
+        RX_multi_chan = se.MultiRecordingChannelExtractor(recordings=[RX_mda, RX_mda, RX_mda])
+        self._check_dumping(RX_multi_chan)
+        RX_multi_time = se.MultiRecordingTimeExtractor(recordings=[RX_mda, RX_mda, RX_mda],)
+        self._check_dumping(RX_multi_time)
+        RX_multi_chan = se.SubRecordingExtractor(RX_mda, channel_ids=[0, 1])
+        self._check_dumping(RX_multi_chan)
+
+        SX_sub = se.SubSortingExtractor(SX_mda, unit_ids=[1, 2])
+        self._check_dumping(SX_sub)
+        SX_multi = se.MultiSortingExtractor(sortings=[SX_mda, SX_mda, SX_mda])
+        self._check_dumping(SX_multi)
+
     def test_nwb_extractor(self):
         path1 = self.test_dir + '/test.nwb'
         se.NwbRecordingExtractor.write_recording(self.RX, path1)
         RX_nwb = se.NwbRecordingExtractor(path1)
         self._check_recording_return_types(RX_nwb)
         self._check_recordings_equal(self.RX, RX_nwb)
+        self._check_dumping(RX_nwb)
+
         del RX_nwb
         # overwrite
         se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1)
         RX_nwb = se.NwbRecordingExtractor(path1)
         self._check_recording_return_types(RX_nwb)
         self._check_recordings_equal(self.RX, RX_nwb)
+        self._check_dumping(RX_nwb)
+
         # add sorting to existing
         se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1)
         # create new
@@ -260,6 +326,7 @@ class TestExtractors(unittest.TestCase):
         se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2)
         SX_nwb = se.NwbSortingExtractor(path1)
         self._check_sortings_equal(self.SX, SX_nwb)
+        self._check_dumping(SX_nwb)
 
     def test_nixio_extractor(self):
         path1 = os.path.join(self.test_dir, 'raw.nix')
@@ -267,6 +334,7 @@ class TestExtractors(unittest.TestCase):
         RX_nixio = se.NIXIORecordingExtractor(path1)
         self._check_recording_return_types(RX_nixio)
         self._check_recordings_equal(self.RX, RX_nixio)
+        self._check_dumping(RX_nixio)
         del RX_nixio
         # test force overwrite
         se.NIXIORecordingExtractor.write_recording(self.RX, path1,
@@ -277,6 +345,26 @@ class TestExtractors(unittest.TestCase):
         SX_nixio = se.NIXIOSortingExtractor(path2)
         self._check_sorting_return_types(SX_nixio)
         self._check_sortings_equal(self.SX, SX_nixio)
+        self._check_dumping(SX_nixio)
+
+    def test_shybrid_extractors(self):
+        # test sorting extractor
+        se.SHYBRIDSortingExtractor.write_sorting(self.SX, self.test_dir)
+        initial_sorting_file = os.path.join(self.test_dir, 'initial_sorting.csv')
+        SX_shybrid = se.SHYBRIDSortingExtractor(initial_sorting_file)
+        self._check_sorting_return_types(SX_shybrid)
+        self._check_sortings_equal(self.SX, SX_shybrid)
+        self._check_dumping(SX_shybrid)
+
+        # test recording extractor
+        se.SHYBRIDRecordingExtractor.write_recording(self.RX,
+                                                     self.test_dir,
+                                                     initial_sorting_file)
+        RX_shybrid = se.SHYBRIDRecordingExtractor(os.path.join(self.test_dir,
+                                                               'recording.bin'))
+        self._check_recording_return_types(RX_shybrid)
+        self._check_recordings_equal(self.RX, RX_shybrid)
+        self._check_dumping(RX_shybrid)
 
     def _check_recordings_equal(self, RX1, RX2):
         M = RX1.get_num_channels()
@@ -332,6 +420,15 @@ class TestExtractors(unittest.TestCase):
             # print(train1)
             # print(train2)
             self.assertTrue(np.array_equal(train1, train2))
+
+    def _check_dumping(self, extractor):
+        extractor.dump(file_name='test.json')
+        extractor_loaded = se.load_extractor_from_json('test.json')
+
+        if 'Recording' in str(type(extractor)):
+            self._check_recordings_equal(extractor, extractor_loaded)
+        elif 'Sorting' in str(type(extractor)):
+            self._check_sortings_equal(extractor, extractor_loaded)
 
 
 if __name__ == '__main__':

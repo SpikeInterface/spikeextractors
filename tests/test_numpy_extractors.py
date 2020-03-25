@@ -7,19 +7,20 @@ class TestNumpyExtractors(unittest.TestCase):
     def setUp(self):
         M = 4
         N = 10000
+        seed= 0
         sampling_frequency = 30000
-        X = np.random.normal(0, 1, (M, N))
-        geom = np.random.normal(0, 1, (M, 2))
+        X = np.random.RandomState(seed=seed).normal(0, 1, (M, N))
+        geom = np.random.RandomState(seed=seed).normal(0, 1, (M, 2))
         self._X = X
         self._geom = geom
         self._sampling_frequency = sampling_frequency
         self.RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
         self.SX = se.NumpySortingExtractor()
         L = 200
-        self._train1 = np.rint(np.random.uniform(0, N, L)).astype(int)
+        self._train1 = np.rint(np.random.RandomState(seed=seed).uniform(0, N, L)).astype(int)
         self.SX.add_unit(unit_id=1, times=self._train1)
-        self.SX.add_unit(unit_id=2, times=np.random.uniform(0, N, L))
-        self.SX.add_unit(unit_id=3, times=np.random.uniform(0, N, L))
+        self.SX.add_unit(unit_id=2, times=np.random.RandomState(seed=seed).uniform(0, N, L))
+        self.SX.add_unit(unit_id=3, times=np.random.RandomState(seed=seed).uniform(0, N, L))
 
     def tearDown(self):
         pass

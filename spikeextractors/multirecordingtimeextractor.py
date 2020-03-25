@@ -50,6 +50,7 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
 
         # Set the channel properties based on the first recording extractor
         self.copy_channel_properties(self._first_recording)
+        self._kwargs = {'recordings': [rec.make_serialized_dict() for rec in recordings], 'epoch_names': epoch_names}
 
     def _find_section_for_frame(self, frame):
         inds = np.where(np.array(self._start_frames[:-1]) <= frame)[0]
@@ -62,6 +63,7 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         return self._recordings[ind], ind, time - self._start_times[ind]
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

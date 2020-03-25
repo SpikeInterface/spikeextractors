@@ -1,23 +1,25 @@
 from spikeextractors import RecordingExtractor
 
 import numpy as np
+from pathlib import Path
 import ctypes
-
 
 try:
     import h5py
+
     HAVE_BIOCAM = True
 except ImportError:
     HAVE_BIOCAM = False
 
-class BiocamRecordingExtractor(RecordingExtractor):
 
-    extractor_name = 'BiocamRecordingExtractor'
+class BiocamRecordingExtractor(RecordingExtractor):
+    extractor_name = 'BiocamRecording'
     has_default_locations = True
     installed = HAVE_BIOCAM  # check at class level if installed or not
     is_writable = True
+    is_dumpable = True
     mode = 'file'
-    extractor_gui_params = [       
+    extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
         {'name': 'mea_pitch', 'type': 'int', 'value': 42, 'default': 42, 'title': "The pitch of the MEA"},
     ]
@@ -34,6 +36,9 @@ class BiocamRecordingExtractor(RecordingExtractor):
         for m in range(self._nRecCh):
             self.set_channel_property(m, 'location', self._positions[m])
 
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'mea_pitch': mea_pitch,
+                        'verbose': verbose}
+
     def __del__(self):
         self._rf.close()
 
@@ -47,6 +52,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
         return self._samplingRate
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
@@ -74,11 +80,11 @@ class BiocamRecordingExtractor(RecordingExtractor):
         N = recording.get_num_frames()
         rf = h5py.File(save_path, 'w')
         g = rf.create_group('3BData')
-        dr = rf.create_dataset('3BData/Raw', (M*N,), dtype=int)
+        dr = rf.create_dataset('3BData/Raw', (M * N,), dtype=int)
         dt = 50000
-        for i in range(N//dt):
-            dr[M*i*dt:M*(i+1)*dt] = recording.get_traces(slice(0, M), i*dt, (i+1)*dt).T.flatten()
-        dr[M*(N//dt)*dt:] = recording.get_traces(slice(0, M), (N//dt)*dt, N).T.flatten()
+        for i in range(N // dt):
+            dr[M * i * dt:M * (i + 1) * dt] = recording.get_traces(slice(0, M), i * dt, (i + 1) * dt).T.flatten()
+        dr[M * (N // dt) * dt:] = recording.get_traces(slice(0, M), (N // dt) * dt, N).T.flatten()
         g.attrs['Version'] = 101
         rf.create_dataset('3BRecInfo/3BRecVars/MinVolt', data=[0])
         rf.create_dataset('3BRecInfo/3BRecVars/MaxVolt', data=[1])
@@ -86,16 +92,16 @@ class BiocamRecordingExtractor(RecordingExtractor):
         rf.create_dataset('3BRecInfo/3BRecVars/SamplingRate', data=[recording.get_sampling_frequency()])
         rf.create_dataset('3BRecInfo/3BRecVars/SignalInversion', data=[1])
         rf.create_dataset('3BRecInfo/3BMeaChip/NCols', data=[M])
-        r = [recording.get_channel_property(i,'location')[-2] for i in range(recording.get_num_channels())]
-        c = [recording.get_channel_property(i,'location')[-1] for i in range(recording.get_num_channels())]
-        d = np.ndarray((1,len(r)),dtype=[('Row', '<i2'), ('Col', '<i2')])
+        r = [recording.get_channel_property(i, 'location')[-2] for i in range(recording.get_num_channels())]
+        c = [recording.get_channel_property(i, 'location')[-1] for i in range(recording.get_num_channels())]
+        d = np.ndarray((1, len(r)), dtype=[('Row', '<i2'), ('Col', '<i2')])
         d['Row'] = r
         d['Col'] = c
         rf.create_dataset('3BRecInfo/3BMeaStreams/Raw/Chs', data=d)
         rf.close()
 
 
-def openBiocamFile(filename,  mea_pitch, verbose=False):
+def openBiocamFile(filename, mea_pitch, verbose=False):
     """Open a Biocam hdf5 file, read and return the recording info, pick te correct method to access raw data, and return this to the caller."""
     rf = h5py.File(filename, 'r')
     # Read recording variables
@@ -125,7 +131,7 @@ def openBiocamFile(filename,  mea_pitch, verbose=False):
         print('# frames: ', nFrames)
         print('# sampling rate: ', samplingRate)
     # get channel locations
-    r = (rf['3BRecInfo/3BMeaStreams/Raw/Chs'][()]['Row'] -1) * mea_pitch
+    r = (rf['3BRecInfo/3BMeaStreams/Raw/Chs'][()]['Row'] - 1) * mea_pitch
     c = (rf['3BRecInfo/3BMeaStreams/Raw/Chs'][()]['Col'] - 1) * mea_pitch
     rawIndices = np.vstack((r, c)).T
     # assign channel numbers
@@ -134,13 +140,13 @@ def openBiocamFile(filename,  mea_pitch, verbose=False):
     if verbose:
         print("# Signal inversion is " + str(signalInv) + ".")
         print("# If your spike sorting results look wrong, invert the signal.")
-    if (file_format == 100)&(signalInv == 1):
+    if (file_format == 100) & (signalInv == 1):
         read_function = readHDF5t_100
-    elif (file_format == 100)&(signalInv == -1):
+    elif (file_format == 100) & (signalInv == -1):
         read_function = readHDF5t_100_i
-    if ((file_format == 101)|(file_format == 102))&(signalInv == 1):
+    if ((file_format == 101) | (file_format == 102)) & (signalInv == 1):
         read_function = readHDF5t_101
-    elif ((file_format == 101)|(file_format == 102))&(signalInv == -1):
+    elif ((file_format == 101) | (file_format == 102)) & (signalInv == -1):
         read_function = readHDF5t_101_i
     else:
         raise RuntimeError("File format unknown.")
@@ -154,23 +160,26 @@ def readHDF5t_100(rf, t0, t1, nch):
         raise Exception('Reading backwards? Not sure about this.')
         return rf['3BData/Raw'][t1:t0]
 
+
 def readHDF5t_100_i(rf, t0, t1, nch):
     if t0 <= t1:
-        return 4096-rf['3BData/Raw'][t0:t1]
+        return 4096 - rf['3BData/Raw'][t0:t1]
     else:  # Reversed read
         raise Exception('Reading backwards? Not sure about this.')
-        return 4096-rf['3BData/Raw'][t1:t0]
+        return 4096 - rf['3BData/Raw'][t1:t0]
+
 
 def readHDF5t_101(rf, t0, t1, nch):
     if t0 <= t1:
-        return rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1-t0, nch), order='C')
+        return rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1 - t0, nch), order='C')
     else:  # Reversed read
         raise Exception('Reading backwards? Not sure about this.')
-        return rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1-t0, nch), order='C')
+        return rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1 - t0, nch), order='C')
+
 
 def readHDF5t_101_i(rf, t0, t1, nch):
     if t0 <= t1:
-        return 4096-rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1-t0, nch), order='C')
+        return 4096 - rf['3BData/Raw'][nch * t0:nch * t1].reshape((t1 - t0, nch), order='C')
     else:  # Reversed read
         raise Exception('Reading backwards? Not sure about this.')
-        return 4096-rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1-t0, nch), order='C')
+        return 4096 - rf['3BData/Raw'][nch * t1:nch * t0].reshape((t1 - t0, nch), order='C')

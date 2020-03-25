@@ -1,5 +1,7 @@
 from spikeextractors import SortingExtractor
 import numpy as np
+from pathlib import Path
+
 
 class NeuroscopeSortingExtractor(SortingExtractor):
 
@@ -41,11 +43,15 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         else:
             self._spiketrains = []
             self._unit_ids = []
+        self._kwargs = {'resfile': str(Path(resfile).absolute()),
+                        'clufile': str(Path(clufile).absolute())}
+
 
     def get_unit_ids(self):
         return list(self._unit_ids)
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

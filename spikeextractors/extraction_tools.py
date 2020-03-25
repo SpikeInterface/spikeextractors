@@ -3,6 +3,10 @@ import csv
 import os
 import sys
 from pathlib import Path
+import json
+import datetime
+import spikeextractors
+from spikeextractors.baseextractor import BaseExtractor
 
 
 def read_python(path):
@@ -163,6 +167,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 
+    subrecording._kwargs['probe_file'] = str(probe_file.absolute())
     return subrecording
 
 
@@ -252,7 +257,8 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
     return samples
 
 
-def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunk_size=None):
+def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
+                               time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
     '''Saves the traces of a recording extractor in binary .dat format.
 
     Parameters
@@ -261,19 +267,41 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         The recording extractor object to be saved in .dat format
     save_path: str
         The path to the file.
+    file_handle: file handle
+        The file handle to dump data. This can be used to append data to an header. In case file_handle is given,
+        the file is NOT closed after writing the binary data.
     time_axis: 0 (default) or 1
         If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
         If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
     dtype: dtype
         Type of the saved data. Default float32.
     chunk_size: None or int
-        If not None then the copy done by chunk size.
-        This avoid to much memory consumption for big files.
+        Number of chunks to save the file in. This avoid to much memory consumption for big files.
+        If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
+    chunk_mb: None or int
+        Chunk size in Mb (default 500Mb)
     '''
-    save_path = Path(save_path)
-    if save_path.suffix == '':
-        # when suffix is already raw/bin/dat do not change it.
-        save_path = save_path.parent / (save_path.name + '.dat')
+    assert save_path is not None or file_handle is not None, "Provide 'save_path' or 'file handle'"
+
+    if save_path is not None:
+        save_path = Path(save_path)
+        if save_path.suffix == '':
+            # when suffix is already raw/bin/dat do not change it.
+            save_path = save_path.parent / (save_path.name + '.dat')
+
+    if chunk_size is not None or chunk_mb is not None:
+        if time_axis == 1:
+            print("Chunking disabled due to 'time_axis' == 1")
+            chunk_size = None
+            chunk_mb = None
+
+    # set chunk size
+    if chunk_size is not None:
+        chunk_size = int(chunk_size)
+    elif chunk_mb is not None:
+        n_bytes = recording.get_dtype().itemsize
+        max_size = int(chunk_mb * 1e6)  # set Mb per chunk
+        chunk_size = max_size // (recording.get_num_channels() * n_bytes)
 
     if chunk_size is None:
         traces = recording.get_traces()
@@ -281,23 +309,36 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
             traces = traces.astype(dtype)
         if time_axis == 0:
             traces = traces.T
-        with save_path.open('wb') as f:
-            traces.tofile(f)
+        if save_path is not None:
+            with save_path.open('wb') as f:
+                traces.tofile(f)
+        else:
+            traces.tofile(file_handle)
     else:
-        assert time_axis == 0, 'chunked writing work only with time_axis 0'
+        # chunk size is not None
         n_sample = recording.get_num_frames()
         n_chunk = n_sample // chunk_size
         if n_sample % chunk_size > 0:
             n_chunk += 1
-        with save_path.open('wb') as f:
+        if save_path is not None:
+            with save_path.open('wb') as f:
+                for i in range(n_chunk):
+                    traces = recording.get_traces(start_frame=i * chunk_size,
+                                                  end_frame=min((i + 1) * chunk_size, n_sample))
+                    if dtype is not None:
+                        traces = traces.astype(dtype)
+                    if time_axis == 0:
+                        traces = traces.T
+                    f.write(traces.tobytes())
+        else:
             for i in range(n_chunk):
-                traces = recording.get_traces(start_frame=i*chunk_size,
-                                              end_frame=min((i+1)*chunk_size, n_sample))
+                traces = recording.get_traces(start_frame=i * chunk_size,
+                                              end_frame=min((i + 1) * chunk_size, n_sample))
                 if dtype is not None:
                     traces = traces.astype(dtype)
                 if time_axis == 0:
                     traces = traces.T
-                f.write(traces.tobytes())
+                file_handle.write(traces.tobytes())
     return save_path
 
 
@@ -320,10 +361,8 @@ def get_sub_extractors_by_property(extractor, property_name, return_property_lis
     sub_list, prop_list
         If return_property_list is True, the property list will be returned as well.
     '''
-    from .recordingextractor import RecordingExtractor
-    from .sortingextractor import SortingExtractor
-    from .subrecordingextractor import SubRecordingExtractor
-    from .subsortingextractor import SubSortingExtractor
+    from spikeextractors import RecordingExtractor, SortingExtractor, SubRecordingExtractor, SubSortingExtractor
+
     if isinstance(extractor, RecordingExtractor):
         if property_name not in extractor.get_shared_channel_property_names():
             raise ValueError("'property_name' must be must be a property of the recording channels")
@@ -475,3 +514,52 @@ def _export_prb_file(recording, file_name, grouping_property=None, graph=True, g
                 f.write("           'graph':  [],\n")
                 f.write('        },\n')
             f.write('}\n')
+
+
+def _check_json(d):
+    # quick hack to ensure json writable
+    for k, v in d.items():
+        if isinstance(v, Path):
+            d[k] = str(v)
+        elif isinstance(v, (np.int, np.int32, np.int64)):
+            d[k] = int(v)
+        elif isinstance(v,  (np.float, np.float32, np.float64)):
+            d[k] = float(v)
+        elif isinstance(v, datetime.datetime):
+            d[k] = v.isoformat()
+
+    return d
+
+
+def load_extractor_from_json(json_file):
+    '''
+    Instantiates extractor from json file
+
+    Parameters
+    ----------
+    json_file: str or Path
+        Path to json file
+
+    Returns
+    -------
+    extractor: RecordingExtractor or SortingExtractor
+        The loaded extractor object
+    '''
+    return BaseExtractor.load_extractor_from_json(json_file)
+
+
+def load_extractor_from_dict(d):
+    '''
+    Instantiates extractor from dictionary
+
+    Parameters
+    ----------
+    d: dictionary
+        Python dictionary
+
+    Returns
+    -------
+    extractor: RecordingExtractor or SortingExtractor
+        The loaded extractor object
+    '''
+    return BaseExtractor.load_extractor_from_dict(d)

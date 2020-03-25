@@ -9,6 +9,7 @@ from .extractors.kilosortextractors.kilosortextractors import KiloSortSortingExt
 from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor, NumpySortingExtractor
 from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor, NwbSortingExtractor
 from .extractors.maxonerecordingextractor import MaxOneRecordingExtractor
+from .extractors.mea1krecordingextractor import Mea1kRecordingExtractor
 from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
 from .extractors.phyextractors.phyextractors import PhyRecordingExtractor, PhySortingExtractor
 from .extractors.bindatrecordingextractor.bindatrecordingextractor import BinDatRecordingExtractor
@@ -18,7 +19,10 @@ from .extractors.spikeglxrecordingextractor.spikeglxrecordingextractor import Sp
 from .extractors.tridescloussortingextractor.tridescloussortingextractor import TridesclousSortingExtractor
 from .extractors.npzsortingextractor.npzsortingextractor import NpzSortingExtractor
 from .extractors.mcsh5recordingextractor.mcsh5recordingextractor import MCSH5RecordingExtractor
+from .extractors.shybridextractors import SHYBRIDRecordingExtractor, SHYBRIDSortingExtractor
 from .extractors.nixioextractors.nixioextractors import NIXIORecordingExtractor, NIXIOSortingExtractor
+from .extractors.neoextractors import (PlexonRecordingExtractor, PlexonSortingExtractor,
+                                        NeuralynxRecordingExtractor, NeuralynxSortingExtractor)
 
 
 recording_extractor_full_list = [
@@ -35,8 +39,15 @@ recording_extractor_full_list = [
     SpikeGLXRecordingExtractor,
     PhyRecordingExtractor,
     MaxOneRecordingExtractor,
+    Mea1kRecordingExtractor,
     MCSH5RecordingExtractor,
+    SHYBRIDRecordingExtractor,
     NIXIORecordingExtractor,
+    
+    # neo based
+    PlexonRecordingExtractor,
+    NeuralynxRecordingExtractor
+    
 ]
 
 recording_extractor_dict = {recording_class.extractor_name: recording_class for recording_class in recording_extractor_full_list}
@@ -54,7 +65,13 @@ sorting_extractor_full_list = [
     SpykingCircusSortingExtractor,
     TridesclousSortingExtractor,
     NpzSortingExtractor,
+    SHYBRIDSortingExtractor,
     NIXIOSortingExtractor,
+    
+    # neo based
+    PlexonSortingExtractor,
+    NeuralynxSortingExtractor,
+    
 ]
 
 installed_sorting_extractor_list = [sx for sx in sorting_extractor_full_list if sx.installed]

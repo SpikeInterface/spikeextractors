@@ -10,8 +10,9 @@ class TestTools(unittest.TestCase):
     def setUp(self):
         M = 32
         N = 10000
+        seed = 0
         sampling_frequency = 30000
-        X = np.random.normal(0, 1, (M, N))
+        X = np.random.RandomState(seed=seed).normal(0, 1, (M, N))
         self._X = X
         self._sampling_frequency = sampling_frequency
         self.RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency)
@@ -40,7 +41,7 @@ class TestTools(unittest.TestCase):
         n_group = 4
         for i in RX.get_channel_ids():
             channel_groups.append(i // n_group)
-        RX.set_channel_groups(RX.get_channel_ids(), channel_groups)
+        RX.set_channel_groups(channel_groups)
         RX.save_to_probe_file('tests/probe_test_no_groups.prb')
         RX.save_to_probe_file('tests/probe_test_groups.prb', grouping_property='group')
 
@@ -73,10 +74,17 @@ class TestTools(unittest.TestCase):
         assert np.allclose(data, self.RX.get_traces())
         del(data) # this close the file
 
-        # time_axis=1 chunk_size=99 do not work
-        with self.assertRaises(Exception) as context:
-            self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=1, dtype='float32', chunk_size=99)
+        # time_axis=0 chunk_mb=2
+        self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=0, dtype='float32', chunk_mb=2)
+        data = np.memmap(open(self.test_dir + 'rec.dat'), dtype='float32', mode='r', shape=(nb_sample, nb_chan)).T
+        assert np.allclose(data, self.RX.get_traces())
+        del (data)  # this close the file
 
+        # time_axis=1 chunk_mb=2
+        self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=1, dtype='float32', chunk_mb=2)
+        data = np.memmap(open(self.test_dir + 'rec.dat'), dtype='float32', mode='r', shape=(nb_chan, nb_sample))
+        assert np.allclose(data, self.RX.get_traces())
+        del (data)  # this close the file
 
 if __name__ == '__main__':
     unittest.main()

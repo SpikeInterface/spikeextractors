@@ -38,11 +38,13 @@ class NpzSortingExtractor(SortingExtractor):
             self._sampling_frequency = float(npz['sampling_frequency'][0])
         else:
             self._sampling_frequency = None
+        self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
     def get_unit_ids(self):
         return list(self.unit_ids)
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         spike_times = self.spike_indexes[self.spike_labels == unit_id]
         if start_frame is not None:
             spike_times = spike_times[spike_times >= start_frame]

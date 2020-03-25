@@ -1,21 +1,32 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import copy
+import tempfile
+import shutil
 import random
-from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, get_sub_extractors_by_property
+from pathlib import Path
+from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, \
+    get_sub_extractors_by_property
+from .baseextractor import BaseExtractor
 
-class RecordingExtractor(ABC):
+
+class RecordingExtractor(ABC, BaseExtractor):
     '''A class that contains functions for extracting important information
     from recorded extracellular data. It is an abstract class so all
     functions with the @abstractmethod tag must be implemented for the
     initialization to work.
-
- 
     '''
     def __init__(self):
+        BaseExtractor.__init__(self)
         self._epochs = {}
         self._channel_properties = {}
         self.id = random.randint(a=0, b=9223372036854775807)
+
+    def __del__(self):
+        if self._tmp_folder is not None:
+            try:
+                shutil.rmtree(self._tmp_folder)
+            except Exception as e:
+                print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
 
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
@@ -99,6 +110,9 @@ class RecordingExtractor(ABC):
         #       'This warning will be removed in future versions of SpikeInterface.')
         return len(self.get_channel_ids())
 
+    def get_dtype(self):
+        return self.get_traces(channel_ids=[self.get_channel_ids()[0]], start_frame=0, end_frame=1).dtype
+
     def frame_to_time(self, frame):
         '''This function converts a user-inputted frame index to a time with units of seconds.
 
@@ -173,14 +187,8 @@ class RecordingExtractor(ABC):
         num_channels = len(channel_ids)
         num_frames = self.get_num_frames()
         snippet_len_total = snippet_len_before + snippet_len_after
-        # snippets = []
         snippets = np.zeros((num_snippets, num_channels, snippet_len_total))
-        #TODO extract all waveforms in a chunk
-        pad_first = False
-        pad_last = False
-        pad_samples_first = 0
-        pad_samples_last = 0
-        snippet_idxs = np.array([], dtype=int)
+
         for i in range(num_snippets):
             snippet_chunk = np.zeros((num_channels, snippet_len_total))
             if (0 <= reference_frames[i]) and (reference_frames[i] < num_frames):
@@ -242,19 +250,21 @@ class RecordingExtractor(ABC):
         for channel_id in channel_ids:
             location = self.get_channel_property(channel_id, 'location')
             locations.append(location)
-        return locations
+        return np.array(locations)
 
-    def set_channel_groups(self, channel_ids, groups):
+    def set_channel_groups(self, groups, channel_ids=None):
         '''This function sets the group property of each specified channel
         id with the corresponding group of the passed in groups list.
 
         Parameters
         ----------
-        channel_ids: array_like
-            The channel ids (ints) for which the groups will be specified
         groups: array_like
-            A list of corresonding groups (ints) for the given channel_ids
+            A list of groups (ints) for the channel_ids
+        channel_ids: array_like or None
+            The channel ids (ints) for which the groups will be specified. If None, all channel ids are assumed
         '''
+        if channel_ids is None:
+            channel_ids = self.get_channel_ids()
         if len(channel_ids) == len(groups):
             for i in range(len(channel_ids)):
                 if isinstance(groups[i], (int, np.integer)):
@@ -505,15 +515,12 @@ class RecordingExtractor(ABC):
         start_frame: int
             The start frame of the epoch to be added (inclusive)
         end_frame: int
-            The end frame of the epoch to be added (exclusive)
-
+            The end frame of the epoch to be added (exclusive). If set to None, it will include the entire
+            recording after the start_frame.
         '''
-        # Default implementation only allows for frame info. Can override to put more info
         if isinstance(epoch_name, str):
-            if end_frame == np.inf:
-                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': end_frame}
-            else:
-                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
+            start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
+            self._epochs[epoch_name] = {'start_frame': start_frame, 'end_frame': end_frame}
         else:
             raise TypeError("epoch_name must be a string")
 
@@ -644,7 +651,7 @@ class RecordingExtractor(ABC):
         save_to_probe_file(self, probe_file, grouping_property=grouping_property, radius=radius,
                            graph=graph, geometry=geometry, verbose=verbose)
 
-    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None):
+    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
         '''Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
@@ -657,10 +664,14 @@ class RecordingExtractor(ABC):
         dtype: dtype
             Type of the saved data. Default float32
         chunk_size: None or int
-            If not None then the copy done by chunk size.
+            If not None then the file is saved in chunks.
             This avoid to much memory consumption for big files.
+            If 'auto' the file is saved in chunks of ~ 500Mb
+        chunk_mb: None or int
+            Chunk size in Mb (default 500Mb)
         '''
-        write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size)
+        write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size,
+                                   chunk_mb=chunk_mb)
    
     def get_sub_extractors_by_property(self, property_name, return_property_list=False):
         '''Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given
@@ -691,6 +702,80 @@ class RecordingExtractor(ABC):
                                                       return_property_list=return_property_list)
             return sub_list
 
+    def get_tmp_folder(self):
+        '''
+        Returns temporary folder associated to the recording extractor
+
+        Returns
+        -------
+        temp_folder: Path
+            The temporary folder
+        '''
+        if self._tmp_folder is None:
+            self._tmp_folder = Path(tempfile.mkdtemp())
+        return self._tmp_folder
+
+    def set_tmp_folder(self, folder):
+        '''
+        Sets temporary folder
+
+        Parameters
+        ----------
+        folder: str or Path
+            The temporary folder
+        '''
+        self._tmp_folder = Path(folder)
+
+    def allocate_array(self, memmap, shape=None, dtype=None, name=None, array=None):
+        '''
+        Allocates a memory or memmap array
+
+        Parameters
+        ----------
+        memmap: bool
+            If True, a memmap array is created in the sorting temporary folder
+        shape: tuple
+            Shape of the array. If None array must be given
+        dtype: dtype
+            Dtype of the array. If None array must be given
+        name: str or None
+            Name (root) of the file (if memmap is True). If None, a random name is generated
+        array: np.array
+            If array is given, shape and dtype are initialized based on the array. If memmap is True, the array is then
+            deleted to clear memory
+
+        Returns
+        -------
+        arr: np.array or np.memmap
+            The allocated memory or memmap array
+        '''
+        if memmap:
+            tmp_folder = self.get_tmp_folder()
+            if array is not None:
+                shape = array.shape
+                dtype = array.dtype
+            else:
+                assert shape is not None and dtype is not None, "Pass 'shape' and 'dtype' arguments"
+            if name is None:
+                tmp_file = tempfile.NamedTemporaryFile(suffix=".raw", dir=tmp_folder).name
+            else:
+                if Path(name).suffix == '':
+                    tmp_file = tmp_folder / (name + '.raw')
+                else:
+                    tmp_file = tmp_folder / name
+            arr = np.memmap(tmp_file, mode='w+', shape=shape, dtype=dtype)
+            if array is not None:
+                arr[:] = array
+                del array
+            else:
+                arr[:] = 0
+        else:
+            if array is not None:
+                arr = array
+            else:
+                arr = np.zeros(shape, dtype=dtype)
+        return arr
+
     @staticmethod
     def write_recording(recording, save_path):
         '''This function writes out the recorded file of a given recording
@@ -710,3 +795,19 @@ class RecordingExtractor(ABC):
         '''
         raise NotImplementedError("The write_recording function is not \
                                   implemented for this extractor")
+
+
+    def _cast_start_end_frame(self, start_frame, end_frame):
+        if isinstance(start_frame, (float, np.float)):
+            start_frame = int(start_frame)
+        elif isinstance(start_frame, (int, np.integer, type(None))):
+            start_frame = start_frame
+        else:
+            raise ValueError("start_frame must be an int, float (not infinity), or None")
+        if isinstance(end_frame, (float, np.float)):
+            end_frame = int(end_frame)
+        elif isinstance(end_frame, (int, np.integer, type(None))):
+            end_frame = end_frame
+        else:
+            raise ValueError("end_frame must be an int, float (not infinity), or None")
+        return start_frame, end_frame

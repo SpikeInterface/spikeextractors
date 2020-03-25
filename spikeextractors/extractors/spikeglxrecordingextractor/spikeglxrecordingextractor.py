@@ -10,9 +10,11 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = True
+    is_dumpable = True
+
     mode = 'file'
     extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
+        {'name': 'file_path', 'type': 'file', 'title': "Path to neuropixels ap or lf file"},
         {'name': 'x_pitch', 'type': 'int', 'value':21, 'default':21, 'title': "x_pitch for Neuropixels probe (default 21)"},
         {'name': 'y_pitch', 'type': 'int', 'value':20, 'default':20, 'title': "y_pitch for Neuropixels probe (default 20)"},
     ]
@@ -63,6 +65,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # set gains - convert from int16 to uVolt
         self.set_channel_gains(self._channels, gains*1e6)
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'x_pitch': x_pitch, 'y_pitch': y_pitch}
 
 
     def get_channel_ids(self):
@@ -75,6 +78,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
