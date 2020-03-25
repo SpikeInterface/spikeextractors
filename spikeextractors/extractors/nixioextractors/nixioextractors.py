@@ -1,14 +1,15 @@
 import os
 import numpy as np
 from collections.abc import Iterable
+from pathlib import Path
 try:
     import nixio as nix
     HAVE_NIXIO = True
 except ImportError:
     HAVE_NIXIO = False
 
-from ...recordingextractor import RecordingExtractor
-from ...sortingextractor import SortingExtractor
+from spikeextractors import RecordingExtractor
+from spikeextractors import SortingExtractor
 
 # error message when not installed
 missing_nixio_msg = ("To use the NIXIORecordingExtractor install nixio:"
@@ -17,10 +18,12 @@ missing_nixio_msg = ("To use the NIXIORecordingExtractor install nixio:"
 
 class NIXIORecordingExtractor(RecordingExtractor):
 
-    extractor_name = 'NIXIORecordingExtractor'
+    extractor_name = 'NIXIORecording'
     has_default_locations = False
     installed = HAVE_NIXIO
     is_writable = True
+    is_dumpable = True
+
     mode = 'file'
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
@@ -32,6 +35,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         self._file = nix.File.open(file_path, nix.FileMode.ReadOnly)
         self._load_properties()
+        self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
     def __del__(self):
         self._file.close()
@@ -59,6 +63,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
         return sampling_frequency
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if channel_ids:
             channels = np.array([self._traces[cid] for cid in channel_ids])
         else:
@@ -163,6 +168,7 @@ class NIXIOSortingExtractor(SortingExtractor):
             sfreq = md["sampling_frequency"]
             self._sampling_frequency = sfreq
         self._load_properties()
+        self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
     def __del__(self):
         self._file.close()
@@ -176,6 +182,7 @@ class NIXIOSortingExtractor(SortingExtractor):
         return [int(da.label) for da in self._spike_das]
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         name = "spikes-{}".format(unit_id)
         da = self._spike_das[name]
         return da[start_frame:end_frame]

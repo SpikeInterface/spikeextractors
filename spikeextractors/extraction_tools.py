@@ -3,6 +3,10 @@ import csv
 import os
 import sys
 from pathlib import Path
+import json
+import datetime
+import spikeextractors
+from spikeextractors.baseextractor import BaseExtractor
 
 
 def read_python(path):
@@ -74,7 +78,6 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
         The extractor containing all of the probe information.
     '''
     from .subrecordingextractor import SubRecordingExtractor
-    from .subsortingextractor import SubSortingExtractor
     probe_file = Path(probe_file)
     if probe_file.suffix == '.prb':
         probe_dict = read_python(probe_file)
@@ -86,14 +89,10 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                 for key_prop, prop_val in cgroup.items():
                     if key_prop == 'channels':
                         ordered_channels = np.concatenate((ordered_channels, prop_val))
-
-            if list(ordered_channels) == recording.get_channel_ids():
-                subrecording = recording
-            else:
-                if not np.all([chan in recording.get_channel_ids() for chan in ordered_channels]) and verbose:
-                    print('Some channel in PRB file are not in original recording')
-                present_ordered_channels = [chan for chan in ordered_channels if chan in recording.get_channel_ids()]
-                subrecording = SubRecordingExtractor(recording, channel_ids=present_ordered_channels)
+            if not np.all([chan in recording.get_channel_ids() for chan in ordered_channels]) and verbose:
+                print('Some channel in PRB file are not in original recording')
+            present_ordered_channels = [chan for chan in ordered_channels if chan in recording.get_channel_ids()]
+            subrecording = SubRecordingExtractor(recording, channel_ids=present_ordered_channels)
             for cgroup_id in groups:
                 cgroup = probe_dict['channel_groups'][cgroup_id]
                 if 'channels' not in cgroup.keys() and len(groups) > 1:
@@ -148,7 +147,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                 "all channel_ids in 'channel_map' must be in the original recording channel ids"
             subrecording = SubRecordingExtractor(recording, channel_ids=channel_map)
         else:
-            subrecording = recording
+            subrecording = SubRecordingExtractor(recording, channel_ids=recording.get_channel_ids())
         with probe_file.open() as csvfile:
             posreader = csv.reader(csvfile)
             row_count = 0
@@ -168,10 +167,12 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 
+    subrecording._kwargs['probe_file'] = str(probe_file.absolute())
     return subrecording
 
 
-def save_to_probe_file(recording, probe_file, format=None, radius=100, dimensions=None, verbose=False):
+def save_to_probe_file(recording, probe_file, grouping_property=None, radius=None,
+                       graph=True, geometry=True, verbose=False):
     '''Saves probe file from the channel information of the given recording
     extractor.
 
@@ -181,8 +182,14 @@ def save_to_probe_file(recording, probe_file, format=None, radius=100, dimension
         The recording extractor to save probe file from
     probe_file: str
         file name of .prb or .csv file to save probe information to
-    format: str (optional)
-        Format for .prb file. It can be either 'klusta' or 'spyking_circus'. Default is None.
+    grouping_property: str (default None)
+        If grouping_property is a shared_channel_property, different groups are saved based on the property.
+    radius: float (default None)
+        Adjacency radius (used by some sorters). If None it is not saved to the probe file.
+    graph: bool
+        If True, the adjacency graph is saved (default=True)
+    geometry: bool
+        If True, the geometry is saved (default=True)
     verbose: bool
         If True, output is verbose
     '''
@@ -212,7 +219,8 @@ def save_to_probe_file(recording, probe_file, format=None, radius=100, dimension
                 raise AttributeError("Recording extractor needs to have "
                                      "'location' property to save .csv probe file")
     elif probe_file.suffix == '.prb':
-        _export_prb_file(recording, probe_file, format, radius=radius, dimensions=dimensions, verbose=verbose)
+        _export_prb_file(recording, probe_file, grouping_property=grouping_property, radius=radius, graph=graph,
+                         geometry=geometry, verbose=verbose)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be saved.")
 
@@ -249,7 +257,8 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
     return samples
 
 
-def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, chunk_size=None):
+def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
+                               time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
     '''Saves the traces of a recording extractor in binary .dat format.
 
     Parameters
@@ -258,19 +267,41 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
         The recording extractor object to be saved in .dat format
     save_path: str
         The path to the file.
+    file_handle: file handle
+        The file handle to dump data. This can be used to append data to an header. In case file_handle is given,
+        the file is NOT closed after writing the binary data.
     time_axis: 0 (default) or 1
         If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
         If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
     dtype: dtype
         Type of the saved data. Default float32.
     chunk_size: None or int
-        If not None then the copy done by chunk size.
-        This avoid to much memory consumption for big files.
+        Number of chunks to save the file in. This avoid to much memory consumption for big files.
+        If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
+    chunk_mb: None or int
+        Chunk size in Mb (default 500Mb)
     '''
-    save_path = Path(save_path)
-    if save_path.suffix == '':
-        # when suffix is already raw/bin/dat do not change it.
-        save_path = save_path.parent / (save_path.name + '.dat')
+    assert save_path is not None or file_handle is not None, "Provide 'save_path' or 'file handle'"
+
+    if save_path is not None:
+        save_path = Path(save_path)
+        if save_path.suffix == '':
+            # when suffix is already raw/bin/dat do not change it.
+            save_path = save_path.parent / (save_path.name + '.dat')
+
+    if chunk_size is not None or chunk_mb is not None:
+        if time_axis == 1:
+            print("Chunking disabled due to 'time_axis' == 1")
+            chunk_size = None
+            chunk_mb = None
+
+    # set chunk size
+    if chunk_size is not None:
+        chunk_size = int(chunk_size)
+    elif chunk_mb is not None:
+        n_bytes = recording.get_dtype().itemsize
+        max_size = int(chunk_mb * 1e6)  # set Mb per chunk
+        chunk_size = max_size // (recording.get_num_channels() * n_bytes)
 
     if chunk_size is None:
         traces = recording.get_traces()
@@ -278,24 +309,36 @@ def write_to_binary_dat_format(recording, save_path, time_axis=0, dtype=None, ch
             traces = traces.astype(dtype)
         if time_axis == 0:
             traces = traces.T
-        with save_path.open('wb') as f:
-            traces.tofile(f)
+        if save_path is not None:
+            with save_path.open('wb') as f:
+                traces.tofile(f)
+        else:
+            traces.tofile(file_handle)
     else:
-        assert time_axis ==0, 'chunked writting work only with time_axis 0'
+        # chunk size is not None
         n_sample = recording.get_num_frames()
-        n_chan = recording.get_num_channels()
         n_chunk = n_sample // chunk_size
         if n_sample % chunk_size > 0:
             n_chunk += 1
-        with save_path.open('wb') as f:
+        if save_path is not None:
+            with save_path.open('wb') as f:
+                for i in range(n_chunk):
+                    traces = recording.get_traces(start_frame=i * chunk_size,
+                                                  end_frame=min((i + 1) * chunk_size, n_sample))
+                    if dtype is not None:
+                        traces = traces.astype(dtype)
+                    if time_axis == 0:
+                        traces = traces.T
+                    f.write(traces.tobytes())
+        else:
             for i in range(n_chunk):
-                traces = recording.get_traces(start_frame=i*chunk_size,
-                                              end_frame=min((i+1)*chunk_size, n_sample))
+                traces = recording.get_traces(start_frame=i * chunk_size,
+                                              end_frame=min((i + 1) * chunk_size, n_sample))
                 if dtype is not None:
                     traces = traces.astype(dtype)
                 if time_axis == 0:
                     traces = traces.T
-                f.write(traces.tobytes())
+                file_handle.write(traces.tobytes())
     return save_path
 
 
@@ -318,10 +361,8 @@ def get_sub_extractors_by_property(extractor, property_name, return_property_lis
     sub_list, prop_list
         If return_property_list is True, the property list will be returned as well.
     '''
-    from .recordingextractor import RecordingExtractor
-    from .sortingextractor import SortingExtractor
-    from .subrecordingextractor import SubRecordingExtractor
-    from .subsortingextractor import SubSortingExtractor
+    from spikeextractors import RecordingExtractor, SortingExtractor, SubRecordingExtractor, SubSortingExtractor
+
     if isinstance(extractor, RecordingExtractor):
         if property_name not in extractor.get_shared_channel_property_names():
             raise ValueError("'property_name' must be must be a property of the recording channels")
@@ -360,8 +401,8 @@ def get_sub_extractors_by_property(extractor, property_name, return_property_lis
         raise ValueError("'extractor' must be a RecordingExtractor or a SortingExtractor")
 
 
-def _export_prb_file(recording, file_name, format=None, adjacency_distance=None, graph=False, geometry=True, radius=100,
-                     dimensions='all', verbose=False):
+def _export_prb_file(recording, file_name, grouping_property=None, graph=True, geometry=True,
+                     radius=None, adjacency_distance=100, verbose=False):
     '''Exports .prb file
 
     Parameters
@@ -370,37 +411,29 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
         The recording extractor to save probe file from
     file_name: str
         probe filename to be exported to
-    format: str
-        'klusta' | 'spiking_circus' (defualt=None)
-    adjacency_distance: float
-        distance to consider 2 channels adjacent (if 'location' is a property)
+    grouping_property: str (default None)
+        If grouping_property is a shared_channel_property, different groups are saved based on the property.
+    radius: float (default None)
+        Adjacency radius (used by some sorters). If None it is not saved to the probe file.
     graph: bool
-        if True graph information is extracted and saved
-    geometry:
-        if True geometry is saved
-    radius: float
-        radius for template-matching (if format is 'spyking_circus')
+        If True, the adjacency graph is saved (default=True)
+    geometry: bool
+        If True, the geometry is saved (default=True)
+    adjacency_distance: float
+        Distance to consider two channels to adjacent (if 'location' is a property). If radius is given,
+        then adjacency_distance is set to the radius.
     '''
-    if format == 'klusta':
-        graph = True
-        geometry = False
-    elif format == 'spyking_circus':
-        graph = False
-        geometry = True
-    else:
-        graph = True
-        geometry = True
-
     file_name = Path(file_name)
     assert file_name is not None
     abspath = file_name.absolute()
+
+    if radius is not None:
+        adjacency_distance = radius
 
     if geometry:
         if 'location' in recording.get_shared_channel_property_names():
             positions = np.array([recording.get_channel_property(chan, 'location')
                                   for chan in recording.get_channel_ids()])
-            if dimensions is not None:
-                positions = positions[:, dimensions]
         else:
             if verbose:
                 print("'location' property is not available and it will not be saved.")
@@ -409,14 +442,19 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
     else:
         positions = None
 
-    if 'group' in recording.get_shared_channel_property_names():
-        groups = np.array([recording.get_channel_property(chan, 'group') for chan in recording.get_channel_ids()])
-        channel_groups = np.unique([groups])
+    if grouping_property is not None:
+        if grouping_property in recording.get_shared_channel_property_names():
+            grouping_property_groups = np.array([recording.get_channel_property(chan, grouping_property)
+                                                 for chan in recording.get_channel_ids()])
+            channel_groups = np.unique([grouping_property_groups])
+        else:
+            if verbose:
+                print(f"{grouping_property} property is not available and it will not be saved.")
+            channel_groups = [0]
+            grouping_property_groups = np.array([0] * recording.get_num_channels())
     else:
-        if verbose:
-            print("'group' property is not available and it will not be saved.")
         channel_groups = [0]
-        groups = np.array([0] * recording.get_num_channels())
+        grouping_property_groups = np.array([0] * recording.get_num_channels())
 
     n_elec = recording.get_num_channels()
 
@@ -426,7 +464,7 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
             adj_graph = []
             for chg in channel_groups:
                 group_graph = []
-                elecs = list(np.where(groups == chg)[0])
+                elecs = list(np.where(grouping_property_groups == chg)[0])
                 for i in range(len(elecs)):
                     for j in range(i, len(elecs)):
                         if elecs[i] != elecs[j]:
@@ -438,7 +476,7 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
             adj_graph = []
             for chg in channel_groups:
                 group_graph = []
-                elecs = list(np.where(groups == chg)[0])
+                elecs = list(np.where(grouping_property_groups == chg)[0])
                 for i in range(len(elecs)):
                     for j in range(i, len(elecs)):
                         if elecs[i] != elecs[j]:
@@ -446,15 +484,14 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
                 adj_graph.append(group_graph)
 
     with abspath.open('w') as f:
-        f.write('\n')
-        if format == 'spyking_circus':
-            f.write('total_nb_channels = ' + str(n_elec) + '\n')
+        f.write('total_nb_channels = ' + str(n_elec) + '\n')
+        if radius is not None:
             f.write('radius = ' + str(radius) + '\n')
         f.write('channel_groups = {\n')
         if len(channel_groups) > 0:
             for i_chg, chg in enumerate(channel_groups):
                 f.write("     " + str(int(chg)) + ": ")
-                elecs = list(np.where(groups == chg)[0])
+                elecs = list(np.where(grouping_property_groups == chg)[0])
                 f.write("\n        {\n")
                 f.write("           'channels': " + str(elecs) + ',\n')
                 if graph:
@@ -462,8 +499,6 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
                         f.write("           'graph':  " + str(adj_graph[0]) + ',\n')
                     else:
                         f.write("           'graph':  " + str(adj_graph[i_chg]) + ',\n')
-                else:
-                    f.write("           'graph':  [],\n")
                 if geometry:
                     f.write("           'geometry':  {\n")
                     for i, pos in enumerate(positions[elecs]):
@@ -479,3 +514,52 @@ def _export_prb_file(recording, file_name, format=None, adjacency_distance=None,
                 f.write("           'graph':  [],\n")
                 f.write('        },\n')
             f.write('}\n')
+
+
+def _check_json(d):
+    # quick hack to ensure json writable
+    for k, v in d.items():
+        if isinstance(v, Path):
+            d[k] = str(v)
+        elif isinstance(v, (np.int, np.int32, np.int64)):
+            d[k] = int(v)
+        elif isinstance(v,  (np.float, np.float32, np.float64)):
+            d[k] = float(v)
+        elif isinstance(v, datetime.datetime):
+            d[k] = v.isoformat()
+
+    return d
+
+
+def load_extractor_from_json(json_file):
+    '''
+    Instantiates extractor from json file
+
+    Parameters
+    ----------
+    json_file: str or Path
+        Path to json file
+
+    Returns
+    -------
+    extractor: RecordingExtractor or SortingExtractor
+        The loaded extractor object
+    '''
+    return BaseExtractor.load_extractor_from_json(json_file)
+
+
+def load_extractor_from_dict(d):
+    '''
+    Instantiates extractor from dictionary
+
+    Parameters
+    ----------
+    d: dictionary
+        Python dictionary
+
+    Returns
+    -------
+    extractor: RecordingExtractor or SortingExtractor
+        The loaded extractor object
+    '''
+    return BaseExtractor.load_extractor_from_dict(d)

@@ -181,7 +181,7 @@ def GainCorrectNI(dataArray, chanList, meta):
 
     # make array of floats to return. dataArray contains only the channels
     # in chanList, so output matches that shape
-    convArray = np.zeros(dataArray.shape, dtype=float)
+    # convArray = np.zeros(dataArray.shape, dtype=float)
     conv = np.zeros(len(chanList), dtype=float)
     for i in range(0, len(chanList)):
         j = chanList[i]             # index into timepoint
@@ -213,7 +213,7 @@ def GainCorrectIM(dataArray, chanList, meta):
 
     # make array of floats to return. dataArray contains only the channels
     # in chanList, so output matches that shape
-    convArray = np.zeros(dataArray.shape, dtype='float')
+    # convArray = np.zeros(dataArray.shape, dtype='float')
     conv = np.zeros(len(chanList), dtype=float)
     for i in range(0, len(chanList)):
         j = chanList[i]     # index into timepoint

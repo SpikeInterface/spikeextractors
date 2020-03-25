@@ -4,17 +4,17 @@ import numpy as np
 
 try:
     import h5py
-    HAVE_MAX = True
+    HAVE_MEA1k = True
 except ImportError:
-    HAVE_MAX = False
+    HAVE_MEA1k = False
 
 
-class MaxOneRecordingExtractor(RecordingExtractor):
+class Mea1kRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'MaxOneRecording'
     has_default_locations = True
-    installed = HAVE_MAX  # check at class level if installed or not
-    is_writable = False
+    installed = HAVE_MEA1k  # check at class level if installed or not
+    is_writable = True
     is_dumpable = True
     mode = 'file'
     extractor_gui_params = [
@@ -30,16 +30,17 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._recordings = None
         self._filehandle = None
         self._mapping = None
+        self._signals = None
         self._initialize()
         self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
     def _initialize(self):
-        self._filehandle = h5py.File(self._file_path, 'r')
-        self._mapping = self._filehandle['mapping']
-        self._channel_ids = self._mapping['channel']
+        self._filehandle = h5py.File(self._file_path, mode='r')
+        self._mapping = self._filehandle['ephys']['mapping']
+        self._channel_ids = list(self._mapping['channel'])
         self._num_channels = len(self._channel_ids)
-        self._fs = float(20000)
-        self._signals = self._filehandle.get('sig')
+        self._fs = float(self._filehandle['ephys']['frame_rate'][()])
+        self._signals = self._filehandle['ephys']['signal']
         self._num_frames = self._signals.shape[1]
 
         for i_ch, ch in enumerate(self.get_channel_ids()):
@@ -75,3 +76,32 @@ class MaxOneRecordingExtractor(RecordingExtractor):
             assert channel_ids in self.get_channel_ids()
             channel_idx = self.get_channel_ids().index(channel_ids)
             return self._signals[np.array(channel_idx), start_frame:end_frame]
+
+    @staticmethod
+    def write_recording(recording, save_path):
+        save_path = Path(save_path)
+        if save_path.suffix == '':
+            save_path = Path(str(save_path) + '.h5')
+        mapping_dtype = np.dtype([('electrode', np.int32), ('x', np.float64), ('y', np.float64),
+                                  ('channel', np.int32)])
+
+        assert 'location' in recording.get_shared_channel_property_names(), "'location' property is needed to write " \
+                                                                            "max1k format"
+
+        with h5py.File(save_path, 'w') as f:
+            f.create_group('ephys')
+            ephys = f['ephys']
+            ephys.create_dataset('frame_rate', data=recording.get_sampling_frequency())
+            ephys.create_dataset('frame_numbers', data=np.arange(recording.get_num_frames()))
+            # save mapping
+            mapping = np.empty(recording.get_num_channels(), dtype=mapping_dtype)
+            x = recording.get_channel_locations()[:, 0]
+            y = recording.get_channel_locations()[:, 1]
+            for i, ch in enumerate(recording.get_channel_ids()):
+                mapping[i] = (ch, x[i], y[i], ch)
+            ephys.create_dataset('mapping', data=mapping)
+            # save traces
+            ephys.create_dataset('signal', data=recording.get_traces())
+            
+
+

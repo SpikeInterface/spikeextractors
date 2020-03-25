@@ -11,6 +11,6 @@ from .extractorlist import *
 
 from . import example_datasets
 from .extraction_tools import load_probe_file, save_to_probe_file, read_binary, write_to_binary_dat_format, \
-    get_sub_extractors_by_property
+    get_sub_extractors_by_property, load_extractor_from_json, load_extractor_from_dict
 
 from .version import version as __version__

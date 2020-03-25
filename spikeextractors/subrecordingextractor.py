@@ -5,8 +5,11 @@ import numpy as np
 # Encapsulates a sub-dataset
 
 class SubRecordingExtractor(RecordingExtractor):
+    extractor_name = 'SubRecording'
+
     def __init__(self, parent_recording, *, channel_ids=None, renamed_channel_ids=None, start_frame=None,
                  end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         self._parent_recording = parent_recording
         self._channel_ids = channel_ids
         self._renamed_channel_ids = renamed_channel_ids
@@ -26,7 +29,12 @@ class SubRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         self.copy_channel_properties(parent_recording, channel_ids=self._renamed_channel_ids)
 
+        # update dump dict
+        self._kwargs = {'parent_recording': parent_recording.make_serialized_dict(), 'channel_ids': channel_ids,
+                        'renamed_channel_ids': renamed_channel_ids, 'start_frame': start_frame, 'end_frame': end_frame}
+
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
@@ -42,11 +50,7 @@ class SubRecordingExtractor(RecordingExtractor):
         return self._renamed_channel_ids
 
     def get_num_frames(self):
-        if self._end_frame == np.inf:
-            end_frame = self._parent_recording.get_num_frames()
-        else:
-            end_frame = self._end_frame
-        return end_frame - self._start_frame
+        return self._end_frame - self._start_frame
 
     def get_sampling_frequency(self):
         return self._parent_recording.get_sampling_frequency()

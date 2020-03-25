@@ -10,9 +10,10 @@ except ImportError:
 
 class IntanRecordingExtractor(RecordingExtractor):
 
-    extractor_name = 'IntanRecordingExtractor'
+    extractor_name = 'IntanRecording'
     has_default_locations = False
     is_writable = False
+    is_dumpable = True
     mode = 'file'
     installed = HAVE_INTAN  # check at class level if installed or not
     extractor_gui_params = [
@@ -27,6 +28,7 @@ class IntanRecordingExtractor(RecordingExtractor):
             "Only '.rhd' and '.rhs' files are supported"
         self._recording_file = file_path
         self._recording = pyintan.File(file_path, verbose)
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'verbose': verbose}
 
     def get_channel_ids(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))
@@ -38,6 +40,7 @@ class IntanRecordingExtractor(RecordingExtractor):
         return float(self._recording.sample_rate.rescale('Hz').magnitude)
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
