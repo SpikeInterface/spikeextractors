@@ -1,5 +1,6 @@
 from spikeextractors import RecordingExtractor
 import numpy as np
+from pathlib import Path
 
 try:
     import h5py
@@ -14,6 +15,8 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     has_default_locations = False
     installed = HAVE_MCSH5  # check at class level if installed or not
     is_writable = False
+    is_dumpable = True
+
     mode = 'file'
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
@@ -27,8 +30,10 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         self._verbose = verbose
         self._available_stream_ids = self.get_available_stream_ids()
         self.set_stream_id(stream_id)
-        
+
         RecordingExtractor.__init__(self)
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'stream_id': stream_id,
+                        'verbose': verbose}
 
     def __del__(self):
         self._rf.close()
@@ -43,9 +48,9 @@ class MCSH5RecordingExtractor(RecordingExtractor):
         return self._samplingRate
 
     def set_stream_id(self, stream_id):
-        assert stream_id in self._available_stream_ids,  "The specified stream ID is unavailable."
+        assert stream_id in self._available_stream_ids, "The specified stream ID is unavailable."
         self._stream_id = stream_id
-        
+
         if hasattr(self, '_rf'):
             self._rf.close()
 
@@ -66,27 +71,38 @@ class MCSH5RecordingExtractor(RecordingExtractor):
             return list(range(len(analog_stream_names)))
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = self.get_num_frames()
         if channel_ids is None:
-            channel_idxs = self._channel_ids
+            channel_idxs = []
+            for m in self._channel_ids:
+                assert m in self._channel_ids, 'channel_id {} not found'.format(m)
+                channel_idxs.append(np.where(np.array(self._channel_ids) == m)[0][0])
         else:
             if isinstance(channel_ids, (int, np.integer)):
                 assert channel_ids in self._channel_ids, 'channel_id {} not found'.format(channel_ids)
-                channel_idxs = np.where(self._channel_ids == channel_ids)[0][0]
+                channel_idxs = np.where(np.array(self._channel_ids) == channel_ids)[0][0]
             else:
                 channel_idxs = []
                 for m in channel_ids:
                     assert m in self._channel_ids, 'channel_id {} not found'.format(m)
-                    channel_idxs.append(np.where(self._channel_ids == m)[0][0])
+                    channel_idxs.append(np.where(np.array(self._channel_ids) == m)[0][0])
 
         stream = self._rf.require_group('/Data/Recording_0/AnalogStream/Stream_' + str(self._stream_id))
-        data_v = np.array(stream.get('ChannelData'), dtype=np.int) * self._convFact.astype(float) * \
-                 (10.0 ** self._exponent)
+        conv = self._convFact.astype(float) * (10.0 ** self._exponent)
 
-        return data_v[channel_idxs, start_frame:end_frame]
+        if np.array(channel_idxs).size > 1:
+            if np.any(np.diff(channel_idxs) < 0):
+                sorted_idx = np.argsort(channel_idxs)
+                recordings = stream.get('ChannelData')[np.sort(channel_idxs), start_frame:end_frame]
+                return recordings[sorted_idx] * conv
+            else:
+                return stream.get('ChannelData')[np.sort(channel_idxs), start_frame:end_frame] * conv
+        else:
+            return stream.get('ChannelData')[np.array(channel_idxs), start_frame:end_frame] * conv
 
     @staticmethod
     def write_recording(recording, save_path):

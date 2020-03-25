@@ -17,6 +17,8 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
     has_default_locations = False
     installed = HAVE_KLSX  # check at class level if installed or not
     is_writable = True
+    is_dumpable = True
+
     mode = 'folder'
     extractor_gui_params = [
         {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
@@ -37,6 +39,8 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
         BinDatRecordingExtractor.__init__(self, file_path=dat_file, sampling_frequency=sampling_frequency, numchan=n_channels,
                                           dtype=dtype)
 
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
+
 
 class KlustaSortingExtractor(SortingExtractor):
     extractor_name = 'KlustaSortingExtractor'
@@ -48,6 +52,7 @@ class KlustaSortingExtractor(SortingExtractor):
     installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
     is_writable = True
     mode = 'file_or_folder'
+
     def __init__(self, file_or_folder_path):
         assert HAVE_KLSX, "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"
         SortingExtractor.__init__(self)
@@ -73,7 +78,7 @@ class KlustaSortingExtractor(SortingExtractor):
         except Exception as e:
             print("Could not load sampling frequency info")
 
-        F = h5py.File(kwikfile)
+        F = h5py.File(kwikfile, 'r')
         channel_groups = F.get('channel_groups')
         self._spiketrains = []
         self._unit_ids = []
@@ -105,10 +110,14 @@ class KlustaSortingExtractor(SortingExtractor):
         for i, u in enumerate(self._unit_ids):
             self.set_unit_property(u, 'group', groups[i])
 
+        self._kwargs = {'file_or_folder_path': str(Path(file_or_folder_path).absolute())}
+
+
     def get_unit_ids(self):
         return list(self._unit_ids)
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

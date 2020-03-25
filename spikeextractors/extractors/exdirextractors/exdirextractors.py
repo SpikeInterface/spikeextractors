@@ -1,6 +1,8 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 import numpy as np
+from pathlib import Path
+from copy import copy
 
 try:
     import exdir
@@ -12,9 +14,10 @@ except ImportError:
 
 
 class ExdirRecordingExtractor(RecordingExtractor):
-    extractor_name = 'ExdirRecordingExtractor'
+    extractor_name = 'ExdirRecording'
     has_default_locations = False
     installed = HAVE_EXDIR  # check at class level if installed or not
+    is_dumpable = True
     is_writable = True
     mode = 'folder'
     extractor_gui_params = [
@@ -33,7 +36,9 @@ class ExdirRecordingExtractor(RecordingExtractor):
         self._num_channels = self._recordings.shape[0]
         self._num_timepoints = self._recordings.shape[1]   
         RecordingExtractor.__init__(self)
-        
+
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
+
     def get_channel_ids(self):
         return list(range(self._num_channels))
 
@@ -44,6 +49,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
@@ -212,19 +218,20 @@ class ExdirSortingExtractor(SortingExtractor):
         exdir_group = exdir.File(folder_path, plugins=exdir.plugins.quantities)
 
         electrophysiology = None
+        sf = copy(sampling_frequency)
         if 'processing' in exdir_group.keys():
             if 'electrophysiology' in exdir_group['processing']:
                 electrophysiology = exdir_group['processing']['electrophysiology']
                 ephys_attrs = electrophysiology.attrs
                 if 'sample_rate' in ephys_attrs:
-                    sampling_frequency = ephys_attrs['sample_rate']
+                    sf = ephys_attrs['sample_rate']
         else:
-            if sampling_frequency is None:
+            if sf is None:
                 raise Exception("Sampling rate information not found. Please provide it with the 'sampling_frequency' "
                                 "argument")
             else:
-                sampling_frequency = sampling_frequency * pq.Hz
-        self._sampling_frequency = float(sampling_frequency.rescale('Hz').magnitude)
+                sf = sf * pq.Hz
+        self._sampling_frequency = float(sf.rescale('Hz').magnitude)
 
         if electrophysiology is None:
             raise Exception("'electrophysiology' group not found!")
@@ -247,7 +254,7 @@ class ExdirSortingExtractor(SortingExtractor):
                 if 'UnitTimes' in channel.keys():
                     for unit, unit_times in channel['UnitTimes'].items():
                         self._unit_ids.append(current_unit)
-                        self._spike_trains.append((unit_times['times'].data.rescale('s')*sampling_frequency).magnitude)
+                        self._spike_trains.append((unit_times['times'].data.rescale('s')*sf).magnitude)
                         attrs = unit_times.attrs
                         for k, v in attrs.items():
                             self.set_unit_property(current_unit, k, v)
@@ -256,11 +263,14 @@ class ExdirSortingExtractor(SortingExtractor):
                             wf = waveforms[unit_idxs]
                             self.set_unit_spike_features(current_unit, 'waveforms', wf)
                         current_unit += 1
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute()), 'sampling_frequency': sampling_frequency,
+                        'channel_group': channel_group, 'load_waveforms': load_waveforms}
 
     def get_unit_ids(self):
         return self._unit_ids
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

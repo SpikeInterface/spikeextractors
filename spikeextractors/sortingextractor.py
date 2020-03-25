@@ -1,11 +1,15 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import copy
+import json
+import os
+import tempfile
+from pathlib import Path
+import shutil
 from .extraction_tools import get_sub_extractors_by_property
+from .baseextractor import BaseExtractor
 
 
-
-class SortingExtractor(ABC):
+class SortingExtractor(ABC, BaseExtractor):
     '''A class that contains functions for extracting important information
     from spiked sorted data given a spike sorting software. It is an abstract
     class so all functions with the @abstractmethod tag must be implemented for
@@ -13,12 +17,20 @@ class SortingExtractor(ABC):
 
 
     '''
-
     def __init__(self):
+        BaseExtractor.__init__(self)
         self._epochs = {}
         self._unit_properties = {}
         self._unit_features = {}
         self._sampling_frequency = None
+        self.id = np.random.randint(low=0, high=9223372036854775807, dtype='int64')
+
+    def __del__(self):
+        if self._tmp_folder is not None:
+            try:
+                shutil.rmtree(self._tmp_folder)
+            except Exception as e:
+                print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
 
     @abstractmethod
     def get_unit_ids(self):
@@ -83,6 +95,7 @@ class SortingExtractor(ABC):
         '''
         self._sampling_frequency = sampling_frequency
 
+    # add idxs option!
     def set_unit_spike_features(self, unit_id, feature_name, value):
         '''This function adds a unit features data set under the given features
         name to the given unit.
@@ -102,7 +115,7 @@ class SortingExtractor(ABC):
                 if unit_id not in self._unit_features.keys():
                     self._unit_features[unit_id] = {}
                 if isinstance(feature_name, str) and len(value) == len(self.get_unit_spike_train(unit_id)):
-                    self._unit_features[unit_id][feature_name] = np.asarray(value)
+                    self._unit_features[unit_id][feature_name] = value  # np.asarray(value) this is to keep memmap object
                 else:
                     if not isinstance(feature_name, str):
                         raise ValueError("feature_name must be a string")
@@ -144,17 +157,25 @@ class SortingExtractor(ABC):
             An array containing all the features for each spike in the
             specified unit given the range of start and end frames.
         '''
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.get_unit_ids():
                 if unit_id not in self._unit_features.keys():
                     self._unit_features[unit_id] = {}
                 if isinstance(feature_name, str):
                     if feature_name in self._unit_features[unit_id].keys():
+                        spike_train = self.get_unit_spike_train(unit_id)
                         if start_frame is None:
                             start_frame = 0
                         if end_frame is None:
-                            end_frame = len(self.get_unit_spike_train(unit_id))
-                        return self._unit_features[unit_id][feature_name][start_frame:end_frame]
+                            end_frame = np.inf
+                        if start_frame == 0 and end_frame == np.inf:
+                            # keep memmap objects
+                            return self._unit_features[unit_id][feature_name]
+                        else:
+                            spike_indices = np.where(np.logical_and(spike_train >= start_frame,
+                                                                    spike_train < end_frame))
+                            return self._unit_features[unit_id][feature_name][spike_indices]
                     else:
                         raise ValueError(str(feature_name) + " has not been added to unit " + str(unit_id))
                 else:
@@ -214,7 +235,7 @@ class SortingExtractor(ABC):
                 raise ValueError(str(unit_id) + " is not a valid unit_id")
         else:
             raise ValueError(str(unit_id) + " must be an int")
-        
+
     def get_shared_unit_spike_feature_names(self, unit_ids=None):
         '''Get the intersection of unit feature names for a given set of units or for all units if unit_ids is None.
          Parameters
@@ -381,7 +402,7 @@ class SortingExtractor(ABC):
                 raise ValueError(str(unit_id) + " is not a valid unit id")
         else:
             raise TypeError(str(unit_id) + " must be an int")
-        
+
     def get_shared_unit_property_names(self, unit_ids=None):
         '''Get the intersection of unit property names for a given set of units or for all units if unit_ids is None.
          Parameters
@@ -485,7 +506,7 @@ class SortingExtractor(ABC):
 
     def add_epoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to your sorting extractor that tracks
-        a certain time period in your recording. It is stored in an internal
+        a certain time period in your sorting. It is stored in an internal
         dictionary of start and end frame tuples.
 
         Parameters
@@ -495,17 +516,14 @@ class SortingExtractor(ABC):
         start_frame: int
             The start frame of the epoch to be added (inclusive)
         end_frame: int
-            The end frame of the epoch to be added (exclusive)
-
+            The end frame of the epoch to be added (exclusive). If set to None, it will include the entire
+            sorting after the start_frame.
         '''
-        # Default implementation only allows for frame info. Can override to put more info
         if isinstance(epoch_name, str):
-            if end_frame == np.inf:
-                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': end_frame}
-            else:
-                self._epochs[epoch_name] = {'start_frame': int(start_frame), 'end_frame': int(end_frame)}
+            start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
+            self._epochs[epoch_name] = {'start_frame': start_frame, 'end_frame': end_frame}
         else:
-            raise ValueError("epoch_name must be a string")
+            raise TypeError("epoch_name must be a string")
 
     def remove_epoch(self, epoch_name):
         '''This function removes an epoch from your sorting extractor.
@@ -606,13 +624,87 @@ class SortingExtractor(ABC):
 
         '''
         if return_property_list:
-            sub_list, prop_list = get_sub_extractors_by_property(self, property_name=property_name, 
-                                                                return_property_list=return_property_list)
+            sub_list, prop_list = get_sub_extractors_by_property(self, property_name=property_name,
+                                                                 return_property_list=return_property_list)
             return sub_list, prop_list
         else:
-            sub_list = get_sub_extractors_by_property(self, property_name=property_name, 
+            sub_list = get_sub_extractors_by_property(self, property_name=property_name,
                                                       return_property_list=return_property_list)
             return sub_list
+
+    def get_tmp_folder(self):
+        '''
+        Returns temporary folder associated to the sorting extractor
+
+        Returns
+        -------
+        temp_folder: Path
+            The temporary folder
+        '''
+        if self._tmp_folder is None:
+            self._tmp_folder = Path(tempfile.mkdtemp())
+        return self._tmp_folder
+
+    def set_tmp_folder(self, folder):
+        '''
+        Sets temporary folder
+
+        Parameters
+        ----------
+        folder: str or Path
+            The temporary folder
+        '''
+        self._tmp_folder = Path(folder)
+
+    def allocate_array(self, memmap, shape=None, dtype=None, name=None, array=None):
+        '''
+        Allocates a memory or memmap array
+
+        Parameters
+        ----------
+        memmap: bool
+            If True, a memmap array is created in the sorting temporary folder
+        shape: tuple
+            Shape of the array. If None array must be given
+        dtype: dtype
+            Dtype of the array. If None array must be given
+        name: str or None
+            Name (root) of the file (if memmap is True). If None, a random name is generated
+        array: np.array
+            If array is given, shape and dtype are initialized based on the array. If memmap is True, the array is then
+            deleted to clear memory
+
+        Returns
+        -------
+        arr: np.array or np.memmap
+            The allocated memory or memmap array
+        '''
+        if memmap:
+            tmp_folder = self.get_tmp_folder()
+            if array is not None:
+                shape = array.shape
+                dtype = array.dtype
+            else:
+                assert shape is not None and dtype is not None, "Pass 'shape' and 'dtype' arguments"
+            if name is None:
+                tmp_file = tempfile.NamedTemporaryFile(suffix=".raw", dir=tmp_folder).name
+            else:
+                if Path(name).suffix == '':
+                    tmp_file = tmp_folder / (name + '.raw')
+                else:
+                    tmp_file = tmp_folder / name
+            arr = np.memmap(tmp_file, mode='w+', shape=shape, dtype=dtype)
+            if array is not None:
+                arr[:] = array
+                del array
+            else:
+                arr[:] = 0
+        else:
+            if array is not None:
+                arr = array
+            else:
+                arr = np.zeros(shape, dtype=dtype)
+        return arr
 
     @staticmethod
     def write_sorting(sorting, save_path):
@@ -633,3 +725,18 @@ class SortingExtractor(ABC):
         '''
         raise NotImplementedError("The write_sorting function is not \
                                   implemented for this extractor")
+
+    def _cast_start_end_frame(self, start_frame, end_frame):
+        if isinstance(start_frame, (float, np.float)):
+            start_frame = int(start_frame)
+        elif isinstance(start_frame, (int, np.integer, type(None))):
+            start_frame = start_frame
+        else:
+            raise ValueError("start_frame must be an int, float (not infinity), or None")
+        if isinstance(end_frame, (float, np.float)):
+            end_frame = int(end_frame)
+        elif isinstance(end_frame, (int, np.integer, type(None))):
+            end_frame = end_frame
+        else:
+            raise ValueError("end_frame must be an int, float (not infinity), or None")
+        return start_frame, end_frame
