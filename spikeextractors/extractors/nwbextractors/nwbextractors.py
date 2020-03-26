@@ -302,6 +302,185 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return self.channel_ids.tolist()
 
     @staticmethod
+    def add_electrodes(recording, nwbfile, metadata):
+        """
+        Auxiliary static method for nwbextractor.
+        Adds channels from recording object as electrodes to nwbfile object.
+        """
+        # Check for existing electrodes
+        if nwbfile.electrodes is not None:
+            nwb_elec_ids = nwbfile.electrodes.id.data[:]
+        else:
+            nwb_elec_ids = []
+
+        # Extractors channel groups must be integers, but Nwb electrodes group_name can be strings
+        # Number code for Nwb electrodes groups
+        nwb_groups_names = [str(grp['name']) for grp in metadata['Ecephys']['ElectrodeGroup']]
+
+        # For older versions of pynwb, we need to manually add these columns
+        if pynwb.__version__ < '1.3.0':
+            if nwbfile.electrodes is None or 'rel_x' not in nwbfile.electrodes.colnames:
+                nwbfile.add_electrode_column('rel_x', 'x position of electrode in electrode group')
+            if nwbfile.electrodes is None or 'rel_y' not in nwbfile.electrodes.colnames:
+                nwbfile.add_electrode_column('rel_y', 'y position of electrode in electrode group')
+
+        # add new electrodes with id, (rel_x, rel_y) and groups
+        channel_ids = recording.get_channel_ids()
+        for m in channel_ids:
+            if m not in nwb_elec_ids:
+                if 'location' in recording.get_channel_property_names(m):
+                    location = recording.get_channel_property(m, 'location')
+                    while len(location) < 2:
+                        location = np.append(location, [0])
+                else:
+                    location = [np.nan, np.nan]
+                impedence = -1.0
+                grp_name = recording.get_channel_groups(channel_ids=[m])
+                grp = nwbfile.electrode_groups[nwb_groups_names[grp_name[0]]]
+                nwbfile.add_electrode(
+                    id=m,
+                    x=np.nan, y=np.nan, z=np.nan,
+                    rel_x=float(location[0]), rel_y=float(location[1]),
+                    imp=impedence,
+                    location='unknown',
+                    filtering='none',
+                    group=grp,
+                )
+        electrode_table = nwbfile.electrodes
+
+        # add/update electrode properties
+        for ch in channel_ids:
+            rx_channel_properties = recording.get_channel_property_names(channel_id=ch)
+            for pr in rx_channel_properties:
+                val = recording.get_channel_property(ch, pr)
+                desc = 'no description'
+                # property 'location' of RX channels corresponds to rel_x and rel_ y of NWB electrodes
+                if pr == 'location':
+                    names = ['rel_x', 'rel_y']
+                    for (nm, v) in zip(names, val):
+                        set_dynamic_table_property(
+                            dynamic_table=electrode_table,
+                            row_ids=[ch],
+                            property_name=nm,
+                            values=[float(v)],
+                            default_value=np.nan,
+                            description=nm + ' coordinate location on the implant'
+                        )
+                    continue
+                # property 'group' of electrodes can not be updated
+                if pr == 'group':
+                    continue
+                # property 'gain' should not be in the NWB electrodes_table
+                if pr == 'gain':
+                    continue
+                # property 'brain_area' of RX channels corresponds to 'location' of NWB electrodes
+                if pr == 'brain_area':
+                    pr = 'location'
+                    desc = 'brain area location'
+                set_dynamic_table_property(
+                    dynamic_table=electrode_table,
+                    row_ids=[ch],
+                    property_name=pr,
+                    values=[val],
+                    default_value=np.nan,
+                    description=desc
+                )
+
+        return nwbfile
+
+    @staticmethod
+    def add_electrical_series(recording, nwbfile, metadata):
+        """
+        Auxiliary static method for nwbextractor.
+        Adds traces from recording object as ElectricalSeries to nwbfile object.
+        """
+        # ElectricalSeries
+        if 'ElectricalSeries' not in metadata['Ecephys']:
+            metadata['Ecephys']['ElectricalSeries'] = [{'name': 'ElectricalSeries',
+                                                        'description': 'electrical_series_description'}]
+        # Tests if ElectricalSeries already exists in acquisition
+        channel_ids = recording.get_channel_ids()
+        nwb_es_names = [ac for ac in nwbfile.acquisition]
+        es = metadata['Ecephys']['ElectricalSeries'][0]
+        if es['name'] not in nwb_es_names:
+            # Creates an electrode table region with specified ids
+            curr_ids = channel_ids
+            table_ids = [list(nwbfile.electrodes.id[:]).index(id) for id in curr_ids]
+            electrode_table_region = nwbfile.create_electrode_table_region(
+                region=table_ids,
+                description='electrode_table_region'
+            )
+
+            # sampling rate
+            rate = recording.get_sampling_frequency()
+
+            # channels gains - for RecordingExtractor, these are values to cast traces to uV
+            # for nwb, the conversions (gains) cast the data to Volts
+            gains = np.squeeze([recording.get_channel_gains(channel_ids=[ch])
+                                if 'gain' in recording.get_channel_property_names(channel_id=ch) else 1
+                                for ch in curr_ids])
+            if len(np.unique(gains)) == 1:  # if all gains are equal
+                scalar_conversion = np.unique(gains)[0] * 1e-6
+                channel_conversion = None
+            else:
+                scalar_conversion = 1.
+                channel_conversion = gains * 1e-6
+
+            def data_generator(recording, channels_ids):
+                #  generates data chunks for iterator
+                for id in channels_ids:
+                    data = recording.get_traces(channel_ids=[id]).flatten()
+                    yield data
+
+            data = data_generator(recording=recording, channels_ids=curr_ids)
+            ephys_data = DataChunkIterator(data=data, iter_axis=1)
+            acquisition_name = es['name']
+
+            # To get traces in Volts = data*channel_conversion*conversion
+            ephys_ts = ElectricalSeries(
+                name=acquisition_name,
+                data=ephys_data,
+                electrodes=electrode_table_region,
+                starting_time=recording.frame_to_time(0),
+                rate=rate,
+                conversion=scalar_conversion,
+                channel_conversion=channel_conversion,
+                comments='Generated from SpikeInterface::NwbRecordingExtractor',
+                description='acquisition_description'
+            )
+            nwbfile.add_acquisition(ephys_ts)
+
+        return nwbfile
+
+    @staticmethod
+    def add_epochs(recording, nwbfile):
+        """
+        Auxiliary static method for nwbextractor.
+        Adds epochs from recording object to nwbfile object.
+        """
+        # add/update epochs
+        for (name, ep) in recording._epochs.items():
+            if nwbfile.epochs is None:
+                nwbfile.add_epoch(
+                    start_time=recording.frame_to_time(ep['start_frame']),
+                    stop_time=recording.frame_to_time(ep['end_frame']),
+                    tags=name
+                )
+            else:
+                if [name] in nwbfile.epochs['tags'][:]:
+                    ind = nwbfile.epochs['tags'][:].index([name])
+                    nwbfile.epochs['start_time'].data[ind] = recording.frame_to_time(ep['start_frame'])
+                    nwbfile.epochs['stop_time'].data[ind] = recording.frame_to_time(ep['end_frame'])
+                else:
+                    nwbfile.add_epoch(
+                        start_time=recording.frame_to_time(ep['start_frame']),
+                        stop_time=recording.frame_to_time(ep['end_frame']),
+                        tags=name
+                    )
+
+        return nwbfile
+
+    @staticmethod
     def write_recording(recording, save_path, metadata=None):
         '''
 
@@ -310,11 +489,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         recording: RecordingExtractor
         save_path: str
         metadata: dict
-            metadata info for constructing the nwb file
+            metadata info for constructing the nwb file (optional).
         '''
         check_nwb_install()
-        # n_channels = recording.get_num_channels()
-        channel_ids = recording.get_channel_ids()
 
         if os.path.exists(save_path):
             read_mode = 'r+'
@@ -347,6 +524,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 if dev['name'] not in nwbfile.devices:
                     nwbfile.create_device(name=dev['name'])
 
+            channel_ids = recording.get_channel_ids()
+
             # Electrode groups
             if 'ElectrodeGroup' not in metadata['Ecephys']:
                 metadata['Ecephys']['ElectrodeGroup'] = []
@@ -375,159 +554,27 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         description=grp['description']
                     )
 
-            # Check for existing electrodes
-            if nwbfile.electrodes is not None:
-                nwb_elec_ids = nwbfile.electrodes.id.data[:]
-            else:
-                nwb_elec_ids = []
+            # Add electrodes
+            nwbfile = se.NwbRecordingExtractor.add_electrodes(
+                recording=recording,
+                nwbfile=nwbfile,
+                metadata=metadata
+            )
 
-            # Extractors channel groups must be integers, but Nwb electrodes group_name can be strings
-            # Number code for Nwb electrodes groups
-            nwb_groups_names = [str(grp['name']) for grp in metadata['Ecephys']['ElectrodeGroup']]
+            # Add electrical series
+            nwbfile = se.NwbRecordingExtractor.add_electrical_series(
+                recording=recording,
+                nwbfile=nwbfile,
+                metadata=metadata
+            )
 
-            # For older versions of pynwb, we need to manually add these columns
-            if pynwb.__version__ < '1.3.0':
-                if nwbfile.electrodes is None or 'rel_x' not in nwbfile.electrodes.colnames:
-                    nwbfile.add_electrode_column('rel_x', 'x position of electrode in electrode group')
-                if nwbfile.electrodes is None or 'rel_y' not in nwbfile.electrodes.colnames:
-                    nwbfile.add_electrode_column('rel_y', 'y position of electrode in electrode group')
+            # Add epochs
+            nwbfile = se.NwbRecordingExtractor.add_epochs(
+                recording=recording,
+                nwbfile=nwbfile
+            )
 
-            # add new electrodes with id, (rel_x, rel_y) and groups
-            for m in channel_ids:
-                if m not in nwb_elec_ids:
-                    if 'location' in recording.get_channel_property_names(m):
-                        location = recording.get_channel_property(m, 'location')
-                        while len(location) < 2:
-                            location = np.append(location, [0])
-                    else:
-                        location = [np.nan, np.nan]
-                    impedence = -1.0
-                    grp_name = recording.get_channel_groups(channel_ids=[m])
-                    grp = nwbfile.electrode_groups[nwb_groups_names[grp_name[0]]]
-                    nwbfile.add_electrode(
-                        id=m,
-                        x=np.nan, y=np.nan, z=np.nan,
-                        rel_x=float(location[0]), rel_y=float(location[1]),
-                        imp=impedence,
-                        location='unknown',
-                        filtering='none',
-                        group=grp,
-                    )
-            electrode_table = nwbfile.electrodes
-
-            # add/update electrode properties
-            for ch in channel_ids:
-                rx_channel_properties = recording.get_channel_property_names(channel_id=ch)
-                for pr in rx_channel_properties:
-                    val = recording.get_channel_property(ch, pr)
-                    desc = 'no description'
-                    # property 'location' of RX channels corresponds to rel_x and rel_ y of NWB electrodes
-                    if pr == 'location':
-                        names = ['rel_x', 'rel_y']
-                        for (nm, v) in zip(names, val):
-                            set_dynamic_table_property(
-                                dynamic_table=electrode_table,
-                                row_ids=[ch],
-                                property_name=nm,
-                                values=[float(v)],
-                                default_value=np.nan,
-                                description=nm + ' coordinate location on the implant'
-                            )
-                        continue
-                    # property 'group' of electrodes can not be updated
-                    if pr == 'group':
-                        continue
-                    # property 'gain' should not be in the NWB electrodes_table
-                    if pr == 'gain':
-                        continue
-                    # property 'brain_area' of RX channels corresponds to 'location' of NWB electrodes
-                    if pr == 'brain_area':
-                        pr = 'location'
-                        desc = 'brain area location'
-                    set_dynamic_table_property(
-                        dynamic_table=electrode_table,
-                        row_ids=[ch],
-                        property_name=pr,
-                        values=[val],
-                        default_value=np.nan,
-                        description=desc
-                    )
-
-            # ElectricalSeries
-            if 'ElectricalSeries' not in metadata['Ecephys']:
-                metadata['Ecephys']['ElectricalSeries'] = [{'name': 'ElectricalSeries',
-                                                            'description': 'electrical_series_description'}]
-            # Tests if ElectricalSeries already exists in acquisition
-            nwb_es_names = [ac for ac in nwbfile.acquisition]
-            es = metadata['Ecephys']['ElectricalSeries'][0]
-            if es['name'] not in nwb_es_names:
-                # Creates an electrode table region with specified ids
-                curr_ids = channel_ids
-                table_ids = [list(nwbfile.electrodes.id[:]).index(id) for id in curr_ids]
-                electrode_table_region = nwbfile.create_electrode_table_region(
-                    region=table_ids,
-                    description='electrode_table_region'
-                )
-
-                # sampling rate
-                rate = recording.get_sampling_frequency()
-
-                # channels gains - for RecordingExtractor, these are values to cast traces to uV
-                # for nwb, the conversions (gains) cast the data to Volts
-                gains = np.squeeze([recording.get_channel_gains(channel_ids=[ch])
-                                    if 'gain' in recording.get_channel_property_names(channel_id=ch) else 1
-                                    for ch in curr_ids])
-                if len(np.unique(gains)) == 1:  # if all gains are equal
-                    scalar_conversion = np.unique(gains)[0] * 1e-6
-                    channel_conversion = None
-                else:
-                    scalar_conversion = 1.
-                    channel_conversion = gains * 1e-6
-
-                def data_generator(recording, channels_ids):
-                    #  generates data chunks for iterator
-                    for id in channels_ids:
-                        data = recording.get_traces(channel_ids=[id]).flatten()
-                        yield data
-
-                data = data_generator(recording=recording, channels_ids=curr_ids)
-                ephys_data = DataChunkIterator(data=data, iter_axis=1)
-                acquisition_name = es['name']
-
-                # To get traces in Volts = data*channel_conversion*conversion
-                ephys_ts = ElectricalSeries(
-                    name=acquisition_name,
-                    data=ephys_data,
-                    electrodes=electrode_table_region,
-                    starting_time=recording.frame_to_time(0),
-                    rate=rate,
-                    conversion=scalar_conversion,
-                    channel_conversion=channel_conversion,
-                    comments='Generated from SpikeInterface::NwbRecordingExtractor',
-                    description='acquisition_description'
-                )
-                nwbfile.add_acquisition(ephys_ts)
-
-            # add/update epochs
-            for (name, ep) in recording._epochs.items():
-                if nwbfile.epochs is None:
-                    nwbfile.add_epoch(
-                        start_time=recording.frame_to_time(ep['start_frame']),
-                        stop_time=recording.frame_to_time(ep['end_frame']),
-                        tags=name
-                    )
-                else:
-                    if [name] in nwbfile.epochs['tags'][:]:
-                        ind = nwbfile.epochs['tags'][:].index([name])
-                        nwbfile.epochs['start_time'].data[ind] = recording.frame_to_time(ep['start_frame'])
-                        nwbfile.epochs['stop_time'].data[ind] = recording.frame_to_time(ep['end_frame'])
-                    else:
-                        nwbfile.add_epoch(
-                            start_time=recording.frame_to_time(ep['start_frame']),
-                            stop_time=recording.frame_to_time(ep['end_frame']),
-                            tags=name
-                        )
-
+            # Write to file
             io.write(nwbfile)
 
 
