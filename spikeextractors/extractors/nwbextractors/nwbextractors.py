@@ -10,6 +10,7 @@ import numpy as np
 import spikeextractors as se
 
 try:
+    import pynwb
     from pynwb import NWBHDF5IO
     from pynwb import NWBFile
     from pynwb.ecephys import ElectricalSeries
@@ -208,8 +209,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         self._channel_properties[i]['group'] = int(unique_grp_names.index(nwbfile.electrodes[col][ind]))
                     elif col == 'location':
                         self._channel_properties[i]['brain_area'] = nwbfile.electrodes[col][ind]
-                    # elif col in ['x', 'y', 'z', 'rel_x', 'rel_y']:
-                    #     continue
+                    elif col in ['x', 'y', 'z', 'rel_x', 'rel_y']:
+                        continue
                     else:
                         self._channel_properties[i][col] = nwbfile.electrodes[col][ind]
 
@@ -382,12 +383,14 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             # Number code for Nwb electrodes groups
             nwb_groups_names = [str(grp['name']) for grp in metadata['Ecephys']['ElectrodeGroup']]
 
-            # add new electrodes with id, (rel_x, rel_y) and groups
-            if nwbfile.electrodes is None or 'rel_x' not in nwbfile.electrodes.colnames:
-                nwbfile.add_electrode_column('rel_x', 'x position of electrode in electrode group')
-            if nwbfile.electrodes is None or 'rel_y' not in nwbfile.electrodes.colnames:
-                nwbfile.add_electrode_column('rel_y', 'y position of electrode in electrode group')
+            # For older versions of pynwb, we need to manually add these columns
+            if pynwb.__version__ < '1.3.0':
+                if nwbfile.electrodes is None or 'rel_x' not in nwbfile.electrodes.colnames:
+                    nwbfile.add_electrode_column('rel_x', 'x position of electrode in electrode group')
+                if nwbfile.electrodes is None or 'rel_y' not in nwbfile.electrodes.colnames:
+                    nwbfile.add_electrode_column('rel_y', 'y position of electrode in electrode group')
 
+            # add new electrodes with id, (rel_x, rel_y) and groups
             for m in channel_ids:
                 if m not in nwb_elec_ids:
                     if 'location' in recording.get_channel_property_names(m):
