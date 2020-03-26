@@ -224,36 +224,38 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     for _, row in df_epochs.iterrows()}
 
             self._kwargs = {'file_path': str(Path(file_path).absolute()), 'electrical_series_name': electrical_series_name}
+            self.make_nwb_metadata(nwbfile=nwbfile, es=es)
 
-            # Metadata dictionary - useful for constructing a nwb file
-            self.nwb_metadata = dict()
-            self.nwb_metadata['NWBFile'] = {
-                'session_description': nwbfile.session_description,
-                'identifier': nwbfile.identifier,
-                'session_start_time': nwbfile.session_start_time,
-                'institution': nwbfile.institution,
-                'lab': nwbfile.lab
-            }
-            self.nwb_metadata['Ecephys'] = dict()
-            # Update metadata with Device info
-            self.nwb_metadata['Ecephys']['Device'] = []
-            for dev in nwbfile.devices:
-                self.nwb_metadata['Ecephys']['Device'].append({'name': dev})
-            # Update metadata with ElectrodeGroup info
-            self.nwb_metadata['Ecephys']['ElectrodeGroup'] = []
-            for k, v in nwbfile.electrode_groups.items():
-                self.nwb_metadata['Ecephys']['ElectrodeGroup'].append({
-                    'name': v.name,
-                    'description': v.description,
-                    'location': v.location,
-                    'device': v.device.name
-                })
-            # Update metadata with ElectricalSeries info
-            self.nwb_metadata['Ecephys']['ElectricalSeries'] = []
-            self.nwb_metadata['Ecephys']['ElectricalSeries'].append({
-                'name': es.name,
-                'description': es.description
+    def make_nwb_metadata(self, nwbfile, es):
+        # Metadata dictionary - useful for constructing a nwb file
+        self.nwb_metadata = dict()
+        self.nwb_metadata['NWBFile'] = {
+            'session_description': nwbfile.session_description,
+            'identifier': nwbfile.identifier,
+            'session_start_time': nwbfile.session_start_time,
+            'institution': nwbfile.institution,
+            'lab': nwbfile.lab
+        }
+        self.nwb_metadata['Ecephys'] = dict()
+        # Update metadata with Device info
+        self.nwb_metadata['Ecephys']['Device'] = []
+        for dev in nwbfile.devices:
+            self.nwb_metadata['Ecephys']['Device'].append({'name': dev})
+        # Update metadata with ElectrodeGroup info
+        self.nwb_metadata['Ecephys']['ElectrodeGroup'] = []
+        for k, v in nwbfile.electrode_groups.items():
+            self.nwb_metadata['Ecephys']['ElectrodeGroup'].append({
+                'name': v.name,
+                'description': v.description,
+                'location': v.location,
+                'device': v.device.name
             })
+        # Update metadata with ElectricalSeries info
+        self.nwb_metadata['Ecephys']['ElectricalSeries'] = []
+        self.nwb_metadata['Ecephys']['ElectricalSeries'].append({
+            'name': es.name,
+            'description': es.description
+        })
 
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         check_nwb_install()
