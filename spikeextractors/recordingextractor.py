@@ -208,7 +208,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             snippets[i] = snippet_chunk
         return snippets
 
-    def set_channel_locations(self, channel_ids, locations):
+    def set_channel_locations(self, locations, channel_ids=None):
         '''This function sets the location properties of each specified channel
         id with the corresponding locations of the passed in locations list.
 
@@ -219,9 +219,11 @@ class RecordingExtractor(ABC, BaseExtractor):
         locations: array_like
             A list of corresponding locations (array_like) for the given channel_ids
         '''
+        if channel_ids is None:
+            channel_ids = self.get_channel_ids()
         if len(channel_ids) == len(locations):
             for i in range(len(channel_ids)):
-                if isinstance(locations[i],(list,np.ndarray)):
+                if isinstance(locations[i], (list, np.ndarray)):
                     location = np.asarray(locations[i])
                     self.set_channel_property(channel_ids[i], 'location', location.astype(float))
                 else:
