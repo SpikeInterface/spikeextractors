@@ -19,8 +19,12 @@ class NumpyRecordingExtractor(RecordingExtractor):
             if Path(timeseries).is_file():
                 self.is_dumpable = True
                 self._timeseries = np.load(timeseries)
+                self._kwargs = {'timeseries': str(Path(timeseries).absolute()),
+                                'sampling_frequency': sampling_frequency, 'geom': geom}
         elif isinstance(timeseries, np.ndarray):
             self._timeseries = timeseries
+            self._kwargs = {'timeseries': timeseries,
+                            'sampling_frequency': sampling_frequency, 'geom': geom}
         else:
             raise TypeError("'timeseries must be a .npy file name or a numpy array")
         RecordingExtractor.__init__(self)
@@ -29,6 +33,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
         if geom is not None:
             for m in range(self._timeseries.shape[0]):
                 self.set_channel_property(m, 'location', self._geom[m, :])
+
 
     def get_channel_ids(self):
         return list(range(self._timeseries.shape[0]))

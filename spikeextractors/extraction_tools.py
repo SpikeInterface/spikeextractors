@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 import json
 import datetime
-import spikeextractors
+from functools import wraps
 from spikeextractors.baseextractor import BaseExtractor
 
 
@@ -563,3 +563,41 @@ def load_extractor_from_dict(d):
         The loaded extractor object
     '''
     return BaseExtractor.load_extractor_from_dict(d)
+
+
+def check_get_traces_args(func):
+    @wraps(func)
+    def corrected_args(*args, **kwargs):
+        recording = args[0]
+        channel_ids = kwargs.get('channel_ids', recording.get_channel_ids())
+        start_frame = kwargs.get('start_frame', 0)
+        end_frame = kwargs.get('end_frame', recording.get_num_frames())
+
+        assert np.all([ch in recording.get_channel_ids() for ch in channel_ids])
+        if start_frame < 0:
+            start_frame = 0
+        if end_frame > recording.get_num_frames():
+            end_frame = recording.get_num_frames()
+        _cast_start_end_frame(recording, start_frame, end_frame)
+        kwargs['channel_ids'] = channel_ids
+        kwargs['start_frame'] = start_frame
+        kwargs['end_frame'] = end_frame
+        get_traces_correct_arg = func(*args, **kwargs)
+        return get_traces_correct_arg
+    return corrected_args
+
+
+def _cast_start_end_frame(self, start_frame, end_frame):
+    if isinstance(start_frame, (float, np.float)):
+        start_frame = int(start_frame)
+    elif isinstance(start_frame, (int, np.integer, type(None))):
+        start_frame = start_frame
+    else:
+        raise ValueError("start_frame must be an int, float (not infinity), or None")
+    if isinstance(end_frame, (float, np.float)):
+        end_frame = int(end_frame)
+    elif isinstance(end_frame, (int, np.integer, type(None))):
+        end_frame = end_frame
+    else:
+        raise ValueError("end_frame must be an int, float (not infinity), or None")
+    return start_frame, end_frame
