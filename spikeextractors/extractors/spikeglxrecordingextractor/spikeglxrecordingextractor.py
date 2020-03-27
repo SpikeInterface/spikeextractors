@@ -2,6 +2,7 @@ from spikeextractors import RecordingExtractor
 from .readSGLX import readMeta, SampRate, makeMemMapRaw, GainCorrectIM, GainCorrectNI
 import numpy as np
 from pathlib import Path
+from spikeextractors.extraction_tools import check_get_traces_args
 
 
 class SpikeGLXRecordingExtractor(RecordingExtractor):
@@ -77,17 +78,10 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._sampling_frequency
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = list(range(self._timeseries.shape[0]))
-        else:
-            channel_ids = [self._channels.index(ch) for ch in channel_ids]
-        recordings = self._timeseries[channel_ids, start_frame:end_frame]
+        channel_idxs = [self._channels.index(ch) for ch in channel_ids]
+        recordings = self._timeseries[channel_idxs, start_frame:end_frame]
         return recordings
 
     @staticmethod

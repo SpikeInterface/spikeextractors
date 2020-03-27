@@ -1,6 +1,7 @@
 from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
+from spikeextractors.extraction_tools import check_get_traces_args
 
 try:
     import pyopenephys
@@ -45,14 +46,8 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return float(self._recording.sample_rate.rescale('Hz').magnitude)
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = self.get_channel_ids()
         if self._dtype == 'int16':
             return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
         elif self._dtype == 'float':

@@ -2,6 +2,7 @@ from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 from pathlib import Path
 import numpy as np
+from spikeextractors.extraction_tools import check_get_traces_args
 
 '''
 The NumpyExtractors can be constructed and used to encapsulate custom file formats and data structures which
@@ -19,8 +20,12 @@ class NumpyRecordingExtractor(RecordingExtractor):
             if Path(timeseries).is_file():
                 self.is_dumpable = True
                 self._timeseries = np.load(timeseries)
+                self._kwargs = {'timeseries': str(Path(timeseries).absolute()),
+                                'sampling_frequency': sampling_frequency, 'geom': geom}
         elif isinstance(timeseries, np.ndarray):
             self._timeseries = timeseries
+            self._kwargs = {'timeseries': timeseries,
+                            'sampling_frequency': sampling_frequency, 'geom': geom}
         else:
             raise TypeError("'timeseries must be a .npy file name or a numpy array")
         RecordingExtractor.__init__(self)
@@ -39,14 +44,8 @@ class NumpyRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._sampling_frequency
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = self.get_channel_ids()
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
         return recordings
 

@@ -3,6 +3,8 @@ from spikeextractors import SortingExtractor
 import numpy as np
 from pathlib import Path
 from copy import copy
+from spikeextractors.extraction_tools import check_get_traces_args
+
 
 try:
     import exdir
@@ -48,8 +50,8 @@ class ExdirRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._sampling_frequency
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:

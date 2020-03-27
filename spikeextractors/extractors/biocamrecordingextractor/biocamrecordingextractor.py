@@ -1,5 +1,5 @@
 from spikeextractors import RecordingExtractor
-
+from spikeextractors.extraction_tools import check_get_traces_args
 import numpy as np
 from pathlib import Path
 import ctypes
@@ -51,16 +51,12 @@ class BiocamRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._samplingRate
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = range(self.get_num_channels())
-        data = self._read_function(
-            self._rf, start_frame, end_frame, self.get_num_channels())
+        data = self._read_function(self._rf, start_frame, end_frame, self.get_num_channels())
+        # transform to slice if possible
+        if sorted(channel_ids) == channel_ids and np.all(np.diff(channel_ids) == 1):
+            channel_ids = slice(channel_ids[0], channel_ids[0]+len(channel_ids))
         return data[:, channel_ids].T
 
     @staticmethod
@@ -83,8 +79,8 @@ class BiocamRecordingExtractor(RecordingExtractor):
         dr = rf.create_dataset('3BData/Raw', (M * N,), dtype=int)
         dt = 50000
         for i in range(N // dt):
-            dr[M * i * dt:M * (i + 1) * dt] = recording.get_traces(slice(0, M), i * dt, (i + 1) * dt).T.flatten()
-        dr[M * (N // dt) * dt:] = recording.get_traces(slice(0, M), (N // dt) * dt, N).T.flatten()
+            dr[M * i * dt:M * (i + 1) * dt] = recording.get_traces(range(M), i * dt, (i + 1) * dt).T.flatten()
+        dr[M * (N // dt) * dt:] = recording.get_traces(range(M), (N // dt) * dt, N).T.flatten()
         g.attrs['Version'] = 101
         rf.create_dataset('3BRecInfo/3BRecVars/MinVolt', data=[0])
         rf.create_dataset('3BRecInfo/3BRecVars/MaxVolt', data=[1])

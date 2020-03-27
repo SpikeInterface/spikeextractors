@@ -10,6 +10,7 @@ except ImportError:
 
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
+from spikeextractors.extraction_tools import check_get_traces_args
 
 # error message when not installed
 missing_nixio_msg = ("To use the NIXIORecordingExtractor install nixio:"
@@ -62,12 +63,9 @@ class NIXIORecordingExtractor(RecordingExtractor):
         sampling_frequency = 1./timedim.sampling_interval
         return sampling_frequency
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if channel_ids:
-            channels = np.array([self._traces[cid] for cid in channel_ids])
-        else:
-            channels = self._traces[:]
+        channels = np.array([self._traces[cid] for cid in channel_ids])
         return channels[:, start_frame:end_frame]
 
     def _load_properties(self):

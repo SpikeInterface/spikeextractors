@@ -1,6 +1,7 @@
 from spikeextractors import RecordingExtractor
 from pathlib import Path
 import numpy as np
+from spikeextractors.extraction_tools import check_get_traces_args
 
 try:
     import h5py
@@ -58,14 +59,8 @@ class Mea1kRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._fs
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = self.get_channel_ids()
         if np.array(channel_ids).size > 1:
             assert np.all([ch in self.get_channel_ids() for ch in channel_ids])
             channel_idxs = [self.get_channel_ids().index(ch) for ch in channel_ids]
