@@ -604,22 +604,23 @@ def check_get_traces_args(func):
             channel_ids = recording.get_channel_ids()
         if start_frame is not None:
             if start_frame < 0:
-                print("'start_time' set to", 0)
-                start_frame = 0
+                start_frame = recording.get_num_frames() - start_frame
         else:
             start_frame = 0
         if end_frame is not None:
             if end_frame > recording.get_num_frames():
                 print("'end_time' set to", recording.get_num_frames())
                 end_frame = recording.get_num_frames()
+            elif end_frame < 0:
+                end_frame = recording.get_num_frames() - end_frame
         else:
             end_frame = recording.get_num_frames()
-        assert end_frame - start_frame > 0, "'start_frame' is equal of greater than 'end_frame'!"
-        _cast_start_end_frame(recording, start_frame, end_frame)
+        assert end_frame - start_frame > 0, "'start_frame' must be less than 'end_frame'!"
+        cast_start_end_frame(start_frame, end_frame)
         kwargs['channel_ids'] = channel_ids
         kwargs['start_frame'] = start_frame
         kwargs['end_frame'] = end_frame
-        
+
         # pass recording as arg and rest as kwargs
         get_traces_correct_arg = func(args[0], **kwargs)
 
@@ -627,7 +628,7 @@ def check_get_traces_args(func):
     return corrected_args
 
 
-def _cast_start_end_frame(self, start_frame, end_frame):
+def cast_start_end_frame(start_frame, end_frame):
     if isinstance(start_frame, (float, np.float)):
         start_frame = int(start_frame)
     elif isinstance(start_frame, (int, np.integer, type(None))):

@@ -5,7 +5,7 @@ import shutil
 import random
 from pathlib import Path
 from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, \
-    get_sub_extractors_by_property
+    get_sub_extractors_by_property, cast_start_end_frame
 from .baseextractor import BaseExtractor
 
 
@@ -521,7 +521,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             recording after the start_frame.
         '''
         if isinstance(epoch_name, str):
-            start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
+            start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
             self._epochs[epoch_name] = {'start_frame': start_frame, 'end_frame': end_frame}
         else:
             raise TypeError("epoch_name must be a string")
@@ -797,19 +797,3 @@ class RecordingExtractor(ABC, BaseExtractor):
         '''
         raise NotImplementedError("The write_recording function is not \
                                   implemented for this extractor")
-
-
-    def _cast_start_end_frame(self, start_frame, end_frame):
-        if isinstance(start_frame, (float, np.float)):
-            start_frame = int(start_frame)
-        elif isinstance(start_frame, (int, np.integer, type(None))):
-            start_frame = start_frame
-        else:
-            raise ValueError("start_frame must be an int, float (not infinity), or None")
-        if isinstance(end_frame, (float, np.float)):
-            end_frame = int(end_frame)
-        elif isinstance(end_frame, (int, np.integer, type(None))):
-            end_frame = end_frame
-        else:
-            raise ValueError("end_frame must be an int, float (not infinity), or None")
-        return start_frame, end_frame
