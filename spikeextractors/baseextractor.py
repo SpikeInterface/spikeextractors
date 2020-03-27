@@ -4,6 +4,7 @@ from pathlib import Path
 import importlib
 import numpy as np
 import datetime
+from copy import deepcopy
 
 
 class BaseExtractor:
@@ -111,7 +112,7 @@ def _load_extractor_from_dict(dic):
     cls = None
     class_name = None
     probe_file = None
-    kwargs = dic['kwargs']
+    kwargs = deepcopy(dic['kwargs'])
     if np.any([isinstance(v, dict) for v in kwargs.values()]):
         # nested
         for k in kwargs.keys():
