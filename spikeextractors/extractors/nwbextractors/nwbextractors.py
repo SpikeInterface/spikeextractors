@@ -337,6 +337,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     'location': 'electrode_group_location',
                     'device': metadata['Ecephys']['Device'][0]['name']
                 })
+
         # Tests if electrode groups exist in nwbfile, if not create them from metadata
         for grp in metadata['Ecephys']['ElectrodeGroup']:
             if str(grp['name']) not in nwbfile.electrode_groups:
@@ -362,8 +363,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             nwb_elec_ids = []
 
         # Extractors channel groups must be integers, but Nwb electrodes group_name can be strings
-        # Number code for Nwb electrodes groups
-        nwb_groups_names = [str(grp['name']) for grp in metadata['Ecephys']['ElectrodeGroup']]
+        # nwb_groups_names = [str(grp['name']) for grp in metadata['Ecephys']['ElectrodeGroup']]
+        nwb_groups_names = list(nwbfile.electrode_groups.keys())
 
         # For older versions of pynwb, we need to manually add these columns
         if pynwb.__version__ < '1.3.0':
@@ -382,14 +383,17 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         location = np.append(location, [0])
                 else:
                     location = [np.nan, np.nan]
-                impedence = -1.0
-                grp_name = recording.get_channel_groups(channel_ids=[m])
-                grp = nwbfile.electrode_groups[nwb_groups_names[grp_name[0]]]
+                if 'group' in recording.get_channel_property_names(m):
+                    grp_name = recording.get_channel_groups(channel_ids=[m])
+                    grp = nwbfile.electrode_groups[nwb_groups_names[grp_name[0]]]
+                else:
+                    grp = nwbfile.electrode_groups[nwb_groups_names[0]]
+                impedance = -1.0
                 nwbfile.add_electrode(
                     id=m,
                     x=np.nan, y=np.nan, z=np.nan,
                     rel_x=float(location[0]), rel_y=float(location[1]),
-                    imp=impedence,
+                    imp=impedance,
                     location='unknown',
                     filtering='none',
                     group=grp,
