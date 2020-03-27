@@ -1,6 +1,7 @@
 from spikeextractors import RecordingExtractor
 import numpy as np
 from pathlib import Path
+from spikeextractors.extraction_tools import check_get_traces_args
 
 try:
     import h5py
@@ -70,26 +71,18 @@ class MCSH5RecordingExtractor(RecordingExtractor):
             analog_stream_names = list(rf.require_group('/Data/Recording_0/AnalogStream').keys())
             return list(range(len(analog_stream_names)))
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_idxs = []
-            for m in self._channel_ids:
-                assert m in self._channel_ids, 'channel_id {} not found'.format(m)
-                channel_idxs.append(np.where(np.array(self._channel_ids) == m)[0][0])
-        else:
-            if isinstance(channel_ids, (int, np.integer)):
-                assert channel_ids in self._channel_ids, 'channel_id {} not found'.format(channel_ids)
-                channel_idxs = np.where(np.array(self._channel_ids) == channel_ids)[0][0]
-            else:
-                channel_idxs = []
-                for m in channel_ids:
-                    assert m in self._channel_ids, 'channel_id {} not found'.format(m)
-                    channel_idxs.append(np.where(np.array(self._channel_ids) == m)[0][0])
+
+        channel_idxs = []
+        for m in channel_ids:
+            assert m in self._channel_ids, 'channel_id {} not found'.format(m)
+            channel_idxs.append(np.where(np.array(self._channel_ids) == m)[0][0])
 
         stream = self._rf.require_group('/Data/Recording_0/AnalogStream/Stream_' + str(self._stream_id))
         conv = self._convFact.astype(float) * (10.0 ** self._exponent)

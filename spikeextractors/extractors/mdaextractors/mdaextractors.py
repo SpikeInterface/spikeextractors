@@ -1,6 +1,6 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-from ...extraction_tools import write_to_binary_dat_format, check_get_traces_args
+from spikeextractors.extraction_tools import write_to_binary_dat_format, check_get_traces_args
 
 import json
 import numpy as np

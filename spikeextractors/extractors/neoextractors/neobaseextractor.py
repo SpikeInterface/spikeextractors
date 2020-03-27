@@ -3,7 +3,7 @@ import neo
 
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-
+from spikeextractors.extraction_tools import check_get_traces_args
 
 class _NeoBaseExtractor:
     NeoRawIOClass = None
@@ -64,8 +64,8 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         self.additional_gain[units == 'uV'] = 1.
         self.additional_gain = self.additional_gain.reshape(1, -1)
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         # in neo rawio channel can acces by names/ids/indexes
         # there is no garranty that ids/names are unique on some formats
         raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,

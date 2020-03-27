@@ -1,5 +1,6 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
+from spikeextractors.extraction_tools import check_get_traces_args
 
 import numpy as np
 from pathlib import Path
@@ -76,14 +77,8 @@ class MEArecRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._fs
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = list(range(self.get_num_channels()))
         if np.array(channel_ids).size > 1:
             if np.any(np.diff(channel_ids) < 0):
                 sorted_idx = np.argsort(channel_ids)

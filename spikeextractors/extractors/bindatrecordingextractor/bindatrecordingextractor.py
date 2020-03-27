@@ -1,8 +1,6 @@
 from spikeextractors import RecordingExtractor
-from spikeextractors.extraction_tools import read_binary, write_to_binary_dat_format
-import os
+from spikeextractors.extraction_tools import read_binary, write_to_binary_dat_format, check_get_traces_args
 import shutil
-import numpy as np
 from pathlib import Path
 
 
@@ -61,16 +59,8 @@ class BinDatRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._sampling_frequency
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = list(range(self._timeseries.shape[0]))
-        else:
-            channel_ids = [self._channels.index(ch) for ch in channel_ids]
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
         if self._dtype.startswith('uint'):
             exp_idx = self._dtype.find('int') + 3
