@@ -604,7 +604,7 @@ def check_get_traces_args(func):
             channel_ids = recording.get_channel_ids()
         if start_frame is not None:
             if start_frame < 0:
-                start_frame = recording.get_num_frames() - start_frame
+                start_frame = recording.get_num_frames() + start_frame
         else:
             start_frame = 0
         if end_frame is not None:
@@ -612,7 +612,7 @@ def check_get_traces_args(func):
                 print("'end_time' set to", recording.get_num_frames())
                 end_frame = recording.get_num_frames()
             elif end_frame < 0:
-                end_frame = recording.get_num_frames() - end_frame
+                end_frame = recording.get_num_frames() + end_frame
         else:
             end_frame = recording.get_num_frames()
         assert end_frame - start_frame > 0, "'start_frame' must be less than 'end_frame'!"
