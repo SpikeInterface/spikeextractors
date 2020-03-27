@@ -188,7 +188,7 @@ class MdaSortingExtractor(SortingExtractor):
         for unit_id in self._unit_ids:
             inds = np.where(self._labels == unit_id)
             max_channels = self._max_channels[inds].astype(int)
-            self.set_unit_property(unit_id, 'max_channel', max_channels[0])
+            self.set_unit_property(unit_id, 'mda_max_channel', max_channels[0])
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'sampling_frequency': sampling_frequency}
 
     def get_unit_ids(self):
