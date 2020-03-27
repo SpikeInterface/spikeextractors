@@ -573,11 +573,23 @@ def check_get_traces_args(func):
         start_frame = kwargs.get('start_frame', 0)
         end_frame = kwargs.get('end_frame', recording.get_num_frames())
 
-        assert np.all([ch in recording.get_channel_ids() for ch in channel_ids])
-        if start_frame < 0:
+        if channel_ids is not None:
+            if np.any([ch not in recording.get_channel_ids() for ch in channel_ids]):
+                print('Removing invalid channels')
+                channel_ids = [ch for ch in channel_ids if ch in recording.get_channel_ids()]
+        else:
+            channel_ids = recording.get_channel_ids()
+        if start_frame is not None:
+            if start_frame < 0:
+                start_frame = 0
+        else:
             start_frame = 0
-        if end_frame > recording.get_num_frames():
+        if end_frame is not None:
+            if end_frame > recording.get_num_frames():
+                end_frame = recording.get_num_frames()
+        else:
             end_frame = recording.get_num_frames()
+        assert end_frame - start_frame > 0, "'start_frame' is equal of greater than 'end_frame'!"
         _cast_start_end_frame(recording, start_frame, end_frame)
         kwargs['channel_ids'] = channel_ids
         kwargs['start_frame'] = start_frame
