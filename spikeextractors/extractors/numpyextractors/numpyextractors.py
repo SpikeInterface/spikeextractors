@@ -30,7 +30,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
             self._kwargs = {'timeseries': timeseries,
                             'sampling_frequency': sampling_frequency, 'geom': geom}
         else:
-            raise TypeError("'timeseries' can be a tr or a numpy array")
+            raise TypeError("'timeseries' can be a str or a numpy array")
         RecordingExtractor.__init__(self)
         self._sampling_frequency = float(sampling_frequency)
         self._geom = geom
