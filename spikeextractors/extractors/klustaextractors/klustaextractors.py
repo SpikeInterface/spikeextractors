@@ -17,7 +17,6 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
     has_default_locations = False
     installed = HAVE_KLSX  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
 
     mode = 'folder'
     extractor_gui_params = [

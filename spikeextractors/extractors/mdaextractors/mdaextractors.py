@@ -15,7 +15,6 @@ class MdaRecordingExtractor(RecordingExtractor):
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
     mode = 'folder'
     extractor_gui_params = [
         {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
@@ -171,7 +170,6 @@ class MdaSortingExtractor(SortingExtractor):
     ]
     installed = True  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
     mode = 'file'
     installation_mesg = ""  # error message when not installed
 

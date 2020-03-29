@@ -21,7 +21,6 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
         {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid recording (.bin, .raw, .dat)"},
     ]
     is_writable = True
-    is_dumpable = True
     mode = 'file'
     installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
 

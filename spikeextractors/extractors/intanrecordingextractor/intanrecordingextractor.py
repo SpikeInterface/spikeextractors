@@ -13,7 +13,6 @@ class IntanRecordingExtractor(RecordingExtractor):
     extractor_name = 'IntanRecording'
     has_default_locations = False
     is_writable = False
-    is_dumpable = True
     mode = 'file'
     installed = HAVE_INTAN  # check at class level if installed or not
     extractor_gui_params = [

@@ -16,7 +16,6 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     has_default_locations = False
     installed = HAVE_OE  # check at class level if installed or not
     is_writable = False
-    is_dumpable = True
     mode = 'folder'
     extractor_gui_params = [
         {'name': 'folder_path', 'type': 'folder', 'title': "str, Path to folder_path"},

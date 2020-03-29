@@ -13,21 +13,24 @@ like any other Recording/SortingExtractor.
 class NumpyRecordingExtractor(RecordingExtractor):
     extractor_name = 'NumpyRecordingExtractor'
     is_writable = True
-    is_dumpable = False
 
     def __init__(self, timeseries, sampling_frequency, geom=None):
         if isinstance(timeseries, str):
             if Path(timeseries).is_file():
+                assert Path(timeseries).suffix == '.npy', "'timeseries' file is not a numpy file (.npy)"
                 self.is_dumpable = True
                 self._timeseries = np.load(timeseries)
                 self._kwargs = {'timeseries': str(Path(timeseries).absolute()),
                                 'sampling_frequency': sampling_frequency, 'geom': geom}
+            else:
+                raise ValueError("'timeeseries' is does not exist")
         elif isinstance(timeseries, np.ndarray):
+            self.is_dumpable = False
             self._timeseries = timeseries
             self._kwargs = {'timeseries': timeseries,
                             'sampling_frequency': sampling_frequency, 'geom': geom}
         else:
-            raise TypeError("'timeseries must be a .npy file name or a numpy array")
+            raise TypeError("'timeseries' can be a str or a numpy array")
         RecordingExtractor.__init__(self)
         self._sampling_frequency = float(sampling_frequency)
         self._geom = geom
