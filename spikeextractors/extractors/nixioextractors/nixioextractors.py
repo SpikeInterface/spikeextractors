@@ -23,7 +23,6 @@ class NIXIORecordingExtractor(RecordingExtractor):
     has_default_locations = False
     installed = HAVE_NIXIO
     is_writable = True
-    is_dumpable = True
 
     mode = 'file'
     extractor_gui_params = [

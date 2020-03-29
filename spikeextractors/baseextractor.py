@@ -8,11 +8,10 @@ from copy import deepcopy
 
 
 class BaseExtractor:
-    is_dumpable = True
-
     def __init__(self):
         self._kwargs = {}
         self._tmp_folder = None
+        self.is_dumpable = True
 
     def make_serialized_dict(self):
         class_name = str(type(self)).replace("<class '", "").replace("'>", '')

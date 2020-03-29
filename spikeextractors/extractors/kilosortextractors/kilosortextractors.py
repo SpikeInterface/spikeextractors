@@ -7,7 +7,6 @@ class KiloSortRecordingExtractor(PhyRecordingExtractor):
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = False
-    is_dumpable = True
 
     mode = 'folder'
     extractor_gui_params = [

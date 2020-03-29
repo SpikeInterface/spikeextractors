@@ -16,7 +16,6 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     has_default_locations = False
     installed = HAVE_MCSH5  # check at class level if installed or not
     is_writable = False
-    is_dumpable = True
 
     mode = 'file'
     extractor_gui_params = [

@@ -17,7 +17,6 @@ class BiocamRecordingExtractor(RecordingExtractor):
     has_default_locations = True
     installed = HAVE_BIOCAM  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
     mode = 'file'
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},

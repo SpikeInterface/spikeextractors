@@ -19,7 +19,6 @@ class ExdirRecordingExtractor(RecordingExtractor):
     extractor_name = 'ExdirRecording'
     has_default_locations = False
     installed = HAVE_EXDIR  # check at class level if installed or not
-    is_dumpable = True
     is_writable = True
     mode = 'folder'
     extractor_gui_params = [

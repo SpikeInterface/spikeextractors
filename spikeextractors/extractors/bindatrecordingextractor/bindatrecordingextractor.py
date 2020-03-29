@@ -10,8 +10,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
     has_default_locations = False
     installed = True  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
-    mode = 'file'      
+    mode = 'file'
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.dat)"},
         {'name': 'sampling_frequency', 'type': 'float', 'title': "Sampling rate in HZ"},

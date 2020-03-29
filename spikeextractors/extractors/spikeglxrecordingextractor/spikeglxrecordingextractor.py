@@ -11,7 +11,6 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
 
     mode = 'file'
     extractor_gui_params = [

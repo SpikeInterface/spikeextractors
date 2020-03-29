@@ -20,7 +20,6 @@ class MEArecRecordingExtractor(RecordingExtractor):
     has_default_locations = True
     installed = HAVE_MREX  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
     mode = 'file'
     extractor_gui_params = [
         {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
@@ -65,7 +64,6 @@ class MEArecRecordingExtractor(RecordingExtractor):
                         elif probe_plane == 'xz':
                             self._locations = self._locations[:, [0, 2]]
                 if self._locations.shape[1] == 3:
-                    print("Could not load plane information. Assuming probe is in yz plane")
                     self._locations = self._locations[:, 1:]
 
     def get_channel_ids(self):
@@ -127,7 +125,6 @@ class MEArecSortingExtractor(SortingExtractor):
     ]
     installed = HAVE_MREX  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
     mode = 'file'
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
 
