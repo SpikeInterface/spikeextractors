@@ -15,6 +15,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
     is_writable = True
 
     def __init__(self, timeseries, sampling_frequency, geom=None):
+        RecordingExtractor.__init__(self)
         if isinstance(timeseries, str):
             if Path(timeseries).is_file():
                 assert Path(timeseries).suffix == '.npy', "'timeseries' file is not a numpy file (.npy)"
@@ -31,7 +32,6 @@ class NumpyRecordingExtractor(RecordingExtractor):
                             'sampling_frequency': sampling_frequency, 'geom': geom}
         else:
             raise TypeError("'timeseries' can be a str or a numpy array")
-        RecordingExtractor.__init__(self)
         self._sampling_frequency = float(sampling_frequency)
         self._geom = geom
         if geom is not None:
@@ -61,11 +61,11 @@ class NumpyRecordingExtractor(RecordingExtractor):
 class NumpySortingExtractor(SortingExtractor):
     extractor_name = 'NumpySortingExtractor'
     is_writable = False
-    is_dumpable = False
 
     def __init__(self):
         SortingExtractor.__init__(self)
         self._units = {}
+        self.is_dumpable = False
 
     def load_from_extractor(self, sorting, copy_unit_properties=False, copy_unit_spike_features=False):
         '''This function loads the information from a SortingExtractor into this extractor.
