@@ -29,6 +29,7 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         self._bindat_kwargs = deepcopy(self._kwargs)
         self.set_tmp_folder(tmp_folder)
         self.copy_channel_properties(recording)
+        self.is_filtered = self._recording.is_filtered
         self._kwargs = {'recording': recording, 'chunk_size': chunk_size}
 
     def __del__(self):
