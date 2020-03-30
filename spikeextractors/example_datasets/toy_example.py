@@ -19,4 +19,5 @@ def toy_example(duration=10, num_channels=4, sampling_frequency=30000.0, K=10, s
     SX.set_sampling_frequency(sampling_frequency)
 
     RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
+    RX.is_filtered = True
     return (RX, SX)

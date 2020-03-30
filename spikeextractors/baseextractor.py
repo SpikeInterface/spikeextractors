@@ -12,6 +12,7 @@ class BaseExtractor:
         self._kwargs = {}
         self._tmp_folder = None
         self.is_dumpable = True
+        self.is_filtered = False
 
     def make_serialized_dict(self):
         class_name = str(type(self)).replace("<class '", "").replace("'>", '')

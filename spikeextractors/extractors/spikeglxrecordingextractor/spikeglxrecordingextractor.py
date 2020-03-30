@@ -26,6 +26,8 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         self._basepath = self._npxfile.parents[0]
 
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
+        if 'ap' in str(self._npxfile):
+            self.is_filtered = True
         aux = self._npxfile.stem.split('.')[-1]
         if aux == 'nidq':
             self._ftype = aux
