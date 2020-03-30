@@ -616,7 +616,7 @@ def check_get_traces_args(func):
         else:
             end_frame = recording.get_num_frames()
         assert end_frame - start_frame > 0, "'start_frame' must be less than 'end_frame'!"
-        cast_start_end_frame(start_frame, end_frame)
+        start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
         kwargs['channel_ids'] = channel_ids
         kwargs['start_frame'] = start_frame
         kwargs['end_frame'] = end_frame
