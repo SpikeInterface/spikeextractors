@@ -44,8 +44,14 @@ class BinDatRecordingExtractor(RecordingExtractor):
         if geom is not None:
             for idx, channel in enumerate(self._channels):
                 self.set_channel_property(channel, 'location', self._geom[idx, :])
+        if 'numpy' in str(dtype):
+            dtype_str = str(dtype).replace("<class '", "").replace("'>", "")
+            # drop 'numpy
+            dtype_str = dtype_str.split('.')[1]
+        else:
+            dtype_str = str(dtype)
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'sampling_frequency': sampling_frequency,
-                        'numchan': numchan, 'dtype': str(dtype), 'recording_channels': recording_channels,
+                        'numchan': numchan, 'dtype': dtype_str, 'recording_channels': recording_channels,
                         'time_axis': time_axis, 'geom': geom, 'offset': offset, 'gain': gain}
 
 
