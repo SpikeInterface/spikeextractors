@@ -17,11 +17,7 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
     has_default_locations = False
     installed = HAVE_KLSX  # check at class level if installed or not
     is_writable = True
-
     mode = 'folder'
-    extractor_gui_params = [
-        {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
-    ]
     installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, folder_path):
@@ -43,10 +39,6 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
 
 class KlustaSortingExtractor(SortingExtractor):
     extractor_name = 'KlustaSortingExtractor'
-    exporter_name = 'KlustaSortingExporter'
-    exporter_gui_params = [
-        {'name': 'save_path', 'type': 'file_or_folder', 'title': "Save path"},
-    ]
     installed = HAVE_KLSX  # check at class level if installed or not
     installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
     is_writable = True

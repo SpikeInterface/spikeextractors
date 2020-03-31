@@ -133,11 +133,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     installed = HAVE_NWB  # check at class level if installed or not
     is_writable = True
     mode = 'file'
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
-        {'name': 'acquisition_name', 'type': 'string', 'value': None, 'default': None,
-         'title': "Name of Acquisition Method"},
-    ]
     installation_mesg = "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
 
     def __init__(self, file_path, electrical_series_name='ElectricalSeries'):
@@ -588,13 +583,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
 class NwbSortingExtractor(se.SortingExtractor):
     extractor_name = 'NwbSortingExtractor'
-    exporter_name = 'NwbSortingExporter'
-    exporter_gui_params = [
-        {'name': 'save_path', 'type': 'file', 'title': "Save path"},
-        {'name': 'identifier', 'type': 'str', 'value': None, 'default': None, 'title': "The session identifier"},
-        {'name': 'session_description', 'type': 'str', 'value': None, 'default': None,
-         'title': "The session description"},
-    ]
     installed = HAVE_NWB  # check at class level if installed or not
     is_writable = True
     mode = 'file'

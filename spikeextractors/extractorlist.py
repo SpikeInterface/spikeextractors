@@ -78,4 +78,4 @@ installed_sorting_extractor_list = [sx for sx in sorting_extractor_full_list if 
 sorting_extractor_dict = {sorting_class.extractor_name: sorting_class for sorting_class in sorting_extractor_full_list}
 
 writable_sorting_extractor_list = [sx for sx in installed_sorting_extractor_list if sx.is_writable]
-sorting_exporter_dict = {sorting_class.exporter_name: sorting_class for sorting_class in writable_sorting_extractor_list}
+writable_sorting_extractor_dict = {sorting_class.extractor_name: sorting_class for sorting_class in writable_sorting_extractor_list}

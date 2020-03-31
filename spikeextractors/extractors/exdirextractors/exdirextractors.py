@@ -21,9 +21,6 @@ class ExdirRecordingExtractor(RecordingExtractor):
     installed = HAVE_EXDIR  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
-    extractor_gui_params = [
-        {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
-    ]
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
     def __init__(self, folder_path):
@@ -200,13 +197,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
 
 
 class ExdirSortingExtractor(SortingExtractor):
-
     extractor_name = 'ExdirSortingExtractor'
-    exporter_name = 'ExdirSortingExporter'
-    exporter_gui_params = [
-        {'name': 'save_path', 'type': 'folder', 'title': "Save path"},
-        {'name': 'save_waveforms', 'type': 'bool',  'value': False, 'default': False, 'title': "Save path"},
-    ]
     installed = HAVE_EXDIR  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
