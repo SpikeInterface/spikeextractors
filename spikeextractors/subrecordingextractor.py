@@ -6,8 +6,6 @@ import numpy as np
 # Encapsulates a sub-dataset
 
 class SubRecordingExtractor(RecordingExtractor):
-    extractor_name = 'SubRecording'
-
     def __init__(self, parent_recording, *, channel_ids=None, renamed_channel_ids=None, start_frame=None,
                  end_frame=None):
         start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)

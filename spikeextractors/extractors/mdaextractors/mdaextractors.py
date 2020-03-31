@@ -16,9 +16,6 @@ class MdaRecordingExtractor(RecordingExtractor):
     installed = True  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
-    extractor_gui_params = [
-        {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
-    ]
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, folder_path, raw_fname='raw.mda', params_fname='params.json', geom_fname='geom.csv'):
@@ -164,10 +161,6 @@ class MdaRecordingExtractor(RecordingExtractor):
 
 class MdaSortingExtractor(SortingExtractor):
     extractor_name = 'MdaSortingExtractor'
-    exporter_name = 'MdaSortingExporter'
-    exporter_gui_params = [
-        {'name': 'save_path', 'type': 'file', 'title': "Save path"},
-    ]
     installed = True  # check at class level if installed or not
     is_writable = True
     mode = 'file'

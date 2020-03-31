@@ -17,13 +17,6 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     installed = HAVE_OE  # check at class level if installed or not
     is_writable = False
     mode = 'folder'
-    extractor_gui_params = [
-        {'name': 'folder_path', 'type': 'folder', 'title': "str, Path to folder_path"},
-        {'name': 'experiment_id', 'type': 'int', 'value': 0, 'default': 0, 'title': "Experiment ID"},
-        {'name': 'recording_id', 'type': 'int', 'value': 0, 'default': 0, 'title': "Recording ID"},
-        {'name': 'dtype', 'type': 'str', 'value': 'float', 'default': 'float', 'title': "dtype ('float' or 'int')"},
-    ]
-
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
 
     def __init__(self, folder_path, *, experiment_id=0, recording_id=0, dtype='float'):

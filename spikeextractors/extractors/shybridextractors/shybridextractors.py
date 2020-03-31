@@ -17,9 +17,6 @@ except ImportError:
 class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
     extractor_name = 'SHYBRIDRecording'
     installed = HAVE_SBEX
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid recording (.bin, .raw, .dat)"},
-    ]
     is_writable = True
     mode = 'file'
     installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
@@ -102,11 +99,7 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
 
 class SHYBRIDSortingExtractor(SortingExtractor):
     extractor_name = 'SHYBRIDSortingExtractor'
-    exporter_name = 'SHYBRIDSortingExporter'
     installed = HAVE_SBEX
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid ground truth labels (.csv)"},
-    ]
     is_writable = True
     installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
 

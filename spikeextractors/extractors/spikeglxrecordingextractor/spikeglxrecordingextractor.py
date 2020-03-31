@@ -6,18 +6,11 @@ from spikeextractors.extraction_tools import check_get_traces_args
 
 
 class SpikeGLXRecordingExtractor(RecordingExtractor):
-
     extractor_name = 'SpikeGLXRecordingExtractor'
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = True
-
     mode = 'file'
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to neuropixels ap or lf file"},
-        {'name': 'x_pitch', 'type': 'int', 'value':21, 'default':21, 'title': "x_pitch for Neuropixels probe (default 21)"},
-        {'name': 'y_pitch', 'type': 'int', 'value':20, 'default':20, 'title': "y_pitch for Neuropixels probe (default 20)"},
-    ]
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, file_path, x_pitch=21, y_pitch=20):

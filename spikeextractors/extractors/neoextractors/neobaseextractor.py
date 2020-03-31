@@ -7,10 +7,8 @@ from spikeextractors.extraction_tools import check_get_traces_args
 
 class _NeoBaseExtractor:
     NeoRawIOClass = None
-
     installed = True
     is_writable = False
-    extractor_gui_params = []
 
     def __init__(self, block_index=None, seg_index=None, **kargs):
         """

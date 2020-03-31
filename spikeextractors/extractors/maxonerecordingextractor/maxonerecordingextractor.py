@@ -11,15 +11,11 @@ except ImportError:
 
 
 class MaxOneRecordingExtractor(RecordingExtractor):
-
     extractor_name = 'MaxOneRecording'
     has_default_locations = True
     installed = HAVE_MAX  # check at class level if installed or not
     is_writable = False
     mode = 'file'
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
-    ]
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, file_path):

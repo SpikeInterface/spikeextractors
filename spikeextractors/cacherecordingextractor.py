@@ -11,9 +11,6 @@ from .baseextractor import _check_json
 
 
 class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
-
-    extractor_name = 'CacheRecording'
-
     def __init__(self, recording, chunk_size=None):
         RecordingExtractor.__init__(self)  # init tmp folder before constructing BinDatRecordingExtractor
         tmp_folder = self.get_tmp_folder()
