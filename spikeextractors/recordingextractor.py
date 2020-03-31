@@ -145,7 +145,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         # Default implementation
         return time * self.get_sampling_frequency()
 
-    def get_snippets(self, *, reference_frames, snippet_len, channel_ids=None):
+    def get_snippets(self, reference_frames, snippet_len, channel_ids=None):
         '''This function returns data snippets from the given channels that
         are starting on the given frames and are the length of the given snippet
         lengths before and after.
@@ -186,12 +186,12 @@ class RecordingExtractor(ABC, BaseExtractor):
         num_snippets = len(reference_frames)
         num_channels = len(channel_ids)
         num_frames = self.get_num_frames()
-        snippet_len_total = snippet_len_before + snippet_len_after
+        snippet_len_total = int(snippet_len_before + snippet_len_after)
         snippets = np.zeros((num_snippets, num_channels, snippet_len_total))
 
         for i in range(num_snippets):
             snippet_chunk = np.zeros((num_channels, snippet_len_total))
-            if (0 <= reference_frames[i]) and (reference_frames[i] < num_frames):
+            if 0 <= reference_frames[i] < num_frames:
                 snippet_range = np.array(
                     [int(reference_frames[i]) - snippet_len_before, int(reference_frames[i]) + snippet_len_after])
                 snippet_buffer = np.array([0, snippet_len_total])
@@ -490,7 +490,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             if property_name in self._channel_properties[channel_id]:
                 del self._channel_properties[channel_id][property_name]
 
-    def clear_channels_property(self, *, channel_ids=None, property_name):
+    def clear_channels_property(self, property_name, channel_ids=None,):
         '''This function clears the channels' properties for the given property.
 
         Parameters
