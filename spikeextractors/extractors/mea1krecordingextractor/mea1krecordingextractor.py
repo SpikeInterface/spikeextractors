@@ -11,15 +11,11 @@ except ImportError:
 
 
 class Mea1kRecordingExtractor(RecordingExtractor):
-
     extractor_name = 'MaxOneRecording'
     has_default_locations = True
     installed = HAVE_MEA1k  # check at class level if installed or not
     is_writable = True
     mode = 'file'
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
-    ]
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, file_path):

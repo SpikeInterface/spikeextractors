@@ -15,10 +15,6 @@ class NpzSortingExtractor(SortingExtractor):
 
     """
     extractor_name = 'NpzSortingExtractor'
-    exporter_name = 'NpzSortingExporter'
-    exporter_gui_params = [
-        {'name': 'save_path', 'type': 'file', 'title': "Save path (.npz)"},
-    ]
     installed = True # depend only on numpy
     installation_mesg = "Always installed"
     is_writable = True

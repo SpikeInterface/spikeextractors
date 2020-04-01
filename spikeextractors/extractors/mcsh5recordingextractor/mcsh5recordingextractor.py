@@ -16,12 +16,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     has_default_locations = False
     installed = HAVE_MCSH5  # check at class level if installed or not
     is_writable = False
-
     mode = 'file'
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
-        {'name': 'stream_id', 'type': 'int', 'title': 'ID of stream that will be loaded'},
-    ]
     installation_mesg = "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, file_path, stream_id=0, verbose=False):

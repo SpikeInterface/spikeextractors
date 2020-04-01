@@ -7,15 +7,11 @@ import csv
 
 
 class PhyRecordingExtractor(BinDatRecordingExtractor):
-
     extractor_name = 'PhyRecording'
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = False
     mode = 'folder'
-    extractor_gui_params = [
-        {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
-    ]
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, folder_path):
@@ -54,12 +50,7 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
 
 
 class PhySortingExtractor(SortingExtractor):
-
     extractor_name = 'PhySortingExtractor'
-    exporter_name = 'PhySortingExporter'
-    exporter_gui_params = [
-        {'name': 'save_path', 'type': 'folder', 'title': "Save path"},
-    ]
     installed = True  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
