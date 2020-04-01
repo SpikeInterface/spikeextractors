@@ -4,6 +4,12 @@ from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 from spikeextractors.extraction_tools import check_get_traces_args
 
+try:
+    import neo
+    HAVE_NEO = True
+except ImportError:
+    HAVE_NEO = False
+
 class _NeoBaseExtractor:
     NeoRawIOClass = None
     installed = True
@@ -15,7 +21,9 @@ class _NeoBaseExtractor:
         if seg_index is None then check if only one segment
 
         """
-        self.neo_reader = self.NeoRawIOClass(**kargs)
+        assert HAVE_NEO, "To use the Neo extractors, install Neo: \n\n pip install neo\n\n"
+        neoIOclass = eval('neo.rawio.' + self.NeoRawIOClass)
+        self.neo_reader = neoIOclass(**kargs)
         self.neo_reader.parse_header()
 
         if block_index is None:
@@ -39,6 +47,7 @@ class _NeoBaseExtractor:
 class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
     def __init__(self, **kargs):
+        RecordingExtractor.__init__(self)
         _NeoBaseExtractor.__init__(self, **kargs)
 
         # TODO propose a meachanisim to select the appropriate channel groups
