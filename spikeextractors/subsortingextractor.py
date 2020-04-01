@@ -106,10 +106,12 @@ class SubSortingExtractor(SortingExtractor):
                                                                               start_frame=start_frame,
                                                                               end_frame=end_frame))
                         # find index of first spike
-                        discarded_spikes_idxs = np.where(sorting.get_unit_spike_train(sorting_unit_id) < start_frame)
-                        if len(discarded_spikes_idxs) > 0:
-                            n_discarded = len(discarded_spikes_idxs[0])
-                            value_idxs = value_idxs - n_discarded
+                        if start_frame is not None:
+                            discarded_spikes_idxs = np.where(sorting.get_unit_spike_train(sorting_unit_id) <
+                                                             start_frame)
+                            if len(discarded_spikes_idxs) > 0:
+                                n_discarded = len(discarded_spikes_idxs[0])
+                                value_idxs = value_idxs - n_discarded
                         self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name,
                                                      value=value,
                                                      indexes=value_idxs)
