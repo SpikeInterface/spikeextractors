@@ -9,11 +9,11 @@ except ImportError:
 class PlexonRecordingExtractor(NeoBaseRecordingExtractor):
     extractor_name = 'PlexonRecording'
     mode = 'file'
-    assert HAVE_NEO, "To use the Neo extractors, install Neo: \n\n pip install neo\n\n"
-    NeoRawIOClass = neo.rawio.PlexonRawIO
+    installed = HAVE_NEO
+    NeoRawIOClass = 'PlexonRawIO'
 
 class PlexonSortingExtractor(NeoBaseSortingExtractor):
     extractor_name = 'PlexonSorting'
     mode = 'file'
-    assert HAVE_NEO, "To use the Neo extractors, install Neo: \n\n pip install neo\n\n"
-    NeoRawIOClass = neo.rawio.PlexonRawIO
+    installed = HAVE_NEO
+    NeoRawIOClass = 'PlexonRawIO'
