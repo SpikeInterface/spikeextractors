@@ -304,29 +304,32 @@ def _check_json(d):
         elif isinstance(v, datetime.datetime):
             d[k] = v.isoformat()
         elif isinstance(v, (np.ndarray, list)):
-            if isinstance(v[0], dict):
-                # these must be extractors for multi extractors
-                d[k] = [_check_json(v_el) for v_el in v]
-            else:
-                v_arr = np.array(v)
-                if len(v_arr.shape) == 1:
-                    if 'int' in str(v_arr.dtype):
-                        v_arr = [int(v_el) for v_el in v_arr]
-                        d[k] = v_arr
-                    elif 'float' in str(v_arr.dtype):
-                        v_arr = [float(v_el) for v_el in v_arr]
-                        d[k] = v_arr
-                    else:
-                        print('Skipping field: only int or float can be serialized')
-                elif len(v_arr.shape) == 2:
-                    if 'int' in str(v_arr.dtype):
-                        v_arr = [[int(v_el) for v_el in v_row] for v_row in v_arr]
-                        d[k] = v_arr
-                    elif 'float' in str(v_arr.dtype):
-                        v_arr = [[float(v_el) for v_el in v_row] for v_row in v_arr]
-                        d[k] = v_arr
-                    else:
-                        print('Skipping field: only int or float can be serialized')
+            if len(v) > 0:
+                if isinstance(v[0], dict):
+                    # these must be extractors for multi extractors
+                    d[k] = [_check_json(v_el) for v_el in v]
                 else:
-                    print("Skipping field: only 1D and 2D arrays can be serialized")
+                    v_arr = np.array(v)
+                    if len(v_arr.shape) == 1:
+                        if 'int' in str(v_arr.dtype):
+                            v_arr = [int(v_el) for v_el in v_arr]
+                            d[k] = v_arr
+                        elif 'float' in str(v_arr.dtype):
+                            v_arr = [float(v_el) for v_el in v_arr]
+                            d[k] = v_arr
+                        else:
+                            print('Skipping field: only int or float can be serialized')
+                    elif len(v_arr.shape) == 2:
+                        if 'int' in str(v_arr.dtype):
+                            v_arr = [[int(v_el) for v_el in v_row] for v_row in v_arr]
+                            d[k] = v_arr
+                        elif 'float' in str(v_arr.dtype):
+                            v_arr = [[float(v_el) for v_el in v_row] for v_row in v_arr]
+                            d[k] = v_arr
+                        else:
+                            print('Skipping field: only int or float can be serialized')
+                    else:
+                        print("Skipping field: only 1D and 2D arrays can be serialized")
+            else:
+                d[k] = list(v)
     return d
