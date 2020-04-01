@@ -5,6 +5,7 @@ import importlib
 import numpy as np
 import datetime
 from copy import deepcopy
+import tempfile
 
 
 class BaseExtractor:
@@ -15,6 +16,15 @@ class BaseExtractor:
         self.is_filtered = False
 
     def make_serialized_dict(self):
+        '''
+        Makes a nested serialized dictionary out of the extractor. The dictionary be used to re-initialize an
+        extractor with spikeextractors.load_extractor_from_dict(dump_dict)
+
+        Returns
+        -------
+        dump_dict: dict
+            Serialized dictionary
+        '''
         class_name = str(type(self)).replace("<class '", "").replace("'>", '')
         module = class_name.split('.')[0]
         imported_module = importlib.import_module(module)
@@ -65,6 +75,84 @@ class BaseExtractor:
                 json.dump(_check_json(dump_dict), f, indent=4)
         else:
             raise Exception(f"The extractor is not dumpable to to json")
+
+    def get_tmp_folder(self):
+        '''
+        Returns temporary folder associated to the extractor
+
+        Returns
+        -------
+        temp_folder: Path
+            The temporary folder
+        '''
+        if self._tmp_folder is None:
+            self._tmp_folder = Path(tempfile.mkdtemp())
+        return self._tmp_folder
+
+    def set_tmp_folder(self, folder):
+        '''
+        Sets temporary folder of the extractor
+
+        Parameters
+        ----------
+        folder: str or Path
+            The temporary folder
+        '''
+        self._tmp_folder = Path(folder)
+
+    def allocate_array(self, memmap, shape=None, dtype=None, name=None, array=None):
+        '''
+        Allocates a memory or memmap array
+
+        Parameters
+        ----------
+        memmap: bool
+            If True, a memmap array is created in the sorting temporary folder
+        shape: tuple
+            Shape of the array. If None array must be given
+        dtype: dtype
+            Dtype of the array. If None array must be given
+        name: str or None
+            Name (root) of the file (if memmap is True). If None, a random name is generated
+        array: np.array
+            If array is given, shape and dtype are initialized based on the array. If memmap is True, the array is then
+            deleted to clear memory
+
+        Returns
+        -------
+        arr: np.array or np.memmap
+            The allocated memory or memmap array
+        '''
+        if memmap:
+            tmp_folder = self.get_tmp_folder()
+            if array is not None:
+                shape = array.shape
+                dtype = array.dtype
+            else:
+                assert shape is not None and dtype is not None, "Pass 'shape' and 'dtype' arguments"
+            if name is None:
+                tmp_file = tempfile.NamedTemporaryFile(suffix=".raw", dir=tmp_folder).name
+            else:
+                if Path(name).suffix == '':
+                    tmp_file = tmp_folder / (name + '.raw')
+                else:
+                    tmp_file = tmp_folder / name
+            arr = np.memmap(tmp_file, mode='w+', shape=shape, dtype=dtype)
+            if array is not None:
+                arr[:] = array
+                del array
+            else:
+                arr[:] = 0
+        else:
+            if array is not None:
+                arr = array
+            else:
+                arr = np.zeros(shape, dtype=dtype)
+        return arr
+
+    def _cast_start_end_frame(self, start_frame, end_frame):
+        from .extraction_tools import cast_start_end_frame
+        return cast_start_end_frame(start_frame, end_frame)
 
     @staticmethod
     def load_extractor_from_json(json_file):

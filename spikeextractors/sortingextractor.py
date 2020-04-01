@@ -62,16 +62,16 @@ class SortingExtractor(ABC, BaseExtractor):
         Parameters
         ----------
         unit_id: int
-            The id that specifies a unit in the recording.
+            The id that specifies a unit in the recording
         start_frame: int
-            The frame above which a spike frame is returned  (inclusive).
+            The frame above which a spike frame is returned  (inclusive)
         end_frame: int
-            The frame below which a spike frame is returned  (exclusive).
+            The frame below which a spike frame is returned  (exclusive)
         Returns
         ----------
         spike_train: numpy.ndarray
             An 1D array containing all the frames for each spike in the
-            specified unit given the range of start and end frames.
+            specified unit given the range of start and end frames
         '''
         pass
 
@@ -95,8 +95,7 @@ class SortingExtractor(ABC, BaseExtractor):
         '''
         self._sampling_frequency = sampling_frequency
 
-    # add idxs option!
-    def set_unit_spike_features(self, unit_id, feature_name, value):
+    def set_unit_spike_features(self, unit_id, feature_name, value, indexes=None):
         '''This function adds a unit features data set under the given features
         name to the given unit.
 
@@ -114,13 +113,23 @@ class SortingExtractor(ABC, BaseExtractor):
             if unit_id in self.get_unit_ids():
                 if unit_id not in self._unit_features.keys():
                     self._unit_features[unit_id] = {}
-                if isinstance(feature_name, str) and len(value) == len(self.get_unit_spike_train(unit_id)):
-                    self._unit_features[unit_id][feature_name] = value  # np.asarray(value) this is to keep memmap object
-                else:
-                    if not isinstance(feature_name, str):
-                        raise ValueError("feature_name must be a string")
+                if indexes is None:
+                    if isinstance(feature_name, str) and len(value) == len(self.get_unit_spike_train(unit_id)):
+                        self._unit_features[unit_id][feature_name] = value
                     else:
-                        raise ValueError("feature values should have the same length as the spike train")
+                        if not isinstance(feature_name, str):
+                            raise ValueError("feature_name must be a string")
+                        else:
+                            raise ValueError("feature values should have the same length as the spike train")
+                else:
+                    if isinstance(feature_name, str) and len(value) == len(indexes):
+                        self._unit_features[unit_id][feature_name] = value
+                        self._unit_features[unit_id][feature_name+'_idxs'] = indexes
+                    else:
+                        if not isinstance(feature_name, str):
+                            raise ValueError("feature_name must be a string")
+                        else:
+                            raise ValueError("feature values should have the same length as indexes")
             else:
                 raise ValueError(str(unit_id) + " is not a valid unit_id")
         else:
@@ -144,18 +153,18 @@ class SortingExtractor(ABC, BaseExtractor):
         Parameters
         ----------
         unit_id: int
-            The id that specifies a unit in the recording.
+            The id that specifies a unit in the recording
         feature_name: string
-            The name of the feature to be returned.
+            The name of the feature to be returned
         start_frame: int
-            The frame above which a spike frame is returned  (inclusive).
+            The frame above which a spike frame is returned  (inclusive)
         end_frame: int
-            The frame below which a spike frame is returned  (exclusive).
+            The frame below which a spike frame is returned  (exclusive)
         Returns
         ----------
         spike_features: numpy.ndarray
             An array containing all the features for each spike in the
-            specified unit given the range of start and end frames.
+            specified unit given the range of start and end frames
         '''
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if isinstance(unit_id, (int, np.integer)):
@@ -173,8 +182,29 @@ class SortingExtractor(ABC, BaseExtractor):
                             # keep memmap objects
                             return self._unit_features[unit_id][feature_name]
                         else:
-                            spike_indices = np.where(np.logical_and(spike_train >= start_frame,
-                                                                    spike_train < end_frame))
+                            if len(self._unit_features[unit_id][feature_name]) == len(spike_train):
+                                spike_indices = np.where(np.logical_and(spike_train >= start_frame,
+                                                                        spike_train < end_frame))
+                            elif len(self._unit_features[unit_id][feature_name]) < len(spike_train):
+                                if not feature_name.endswith('idxs'):
+                                    # retrieve features on the correct idxs
+                                    assert feature_name + '_idxs' in self.get_unit_spike_feature_names(unit_id=unit_id)
+                                    feature_name_idxs = feature_name + '_idxs'
+                                    value_idxs = np.array(self.get_unit_spike_features(unit_id=unit_id,
+                                                                                       feature_name=feature_name_idxs))
+                                    spike_train = spike_train[value_idxs]
+                                    spike_indices = np.where(np.logical_and(spike_train >= start_frame,
+                                                                            spike_train < end_frame))
+                                else:
+                                    # retrieve idxs features
+                                    value_idxs = np.array(self.get_unit_spike_features(unit_id=unit_id,
+                                                                                       feature_name=feature_name))
+                                    spike_train = spike_train[value_idxs]
+                                    spike_indices = np.where(np.logical_and(spike_train >= start_frame,
+                                                                            spike_train < end_frame))
+                            else:
+                                raise ValueError(str(feature_name) + " dimensions are inconsistent for unit "
+                                                 + str(unit_id))
                             return self._unit_features[unit_id][feature_name][spike_indices]
                     else:
                         raise ValueError(str(feature_name) + " has not been added to unit " + str(unit_id))
@@ -191,23 +221,23 @@ class SortingExtractor(ABC, BaseExtractor):
         Parameters
         ----------
         unit_id: int
-            The id that specifies a unit in the sorting.
+            The id that specifies a unit in the sorting
         feature_name: string
-            The name of the feature to be cleared.
+            The name of the feature to be cleared
         '''
         if unit_id in self._unit_features:
             if feature_name in self._unit_features[unit_id]:
                 del self._unit_features[unit_id][feature_name]
 
-    def clear_units_spike_features(self, *, unit_ids=None, feature_name):
+    def clear_units_spike_features(self, feature_name, unit_ids=None):
         '''This function clears the units' spikes features for the given feature.
 
         Parameters
         ----------
-        unit_ids: list
-            A list of ids that specifies a set of units in the sorting.
         feature_name: string
-            The name of the feature to be cleared.
+            The name of the feature to be cleared
+        unit_ids: list
+            A list of ids that specifies a set of units in the sorting. If None, all units are cleared
         '''
         if unit_ids is None:
             unit_ids = self.get_unit_ids()
@@ -219,7 +249,7 @@ class SortingExtractor(ABC, BaseExtractor):
         Parameters
         ----------
         unit_id: int
-            The unit id for which the feature names will be returned.
+            The unit id for which the feature names will be returned
         Returns
         ----------
         property_names
@@ -242,7 +272,7 @@ class SortingExtractor(ABC, BaseExtractor):
         ----------
         unit_ids: array_like
             The unit ids for which the shared feature names will be returned.
-            If None (default), will return shared feature names for all units,
+            If None (default), will return shared feature names for all units
         Returns
         ----------
         property_names
@@ -269,7 +299,7 @@ class SortingExtractor(ABC, BaseExtractor):
             The name of the property to be stored
         value
             The data associated with the given property name. Could be many
-            formats as specified by the user.
+            formats as specified by the user
         '''
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.get_unit_ids():
@@ -302,32 +332,6 @@ class SortingExtractor(ABC, BaseExtractor):
         for i, unit in enumerate(unit_ids):
             self.set_unit_property(unit_id=unit, property_name=property_name, value=values[i])
 
-    def add_unit_property(self, unit_id, property_name, value):
-        '''DEPRECATED! This function adds a unit property data set under the given property
-        name to the given unit.
-
-        Parameters
-        ----------
-        unit_id: int
-            The unit id for which the property will be added
-        property_name: str
-            The name of the property
-        value
-            The data associated with the given property name. Could be many
-            formats as specified by the user.
-        '''
-        print('WARNING: add_unit_property is deprecated. Use set_unit_property instead.')
-        if isinstance(unit_id, (int, np.integer)):
-            if unit_id in self.get_unit_ids():
-                if isinstance(property_name, str):
-                    self._unit_properties[unit_id][property_name] = value
-                else:
-                    raise ValueError(str(property_name) + " must be a string")
-            else:
-                raise ValueError(str(unit_id) + " is not a valid unit_id")
-        else:
-            raise ValueError(str(unit_id) + " must be an int")
-
     def get_unit_property(self, unit_id, property_name):
         '''This function returns the data stored under the property name given
         from the given unit.
@@ -342,7 +346,7 @@ class SortingExtractor(ABC, BaseExtractor):
         ----------
         value
             The data associated with the given property name. Could be many
-            formats as specified by the user.
+            formats as specified by the user
         '''
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.get_unit_ids():
@@ -386,7 +390,7 @@ class SortingExtractor(ABC, BaseExtractor):
          Parameters
         ----------
         unit_id: int
-            The unit id for which the property names will be returned.
+            The unit id for which the property names will be returned
         Returns
         ----------
         property_names
@@ -409,7 +413,7 @@ class SortingExtractor(ABC, BaseExtractor):
         ----------
         unit_ids: array_like
             The unit ids for which the shared property names will be returned.
-            If None (default), will return shared property names for all units,
+            If None (default), will return shared property names for all units
         Returns
         ----------
         property_names
@@ -433,7 +437,7 @@ class SortingExtractor(ABC, BaseExtractor):
         sorting: SortingExtractor
             The sorting extractor from which the properties will be copied
         unit_ids: (array_like, int)
-            The list (or single value) of unit_ids for which the properties will be copied.
+            The list (or single value) of unit_ids for which the properties will be copied
         '''
         if unit_ids is None:
             unit_ids = sorting.get_unit_ids()
@@ -455,23 +459,23 @@ class SortingExtractor(ABC, BaseExtractor):
         Parameters
         ----------
         unit_id: int
-            The id that specifies a unit in the sorting.
+            The id that specifies a unit in the sorting
         property_name: string
-            The name of the property to be cleared.
+            The name of the property to be cleared
         '''
         if unit_id in self._unit_properties:
             if property_name in self._unit_properties[unit_id]:
                 del self._unit_properties[unit_id][property_name]
 
-    def clear_units_property(self, *, unit_ids=None, property_name):
+    def clear_units_property(self, property_name, unit_ids=None):
         '''This function clears the units' properties for the given property.
 
         Parameters
         ----------
-        unit_ids: list
-            A list of ids that specifies a set of units in the sorting.
         property_name: string
-            The name of the property to be cleared.
+            The name of the property to be cleared
+        unit_ids: list
+            A list of ids that specifies a set of units in the sorting. If None, all units are cleared
         '''
         if unit_ids is None:
             unit_ids = self.get_unit_ids()
@@ -487,8 +491,7 @@ class SortingExtractor(ABC, BaseExtractor):
         sorting: SortingExtractor
             The sorting extractor from which the spike features will be copied
         unit_ids: (array_like, int)
-            The list (or single value) of unit_ids for which the spike features will be copied.
-        def get_unit_spike_features(self, unit_id, feature_name, start_frame=None, end_frame=None):
+            The list (or single value) of unit_ids for which the spike features will be copied
         '''
         if unit_ids is None:
             unit_ids = sorting.get_unit_ids()
@@ -517,7 +520,7 @@ class SortingExtractor(ABC, BaseExtractor):
             The start frame of the epoch to be added (inclusive)
         end_frame: int
             The end frame of the epoch to be added (exclusive). If set to None, it will include the entire
-            sorting after the start_frame.
+            sorting after the start_frame
         '''
         if isinstance(epoch_name, str):
             start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
@@ -620,7 +623,7 @@ class SortingExtractor(ABC, BaseExtractor):
         Returns
         -------
         sub_list: list
-            The list of subextractors to be returned.
+            The list of subextractors to be returned
 
         '''
         if return_property_list:
@@ -631,80 +634,6 @@ class SortingExtractor(ABC, BaseExtractor):
             sub_list = get_sub_extractors_by_property(self, property_name=property_name,
                                                       return_property_list=return_property_list)
             return sub_list
-
-    def get_tmp_folder(self):
-        '''
-        Returns temporary folder associated to the sorting extractor
-
-        Returns
-        -------
-        temp_folder: Path
-            The temporary folder
-        '''
-        if self._tmp_folder is None:
-            self._tmp_folder = Path(tempfile.mkdtemp())
-        return self._tmp_folder
-
-    def set_tmp_folder(self, folder):
-        '''
-        Sets temporary folder
-
-        Parameters
-        ----------
-        folder: str or Path
-            The temporary folder
-        '''
-        self._tmp_folder = Path(folder)
-
-    def allocate_array(self, memmap, shape=None, dtype=None, name=None, array=None):
-        '''
-        Allocates a memory or memmap array
-
-        Parameters
-        ----------
-        memmap: bool
-            If True, a memmap array is created in the sorting temporary folder
-        shape: tuple
-            Shape of the array. If None array must be given
-        dtype: dtype
-            Dtype of the array. If None array must be given
-        name: str or None
-            Name (root) of the file (if memmap is True). If None, a random name is generated
-        array: np.array
-            If array is given, shape and dtype are initialized based on the array. If memmap is True, the array is then
-            deleted to clear memory
-
-        Returns
-        -------
-        arr: np.array or np.memmap
-            The allocated memory or memmap array
-        '''
-        if memmap:
-            tmp_folder = self.get_tmp_folder()
-            if array is not None:
-                shape = array.shape
-                dtype = array.dtype
-            else:
-                assert shape is not None and dtype is not None, "Pass 'shape' and 'dtype' arguments"
-            if name is None:
-                tmp_file = tempfile.NamedTemporaryFile(suffix=".raw", dir=tmp_folder).name
-            else:
-                if Path(name).suffix == '':
-                    tmp_file = tmp_folder / (name + '.raw')
-                else:
-                    tmp_file = tmp_folder / name
-            arr = np.memmap(tmp_file, mode='w+', shape=shape, dtype=dtype)
-            if array is not None:
-                arr[:] = array
-                del array
-            else:
-                arr[:] = 0
-        else:
-            if array is not None:
-                arr = array
-            else:
-                arr = np.zeros(shape, dtype=dtype)
-        return arr
 
     @staticmethod
     def write_sorting(sorting, save_path):
@@ -717,26 +646,12 @@ class SortingExtractor(ABC, BaseExtractor):
         ----------
         sorting: SortingExtractor
             A SortingExtractor that can extract information from the sorted data
-            file to be converted to the new format.
+            file to be converted to the new format
 
         save_path: string
             A path to where the converted sorted data will be saved, which may
-            either be a file or a folder, depending on the format.
+            either be a file or a folder, depending on the format
         '''
         raise NotImplementedError("The write_sorting function is not \
                                   implemented for this extractor")
 
-    def _cast_start_end_frame(self, start_frame, end_frame):
-        if isinstance(start_frame, (float, np.float)):
-            start_frame = int(start_frame)
-        elif isinstance(start_frame, (int, np.integer, type(None))):
-            start_frame = start_frame
-        else:
-            raise ValueError("start_frame must be an int, float (not infinity), or None")
-        if isinstance(end_frame, (float, np.float)):
-            end_frame = int(end_frame)
-        elif isinstance(end_frame, (int, np.integer, type(None))):
-            end_frame = end_frame
-        else:
-            raise ValueError("end_frame must be an int, float (not infinity), or None")
-        return start_frame, end_frame
