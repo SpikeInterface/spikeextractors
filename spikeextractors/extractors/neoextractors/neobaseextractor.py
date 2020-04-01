@@ -1,5 +1,4 @@
 import numpy as np
-import neo
 
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
