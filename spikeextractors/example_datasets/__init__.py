@@ -1,2 +1,1 @@
-from .toy_example import toy_example
-from .real import real
+from .toy_example import toy_example, create_dumpable_extractors

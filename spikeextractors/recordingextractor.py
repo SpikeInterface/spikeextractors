@@ -49,12 +49,12 @@ class RecordingExtractor(ABC, BaseExtractor):
         Parameters
         ----------
         start_frame: int
-            The starting frame of the trace to be returned (inclusive).
+            The starting frame of the trace to be returned (inclusive)
         end_frame: int
-            The ending frame of the trace to be returned (exclusive).
+            The ending frame of the trace to be returned (exclusive)
         channel_ids: array_like
             A list or 1D array of channel ids (ints) from which each trace will be
-            extracted.
+            extracted
 
         Returns
         ----------
@@ -66,12 +66,12 @@ class RecordingExtractor(ABC, BaseExtractor):
 
     @abstractmethod
     def get_num_frames(self):
-        '''This function returns the number of frames in the recording.
+        '''This function returns the number of frames in the recording
 
         Returns
         -------
         num_frames: int
-            Number of frames in the recording (duration of recording).
+            Number of frames in the recording (duration of recording)
         '''
         pass
 
@@ -82,7 +82,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         Returns
         -------
         fs: float
-            Sampling frequency of the recordings in Hz.
+            Sampling frequency of the recordings in Hz
         '''
         pass
 
@@ -104,7 +104,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         Returns
         -------
         num_channels: int
-            Number of channels in the recording.
+            Number of channels in the recording
         '''
         # print('WARNING: this is a temporary warning. You should use get_channel_ids() to iterate through the channels. '
         #       'This warning will be removed in future versions of SpikeInterface.')
@@ -119,12 +119,12 @@ class RecordingExtractor(ABC, BaseExtractor):
         Parameters
         ----------
         frame: float
-            The frame to be converted to a time.
+            The frame to be converted to a time
 
         Returns
         -------
         time: float
-            The corresponding time in seconds.
+            The corresponding time in seconds
         '''
         # Default implementation
         return frame / self.get_sampling_frequency()
@@ -135,12 +135,12 @@ class RecordingExtractor(ABC, BaseExtractor):
         Parameters
         -------
         time: float
-            The time (in seconds) to be converted to frame index.
+            The time (in seconds) to be converted to frame index
 
         Returns
         -------
         frame: float
-            The corresponding frame index.
+            The corresponding frame index
         '''
         # Default implementation
         return time * self.get_sampling_frequency()
@@ -162,7 +162,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             each snippet
         channel_ids: array_like
             A list or array of channel ids (ints) from which each trace will be
-            extracted.
+            extracted
 
         Returns
         ----------
@@ -170,7 +170,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             Returns a list of the snippets as numpy arrays.
             The length of the list is len(reference_frames)
             Each array has dimensions: (num_channels x snippet_len)
-            Out-of-bounds cases should be handled by filling in zeros in the snippet.
+            Out-of-bounds cases should be handled by filling in zeros in the snippet
         '''
         # Default implementation
         if isinstance(snippet_len, (tuple, list, np.ndarray)):
@@ -244,7 +244,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         ----------
         locations: array_like
             Returns a list of corresonding locations (floats) for the given
-            channel_ids.
+            channel_ids
         '''
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
@@ -289,7 +289,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         ----------
         groups: array_like
             Returns a list of corresonding groups (ints) for the given
-            channel_ids.
+            channel_ids
         '''
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
@@ -309,7 +309,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             The channel ids (ints) for which the groups will be specified
         gains: float/array_like
             If a float, each channel will be assigned the corresponding gain.
-            If a list, each channel will be given a gain from the list.
+            If a list, each channel will be given a gain from the list
         '''
         if isinstance(gains, (int, np.integer, float, np.float64)):
             gain = float(gains)
@@ -340,7 +340,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         ----------
         gains: array_like
             Returns a list of corresonding gains (floats) for the given
-            channel_ids.
+            channel_ids
         '''
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
@@ -362,7 +362,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             A property stored by the RecordingExtractor (location, etc.)
         value:
             The data associated with the given property name. Could be many
-            formats as specified by the user.
+            formats as specified by the user
         '''
         if isinstance(channel_id, (int, np.integer)):
             if channel_id in self.get_channel_ids():
@@ -392,7 +392,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         ----------
         property_data
             The data associated with the given property name. Could be many
-            formats as specified by the user.
+            formats as specified by the user
         '''
         if not isinstance(channel_id, (int, np.integer)):
             raise TypeError(str(channel_id) + " must be an int")
@@ -460,7 +460,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         recording: RecordingExtractor
             The recording extractor from which the properties will be copied
         channel_ids: (array_like, int)
-            The list (or single value) of channel_ids for which the properties will be copied.
+            The list (or single value) of channel_ids for which the properties will be copied
         '''
         if channel_ids is None:
             channel_ids = recording.get_channel_ids()
@@ -482,23 +482,23 @@ class RecordingExtractor(ABC, BaseExtractor):
         Parameters
         ----------
         channel_id: int
-            The id that specifies a channel in the recording.
+            The id that specifies a channel in the recording
         property_name: string
-            The name of the property to be cleared.
+            The name of the property to be cleared
         '''
         if channel_id in self._channel_properties:
             if property_name in self._channel_properties[channel_id]:
                 del self._channel_properties[channel_id][property_name]
 
-    def clear_channels_property(self, property_name, channel_ids=None,):
+    def clear_channels_property(self, property_name, channel_ids=None):
         '''This function clears the channels' properties for the given property.
 
         Parameters
         ----------
-        channel_ids: list
-            A list of ids that specifies a set of channels in the recording.
         property_name: string
-            The name of the property to be cleared.
+            The name of the property to be cleared
+        channel_ids: list
+            A list of ids that specifies a set of channels in the recording. If None all channels ar cleared
         '''
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
@@ -518,7 +518,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             The start frame of the epoch to be added (inclusive)
         end_frame: int
             The end frame of the epoch to be added (exclusive). If set to None, it will include the entire
-            recording after the start_frame.
+            recording after the start_frame
         '''
         if isinstance(epoch_name, str):
             start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
@@ -689,10 +689,10 @@ class RecordingExtractor(ABC, BaseExtractor):
         Returns
         -------
         sub_list: list
-            The list of subextractors to be returned.
+            The list of subextractors to be returned
         OR
         sub_list, prop_list
-            If return_property_list is True, the property list will be returned as well.
+            If return_property_list is True, the property list will be returned as well
 
         '''
         if return_property_list:
@@ -703,80 +703,6 @@ class RecordingExtractor(ABC, BaseExtractor):
             sub_list = get_sub_extractors_by_property(self, property_name=property_name, 
                                                       return_property_list=return_property_list)
             return sub_list
-
-    def get_tmp_folder(self):
-        '''
-        Returns temporary folder associated to the recording extractor
-
-        Returns
-        -------
-        temp_folder: Path
-            The temporary folder
-        '''
-        if self._tmp_folder is None:
-            self._tmp_folder = Path(tempfile.mkdtemp())
-        return self._tmp_folder
-
-    def set_tmp_folder(self, folder):
-        '''
-        Sets temporary folder
-
-        Parameters
-        ----------
-        folder: str or Path
-            The temporary folder
-        '''
-        self._tmp_folder = Path(folder)
-
-    def allocate_array(self, memmap, shape=None, dtype=None, name=None, array=None):
-        '''
-        Allocates a memory or memmap array
-
-        Parameters
-        ----------
-        memmap: bool
-            If True, a memmap array is created in the sorting temporary folder
-        shape: tuple
-            Shape of the array. If None array must be given
-        dtype: dtype
-            Dtype of the array. If None array must be given
-        name: str or None
-            Name (root) of the file (if memmap is True). If None, a random name is generated
-        array: np.array
-            If array is given, shape and dtype are initialized based on the array. If memmap is True, the array is then
-            deleted to clear memory
-
-        Returns
-        -------
-        arr: np.array or np.memmap
-            The allocated memory or memmap array
-        '''
-        if memmap:
-            tmp_folder = self.get_tmp_folder()
-            if array is not None:
-                shape = array.shape
-                dtype = array.dtype
-            else:
-                assert shape is not None and dtype is not None, "Pass 'shape' and 'dtype' arguments"
-            if name is None:
-                tmp_file = tempfile.NamedTemporaryFile(suffix=".raw", dir=tmp_folder).name
-            else:
-                if Path(name).suffix == '':
-                    tmp_file = tmp_folder / (name + '.raw')
-                else:
-                    tmp_file = tmp_folder / name
-            arr = np.memmap(tmp_file, mode='w+', shape=shape, dtype=dtype)
-            if array is not None:
-                arr[:] = array
-                del array
-            else:
-                arr[:] = 0
-        else:
-            if array is not None:
-                arr = array
-            else:
-                arr = np.zeros(shape, dtype=dtype)
-        return arr
 
     @staticmethod
     def write_recording(recording, save_path):

@@ -19,7 +19,6 @@ setuptools.setup(
     package_data={},
     install_requires=[
         'numpy',
-        'neo>=0.8',
     ],
     classifiers=(
         "Programming Language :: Python :: 3",
