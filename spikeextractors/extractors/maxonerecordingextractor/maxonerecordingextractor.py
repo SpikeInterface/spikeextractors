@@ -32,6 +32,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
     def _initialize(self):
         self._filehandle = h5py.File(self._file_path, 'r')
         self._mapping = self._filehandle['mapping']
+        self._lsb = self._filehandle['settings']['lsb'][()] * 1e6
         channels = np.array(self._mapping['channel'])
         electrodes = np.array(self._mapping['electrode'])
         # remove unused channels
@@ -61,10 +62,10 @@ class MaxOneRecordingExtractor(RecordingExtractor):
             if np.any(np.diff(channel_idxs) < 0):
                 sorted_idx = np.argsort(channel_idxs)
                 recordings = self._signals[np.sort(channel_idxs), start_frame:end_frame]
-                return recordings[sorted_idx]
+                return (recordings[sorted_idx] * self._lsb).astype('float')
             else:
-                return self._signals[np.array(channel_idxs), start_frame:end_frame]
+                return (self._signals[np.array(channel_idxs), start_frame:end_frame] * self._lsb).astype('float')
         else:
             assert channel_ids in self.get_channel_ids()
             channel_idx = self.get_channel_ids().index(channel_ids)
-            return self._signals[np.array(channel_idx), start_frame:end_frame]
+            return (self._signals[np.array(channel_idx), start_frame:end_frame] * self._lsb).astype('float')

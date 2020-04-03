@@ -1,6 +1,7 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors.extraction_tools import read_binary, write_to_binary_dat_format, check_get_traces_args
 import shutil
+import numpy as np
 from pathlib import Path
 
 
@@ -55,7 +56,8 @@ class BinDatRecordingExtractor(RecordingExtractor):
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
+        channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
+        recordings = self._timeseries[:, start_frame:end_frame][channel_idxs, :]
         if self._dtype.startswith('uint'):
             exp_idx = self._dtype.find('int') + 3
             exp = int(self._dtype[exp_idx:])
@@ -94,6 +96,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         else:
             write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
                                        chunk_size=chunk_size, chunk_mb=chunk_mb)
+
 
     @staticmethod
     def write_recording(recording, save_path, time_axis=0, dtype=None, chunk_size=None):
