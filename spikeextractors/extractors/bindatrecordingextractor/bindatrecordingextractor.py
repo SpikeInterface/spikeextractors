@@ -1,7 +1,9 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors.extraction_tools import read_binary, write_to_binary_dat_format, check_get_traces_args
 import shutil
+import numpy as np
 from pathlib import Path
+import os
 
 
 class BinDatRecordingExtractor(RecordingExtractor):
@@ -18,10 +20,12 @@ class BinDatRecordingExtractor(RecordingExtractor):
         self._datfile = Path(file_path)
         self._time_axis = time_axis
         self._dtype = str(dtype)
-        self._timeseries = read_binary(self._datfile, numchan, dtype, time_axis, offset)
         self._sampling_frequency = float(sampling_frequency)
         self._gain = gain
+        self._numchan = numchan
         self._geom = geom
+        self._offset = offset
+        self._timeseries = read_binary(self._datfile, numchan, dtype, time_axis, offset)
 
         if recording_channels is not None:
             assert len(recording_channels) == self._timeseries.shape[0], \
@@ -43,7 +47,6 @@ class BinDatRecordingExtractor(RecordingExtractor):
                         'numchan': numchan, 'dtype': dtype_str, 'recording_channels': recording_channels,
                         'time_axis': time_axis, 'geom': geom, 'offset': offset, 'gain': gain}
 
-
     def get_channel_ids(self):
         return self._channels
 
@@ -55,7 +58,8 @@ class BinDatRecordingExtractor(RecordingExtractor):
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
+        channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
+        recordings = self._timeseries[:, start_frame:end_frame][channel_idxs, :]
         if self._dtype.startswith('uint'):
             exp_idx = self._dtype.find('int') + 3
             exp = int(self._dtype[exp_idx:])
@@ -94,6 +98,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         else:
             write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
                                        chunk_size=chunk_size, chunk_mb=chunk_mb)
+
 
     @staticmethod
     def write_recording(recording, save_path, time_axis=0, dtype=None, chunk_size=None):

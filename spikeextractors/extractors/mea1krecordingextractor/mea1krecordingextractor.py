@@ -58,17 +58,15 @@ class Mea1kRecordingExtractor(RecordingExtractor):
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if np.array(channel_ids).size > 1:
             assert np.all([ch in self.get_channel_ids() for ch in channel_ids])
-            channel_idxs = [self.get_channel_ids().index(ch) for ch in channel_ids]
-            if np.any(np.diff(channel_idxs) < 0):
-                sorted_idx = np.argsort(channel_idxs)
-                recordings = self._signals[np.sort(channel_idxs), start_frame:end_frame]
-                return recordings[sorted_idx]
+            if np.any(np.diff(channel_ids) < 0):
+                sorted_idx = np.argsort(channel_ids)
+                recordings = self._signals[np.sort(channel_ids), start_frame:end_frame]
+                return recordings[sorted_idx].astype('float')
             else:
-                return self._signals[np.array(channel_idxs), start_frame:end_frame]
+                return self._signals[np.array(channel_ids), start_frame:end_frame].astype('float')
         else:
             assert channel_ids in self.get_channel_ids()
-            channel_idx = self.get_channel_ids().index(channel_ids)
-            return self._signals[np.array(channel_idx), start_frame:end_frame]
+            return self._signals[np.array(channel_ids), start_frame:end_frame].astype('float')
 
     @staticmethod
     def write_recording(recording, save_path):
