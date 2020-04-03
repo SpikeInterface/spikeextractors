@@ -247,13 +247,13 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
     numchan = int(numchan)
     with Path(file).open() as f:
         nsamples = (os.fstat(f.fileno()).st_size - offset) // (numchan * np.dtype(dtype).itemsize)
-        if time_axis == 0:
-            samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
-                                shape=(nsamples, numchan))
-            samples = np.memmap.transpose(samples)
-        else:
-            samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
-                                shape=(numchan, nsamples))
+    if time_axis == 0:
+        samples = np.memmap(file, np.dtype(dtype), mode='r', offset=offset,
+                            shape=(nsamples, numchan))
+        samples = np.memmap.transpose(samples)
+    else:
+        samples = np.memmap(file, np.dtype(dtype), mode='r', offset=offset,
+                            shape=(numchan, nsamples))
     return samples
 
 
