@@ -152,8 +152,16 @@ class TestExtractors(unittest.TestCase):
 
         assert cache_extractor.filename == 'cache.dat'
         check_dumping(cache_extractor)
+
+        # test saving to file
         del cache_extractor
-        assert not Path('cache.dat').is_file()
+        assert Path('cache.dat').is_file()
+
+        # test tmp
+        cache_extractor = se.CacheRecordingExtractor(self.RX)
+        tmp_file = cache_extractor.filename
+        del cache_extractor
+        assert not Path(tmp_file).is_file()
 
     def test_mda_extractor(self):
         path1 = self.test_dir + '/mda'
