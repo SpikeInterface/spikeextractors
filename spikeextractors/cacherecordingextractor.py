@@ -16,6 +16,7 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         tmp_folder = self.get_tmp_folder()
         self._recording = recording
         self._tmp_file = tempfile.NamedTemporaryFile(suffix=".dat", dir=tmp_folder).name
+        self._is_tmp = True
         dtype = recording.get_traces(start_frame=0, end_frame=2).dtype
         recording.write_to_binary_dat_format(save_path=self._tmp_file, dtype=dtype, chunk_size=chunk_size)
         BinDatRecordingExtractor.__init__(self, self._tmp_file, numchan=recording.get_num_channels(),
@@ -30,10 +31,11 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         self._kwargs = {'recording': recording, 'chunk_size': chunk_size}
 
     def __del__(self):
-        try:
-            os.remove(self._tmp_file)
-        except Exception as e:
-            print("Unable to remove temporary file", e)
+        if self._is_tmp:
+            try:
+                os.remove(self._tmp_file)
+            except Exception as e:
+                print("Unable to remove temporary file", e)
 
     @property
     def filename(self):
@@ -49,6 +51,7 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         self._tmp_file = str(save_path)
         self._kwargs['file_path'] = str(Path(self._tmp_file).absolute())
         self._bindat_kwargs['file_path'] = str(Path(self._tmp_file).absolute())
+        self._is_tmp = False
 
     # override to make serialization avoid reloading and saving binary file
     def make_serialized_dict(self):
@@ -56,10 +59,10 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         module = class_name.split('.')[0]
         imported_module = importlib.import_module(module)
 
-        # always dumpable
-        print("Warning: dumping a CacheRecordingExtractor. The path to the tmp binary file will be lost in "
-              "further sessions. To prevent this, use the 'CacheRecordingExtractor.save_to_file('path-to-file)' "
-              "function")
+        if self._is_tmp:
+            print("Warning: dumping a CacheRecordingExtractor. The path to the tmp binary file will be lost in "
+                  "further sessions. To prevent this, use the 'CacheRecordingExtractor.save_to_file('path-to-file)' "
+                  "function")
 
         dump_dict = {'class': class_name, 'module': module, 'kwargs': self._bindat_kwargs,
                      'version': imported_module.__version__, 'dumpable': True}
