@@ -59,7 +59,7 @@ class KlustaSortingExtractor(SortingExtractor):
 
     default_cluster_groups = {0: 'Noise', 1: 'MUA', 2: 'Good', 3: 'Unsorted'}
 
-    def __init__(self, file_or_folder_path):
+    def __init__(self, file_or_folder_path, exclude_cluster_groups=None):
         assert HAVE_KLSX, "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"
         SortingExtractor.__init__(self)
         kwik_file_or_folder = Path(file_or_folder_path)
@@ -89,10 +89,17 @@ class KlustaSortingExtractor(SortingExtractor):
         self._unit_ids = []
         unique_units = []
         klusta_units = []
-        cluster_groups_int = []
         cluster_groups_name = []
         groups = []
         unit = 0
+
+        cs_to_exclude = []
+        valid_group_names = [i[1].lower() for i in self.default_cluster_groups.items()]
+        if exclude_cluster_groups is not None:
+            assert isinstance(exclude_cluster_groups, list), 'exclude_cluster_groups should be a list'
+            for ec in exclude_cluster_groups:
+                assert ec in valid_group_names, f'select exclude names out of: {valid_group_names}'
+                cs_to_exclude.append(ec.lower())
 
         for channel_group in kf_reader.get('/channel_groups'):
             chan_cluster_id_arr = kf_reader.get(f'/channel_groups/{channel_group}/spikes/clusters/main')[()]
@@ -106,13 +113,19 @@ class KlustaSortingExtractor(SortingExtractor):
                 st = chan_cluster_times_arr[cluster_frame_idx]
                 assert st.shape[0] > 0, 'no spikes in cluster'  # this shouldnt happen
                 cluster_group = kf_reader.get(f'/channel_groups/{channel_group}/clusters/main/{cluster_id}').attrs['cluster_group']
+
+                assert cluster_group in self.default_cluster_groups.keys(), f'cluster_group not in "default_dict: {cluster_group}'
+                cluster_group_name = self.default_cluster_groups[cluster_group]
+
+                if cluster_group_name.lower() in cs_to_exclude:
+                    continue
+
                 self._spiketrains.append(st)
                 klusta_units.append(int(cluster_id))
                 unique_units.append(unit)
                 unit += 1
                 groups.append(int(channel_group))
-                cluster_groups_int.append(cluster_group)
-                cluster_groups_name.append(self.default_cluster_groups[cluster_group])
+                cluster_groups_name.append(cluster_group_name)
 
         if len(np.unique(klusta_units)) == len(np.unique(unique_units)):
             self._unit_ids = klusta_units
@@ -121,8 +134,7 @@ class KlustaSortingExtractor(SortingExtractor):
             self._unit_ids = unique_units
         for i, u in enumerate(self._unit_ids):
             self.set_unit_property(u, 'group', groups[i])
-            self.set_unit_property(u, 'cluster_group', cluster_groups_int[i])
-            self.set_unit_property(u, 'cluster_group_name', cluster_groups_name[i])
+            self.set_unit_property(u, 'quality', cluster_groups_name[i].lower())
 
         self._kwargs = {'file_or_folder_path': str(Path(file_or_folder_path).absolute())}
 
