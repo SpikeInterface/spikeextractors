@@ -23,6 +23,7 @@ except ImportError:
     HAVE_KLSX = False
 
 
+# noinspection SpellCheckingInspection
 class KlustaRecordingExtractor(BinDatRecordingExtractor):
     extractor_name = 'KlustaRecordingExtractor'
     has_default_locations = False
@@ -48,6 +49,7 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
 
+# noinspection SpellCheckingInspection
 class KlustaSortingExtractor(SortingExtractor):
     extractor_name = 'KlustaSortingExtractor'
     installed = HAVE_KLSX  # check at class level if installed or not
