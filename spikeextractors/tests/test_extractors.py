@@ -235,7 +235,7 @@ class TestExtractors(unittest.TestCase):
 
     def test_klusta_extractor(self):
         path1 = self.test_dir + '/firings_true.kwik'
-        se.KlustaSortingExtractor.write_sorting(self.SX, path1)
+        # se.KlustaSortingExtractor.write_sorting(self.SX, path1)
         SX_kl = se.KlustaSortingExtractor(path1)
         check_sorting_return_types(SX_kl)
         check_sortings_equal(self.SX, SX_kl)
