@@ -111,7 +111,7 @@ class KlustaSortingExtractor(SortingExtractor):
             for cluster_id in chan_cluster_ids:
                 cluster_frame_idx = np.nonzero(chan_cluster_id_arr == cluster_id)  # the [()] is a h5py thing
                 st = chan_cluster_times_arr[cluster_frame_idx]
-                assert st.shape[0] > 0, 'no spikes in cluster'  # this shouldnt happen
+                assert st.shape[0] > 0, 'no spikes in cluster'
                 cluster_group = kf_reader.get(f'/channel_groups/{channel_group}/clusters/main/{cluster_id}').attrs['cluster_group']
 
                 assert cluster_group in self.default_cluster_groups.keys(), f'cluster_group not in "default_dict: {cluster_group}'
