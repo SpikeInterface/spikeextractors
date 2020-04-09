@@ -87,7 +87,8 @@ class KlustaSortingExtractor(SortingExtractor):
         kf_reader = h5py.File(kwikfile, 'r')
         self._spiketrains = []
         self._unit_ids = []
-        self._sampling_frequency = kf_reader.get('recordings/0/').attrs['sample_rate']
+        # self._sampling_frequency = kf_reader.get('recordings/0/').attrs['sample_rate']
+        self.get_sampling_frequency = 32000
         unique_units = []
         klusta_units = []
         cluster_groups_name = []
