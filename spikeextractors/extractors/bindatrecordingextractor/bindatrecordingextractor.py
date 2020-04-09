@@ -15,7 +15,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, file_path, sampling_frequency, numchan, dtype, recording_channels=None,
-                 time_axis=0, geom=None, offset=0, gain=None):
+                 time_axis=0, geom=None, offset=0, gain=None, is_filtered=None):
         RecordingExtractor.__init__(self)
         self._datfile = Path(file_path)
         self._time_axis = time_axis
@@ -26,6 +26,12 @@ class BinDatRecordingExtractor(RecordingExtractor):
         self._geom = geom
         self._offset = offset
         self._timeseries = read_binary(self._datfile, numchan, dtype, time_axis, offset)
+
+        # keep track of filter status when dumping
+        if is_filtered is not None:
+            self.is_filtered = is_filtered
+        else:
+            self.is_filtered = False
 
         if recording_channels is not None:
             assert len(recording_channels) == self._timeseries.shape[0], \
@@ -45,7 +51,8 @@ class BinDatRecordingExtractor(RecordingExtractor):
             dtype_str = str(dtype)
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'sampling_frequency': sampling_frequency,
                         'numchan': numchan, 'dtype': dtype_str, 'recording_channels': recording_channels,
-                        'time_axis': time_axis, 'geom': geom, 'offset': offset, 'gain': gain}
+                        'time_axis': time_axis, 'geom': geom, 'offset': offset, 'gain': gain,
+                        'is_filtered': is_filtered}
 
     def get_channel_ids(self):
         return self._channels

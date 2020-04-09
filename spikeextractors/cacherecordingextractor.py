@@ -19,15 +19,16 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         self._is_tmp = True
         dtype = recording.get_traces(start_frame=0, end_frame=2).dtype
         recording.write_to_binary_dat_format(save_path=self._tmp_file, dtype=dtype, chunk_size=chunk_size)
+        # keep track of filter status when dumping
+        self.is_filtered = self._recording.is_filtered
         BinDatRecordingExtractor.__init__(self, self._tmp_file, numchan=recording.get_num_channels(),
                                           recording_channels=recording.get_channel_ids(),
                                           sampling_frequency=recording.get_sampling_frequency(),
-                                          dtype=dtype)
+                                          dtype=dtype, is_filtered=self.is_filtered)
         # keep BinDatRecording kwargs
         self._bindat_kwargs = deepcopy(self._kwargs)
         self.set_tmp_folder(tmp_folder)
         self.copy_channel_properties(recording)
-        self.is_filtered = self._recording.is_filtered
         self._kwargs = {'recording': recording, 'chunk_size': chunk_size}
 
     def __del__(self):
