@@ -1,3 +1,14 @@
+"""
+kwik structure based on:
+https://github.com/kwikteam/phy-doc/blob/master/docs/kwik-format.md
+
+cluster_group defaults based on:
+https://github.com/kwikteam/phy-doc/blob/master/docs/kwik-model.md
+
+04/08/20
+"""
+
+
 from spikeextractors import SortingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 from spikeextractors.extraction_tools import read_python
@@ -12,6 +23,7 @@ except ImportError:
     HAVE_KLSX = False
 
 
+# noinspection SpellCheckingInspection
 class KlustaRecordingExtractor(BinDatRecordingExtractor):
     extractor_name = 'KlustaRecordingExtractor'
     has_default_locations = False
@@ -37,6 +49,7 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
 
+# noinspection SpellCheckingInspection
 class KlustaSortingExtractor(SortingExtractor):
     extractor_name = 'KlustaSortingExtractor'
     installed = HAVE_KLSX  # check at class level if installed or not
@@ -44,7 +57,9 @@ class KlustaSortingExtractor(SortingExtractor):
     is_writable = True
     mode = 'file_or_folder'
 
-    def __init__(self, file_or_folder_path):
+    default_cluster_groups = {0: 'Noise', 1: 'MUA', 2: 'Good', 3: 'Unsorted'}
+
+    def __init__(self, file_or_folder_path, exclude_cluster_groups=None):
         assert HAVE_KLSX, "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"
         SortingExtractor.__init__(self)
         kwik_file_or_folder = Path(file_or_folder_path)
@@ -69,30 +84,49 @@ class KlustaSortingExtractor(SortingExtractor):
         except Exception as e:
             print("Could not load sampling frequency info")
 
-        F = h5py.File(kwikfile, 'r')
-        channel_groups = F.get('channel_groups')
+        kf_reader = h5py.File(kwikfile, 'r')
         self._spiketrains = []
         self._unit_ids = []
         unique_units = []
         klusta_units = []
+        cluster_groups_name = []
         groups = []
         unit = 0
-        for cgroup in channel_groups:
-            group_id = int(cgroup)
-            try:
-                cluster_ids = channel_groups[cgroup]['clusters']['main']
-            except Exception as e:
-                print('Unable to extract clusters from', kwikfile)
-                continue
-            for cluster_id in channel_groups[cgroup]['clusters']['main']:
-                clusters = np.array(channel_groups[cgroup]['spikes']['clusters']['main'])
-                idx = np.nonzero(clusters == int(cluster_id))
-                st = np.array(channel_groups[cgroup]['spikes']['time_samples'])[idx]
+
+        cs_to_exclude = []
+        valid_group_names = [i[1].lower() for i in self.default_cluster_groups.items()]
+        if exclude_cluster_groups is not None:
+            assert isinstance(exclude_cluster_groups, list), 'exclude_cluster_groups should be a list'
+            for ec in exclude_cluster_groups:
+                assert ec in valid_group_names, f'select exclude names out of: {valid_group_names}'
+                cs_to_exclude.append(ec.lower())
+
+        for channel_group in kf_reader.get('/channel_groups'):
+            chan_cluster_id_arr = kf_reader.get(f'/channel_groups/{channel_group}/spikes/clusters/main')[()]
+            chan_cluster_times_arr = kf_reader.get(f'/channel_groups/{channel_group}/spikes/time_samples')[()]
+            chan_cluster_ids = np.unique(chan_cluster_id_arr)  # if clusters were merged in gui,
+                                                                # the original id's are still in the kwiktree, but
+                                                                # in this array
+
+            for cluster_id in chan_cluster_ids:
+                cluster_frame_idx = np.nonzero(chan_cluster_id_arr == cluster_id)  # the [()] is a h5py thing
+                st = chan_cluster_times_arr[cluster_frame_idx]
+                assert st.shape[0] > 0, 'no spikes in cluster'
+                cluster_group = kf_reader.get(f'/channel_groups/{channel_group}/clusters/main/{cluster_id}').attrs['cluster_group']
+
+                assert cluster_group in self.default_cluster_groups.keys(), f'cluster_group not in "default_dict: {cluster_group}'
+                cluster_group_name = self.default_cluster_groups[cluster_group]
+
+                if cluster_group_name.lower() in cs_to_exclude:
+                    continue
+
                 self._spiketrains.append(st)
                 klusta_units.append(int(cluster_id))
                 unique_units.append(unit)
                 unit += 1
-                groups.append(group_id)
+                groups.append(int(channel_group))
+                cluster_groups_name.append(cluster_group_name)
+
         if len(np.unique(klusta_units)) == len(np.unique(unique_units)):
             self._unit_ids = klusta_units
         else:
@@ -100,9 +134,9 @@ class KlustaSortingExtractor(SortingExtractor):
             self._unit_ids = unique_units
         for i, u in enumerate(self._unit_ids):
             self.set_unit_property(u, 'group', groups[i])
+            self.set_unit_property(u, 'quality', cluster_groups_name[i].lower())
 
         self._kwargs = {'file_or_folder_path': str(Path(file_or_folder_path).absolute())}
-
 
     def get_unit_ids(self):
         return list(self._unit_ids)
@@ -117,48 +151,48 @@ class KlustaSortingExtractor(SortingExtractor):
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
 
-    @staticmethod
-    def write_sorting(sorting, save_path):
-        assert HAVE_KLSX, "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"
-        save_path = Path(save_path)
-        if save_path.is_dir():
-            save_path = save_path / 'klusta.kwik'
-        elif save_path.suffix == '.kwik':
-            pass
-        else:
-            save_path.mkdir()
-            save_path = save_path / 'klusta.kwik'
-        F = h5py.File(save_path, 'w')
-        F.attrs.create('kwik_version', data=2)
-        if 'group' in sorting.get_shared_unit_property_names():
-            cgroups = np.unique([sorting.get_unit_property(unit, 'group') for unit in sorting.get_unit_ids()])
-        else:
-            cgroups = [0]
-
-        channel_groups = F.create_group('channel_groups')
-
-        for cgroup in cgroups:
-            channel_group = channel_groups.create_group(str(cgroup))
-            time_samples = np.array([])
-            cluster_main = np.array([])
-            if 'group' in sorting.get_shared_unit_property_names():
-                idxs = [unit for unit in sorting.get_unit_ids() if
-                        sorting.get_unit_property(unit, 'group') == cgroup]
-            else:
-                idxs = sorting.get_unit_ids()
-            clust = channel_group.create_group('clusters')
-            clust.create_dataset('main', data=idxs)
-            clust.create_dataset('original', data=idxs)
-            for id in idxs:
-                st = sorting.get_unit_spike_train(id)
-                cl = [id] * len(sorting.get_unit_spike_train(id))
-                time_samples = np.concatenate((time_samples, np.array(st)))
-                cluster_main = np.concatenate((cluster_main, np.array(cl)))
-            sorting_idxs = np.argsort(time_samples)
-            time_samples = time_samples[sorting_idxs].astype(int)
-            cluster_main = cluster_main[sorting_idxs].astype(int)
-            spikes = channel_group.create_group('spikes')
-            spikes.create_dataset('time_samples', data=time_samples)
-            clusters = spikes.create_group('clusters')
-            clusters.create_dataset('main', data=cluster_main)
-            clusters.create_dataset('original', data=cluster_main)
+    # @staticmethod
+    # def write_sorting(sorting, save_path):
+    #     assert HAVE_KLSX, "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"
+    #     save_path = Path(save_path)
+    #     if save_path.is_dir():
+    #         save_path = save_path / 'klusta.kwik'
+    #     elif save_path.suffix == '.kwik':
+    #         pass
+    #     else:
+    #         save_path.mkdir()
+    #         save_path = save_path / 'klusta.kwik'
+    #     F = h5py.File(save_path, 'w')
+    #     F.attrs.create('kwik_version', data=2)
+    #     if 'group' in sorting.get_shared_unit_property_names():
+    #         cgroups = np.unique([sorting.get_unit_property(unit, 'group') for unit in sorting.get_unit_ids()])
+    #     else:
+    #         cgroups = [0]
+    #
+    #     channel_groups = F.create_group('channel_groups')
+    #
+    #     for cgroup in cgroups:
+    #         channel_group = channel_groups.create_group(str(cgroup))
+    #         time_samples = np.array([])
+    #         cluster_main = np.array([])
+    #         if 'group' in sorting.get_shared_unit_property_names():
+    #             idxs = [unit for unit in sorting.get_unit_ids() if
+    #                     sorting.get_unit_property(unit, 'group') == cgroup]
+    #         else:
+    #             idxs = sorting.get_unit_ids()
+    #         clust = channel_group.create_group('clusters')
+    #         clust.create_dataset('main', data=idxs)
+    #         clust.create_dataset('original', data=idxs)
+    #         for id in idxs:
+    #             st = sorting.get_unit_spike_train(id)
+    #             cl = [id] * len(sorting.get_unit_spike_train(id))
+    #             time_samples = np.concatenate((time_samples, np.array(st)))
+    #             cluster_main = np.concatenate((cluster_main, np.array(cl)))
+    #         sorting_idxs = np.argsort(time_samples)
+    #         time_samples = time_samples[sorting_idxs].astype(int)
+    #         cluster_main = cluster_main[sorting_idxs].astype(int)
+    #         spikes = channel_group.create_group('spikes')
+    #         spikes.create_dataset('time_samples', data=time_samples)
+    #         clusters = spikes.create_group('clusters')
+    #         clusters.create_dataset('main', data=cluster_main)
+    #         clusters.create_dataset('original', data=cluster_main)
