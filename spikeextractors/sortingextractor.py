@@ -496,15 +496,22 @@ class SortingExtractor(ABC, BaseExtractor):
         if unit_ids is None:
             unit_ids = sorting.get_unit_ids()
         if isinstance(unit_ids, int):
-            curr_feature_names = sorting.get_unit_spike_feature_names(unit_id=unit_ids)
+            unit_ids = [unit_ids]
+        for unit_id in unit_ids:
+            curr_feature_names = sorting.get_unit_spike_feature_names(unit_id=unit_id)
             for curr_feature_name in curr_feature_names:
-                value = sorting.get_unit_spike_features(unit_id=unit_ids, feature_name=curr_feature_name)
-                self.set_unit_spike_features(unit_id=unit_ids, feature_name=curr_feature_name, value=value)
-        else:
-            for unit_id in unit_ids:
-                curr_feature_names = sorting.get_unit_spike_feature_names(unit_id=unit_id)
-                for curr_feature_name in curr_feature_names:
-                    value = sorting.get_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name)
+                value = sorting.get_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name)
+                if len(value) < len(sorting.get_unit_spike_train(unit_id)):
+                    if not curr_feature_name.endswith('idxs'):
+                        assert curr_feature_name + '_idxs' in \
+                               sorting.get_unit_spike_feature_names(unit_id=unit_id)
+                        curr_feature_name_idxs = curr_feature_name + '_idxs'
+                        value_idxs = np.array(sorting.get_unit_spike_features(unit_id=unit_id,
+                                                                              feature_name=curr_feature_name_idxs))
+                        # find index of first spike
+                        self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name,
+                                                     value=value, indexes=value_idxs)
+                else:
                     self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name, value=value)
 
     def add_epoch(self, epoch_name, start_frame, end_frame):

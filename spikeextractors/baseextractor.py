@@ -297,6 +297,8 @@ def _check_json(d):
             d[k] = _check_json(v)
         elif isinstance(v, Path):
             d[k] = str(v.absolute())
+        elif isinstance(v, bool):
+            d[k] = bool(v)
         elif isinstance(v, (np.int, np.int32, np.int64)):
             d[k] = int(v)
         elif isinstance(v, (np.float, np.float32, np.float64)):
