@@ -75,6 +75,28 @@ class SortingExtractor(ABC, BaseExtractor):
         '''
         pass
 
+    def get_units_spike_train(self, unit_ids=None, start_frame=None, end_frame=None):
+        '''This function extracts spike frames from the specified units.
+        Parameters
+        ----------
+        unit_ids: array_like
+            The unit ids from which to return spike trains. If None, all unit
+            spike trains will be returned
+        start_frame: int
+            The frame above which a spike frame is returned  (inclusive)
+        end_frame: int
+            The frame below which a spike frame is returned  (exclusive)
+        Returns
+        ----------
+        spike_train: numpy.ndarray
+            An 2D array containing all the frames for each spike in the
+            specified units given the range of start and end frames
+        '''
+        if unit_ids is None:
+            unit_ids = self.get_unit_ids()
+        spike_trains = [self.get_unit_spike_train(uid, start_frame, end_frame) for uid in unit_ids]
+        return spike_trains
+
     def get_sampling_frequency(self):
         '''
         It returns the sampling frequency.
@@ -654,4 +676,3 @@ class SortingExtractor(ABC, BaseExtractor):
         '''
         raise NotImplementedError("The write_sorting function is not \
                                   implemented for this extractor")
-
