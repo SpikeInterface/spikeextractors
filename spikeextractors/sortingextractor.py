@@ -146,7 +146,7 @@ class SortingExtractor(ABC, BaseExtractor):
                 else:
                     if isinstance(feature_name, str) and len(value) == len(indexes):
                         self._unit_features[unit_id][feature_name] = value
-                        self._unit_features[unit_id][feature_name+'_idxs'] = indexes
+                        self._unit_features[unit_id][feature_name + '_idxs'] = np.array(indexes)
                     else:
                         if not isinstance(feature_name, str):
                             raise ValueError("feature_name must be a string")
@@ -227,7 +227,10 @@ class SortingExtractor(ABC, BaseExtractor):
                             else:
                                 raise ValueError(str(feature_name) + " dimensions are inconsistent for unit "
                                                  + str(unit_id))
-                            return self._unit_features[unit_id][feature_name][spike_indices]
+                            if isinstance(self._unit_features[unit_id][feature_name], list):
+                                return list(np.array(self._unit_features[unit_id][feature_name])[spike_indices])
+                            else:
+                                return np.array(self._unit_features[unit_id][feature_name])[spike_indices]
                     else:
                         raise ValueError(str(feature_name) + " has not been added to unit " + str(unit_id))
                 else:
