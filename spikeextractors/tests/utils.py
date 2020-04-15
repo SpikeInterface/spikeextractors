@@ -61,7 +61,7 @@ def check_sortings_equal(SX1, SX2):
 
 
 def check_dumping(extractor):
-    extractor.dump(file_name='test.json')
+    extractor.dump(file_path='test.json')
     extractor_loaded = load_extractor_from_json('test.json')
 
     if 'Recording' in str(type(extractor)):

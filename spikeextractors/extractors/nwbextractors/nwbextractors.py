@@ -633,11 +633,11 @@ class NwbSortingExtractor(se.SortingExtractor):
                 if item + '_index' in all_names:  # if it has index, it is a spike_feature
                     for id in units_ids:
                         ind = list(units_ids).index(id)
-                        self._unit_features.update({id: {item: nwbfile.units[item][ind]}})
+                        self.set_unit_spike_features(id, item, nwbfile.units[item][ind])
                 else:  # if it is unit_property
                     for id in units_ids:
                         ind = list(units_ids).index(id)
-                        self._unit_properties.update({id: {item: nwbfile.units[item][ind]}})
+                        self.set_unit_property(id, item, nwbfile.units[item][ind])
 
             # Fill epochs dictionary
             self._epochs = {}
@@ -705,8 +705,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             t0 = 0.
 
         (all_properties, all_features) = find_all_unit_property_names(
-            properties_dict=sorting._unit_properties,
-            features_dict=sorting._unit_features
+            properties_dict=sorting._properties,
+            features_dict=sorting._features
         )
 
         if os.path.exists(save_path):
@@ -732,9 +732,9 @@ class NwbSortingExtractor(se.SortingExtractor):
 
             # Units properties
             for pr in all_properties:
-                unit_ids = [int(k) for k, v in sorting._unit_properties.items()
+                unit_ids = [int(k) for k, v in sorting._properties.items()
                             if pr in v]
-                vals = [v[pr] for k, v in sorting._unit_properties.items()
+                vals = [v[pr] for k, v in sorting._properties.items()
                         if pr in v]
                 set_dynamic_table_property(
                     dynamic_table=nwbfile.units,
@@ -765,7 +765,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             nspikes = {k: get_nspikes(nwbfile.units, int(k)) for k in ids}
             for ft in all_features:
                 vals = [v[ft] if ft in v else [np.nan] * nspikes[int(k)]
-                        for k, v in sorting._unit_features.items()]
+                        for k, v in sorting._features.items()]
                 flatten_vals = [item for sublist in vals for item in sublist]
                 nspks_list = [sp for sp in nspikes.values()]
                 spikes_index = np.cumsum(nspks_list).tolist()

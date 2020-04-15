@@ -18,7 +18,6 @@ class RecordingExtractor(ABC, BaseExtractor):
     def __init__(self):
         BaseExtractor.__init__(self)
         self._epochs = {}
-        self._channel_properties = {}
         self.id = random.randint(a=0, b=9223372036854775807)
 
     def __del__(self):
@@ -366,10 +365,10 @@ class RecordingExtractor(ABC, BaseExtractor):
         '''
         if isinstance(channel_id, (int, np.integer)):
             if channel_id in self.get_channel_ids():
-                if channel_id not in self._channel_properties:
-                    self._channel_properties[channel_id] = {}
+                if channel_id not in self._properties.keys():
+                    self._properties[channel_id] = {}
                 if isinstance(property_name, str):
-                    self._channel_properties[channel_id][property_name] = value
+                    self._properties[channel_id][property_name] = value
                 else:
                     raise TypeError(str(property_name) + " must be a string")
             else:
@@ -398,13 +397,13 @@ class RecordingExtractor(ABC, BaseExtractor):
             raise TypeError(str(channel_id) + " must be an int")
         if channel_id not in self.get_channel_ids():
             raise ValueError(str(channel_id) + " is not a valid channel_id")
-        if channel_id not in self._channel_properties:
+        if channel_id not in self._properties.keys():
             raise ValueError('no properties found for channel' + str(channel_id))
-        if property_name not in self._channel_properties[channel_id]:
+        if property_name not in self._properties[channel_id]:
             raise RuntimeError(str(property_name) + " has not been added to channel " + str(channel_id))
         if not isinstance(property_name, str):
             raise TypeError(str(property_name) + " must be a string")
-        return self._channel_properties[channel_id][property_name]
+        return self._properties[channel_id][property_name]
 
     def get_channel_property_names(self, channel_id):
         '''Get a list of property names for a given channel.
@@ -420,9 +419,9 @@ class RecordingExtractor(ABC, BaseExtractor):
         '''
         if isinstance(channel_id, (int, np.integer)):
             if channel_id in self.get_channel_ids():
-                if channel_id not in self._channel_properties:
-                    self._channel_properties[channel_id] = {}
-                property_names = sorted(self._channel_properties[channel_id].keys())
+                if channel_id not in self._properties.keys():
+                    self._properties[channel_id] = {}
+                property_names = sorted(self._properties[channel_id].keys())
                 return property_names
             else:
                 raise ValueError(str(channel_id) + " is not a valid channel_id")
@@ -443,7 +442,6 @@ class RecordingExtractor(ABC, BaseExtractor):
         '''
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
-        property_names = []
         curr_property_name_set = set(self.get_channel_property_names(channel_id=channel_ids[0]))
         for channel_id in channel_ids[1:]:
             curr_channel_property_name_set = set(self.get_channel_property_names(channel_id=channel_id))
@@ -486,9 +484,9 @@ class RecordingExtractor(ABC, BaseExtractor):
         property_name: string
             The name of the property to be cleared
         '''
-        if channel_id in self._channel_properties:
-            if property_name in self._channel_properties[channel_id]:
-                del self._channel_properties[channel_id][property_name]
+        if channel_id in self._properties.keys():
+            if property_name in self._properties[channel_id]:
+                del self._properties[channel_id][property_name]
 
     def clear_channels_property(self, property_name, channel_ids=None):
         '''This function clears the channels' properties for the given property.

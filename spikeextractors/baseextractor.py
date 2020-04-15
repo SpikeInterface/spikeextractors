@@ -6,16 +6,19 @@ import numpy as np
 import datetime
 from copy import deepcopy
 import tempfile
+import pickle
 
 
 class BaseExtractor:
     def __init__(self):
         self._kwargs = {}
         self._tmp_folder = None
+        self._properties = {}
+        self._features = {}
         self.is_dumpable = True
         self.is_filtered = False
 
-    def make_serialized_dict(self):
+    def make_serialized_dict(self, include_properties=None, include_features=None):
         '''
         Makes a nested serialized dictionary out of the extractor. The dictionary be used to re-initialize an
         extractor with spikeextractors.load_extractor_from_dict(dump_dict)
@@ -24,6 +27,10 @@ class BaseExtractor:
         -------
         dump_dict: dict
             Serialized dictionary
+        include_properties: list or None
+            List of properties to include in the dictionary
+        include_features: list or None
+            List of features to include in the dictionary
         '''
         class_name = str(type(self)).replace("<class '", "").replace("'>", '')
         module = class_name.split('.')[0]
@@ -32,47 +39,47 @@ class BaseExtractor:
         if self.is_dumpable:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': self._kwargs,
                          'version': imported_module.__version__, 'dumpable': True}
-            if 'Recording' in class_name:
-                if 'group' in self.get_shared_channel_property_names():
-                    groups = self.get_channel_groups()
-                    dump_dict['groups'] = groups
-                if 'location' in self.get_shared_channel_property_names():
-                    locations = self.get_channel_locations()
-                    dump_dict['locations'] = locations
-            elif 'Sorting' in class_name:
-                if 'group' in self.get_shared_unit_property_names():
-                    groups = [self.get_unit_property(u, 'group') for u in self.get_unit_ids()]
-                    dump_dict['groups'] = groups
         else:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': {},
                          'version': imported_module.__version__, 'dumpable': False}
-
+        dump_dict = self._include_properties_and_features_in_dict(dump_dict, include_properties, include_features)
         return dump_dict
 
-    def dump(self, file_name=None, folder_path=None):
+    def dump(self, file_path=None, dump_properties_and_features=True):
         '''
         Dumps recording extractor to json file.
         The extractor can be re-loaded with spikeextractors.load_extractor_from_json(json_file)
 
         Parameters
         ----------
-        file_name: str
-            Filename
-        folder_path: str or Path
-            Path to output_folder
+        file_path: str
+            Path of the json file
+        dump_properties_and_features: bool
+            If True, property and features are dumped as npz files in the same folder as the json
         '''
         if self.check_if_dumpable():
-            if folder_path is None:
-                folder_path = Path(os.getcwd())
-            else:
-                folder_path = Path(folder_path)
-            if file_name is None:
-                file_name = 'spikeinterface_recording.json'
-            elif Path(file_name).suffix == '':
-                file_name = file_name + '.json'
+            if file_path is None:
+                if 'Recording' in self.__class__:
+                    file_path = 'spikeinterface_recording.json'
+                elif 'Sorting' in self.__class__:
+                    file_path = 'spikeinterface_sorting.json'
+            file_path = Path(file_path)
+            if not file_path.parent.is_dir():
+                os.makedirs(str(file_path.parent))
+            folder_path = file_path.parent
+            if Path(file_path).suffix == '':
+                file_path = folder_path / (str(file_path) + '.json')
+            assert file_path.suffix == '.json', "'file_path' should be a .json file"
             dump_dict = self.make_serialized_dict()
-            with open(str(folder_path / file_name), 'w', encoding='utf8') as f:
+            with open(str(file_path), 'w', encoding='utf8') as f:
                 json.dump(_check_json(dump_dict), f, indent=4)
+            if dump_properties_and_features:
+                if len(self._properties.keys()) > 0:
+                    with (folder_path / 'properties.pkl').open('wb') as f:
+                        pickle.dump(self._properties, f)
+                if len(self._features.keys()) > 0:
+                    with (folder_path / 'features.pkl').open('wb') as f:
+                        pickle.dump(self._features, f)
         else:
             raise Exception(f"The extractor is not dumpable to to json")
 
@@ -154,6 +161,32 @@ class BaseExtractor:
         from .extraction_tools import cast_start_end_frame
         return cast_start_end_frame(start_frame, end_frame)
 
+    def _include_properties_and_features_in_dict(self, dump_dict, include_properties, include_features):
+        if include_properties is not None:
+            assert isinstance(include_properties, list), "'include_properties' should be a list of property names"
+            dump_dict['properties'] = {}
+            dump_properties_dict = {}
+            for property in include_properties:
+                for key, props in self._properties.items():
+                    if property in props.keys():
+                        if key not in dump_properties_dict.keys():
+                            dump_properties_dict[key] = {}
+                        dump_properties_dict[key].update({property: props[property]})
+            if len(dump_properties_dict.keys()) > 1:
+                dump_dict['properties'] = dump_properties_dict
+        if include_features is not None:
+            assert isinstance(include_features, list), "'include_features' should be a list of feature names"
+            dump_features_dict = {}
+            for feature in include_features:
+                for key, feats in self._features.items():
+                    if feature in feats.keys():
+                        if key not in dump_features_dict.keys():
+                            dump_features_dict[key] = {}
+                        dump_features_dict[key].update({feature: feats[feature]})
+            if len(dump_features_dict.keys()) > 1:
+                dump_dict['features'] = dump_features_dict
+        return dump_dict
+
     @staticmethod
     def load_extractor_from_json(json_file):
         '''
@@ -169,9 +202,18 @@ class BaseExtractor:
         extractor: RecordingExtractor or SortingExtractor
             The loaded extractor object
         '''
+        json_file = Path(json_file)
         with open(str(json_file), 'r') as f:
             d = json.load(f)
             extractor = _load_extractor_from_dict(d)
+        property_file = json_file.parent / 'properties.pkl'
+        features_file = json_file.parent / 'features.pkl'
+        if property_file.is_file():
+            with property_file.open('rb') as f:
+                extractor._properties = pickle.load(f)
+        if features_file.is_file():
+            with features_file.open('rb') as f:
+                extractor._features = pickle.load(f)
         return extractor
 
     @staticmethod
@@ -239,24 +281,17 @@ def _load_extractor_from_dict(dic):
     # instantiate extrator object
     extractor = cls(**kwargs)
 
-    # load properties and probe file
-    if 'Recording' in class_name:
-        if 'groups' in dic.keys():
-            groups = dic['groups']
-            for i, ch in enumerate(extractor.get_channel_ids()):
-                extractor.set_channel_property(ch, 'group', groups[i])
-        if 'locations' in dic.keys():
-            locations = dic['locations']
-            for i, ch in enumerate(extractor.get_channel_ids()):
-                extractor.set_channel_property(ch, 'location', np.array(locations[i]))
-    elif 'Sorting' in class_name:
-        if 'groups' in dic.keys():
-            groups = dic['groups']
-            for i, unit in enumerate(extractor.get_unit_ids()):
-                extractor.set_unit_property(unit, 'group', groups[i])
+    # load probe file
     if probe_file is not None:
         assert 'Recording' in class_name, "Only recording extractors can have probe files"
         extractor = extractor.load_probe_file(probe_file=probe_file)
+
+    # load properties and features
+    if 'properties' in dic.keys():
+        extractor._properties = dic['properties']
+    if 'features' in dic.keys():
+        extractor._features = dic['features']
+
     return extractor
 
 
