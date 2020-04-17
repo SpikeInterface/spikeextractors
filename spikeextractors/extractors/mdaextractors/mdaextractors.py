@@ -36,8 +36,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         self._num_channels = X.N1()
         self._num_timepoints = X.N2()
         RecordingExtractor.__init__(self)
-        for m in range(self._num_channels):
-            self.set_channel_property(m, 'location', self._geom[m, :])
+        self.set_channel_locations(self._geom)
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
     def get_channel_ids(self):
@@ -128,12 +127,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         num_chan = recording.get_num_channels()
         num_frames = recording.get_num_frames()
 
-        location0 = recording.get_channel_property(channel_ids[0], 'location')
-        nd = len(location0)
-        geom = np.zeros((num_chan, nd))
-        for ii in range(len(channel_ids)):
-            location_ii = recording.get_channel_property(channel_ids[ii], 'location')
-            geom[ii, :] = list(location_ii)
+        geom = recording.get_channel_locations()
 
         if not save_path.is_dir():
             os.mkdir(save_path)

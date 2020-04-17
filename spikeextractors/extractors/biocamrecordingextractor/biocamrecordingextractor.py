@@ -28,8 +28,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
         self._file_format, self._signalInv, self._positions, self._read_function = openBiocamFile(
             self._recording_file, self._mea_pitch, verbose)
         RecordingExtractor.__init__(self)
-        for m in range(self._nRecCh):
-            self.set_channel_property(m, 'location', self._positions[m])
+        self.set_channel_locations(self._positions)
 
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'mea_pitch': mea_pitch,
                         'verbose': verbose}
@@ -83,8 +82,8 @@ class BiocamRecordingExtractor(RecordingExtractor):
         rf.create_dataset('3BRecInfo/3BRecVars/SamplingRate', data=[recording.get_sampling_frequency()])
         rf.create_dataset('3BRecInfo/3BRecVars/SignalInversion', data=[1])
         rf.create_dataset('3BRecInfo/3BMeaChip/NCols', data=[M])
-        r = [recording.get_channel_property(i, 'location')[-2] for i in range(recording.get_num_channels())]
-        c = [recording.get_channel_property(i, 'location')[-1] for i in range(recording.get_num_channels())]
+        r = recording.get_channel_locations()[:, 0]
+        c = recording.get_channel_locations()[:, 1]
         d = np.ndarray((1, len(r)), dtype=[('Row', '<i2'), ('Col', '<i2')])
         d['Row'] = r
         d['Col'] = c

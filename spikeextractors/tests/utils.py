@@ -1,6 +1,6 @@
 import numpy as np
 import shutil
-from spikeextractors.extraction_tools import load_extractor_from_json
+from spikeextractors.extraction_tools import load_extractor_from_pickle
 
 
 def check_recordings_equal(RX1, RX2):
@@ -77,8 +77,8 @@ def check_sorting_properties_features(SX1, SX2):
 
 
 def check_dumping(extractor):
-    extractor.dump(file_path='test_dumping/test.json', dump_properties_and_features=True)
-    extractor_loaded = load_extractor_from_json('test_dumping/test.json')
+    extractor.dump_to_pickle(file_path='test_dumping/test.pickle')
+    extractor_loaded = load_extractor_from_pickle('test_dumping/test.pickle')
 
     if 'Recording' in str(type(extractor)):
         check_recordings_equal(extractor, extractor_loaded)

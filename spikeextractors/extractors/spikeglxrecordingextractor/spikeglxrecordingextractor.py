@@ -49,8 +49,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # locations
         if len(locations) > 0:
-           for m in range(len(self._channels)):
-               self.set_channel_property(m, 'location', locations[m])
+            self.set_channel_locations(locations)
 
         # get gains
         if meta['typeThis'] == 'imec':

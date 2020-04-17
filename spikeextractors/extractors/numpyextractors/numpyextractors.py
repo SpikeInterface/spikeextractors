@@ -35,8 +35,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
         self._sampling_frequency = float(sampling_frequency)
         self._geom = geom
         if geom is not None:
-            for m in range(self._timeseries.shape[0]):
-                self.set_channel_property(m, 'location', self._geom[m, :])
+            self.set_channel_locations(self._geom)
 
     def get_channel_ids(self):
         return list(range(self._timeseries.shape[0]))

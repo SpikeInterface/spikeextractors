@@ -37,14 +37,12 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
         if (phy_folder / 'channel_groups.npy').is_file():
             channel_groups = np.load(phy_folder / 'channel_groups.npy')
             assert len(channel_groups) == self.get_num_channels()
-            for (ch, cg) in zip(self.get_channel_ids(), channel_groups):
-                self.set_channel_property(ch, 'group', cg)
+            self.set_channel_groups(channel_groups)
 
         if (phy_folder / 'channel_positions.npy').is_file():
             channel_locations = np.load(phy_folder / 'channel_positions.npy')
             assert len(channel_locations) == self.get_num_channels()
-            for (ch, loc) in zip(self.get_channel_ids(), channel_locations):
-                self.set_channel_property(ch, 'location', loc)
+            self.set_channel_locations(channel_locations)
 
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
@@ -159,8 +157,7 @@ class PhySortingExtractor(SortingExtractor):
             if (phy_folder / 'channel_groups.npy').is_file():
                 channel_groups = np.load(phy_folder / 'channel_groups.npy')
                 assert len(channel_groups) == recording.get_num_channels()
-                for (ch, cg) in zip(recording.get_channel_ids(), channel_groups):
-                    recording.set_channel_property(ch, 'group', cg)
+                recording.set_channel_groups(channel_groups)
                 for u_i, u in enumerate(self.get_unit_ids()):
                     if verbose:
                         print('Computing waveform by group for unit', u)
@@ -176,7 +173,7 @@ class PhySortingExtractor(SortingExtractor):
                         wf = recording.get_snippets(reference_frames=spiketrain,
                                                     snippet_len=[frames_before, frames_after])
                         max_chan = np.unravel_index(np.argmin(np.mean(wf, axis=0)), np.mean(wf, axis=0).shape)[0]
-                        group = recording.get_channel_property(int(max_chan), 'group')
+                        group = recording.get_channel_groups(int(max_chan))
                         self.set_unit_property(u, 'group', group)
                         group_idx = np.where(channel_groups == group)[0]
                         wf = wf[:, group_idx]

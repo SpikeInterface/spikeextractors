@@ -13,12 +13,13 @@ class BaseExtractor:
     def __init__(self):
         self._kwargs = {}
         self._tmp_folder = None
+        self._key_properties = {}
         self._properties = {}
         self._features = {}
         self.is_dumpable = True
         self.is_filtered = False
 
-    def make_serialized_dict(self, include_properties=None, include_features=None):
+    def make_serialized_dict(self):
         '''
         Makes a nested serialized dictionary out of the extractor. The dictionary be used to re-initialize an
         extractor with spikeextractors.load_extractor_from_dict(dump_dict)
@@ -27,10 +28,6 @@ class BaseExtractor:
         -------
         dump_dict: dict
             Serialized dictionary
-        include_properties: list or None
-            List of properties to include in the dictionary
-        include_features: list or None
-            List of features to include in the dictionary
         '''
         class_name = str(type(self)).replace("<class '", "").replace("'>", '')
         module = class_name.split('.')[0]
@@ -38,14 +35,27 @@ class BaseExtractor:
 
         if self.is_dumpable:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': self._kwargs,
-                         'version': imported_module.__version__, 'dumpable': True}
+                         'key_properties': self._key_properties, 'version': imported_module.__version__,
+                         'dumpable': True}
         else:
-            dump_dict = {'class': class_name, 'module': module, 'kwargs': {},
+            dump_dict = {'class': class_name, 'module': module, 'kwargs': {}, 'key_properties': self._key_properties,
                          'version': imported_module.__version__, 'dumpable': False}
-        dump_dict = self._include_properties_and_features_in_dict(dump_dict, include_properties, include_features)
         return dump_dict
 
-    def dump(self, file_path=None, dump_properties_and_features=True):
+    def dump_to_dict(self):
+        '''
+        Dumps recording to a dictionary.
+        The dictionary be used to re-initialize an
+        extractor with spikeextractors.load_extractor_from_dict(dump_dict)
+
+        Returns
+        -------
+        dump_dict: dict
+            Serialized dictionary
+        '''
+        return self.make_serialized_dict()
+
+    def dump_to_json(self, file_path=None, dump_properties_and_features=True):
         '''
         Dumps recording extractor to json file.
         The extractor can be re-loaded with spikeextractors.load_extractor_from_json(json_file)
@@ -73,15 +83,49 @@ class BaseExtractor:
             dump_dict = self.make_serialized_dict()
             with open(str(file_path), 'w', encoding='utf8') as f:
                 json.dump(_check_json(dump_dict), f, indent=4)
-            if dump_properties_and_features:
-                if len(self._properties.keys()) > 0:
-                    with (folder_path / 'properties.pkl').open('wb') as f:
-                        pickle.dump(self._properties, f)
-                if len(self._features.keys()) > 0:
-                    with (folder_path / 'features.pkl').open('wb') as f:
-                        pickle.dump(self._features, f)
         else:
             raise Exception(f"The extractor is not dumpable to to json")
+
+    def dump_to_pickle(self, file_path=None, include_properties=True, include_features=True):
+        '''
+        Dumps recording extractor to a pickle file.
+        The extractor can be re-loaded with spikeextractors.load_extractor_from_json(json_file)
+
+        Parameters
+        ----------
+        file_path: str
+            Path of the json file
+        dump_properties_and_features: bool
+            If True, property and features are dumped as npz files in the same folder as the json
+        '''
+        if self.check_if_dumpable():
+            dump_dict = {}
+            if file_path is None:
+                if 'Recording' in self.__class__:
+                    file_path = 'spikeinterface_recording.pkl'
+                elif 'Sorting' in self.__class__:
+                    file_path = 'spikeinterface_sorting.pkl'
+            file_path = Path(file_path)
+            if not file_path.parent.is_dir():
+                os.makedirs(str(file_path.parent))
+            if Path(file_path).suffix == '':
+                file_path = file_path.parent / (str(file_path) + '.pkl')
+            assert file_path.suffix == '.pkl' or file_path.suffix == '.pickle', "'file_path' should be a .pkl or " \
+                                                                                ".pickle file"
+
+            # Dump all
+            dump_dict['serialized_dict'] = self.make_serialized_dict()
+            if include_properties:
+                if len(self._properties.keys()) > 0:
+                    dump_dict['properties'] = self._properties
+            if include_features:
+                if len(self._features.keys()) > 0:
+                    dump_dict['features'] = self._features
+
+            with file_path.open('wb') as f:
+                pickle.dump(dump_dict, f)
+        else:
+            raise Exception(f"The extractor is not dumpable to to pkl")
 
     def get_tmp_folder(self):
         '''
@@ -206,14 +250,31 @@ class BaseExtractor:
         with open(str(json_file), 'r') as f:
             d = json.load(f)
             extractor = _load_extractor_from_dict(d)
-        property_file = json_file.parent / 'properties.pkl'
-        features_file = json_file.parent / 'features.pkl'
-        if property_file.is_file():
-            with property_file.open('rb') as f:
-                extractor._properties = pickle.load(f)
-        if features_file.is_file():
-            with features_file.open('rb') as f:
-                extractor._features = pickle.load(f)
+        return extractor
+
+    @staticmethod
+    def load_extractor_from_pickle(pkl_file):
+        '''
+        Instantiates extractor from json file
+
+        Parameters
+        ----------
+        json_file: str or Path
+            Path to json file
+
+        Returns
+        -------
+        extractor: RecordingExtractor or SortingExtractor
+            The loaded extractor object
+        '''
+        pkl_file = Path(pkl_file)
+        with open(str(pkl_file), 'rb') as f:
+            d = pickle.load(f)
+        extractor = _load_extractor_from_dict(d['serialized_dict'])
+        if 'properties' in d.keys():
+            extractor._properties = d['properties']
+        if 'features' in d.keys():
+            extractor._features = d['features']
         return extractor
 
     @staticmethod
@@ -287,10 +348,8 @@ def _load_extractor_from_dict(dic):
         extractor = extractor.load_probe_file(probe_file=probe_file)
 
     # load properties and features
-    if 'properties' in dic.keys():
-        extractor._properties = dic['properties']
-    if 'features' in dic.keys():
-        extractor._features = dic['features']
+    if 'key_properties' in dic.keys():
+        extractor._key_properties = dic['key_properties']
 
     return extractor
 
