@@ -1,6 +1,6 @@
 from spikeextractors import SortingExtractor
 from pathlib import Path
-
+from spikeextractors.extraction_tools import check_valid_unit_id
 import numpy as np
 
 
@@ -39,6 +39,7 @@ class NpzSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self.unit_ids)
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         spike_times = self.spike_indexes[self.spike_labels == unit_id]

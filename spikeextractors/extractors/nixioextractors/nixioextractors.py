@@ -10,7 +10,7 @@ except ImportError:
 
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-from spikeextractors.extraction_tools import check_get_traces_args
+from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
 
 # error message when not installed
 missing_nixio_msg = ("To use the NIXIORecordingExtractor install nixio:"
@@ -168,6 +168,7 @@ class NIXIOSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return [int(da.label) for da in self._spike_das]
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         name = "spikes-{}".format(unit_id)

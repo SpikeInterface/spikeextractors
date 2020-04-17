@@ -2,7 +2,8 @@ from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 from pathlib import Path
 import numpy as np
-from spikeextractors.extraction_tools import check_get_traces_args
+from functools import wraps
+from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
 
 '''
 The NumpyExtractors can be constructed and used to encapsulate custom file formats and data structures which
@@ -93,7 +94,7 @@ class NumpySortingExtractor(SortingExtractor):
         self._sampling_frequency = sampling_frequency
 
     def set_times_labels(self, times, labels):
-        '''This function takes in an array of spike times (in frames) and an array of spike labels and adds all the 
+        '''This function takes in an array of spike times (in frames) and an array of spike labels and adds all the
         unit information in these lists into the extractor.
 
         Parameters
@@ -123,6 +124,7 @@ class NumpySortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._units.keys())
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
