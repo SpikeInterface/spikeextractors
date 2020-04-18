@@ -205,31 +205,6 @@ class BaseExtractor:
         from .extraction_tools import cast_start_end_frame
         return cast_start_end_frame(start_frame, end_frame)
 
-    def _include_properties_and_features_in_dict(self, dump_dict, include_properties, include_features):
-        if include_properties is not None:
-            assert isinstance(include_properties, list), "'include_properties' should be a list of property names"
-            dump_dict['properties'] = {}
-            dump_properties_dict = {}
-            for property in include_properties:
-                for key, props in self._properties.items():
-                    if property in props.keys():
-                        if key not in dump_properties_dict.keys():
-                            dump_properties_dict[key] = {}
-                        dump_properties_dict[key].update({property: props[property]})
-            if len(dump_properties_dict.keys()) > 1:
-                dump_dict['properties'] = dump_properties_dict
-        if include_features is not None:
-            assert isinstance(include_features, list), "'include_features' should be a list of feature names"
-            dump_features_dict = {}
-            for feature in include_features:
-                for key, feats in self._features.items():
-                    if feature in feats.keys():
-                        if key not in dump_features_dict.keys():
-                            dump_features_dict[key] = {}
-                        dump_features_dict[key].update({feature: feats[feature]})
-            if len(dump_features_dict.keys()) > 1:
-                dump_dict['features'] = dump_features_dict
-        return dump_dict
 
     @staticmethod
     def load_extractor_from_json(json_file):
