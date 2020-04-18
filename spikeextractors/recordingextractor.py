@@ -226,7 +226,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             self._key_properties['location'] = np.empty((self.get_num_channels(), 3), dtype='float')
         if len(channel_ids) == len(locations):
             for i in range(len(channel_ids)):
-                if isinstance(locations[i], (list, np.ndarray)):
+                if isinstance(locations[i], (list, np.ndarray, tuple)):
                     location = np.asarray(locations[i])
                     channel_idx = list(self.get_channel_ids()).index(channel_ids[i])
                     if len(location) == 2:
@@ -264,10 +264,12 @@ class RecordingExtractor(ABC, BaseExtractor):
         locations = self._key_properties['location']
         if locations is None:
             locations = np.empty((self.get_num_channels(), 3), dtype='float')
+            locations[:, 2] = np.nan
             self._key_properties['location'] = locations
+        locations = np.array(locations)
         channel_idxs = np.array([list(self.get_channel_ids()).index(ch) for ch in channel_ids])
         if locations_2d:
-            locations = locations[:, :2]
+            locations = np.array(locations)[:, :2]
         if len(channel_idxs) == 1:
             return locations[channel_idxs][0]
         else:
@@ -325,6 +327,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         if groups is None:
             groups = np.zeros(self.get_num_channels(), dtype='int')
             self._key_properties['group'] = groups
+        groups = np.array(groups)
         channel_idxs = np.array([list(self.get_channel_ids()).index(ch) for ch in channel_ids])
         if len(channel_idxs) == 1:
             return groups[channel_idxs][0]
