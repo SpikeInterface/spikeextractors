@@ -580,9 +580,10 @@ def check_valid_unit_id(func):
         elif not (isinstance(unit_id, (int, np.integer))):
             raise ValueError("unit_id must be an integer")
         elif unit_id not in sorting.get_unit_ids():
-            raise ValueError("{} is an invalid unit id".format(unit_id))
+            raise ValueError(f"{unit_id} is an invalid unit id")
         return func(*args, **kwargs)
     return check_validity
+
 
 def check_get_traces_args(func):
     @wraps(func)
