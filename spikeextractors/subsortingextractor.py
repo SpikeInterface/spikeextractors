@@ -41,10 +41,7 @@ class SubSortingExtractor(SortingExtractor):
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        if (isinstance(unit_id, (int, np.integer))):
-            original_unit_id = self._original_unit_id_lookup[unit_id]
-        else:
-            raise ValueError("unit_id must be an int")
+        original_unit_id = self._original_unit_id_lookup[unit_id]
         sf = self._start_frame + start_frame
         ef = self._start_frame + end_frame
         if sf < self._start_frame:
