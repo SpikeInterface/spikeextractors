@@ -53,6 +53,9 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         self._kwargs['file_path'] = str(Path(self._tmp_file).absolute())
         self._bindat_kwargs['file_path'] = str(Path(self._tmp_file).absolute())
         self._is_tmp = False
+        # re-initialize with new file
+        print('re-init')
+        self = BinDatRecordingExtractor(**self._bindat_kwargs)
 
     # override to make serialization avoid reloading and saving binary file
     def make_serialized_dict(self, include_properties=None, include_features=None):
@@ -79,7 +82,5 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
                   "function")
 
         dump_dict = {'class': class_name, 'module': module, 'kwargs': self._bindat_kwargs,
-                     'version': imported_module.__version__, 'dumpable': True}
-
-        dump_dict = self._include_properties_and_features_in_dict(dump_dict, include_properties, include_features)
+                     'key_properties': self._key_properties, 'version': imported_module.__version__, 'dumpable': True}
         return dump_dict
