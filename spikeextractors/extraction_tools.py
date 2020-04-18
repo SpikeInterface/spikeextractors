@@ -565,6 +565,26 @@ def load_extractor_from_dict(d):
     return BaseExtractor.load_extractor_from_dict(d)
 
 
+def check_valid_unit_id(func):
+    @wraps(func)
+    def check_validity(*args, **kwargs):
+        # parse args and kwargs
+        if len(args) == 1:
+            sorting = args[0]
+            unit_id = kwargs.get('unit_id', None)
+        else:
+            sorting = args[0]
+            unit_id = args[1]
+        if unit_id is None:
+            raise TypeError("get_unit_spike_train() missing 1 required positional argument: 'unit_id')")
+        elif not (isinstance(unit_id, (int, np.integer))):
+            raise ValueError("unit_id must be an integer")
+        elif unit_id not in sorting.get_unit_ids():
+            raise ValueError(f"{unit_id} is an invalid unit id")
+        return func(*args, **kwargs)
+    return check_validity
+
+
 def check_get_traces_args(func):
     @wraps(func)
     def corrected_args(*args, **kwargs):

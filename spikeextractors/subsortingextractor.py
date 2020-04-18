@@ -1,5 +1,6 @@
 from .sortingextractor import SortingExtractor
 import numpy as np
+from .extraction_tools import check_valid_unit_id
 
 
 # Encapsulates a subset of a spike sorted data file
@@ -33,19 +34,14 @@ class SubSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._renamed_unit_ids)
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        if (isinstance(unit_id, (int, np.integer))):
-            if (unit_id in self.get_unit_ids()):
-                original_unit_id = self._original_unit_id_lookup[unit_id]
-            else:
-                raise ValueError("Non-valid unit_id")
-        else:
-            raise ValueError("unit_id must be an int")
+        original_unit_id = self._original_unit_id_lookup[unit_id]
         sf = self._start_frame + start_frame
         ef = self._start_frame + end_frame
         if sf < self._start_frame:
