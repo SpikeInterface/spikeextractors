@@ -570,16 +570,12 @@ def check_valid_unit_id(func):
     def check_validity(*args, **kwargs):
         # parse args and kwargs
         if len(args) == 1:
-            sorting = args[0]
-            unit_id = kwargs.get('unit_id', None)
+            raise TypeError("get_unit_spike_train() missing 1 required positional argument: 'unit_id')")
         else:
             sorting = args[0]
             unit_id = args[1]
-        
-
-        if unit_id is None:
-            raise TypeError("get_unit_spike_train() missing 1 required positional argument: 'unit_id')")
-        elif unit_id not in sorting.get_unit_ids():
+ 
+        if unit_id not in sorting.get_unit_ids():
             raise ValueError("{} is an invalid unit id".format(unit_id))
 
         return func(*args, **kwargs)
