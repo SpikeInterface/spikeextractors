@@ -1,6 +1,6 @@
 from spikeextractors import SortingExtractor, RecordingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
-from spikeextractors.extraction_tools import read_python, write_python
+from spikeextractors.extraction_tools import read_python, write_python, check_valid_unit_id
 import numpy as np
 from pathlib import Path
 import csv
@@ -195,6 +195,7 @@ class PhySortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._unit_ids)
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:

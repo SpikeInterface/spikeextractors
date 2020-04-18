@@ -1,6 +1,6 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-from spikeextractors.extraction_tools import check_get_traces_args
+from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
 
 import numpy as np
 from pathlib import Path
@@ -153,6 +153,7 @@ class MEArecSortingExtractor(SortingExtractor):
             self._initialize()
         return self._num_units
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:

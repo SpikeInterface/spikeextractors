@@ -1,5 +1,6 @@
 from spikeextractors import SortingExtractor
 from pathlib import Path
+from spikeextractors.extraction_tools import check_valid_unit_id
 
 try:
     import tridesclous as tdc
@@ -38,6 +39,7 @@ class TridesclousSortingExtractor(SortingExtractor):
         labels = labels[labels >= 0]
         return list(labels)
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         spikes = self.dataio.get_spikes(seg_num=0, chan_grp=self.chan_grp, i_start=None, i_stop=None)

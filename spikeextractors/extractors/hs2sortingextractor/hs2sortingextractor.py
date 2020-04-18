@@ -1,6 +1,7 @@
 from spikeextractors import SortingExtractor
 import numpy as np
 from pathlib import Path
+from spikeextractors.extraction_tools import check_valid_unit_id
 
 try:
     import h5py
@@ -60,6 +61,7 @@ class HS2SortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._unit_ids)
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
