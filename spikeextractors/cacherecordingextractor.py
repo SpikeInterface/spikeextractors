@@ -54,7 +54,6 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         self._bindat_kwargs['file_path'] = str(Path(self._tmp_file).absolute())
         self._is_tmp = False
         # re-initialize with new file
-        print('re-init')
         self = BinDatRecordingExtractor(**self._bindat_kwargs)
 
     # override to make serialization avoid reloading and saving binary file
