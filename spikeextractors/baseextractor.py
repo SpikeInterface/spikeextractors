@@ -55,7 +55,7 @@ class BaseExtractor:
         '''
         return self.make_serialized_dict()
 
-    def dump_to_json(self, file_path=None, dump_properties_and_features=True):
+    def dump_to_json(self, file_path=None):
         '''
         Dumps recording extractor to json file.
         The extractor can be re-loaded with spikeextractors.load_extractor_from_json(json_file)
@@ -64,8 +64,6 @@ class BaseExtractor:
         ----------
         file_path: str
             Path of the json file
-        dump_properties_and_features: bool
-            If True, property and features are dumped as npz files in the same folder as the json
         '''
         if self.check_if_dumpable():
             if file_path is None:
@@ -95,8 +93,10 @@ class BaseExtractor:
         ----------
         file_path: str
             Path of the json file
-        dump_properties_and_features: bool
-            If True, property and features are dumped as npz files in the same folder as the json
+        include_properties: bool
+            If True, all properties are dumped
+        include_features: bool
+            If True, all features are dumped
         '''
         if self.check_if_dumpable():
             dump_dict = {}
