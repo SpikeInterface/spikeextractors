@@ -53,9 +53,24 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         self._kwargs['file_path'] = str(Path(self._tmp_file).absolute())
         self._bindat_kwargs['file_path'] = str(Path(self._tmp_file).absolute())
         self._is_tmp = False
+        # re-initialize with new file
+        self = BinDatRecordingExtractor(**self._bindat_kwargs)
 
     # override to make serialization avoid reloading and saving binary file
-    def make_serialized_dict(self):
+    def make_serialized_dict(self, include_properties=None, include_features=None):
+        '''
+        Makes a nested serialized dictionary out of the extractor. The dictionary be used to re-initialize an
+        extractor with spikeextractors.load_extractor_from_dict(dump_dict)
+
+        Returns
+        -------
+        dump_dict: dict
+            Serialized dictionary
+        include_properties: list or None
+            List of properties to include in the dictionary
+        include_features: list or None
+            List of features to include in the dictionary
+        '''
         class_name = str(BinDatRecordingExtractor).replace("<class '", "").replace("'>", '')
         module = class_name.split('.')[0]
         imported_module = importlib.import_module(module)
@@ -66,42 +81,5 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
                   "function")
 
         dump_dict = {'class': class_name, 'module': module, 'kwargs': self._bindat_kwargs,
-                     'version': imported_module.__version__, 'dumpable': True}
-
-        if 'Recording' in class_name:
-            if 'group' in self.get_shared_channel_property_names():
-                groups = self.get_channel_groups()
-                dump_dict['groups'] = groups
-            if 'location' in self.get_shared_channel_property_names():
-                locations = self.get_channel_locations()
-                dump_dict['locations'] = locations
-        elif 'Sorting' in class_name:
-            if 'group' in self.get_shared_unit_property_names():
-                groups = [self.get_unit_property(u, 'group') for u in self.get_unit_ids()]
-                dump_dict['groups'] = groups
-
+                     'key_properties': self._key_properties, 'version': imported_module.__version__, 'dumpable': True}
         return dump_dict
-
-    def dump(self, file_name=None, folder_path=None):
-        '''
-        Dumps recording extractor to json file.
-        The extractor can be re-loaded with spikeextractors.load_extractor_from_json(json_file)
-
-        Parameters
-        ----------
-        file_name: str
-            Filename
-        folder_path: str or Path
-            Path to output_folder
-        '''
-        if folder_path is None:
-            folder_path = Path(os.getcwd())
-        else:
-            folder_path = Path(folder_path)
-        if file_name is None:
-            file_name = 'spikeinterface_recording.json'
-        elif Path(file_name).suffix == '':
-            file_name = file_name + '.json'
-        dump_dict = self.make_serialized_dict()
-        with open(str(folder_path / file_name), 'w', encoding='utf8') as f:
-            json.dump(_check_json(dump_dict), f, indent=4)

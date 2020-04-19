@@ -108,14 +108,14 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                     if key_prop == 'channels':
                         for i_ch, prop in enumerate(prop_val):
                             if prop in subrecording.get_channel_ids():
-                                subrecording.set_channel_property(prop, 'group', int(cgroup_id))
+                                subrecording.set_channel_groups(int(cgroup_id), channel_ids=prop)
                     elif key_prop == 'geometry' or key_prop == 'location':
                         if isinstance(prop_val, dict):
                             if len(prop_val.keys()) != channels_in_group and verbose:
                                 print('geometry in PRB does not have the same length as channel in group')
                             for (i_ch, prop) in prop_val.items():
                                 if i_ch in subrecording.get_channel_ids():
-                                    subrecording.set_channel_property(i_ch, 'location', prop)
+                                    subrecording.set_channel_locations(prop, channel_ids=i_ch)
                         elif isinstance(prop_val, (list, np.ndarray)) and len(prop_val) == channels_in_group:
                             if 'channels' not in cgroup.keys():
                                 raise Exception("'geometry'/'location' in the .prb file can be a list only if "
@@ -124,7 +124,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                 print('geometry in PRB does not have the same length as channel in group')
                             for (i_ch, prop) in zip(channels_id_in_group, prop_val):
                                 if i_ch in subrecording.get_channel_ids():
-                                    subrecording.set_channel_property(i_ch, 'location', prop)
+                                    subrecording.set_channel_locations(prop, channel_ids=i_ch)
                     else:
                         if isinstance(prop_val, dict) and len(prop_val.keys()) == channels_in_group:
                             for (i_ch, prop) in prop_val.items():
@@ -136,8 +136,9 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                     subrecording.set_channel_property(i_ch, key_prop, prop)
                 # create dummy locations
                 if 'geometry' not in cgroup.keys() and 'location' not in cgroup.keys():
-                    for i, chan in enumerate(subrecording.get_channel_ids()):
-                        subrecording.set_channel_property(chan, 'location', [0, i])
+                    locs = np.zeros((subrecording.get_num_channels(), 2))
+                    locs[:, 1] = np.arange(subrecording.get_num_channels())
+                    subrecording.set_channel_locations(locs)
         else:
             raise AttributeError("'.prb' file should contain the 'channel_groups' field")
 
@@ -159,11 +160,11 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                                                      "rows as the number of channels in the recordings"
             for i_ch, pos in zip(subrecording.get_channel_ids(), loaded_pos):
                 if i_ch in subrecording.get_channel_ids():
-                    subrecording.set_channel_property(i_ch, 'location', list(np.array(pos).astype(float)))
+                    subrecording.set_channel_locations(list(np.array(pos).astype(float)), i_ch)
             if channel_groups is not None and len(channel_groups) == len(subrecording.get_channel_ids()):
                 for i_ch, chg in zip(subrecording.get_channel_ids(), channel_groups):
                     if i_ch in subrecording.get_channel_ids():
-                        subrecording.set_channel_property(i_ch, 'group', chg)
+                        subrecording.set_channel_groups(chg, i_ch)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 
@@ -202,7 +203,7 @@ def save_to_probe_file(recording, probe_file, grouping_property=None, radius=Non
         with probe_file.open('w') as f:
             if 'location' in recording.get_shared_channel_property_names():
                 for chan in recording.get_channel_ids():
-                    loc = recording.get_channel_property(chan, 'location')
+                    loc = recording.get_channel_locations(chan)
                     if len(loc) == 2:
                         f.write(str(loc[0]))
                         f.write(',')
@@ -432,8 +433,7 @@ def _export_prb_file(recording, file_name, grouping_property=None, graph=True, g
 
     if geometry:
         if 'location' in recording.get_shared_channel_property_names():
-            positions = np.array([recording.get_channel_property(chan, 'location')
-                                  for chan in recording.get_channel_ids()])
+            positions = recording.get_channel_locations()
         else:
             if verbose:
                 print("'location' property is not available and it will not be saved.")
@@ -563,6 +563,23 @@ def load_extractor_from_dict(d):
         The loaded extractor object
     '''
     return BaseExtractor.load_extractor_from_dict(d)
+
+
+def load_extractor_from_pickle(pkl_file):
+    '''
+    Instantiates extractor from pickle file
+
+    Parameters
+    ----------
+    pkl_file: str or Path
+        Path to json file
+
+    Returns
+    -------
+    extractor: RecordingExtractor or SortingExtractor
+        The loaded extractor object
+    '''
+    return BaseExtractor.load_extractor_from_pickle(pkl_file)
 
 
 def check_valid_unit_id(func):

@@ -43,7 +43,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._num_frames = self._signals.shape[1]
 
         for i_ch, ch in enumerate(self.get_channel_ids()):
-            self.set_channel_property(ch, 'location', [self._mapping['x'][i_ch], self._mapping['y'][i_ch]])
+            self.set_channel_locations([self._mapping['x'][i_ch], self._mapping['y'][i_ch]], ch)
 
     def get_channel_ids(self):
         return list(self._channel_ids)

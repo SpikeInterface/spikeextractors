@@ -1,5 +1,6 @@
 import numpy as np
-from spikeextractors.extraction_tools import load_extractor_from_json
+import shutil
+from spikeextractors.extraction_tools import load_extractor_from_pickle
 
 
 def check_recordings_equal(RX1, RX2):
@@ -28,8 +29,13 @@ def check_recordings_equal(RX1, RX2):
     snippets2 = RX2.get_snippets(reference_frames=frames, snippet_len=(10, 10))
     for ii in range(len(frames)):
         assert np.allclose(snippets1[ii], snippets2[ii])
-        
-        
+
+
+def check_recording_properties(RX1, RX2):
+    # check properties
+    assert sorted(RX1.get_shared_channel_property_names()) == sorted(RX2.get_shared_channel_property_names())
+
+
 def check_recording_return_types(RX):
     channel_ids = RX.get_channel_ids()
     assert (type(RX.get_num_channels()) == int) or (type(RX.get_num_channels()) == np.int64)
@@ -60,11 +66,24 @@ def check_sortings_equal(SX1, SX2):
         assert np.array_equal(train1, train2)
 
 
+def check_sorting_properties_features(SX1, SX2):
+    # check properties
+    print(SX1.__class__)
+    print('Properties', sorted(SX1.get_shared_unit_property_names()), sorted(SX2.get_shared_unit_property_names()))
+    assert sorted(SX1.get_shared_unit_property_names()) == sorted(SX2.get_shared_unit_property_names())
+    # check features
+    print('Features', sorted(SX1.get_shared_unit_spike_feature_names()), sorted(SX2.get_shared_unit_spike_feature_names()))
+    assert sorted(SX1.get_shared_unit_spike_feature_names()) == sorted(SX2.get_shared_unit_spike_feature_names())
+
+
 def check_dumping(extractor):
-    extractor.dump(file_name='test.json')
-    extractor_loaded = load_extractor_from_json('test.json')
+    extractor.dump_to_pickle(file_path='test_dumping/test.pickle')
+    extractor_loaded = load_extractor_from_pickle('test_dumping/test.pickle')
 
     if 'Recording' in str(type(extractor)):
         check_recordings_equal(extractor, extractor_loaded)
+        check_recording_properties(extractor, extractor_loaded)
     elif 'Sorting' in str(type(extractor)):
         check_sortings_equal(extractor, extractor_loaded)
+        check_sorting_properties_features(extractor, extractor_loaded)
+    shutil.rmtree('test_dumping')

@@ -41,8 +41,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
             self._channels = list(range(self._timeseries.shape[0]))
 
         if geom is not None:
-            for idx, channel in enumerate(self._channels):
-                self.set_channel_property(channel, 'location', self._geom[idx, :])
+            self.set_channel_locations(self._geom)
         if 'numpy' in str(dtype):
             dtype_str = str(dtype).replace("<class '", "").replace("'>", "")
             # drop 'numpy

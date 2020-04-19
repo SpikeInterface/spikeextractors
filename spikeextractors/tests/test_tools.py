@@ -1,6 +1,7 @@
 import numpy as np
 import unittest
-import tempfile, shutil
+import tempfile
+import shutil
 import spikeextractors as se
 from copy import copy
 from pathlib import Path
@@ -16,6 +17,7 @@ class TestTools(unittest.TestCase):
         self._X = X
         self._sampling_frequency = sampling_frequency
         self.RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency)
+        self.RX.set_channel_locations(np.random.randn(32, 3))
         self.test_dir = tempfile.mkdtemp()
 
     def tearDown(self):
@@ -26,12 +28,12 @@ class TestTools(unittest.TestCase):
         # print(SX.get_channel_property_names())
         assert 'location' in sub_RX.get_shared_channel_property_names()
         assert 'group' in sub_RX.get_shared_channel_property_names()
-        positions = [sub_RX.get_channel_property(chan, 'location') for chan in range(self.RX.get_num_channels())]
+        positions = [sub_RX.get_channel_locations(chan) for chan in range(self.RX.get_num_channels())]
         # save in csv
         sub_RX.save_to_probe_file(Path(self.test_dir) / 'geom.csv')
         # load csv locations
         sub_RX_load = sub_RX.load_probe_file(Path(self.test_dir) / 'geom.csv')
-        position_loaded = [sub_RX_load.get_channel_property(chan, 'location') for
+        position_loaded = [sub_RX_load.get_channel_locations(chan) for
                            chan in range(sub_RX_load.get_num_channels())]
         self.assertTrue(np.allclose(positions[10], position_loaded[10]))
 

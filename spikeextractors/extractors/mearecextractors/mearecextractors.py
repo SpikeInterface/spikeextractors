@@ -34,8 +34,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
 
         if self._locations is not None:
-            for chan, pos in enumerate(self._locations):
-                self.set_channel_property(chan, 'location', pos)
+            self.set_channel_locations(self._locations)
 
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'locs_2d': locs_2d}
 
@@ -102,8 +101,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
             info = {'recordings': {'fs': recording.get_sampling_frequency()}}
             rec_dict = {'recordings': recording.get_traces()}
             if 'location' in recording.get_shared_channel_property_names():
-                positions = np.array([recording.get_channel_property(chan, 'location')
-                                      for chan in recording.get_channel_ids()])
+                positions = recording.get_channel_locations()
                 rec_dict['channel_positions'] = positions
             recgen = mr.RecordingGenerator(rec_dict=rec_dict, info=info)
             mr.save_recording_generator(recgen, str(save_path), verbose=False)
