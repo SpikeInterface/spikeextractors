@@ -572,7 +572,7 @@ def load_extractor_from_pickle(pkl_file):
     Parameters
     ----------
     pkl_file: str or Path
-        Path to json file
+        Path to pickle file
 
     Returns
     -------
