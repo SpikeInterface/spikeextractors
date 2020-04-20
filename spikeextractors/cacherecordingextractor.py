@@ -17,14 +17,14 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         self._recording = recording
         self._tmp_file = tempfile.NamedTemporaryFile(suffix=".dat", dir=tmp_folder).name
         self._is_tmp = True
-        dtype = recording.get_traces(start_frame=0, end_frame=2).dtype
-        recording.write_to_binary_dat_format(save_path=self._tmp_file, dtype=dtype, chunk_size=chunk_size)
+        self._dtype = recording.get_traces(start_frame=0, end_frame=2).dtype
+        recording.write_to_binary_dat_format(save_path=self._tmp_file, dtype=self._dtype, chunk_size=chunk_size)
         # keep track of filter status when dumping
         self.is_filtered = self._recording.is_filtered
         BinDatRecordingExtractor.__init__(self, self._tmp_file, numchan=recording.get_num_channels(),
                                           recording_channels=recording.get_channel_ids(),
                                           sampling_frequency=recording.get_sampling_frequency(),
-                                          dtype=dtype, is_filtered=self.is_filtered)
+                                          dtype=self._dtype, is_filtered=self.is_filtered)
         # keep BinDatRecording kwargs
         self._bindat_kwargs = deepcopy(self._kwargs)
         self.set_tmp_folder(tmp_folder)
@@ -53,8 +53,14 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         self._kwargs['file_path'] = str(Path(self._tmp_file).absolute())
         self._bindat_kwargs['file_path'] = str(Path(self._tmp_file).absolute())
         self._is_tmp = False
+        tmp_folder = self.get_tmp_folder()
         # re-initialize with new file
-        self = BinDatRecordingExtractor(**self._bindat_kwargs)
+        BinDatRecordingExtractor.__init__(self, self._tmp_file, numchan=self._recording.get_num_channels(),
+                                          recording_channels=self._recording.get_channel_ids(),
+                                          sampling_frequency=self._recording.get_sampling_frequency(),
+                                          dtype=self._dtype, is_filtered=self.is_filtered)
+        self.set_tmp_folder(tmp_folder)
+        self.copy_channel_properties(self._recording)
 
     # override to make serialization avoid reloading and saving binary file
     def make_serialized_dict(self, include_properties=None, include_features=None):
