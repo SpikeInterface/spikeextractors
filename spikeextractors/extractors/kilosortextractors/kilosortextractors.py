@@ -18,7 +18,7 @@ class KiloSortSortingExtractor(PhySortingExtractor):
     extractor_name = 'KiloSortSortingExtractor'
     installed = True  # check at class level if installed or not
     installation_mesg = ""  # error message when not installed
-    is_writable = True
+    is_writable = False
     mode = 'folder'
 
     def __init__(self, folder_path, exclude_cluster_groups=None, load_waveforms=False, keep_good_only=False,
