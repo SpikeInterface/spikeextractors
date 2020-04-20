@@ -145,22 +145,40 @@ class TestExtractors(unittest.TestCase):
         assert arr_memmap.dtype == dtype
 
     def test_cache_extractor(self):
-        cache_extractor = se.CacheRecordingExtractor(self.RX)
-        check_recording_return_types(cache_extractor)
-        check_recordings_equal(self.RX, cache_extractor)
-        cache_extractor.save_to_file('cache')
+        cache_rec = se.CacheRecordingExtractor(self.RX)
+        check_recording_return_types(cache_rec)
+        check_recordings_equal(self.RX, cache_rec)
+        cache_rec.save_to_file('cache_rec')
 
-        assert cache_extractor.filename == 'cache.dat'
-        check_dumping(cache_extractor)
+        assert cache_rec.filename == 'cache_rec.dat'
+        check_dumping(cache_rec)
 
         # test saving to file
-        del cache_extractor
-        assert Path('cache.dat').is_file()
+        del cache_rec
+        assert Path('cache_rec.dat').is_file()
 
         # test tmp
-        cache_extractor = se.CacheRecordingExtractor(self.RX)
-        tmp_file = cache_extractor.filename
-        del cache_extractor
+        cache_rec = se.CacheRecordingExtractor(self.RX)
+        tmp_file = cache_rec.filename
+        del cache_rec
+        assert not Path(tmp_file).is_file()
+
+        cache_sort = se.CacheSortingExtractor(self.SX)
+        check_sorting_return_types(cache_sort)
+        check_sortings_equal(self.SX, cache_sort)
+        cache_sort.save_to_file('cache_sort')
+
+        assert cache_sort.filename == 'cache_sort.npz'
+        check_dumping(cache_sort)
+
+        # test saving to file
+        del cache_sort
+        assert Path('cache_sort.npz').is_file()
+
+        # test tmp
+        cache_sort = se.CacheSortingExtractor(self.SX)
+        tmp_file = cache_sort.filename
+        del cache_sort
         assert not Path(tmp_file).is_file()
 
     def test_mda_extractor(self):
@@ -224,14 +242,6 @@ class TestExtractors(unittest.TestCase):
         check_sorting_return_types(SX_exdir)
         check_sortings_equal(self.SX, SX_exdir)
         check_dumping(SX_exdir)
-
-    def test_kilosort_extractor(self):
-        path1 = self.test_dir + '/ks'
-        se.KiloSortSortingExtractor.write_sorting(self.SX, path1)
-        SX_ks = se.KiloSortSortingExtractor(path1)
-        check_sorting_return_types(SX_ks)
-        check_sortings_equal(self.SX, SX_ks)
-        check_dumping(SX_ks)
 
     def test_spykingcircus_extractor(self):
         path1 = self.test_dir + '/sc'
