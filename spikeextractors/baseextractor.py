@@ -67,9 +67,9 @@ class BaseExtractor:
         '''
         if self.check_if_dumpable():
             if file_path is None:
-                if 'Recording' in str(self.__class__):
+                if 'Recording' in type(self).__name__:
                     file_path = 'spikeinterface_recording.json'
-                elif 'Sorting' in str(self.__class__):
+                elif 'Sorting' in type(self).__name__:
                     file_path = 'spikeinterface_sorting.json'
             file_path = Path(file_path)
             if not file_path.parent.is_dir():
@@ -101,9 +101,9 @@ class BaseExtractor:
         if self.check_if_dumpable():
             dump_dict = {}
             if file_path is None:
-                if 'Recording' in str(self.__class__):
+                if 'Recording' in type(self).__name__:
                     file_path = 'spikeinterface_recording.pkl'
-                elif 'Sorting' in str(self.__class__):
+                elif 'Sorting' in type(self).__name__:
                     file_path = 'spikeinterface_sorting.pkl'
             file_path = Path(file_path)
             if not file_path.parent.is_dir():
