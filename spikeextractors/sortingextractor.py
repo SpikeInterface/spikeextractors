@@ -303,11 +303,14 @@ class SortingExtractor(ABC, BaseExtractor):
         '''
         if unit_ids is None:
             unit_ids = self.get_unit_ids()
-        curr_feature_name_set = set(self.get_unit_spike_feature_names(unit_id=unit_ids[0]))
-        for unit_id in unit_ids[1:]:
-            curr_unit_feature_name_set = set(self.get_unit_spike_feature_names(unit_id=unit_id))
-            curr_feature_name_set = curr_feature_name_set.intersection(curr_unit_feature_name_set)
-        feature_names = sorted(list(curr_feature_name_set))
+        if len(unit_ids) > 0:
+            curr_feature_name_set = set(self.get_unit_spike_feature_names(unit_id=unit_ids[0]))
+            for unit_id in unit_ids[1:]:
+                curr_unit_feature_name_set = set(self.get_unit_spike_feature_names(unit_id=unit_id))
+                curr_feature_name_set = curr_feature_name_set.intersection(curr_unit_feature_name_set)
+            feature_names = sorted(list(curr_feature_name_set))
+        else:
+            feature_names = []
         return feature_names
 
     def set_unit_property(self, unit_id, property_name, value):

@@ -172,11 +172,11 @@ class RecordingExtractor(ABC, BaseExtractor):
         '''
         # Default implementation
         if isinstance(snippet_len, (tuple, list, np.ndarray)):
-            snippet_len_before = snippet_len[0]
-            snippet_len_after = snippet_len[1]
+            snippet_len_before = int(snippet_len[0])
+            snippet_len_after = int(snippet_len[1])
         else:
             snippet_len_before = int((snippet_len + 1) / 2)
-            snippet_len_after = snippet_len - snippet_len_before
+            snippet_len_after = int(snippet_len - snippet_len_before)
 
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
@@ -185,14 +185,14 @@ class RecordingExtractor(ABC, BaseExtractor):
         num_channels = len(channel_ids)
         num_frames = self.get_num_frames()
         snippet_len_total = int(snippet_len_before + snippet_len_after)
-        snippets = np.zeros((num_snippets, num_channels, snippet_len_total))
+        snippets = np.zeros((num_snippets, num_channels, snippet_len_total), dtype=self.get_dtype())
 
         for i in range(num_snippets):
-            snippet_chunk = np.zeros((num_channels, snippet_len_total))
+            snippet_chunk = np.zeros((num_channels, snippet_len_total), dtype=self.get_dtype())
             if 0 <= reference_frames[i] < num_frames:
-                snippet_range = np.array(
-                    [int(reference_frames[i]) - snippet_len_before, int(reference_frames[i]) + snippet_len_after])
-                snippet_buffer = np.array([0, snippet_len_total])
+                snippet_range = np.array([int(reference_frames[i]) - snippet_len_before,
+                                          int(reference_frames[i]) + snippet_len_after])
+                snippet_buffer = np.array([0, snippet_len_total], dtype='int')
                 # The following handles the out-of-bounds cases
                 if snippet_range[0] < 0:
                     snippet_buffer[0] -= snippet_range[0]
