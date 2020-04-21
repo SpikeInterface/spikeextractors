@@ -304,7 +304,7 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
     if chunk_size is not None:
         chunk_size = int(chunk_size)
     elif chunk_mb is not None:
-        n_bytes = recording.get_dtype().itemsize
+        n_bytes = np.dtype(recording.get_dtype()).itemsize
         max_size = int(chunk_mb * 1e6)  # set Mb per chunk
         chunk_size = max_size // (recording.get_num_channels() * n_bytes)
 
