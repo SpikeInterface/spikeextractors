@@ -1,12 +1,16 @@
 import numpy as np
 import csv
 import os
+import re
 import sys
 from pathlib import Path
+from typing import Union
 import json
 import datetime
 from functools import wraps
 from spikeextractors.baseextractor import BaseExtractor
+
+PathType = Union[str, Path]
 
 
 def read_python(path):
