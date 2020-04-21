@@ -8,8 +8,36 @@ from .synthesize_timeseries import synthesize_timeseries
 
 def toy_example(duration=10, num_channels=4, sampling_frequency=30000.0, K=10, dumpable=False, dump_folder=None,
                 seed=None):
-    upsamplefac = 13
+    '''
+    Creates toy recording and sorting extractors.
 
+    Parameters
+    ----------
+    duration: float
+        Duration in s (default 10)
+    num_channels: int
+        Number of channels (default 4)
+    sampling_frequency: float
+        Sampling frequency (default 30000)
+    K: int
+        Number of units (default 10)
+    dumpable: bool
+        If True, objects are dumped to file and become 'dumpable'
+    dump_folder: str or Path
+        Path to dump folder (if None, 'test' is used
+    seed: int
+        Seed for random initialization
+
+    Returns
+    -------
+    recording: RecordingExtractor
+        The output recording extractor. If dumpable is False it's a NumpyRecordingExtractor, otherwise it's an
+        MdaRecordingExtractor
+    sorting: SortingExtractor
+        The output sorting extractor. If dumpable is False it's a NumpyRecordingExtractor, otherwise it's an
+        NpzSortingExtractor
+    '''
+    upsamplefac = 13
     waveforms, geom = synthesize_random_waveforms(K=K, M=num_channels, average_peak_amplitude=-100,
                                                   upsamplefac=upsamplefac, seed=seed)
     times, labels = synthesize_random_firings(K=K, duration=duration, sampling_frequency=sampling_frequency, seed=seed)
