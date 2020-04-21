@@ -15,6 +15,9 @@ class RecordingExtractor(ABC, BaseExtractor):
     functions with the @abstractmethod tag must be implemented for the
     initialization to work.
     '''
+
+    _default_filename = "spikeinterface_recording"
+
     def __init__(self):
         BaseExtractor.__init__(self)
         self._key_properties = {'group': None, 'location': None}
