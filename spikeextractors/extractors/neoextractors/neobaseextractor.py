@@ -83,8 +83,9 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         scaled_traces = self.neo_reader.rescale_signal_raw_to_float(raw_traces, dtype='float32',
                                                                     channel_indexes=None, channel_names=None,
                                                                     channel_ids=channel_ids)
+        channel_idxs = np.array([list(channel_ids).index(ch) for ch in channel_ids])
         # and then to uV
-        scaled_traces *= self.additional_gain
+        scaled_traces *= self.additional_gain[0, channel_idxs]
 
         # fortunatly neo works with (samples, channels) strides
         # so transpose to spieextractors wolrd
