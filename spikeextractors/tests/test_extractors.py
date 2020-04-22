@@ -7,6 +7,7 @@ import shutil
 import spikeextractors as se
 from .utils import check_sortings_equal, check_recordings_equal, check_dumping, check_recording_return_types, \
     check_sorting_return_types
+from spikeextractors.exceptions import NotDumpableExtractorError
 
 
 class TestExtractors(unittest.TestCase):
@@ -180,6 +181,19 @@ class TestExtractors(unittest.TestCase):
         tmp_file = cache_sort.filename
         del cache_sort
         assert not Path(tmp_file).is_file()
+
+    def test_not_dumpable_exception(self):
+        try:
+            self.RX.dump_to_json()
+        except Exception as e:
+            assert isinstance(e, NotDumpableExtractorError)
+
+        try:
+            self.RX.dump_to_pickle()
+        except Exception as e:
+            assert isinstance(e, NotDumpableExtractorError)
+
+
 
     def test_mda_extractor(self):
         path1 = self.test_dir + '/mda'
