@@ -111,7 +111,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         # so check it
         assert np.unique(chan_ids).size == chan_ids.size, 'In this format channel ids are not unique'
         # to avoid this limitation this could return chan_index which is 0...N-1
-        return chan_ids
+        return list(chan_ids)
 
 
 class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
