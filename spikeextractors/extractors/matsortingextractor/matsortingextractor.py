@@ -18,7 +18,7 @@ PathType = Union[str, Path]
 class MATSortingExtractor(SortingExtractor):
     extractor_name = "MATSortingExtractor"
     installed = HAVE_MAT  # check at class level if installed or not
-    is_writable = True
+    is_writable = False
     mode = "file"
     installation_mesg = "To use the MATSortingExtractor install h5py and scipy: \n\n pip install h5py scipy\n\n"  # error message when not installed
 
