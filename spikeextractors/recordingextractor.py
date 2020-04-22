@@ -22,7 +22,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         self.id = random.randint(a=0, b=9223372036854775807)
 
     def __del__(self):
-        if self._tmp_folder is not None:
+        if getattr(self, '_tmp_folder', None):
             try:
                 shutil.rmtree(self._tmp_folder)
             except Exception as e:
