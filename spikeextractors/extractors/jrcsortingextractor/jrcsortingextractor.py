@@ -13,7 +13,7 @@ class JRCSortingExtractor(MATSortingExtractor):
     extractor_name = "JRCSortingExtractor"
     installation_mesg = "To use the MATSortingExtractor install h5py and scipy: \n\n pip install h5py scipy\n\n"  # error message when not installed
 
-    def __init__(self, file_path: PathType, positive_only: bool = False):
+    def __init__(self, file_path: PathType, keep_good_only: bool = False):
         super().__init__(file_path)
         file_path = self._kwargs["file_path"]
 
@@ -60,7 +60,7 @@ class JRCSortingExtractor(MATSortingExtractor):
         features_shape = self._getfield("featuresShape").ravel().astype(np.int)
 
         # nonpositive clusters are noise or deleted units
-        if positive_only:
+        if keep_good_only:
             good_mask = spike_clusters > 0
         else:
             good_mask = np.ones_like(spike_clusters, dtype=np.bool)
@@ -73,14 +73,16 @@ class JRCSortingExtractor(MATSortingExtractor):
             mask = (spike_clusters == uid)
             self._spike_trains[uid] = spike_times[mask]
 
-            self.set_unit_spike_features(uid, "spike_amplitudes", spike_amplitudes[mask])
-            self.set_unit_spike_features(uid, "spike_sites", spike_sites[mask])
-            self.set_unit_spike_features(uid, "spike_positions", spike_positions[mask, :])
+            self.set_unit_spike_features(uid, "amplitudes", spike_amplitudes[mask])
+            self.set_unit_spike_features(uid, "max_channel", spike_sites[mask])
+            self.set_unit_spike_features(uid, "positions", spike_positions[mask, :])
 
             self.set_unit_property(uid, "centroid", unit_centroids[uid - 1, :])
-            self.set_unit_property(uid, "center_site", unit_sites[uid - 1])
-            self.set_unit_property(uid, "mean_waveform", mean_waveforms[:, :, uid - 1])
-            self.set_unit_property(uid, "mean_waveform_raw", mean_waveforms_raw[:, :, uid - 1])
+            self.set_unit_property(uid, "max_channel", unit_sites[uid - 1])
+            self.set_unit_property(uid, "template", mean_waveforms[:, :, uid - 1])
+            self.set_unit_property(uid, "template_raw", mean_waveforms_raw[:, :, uid - 1])
+
+        self._kwargs["keep_good_only"] = keep_good_only
 
     @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
