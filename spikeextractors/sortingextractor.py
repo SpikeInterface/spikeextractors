@@ -14,9 +14,10 @@ class SortingExtractor(ABC, BaseExtractor):
     from spiked sorted data given a spike sorting software. It is an abstract
     class so all functions with the @abstractmethod tag must be implemented for
     the initialization to work.
-
-
     '''
+
+    _default_filename = "spikeinterface_sorting"
+
     def __init__(self):
         BaseExtractor.__init__(self)
         self._epochs = {}

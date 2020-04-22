@@ -8,8 +8,16 @@ from copy import deepcopy
 import tempfile
 import pickle
 
+from .exceptions import NotDumpableExtractorError
+
 
 class BaseExtractor:
+
+    # To be specified in concrete sub-classes
+    # The default filename (extension to be added by corresponding method)
+    # to be used if no file path is provided
+    _default_filename = None
+
     def __init__(self):
         self._kwargs = {}
         self._tmp_folder = None
@@ -55,6 +63,48 @@ class BaseExtractor:
         '''
         return self.make_serialized_dict()
 
+    def _get_file_path(self, file_path, extensions):
+        '''
+        Helper to be used by various dump_to_file utilities.
+
+        Returns default file_path (if not specified), assures that target
+        directory exists, adds correct file extension if none, and assures
+        that provided file extension is one of the allowed.
+
+        Parameters
+        ----------
+        file_path: str or None
+        extensions: list or tuple
+            First provided is used as an extension for the default file_path.
+            All are tested against
+
+        Returns
+        -------
+        Path
+            Path object with file path to the file
+
+        Raises
+        ------
+        NotDumpableExtractorError
+        '''
+        ext = extensions[0]
+        if self.check_if_dumpable():
+            if file_path is None:
+                file_path = self._default_filename + ext
+            file_path = Path(file_path)
+            if not file_path.parent.is_dir():
+                os.makedirs(str(file_path.parent))
+            folder_path = file_path.parent
+            if Path(file_path).suffix == '':
+                file_path = folder_path / (str(file_path) + ext)
+            assert file_path.suffix in extensions, \
+                "'file_path' should have one of the following extensions:" \
+                " %s" % (', '.join(extensions))
+            return file_path
+        else:
+            raise NotDumpableExtractorError(
+                f"The extractor is not dumpable to {ext}")
+
     def dump_to_json(self, file_path=None):
         '''
         Dumps recording extractor to json file.
@@ -65,24 +115,12 @@ class BaseExtractor:
         file_path: str
             Path of the json file
         '''
-        if self.check_if_dumpable():
-            if file_path is None:
-                if 'Recording' in self.__class__:
-                    file_path = 'spikeinterface_recording.json'
-                elif 'Sorting' in self.__class__:
-                    file_path = 'spikeinterface_sorting.json'
-            file_path = Path(file_path)
-            if not file_path.parent.is_dir():
-                os.makedirs(str(file_path.parent))
-            folder_path = file_path.parent
-            if Path(file_path).suffix == '':
-                file_path = folder_path / (str(file_path) + '.json')
-            assert file_path.suffix == '.json', "'file_path' should be a .json file"
-            dump_dict = self.make_serialized_dict()
-            with open(str(file_path), 'w', encoding='utf8') as f:
-                json.dump(_check_json(dump_dict), f, indent=4)
-        else:
-            raise Exception(f"The extractor is not dumpable to to json")
+        dump_dict = self.make_serialized_dict()
+        self._get_file_path(file_path, ['.json'])\
+            .write_text(
+                json.dumps(_check_json(dump_dict), indent=4),
+                encoding='utf8'
+            )
 
     def dump_to_pickle(self, file_path=None, include_properties=True, include_features=True):
         '''
@@ -98,34 +136,18 @@ class BaseExtractor:
         include_features: bool
             If True, all features are dumped
         '''
-        if self.check_if_dumpable():
-            dump_dict = {}
-            if file_path is None:
-                if 'Recording' in self.__class__:
-                    file_path = 'spikeinterface_recording.pkl'
-                elif 'Sorting' in self.__class__:
-                    file_path = 'spikeinterface_sorting.pkl'
-            file_path = Path(file_path)
-            if not file_path.parent.is_dir():
-                os.makedirs(str(file_path.parent))
-            if Path(file_path).suffix == '':
-                file_path = file_path.parent / (str(file_path) + '.pkl')
-            assert file_path.suffix == '.pkl' or file_path.suffix == '.pickle', "'file_path' should be a .pkl or " \
-                                                                                ".pickle file"
+        file_path = self._get_file_path(file_path, ['.pkl', '.pickle'])
 
-            # Dump all
-            dump_dict['serialized_dict'] = self.make_serialized_dict()
-            if include_properties:
-                if len(self._properties.keys()) > 0:
-                    dump_dict['properties'] = self._properties
-            if include_features:
-                if len(self._features.keys()) > 0:
-                    dump_dict['features'] = self._features
+        # Dump all
+        dump_dict = {'serialized_dict': self.make_serialized_dict()}
+        if include_properties:
+            if len(self._properties.keys()) > 0:
+                dump_dict['properties'] = self._properties
+        if include_features:
+            if len(self._features.keys()) > 0:
+                dump_dict['features'] = self._features
 
-            with file_path.open('wb') as f:
-                pickle.dump(dump_dict, f)
-        else:
-            raise Exception(f"The extractor is not dumpable to to pkl")
+        file_path.write_bytes(pickle.dumps(dump_dict))
 
     def get_tmp_folder(self):
         '''
