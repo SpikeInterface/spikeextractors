@@ -74,7 +74,7 @@ class JRCSortingExtractor(MATSortingExtractor):
             self._spike_trains[uid] = spike_times[mask]
 
             self.set_unit_spike_features(uid, "amplitudes", spike_amplitudes[mask])
-            self.set_unit_spike_features(uid, "max_channel", spike_sites[mask])
+            self.set_unit_spike_features(uid, "max_channels", spike_sites[mask])
             self.set_unit_spike_features(uid, "positions", spike_positions[mask, :])
 
             self.set_unit_property(uid, "centroid", unit_centroids[uid - 1, :])
