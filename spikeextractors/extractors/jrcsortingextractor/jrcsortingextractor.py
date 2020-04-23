@@ -34,7 +34,7 @@ class JRCSortingExtractor(MATSortingExtractor):
         filter_type = "ndiff"
         ndiff_order = 2
 
-        prm_file = Path(file_path.name.replace("_res.mat", ".prm"))
+        prm_file = Path(file_path.parent, file_path.name.replace("_res.mat", ".prm"))
         with prm_file.open("r") as fh:
             line = fh.readline()
             while line:
@@ -71,17 +71,17 @@ class JRCSortingExtractor(MATSortingExtractor):
             self._kwargs["bit_scaling"] /= 2
 
         # traces, features
-        raw_file = Path(file_path.name.replace("_res.mat", "_raw.jrc"))
+        raw_file = Path(file_path.parent, file_path.name.replace("_res.mat", "_raw.jrc"))
         raw_shape = tuple(self._getfield("rawShape").ravel().astype(np.int))
         self._raw_traces = np.memmap(raw_file, dtype=np.int16, mode="r",
                                      shape=raw_shape, order="F")
 
-        filt_file = Path(file_path.name.replace("_res.mat", "_filt.jrc"))
+        filt_file = Path(file_path.parent, file_path.name.replace("_res.mat", "_filt.jrc"))
         filt_shape = tuple(self._getfield("filtShape").ravel().astype(np.int))
         self._filt_traces = np.memmap(filt_file, dtype=np.int16, mode="r",
                                       shape=filt_shape, order="F")
 
-        features_file = Path(file_path.name.replace("_res.mat", "_features.jrc"))
+        features_file = Path(file_path.parent, file_path.name.replace("_res.mat", "_features.jrc"))
         features_shape = tuple(self._getfield("featuresShape").ravel().astype(np.int))
         self._cluster_features = np.memmap(features_file, dtype=np.float32, mode="r",
                                            shape=features_shape, order="F")

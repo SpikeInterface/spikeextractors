@@ -31,7 +31,7 @@ class MATSortingExtractor(SortingExtractor):
 
         file_path = file_path.resolve()  # get absolute path to this file
         if not file_path.is_file():
-            raise ValueError(f"Specified file path '{file_path}' does not exist.")
+            raise ValueError(f"Specified file path '{file_path}' is not a file.")
 
         self._kwargs = {"file_path": file_path}
 
