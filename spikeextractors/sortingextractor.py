@@ -455,7 +455,7 @@ class SortingExtractor(ABC, BaseExtractor):
                 curr_property_name_set = curr_property_name_set.intersection(curr_unit_property_name_set)
             property_names = sorted(list(curr_property_name_set))
         else:
-            property_names = []ß
+            property_names = []
         return property_names
 
     def copy_unit_properties(self, sorting, unit_ids=None):
