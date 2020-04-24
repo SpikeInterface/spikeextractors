@@ -267,7 +267,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         locations = self._key_properties['location']
         if locations is None:
             locations = np.empty((self.get_num_channels(), 3), dtype='float')
-            locations[:, 2] = np.nan
+            locations[:] = np.nan
             self._key_properties['location'] = locations
         locations = np.array(locations)
         channel_idxs = np.array([list(self.get_channel_ids()).index(ch) for ch in channel_ids])
@@ -466,7 +466,9 @@ class RecordingExtractor(ABC, BaseExtractor):
                 if channel_id not in self._properties.keys():
                     self._properties[channel_id] = {}
                 property_names = list(self._properties[channel_id].keys())
-                property_names.extend(self._key_properties.keys())
+                if np.any(np.logical_not(np.isnan(self.get_channel_locations(channel_id)))):
+                    property_names.extend(['location'])
+                property_names.extend(['group'])
                 return sorted(property_names)
             else:
                 raise ValueError(str(channel_id) + " is not a valid channel_id")
@@ -492,7 +494,6 @@ class RecordingExtractor(ABC, BaseExtractor):
             curr_channel_property_name_set = set(self.get_channel_property_names(channel_id=channel_id))
             curr_property_name_set = curr_property_name_set.intersection(curr_channel_property_name_set)
         property_names = list(curr_property_name_set)
-        property_names.extend(self._key_properties.keys())
         return sorted(property_names)
 
     def copy_channel_properties(self, recording, channel_ids=None):
@@ -519,7 +520,7 @@ class RecordingExtractor(ABC, BaseExtractor):
                 for curr_property_name in curr_property_names:
                     value = recording.get_channel_property(channel_id=channel_id, property_name=curr_property_name)
                     self.set_channel_property(channel_id=channel_id, property_name=curr_property_name, value=value)
-    
+
     def clear_channel_property(self, channel_id, property_name):
         '''This function clears the channel property for the given property.
 
@@ -548,7 +549,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             channel_ids = self.get_channel_ids()
         for channel_id in channel_ids:
             self.clear_channel_property(channel_id, property_name)
-            
+
     def add_epoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to your recording extractor that tracks
         a certain time period in your recording. It is stored in an internal
@@ -653,8 +654,8 @@ class RecordingExtractor(ABC, BaseExtractor):
 
     def load_probe_file(self, probe_file, channel_map=None, channel_groups=None, verbose=False):
         '''This function returns a SubRecordingExtractor that contains information from the given
-        probe file (channel locations, groups, etc.) If a .prb file is given, then 'location' and 'group' 
-        information for each channel is added to the SubRecordingExtractor. If a .csv file is given, then 
+        probe file (channel locations, groups, etc.) If a .prb file is given, then 'location' and 'group'
+        information for each channel is added to the SubRecordingExtractor. If a .csv file is given, then
         it will only add 'location' to the SubRecordingExtractor.
 
         Parameters
@@ -671,7 +672,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         subrecording = SubRecordingExtractor
             The extractor containing all of the probe information.
         '''
-        subrecording = load_probe_file(self, probe_file, channel_map=channel_map, 
+        subrecording = load_probe_file(self, probe_file, channel_map=channel_map,
                                        channel_groups=channel_groups, verbose=verbose)
         return subrecording
 
@@ -718,7 +719,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         '''
         write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size,
                                    chunk_mb=chunk_mb)
-   
+
     def get_sub_extractors_by_property(self, property_name, return_property_list=False):
         '''Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given
         property_name (e.g. group)
@@ -740,11 +741,11 @@ class RecordingExtractor(ABC, BaseExtractor):
 
         '''
         if return_property_list:
-            sub_list, prop_list = get_sub_extractors_by_property(self, property_name=property_name, 
+            sub_list, prop_list = get_sub_extractors_by_property(self, property_name=property_name,
                                                                  return_property_list=return_property_list)
             return sub_list, prop_list
         else:
-            sub_list = get_sub_extractors_by_property(self, property_name=property_name, 
+            sub_list = get_sub_extractors_by_property(self, property_name=property_name,
                                                       return_property_list=return_property_list)
             return sub_list
 
