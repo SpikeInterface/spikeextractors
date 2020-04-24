@@ -448,11 +448,14 @@ class SortingExtractor(ABC, BaseExtractor):
         '''
         if unit_ids is None:
             unit_ids = self.get_unit_ids()
-        curr_property_name_set = set(self.get_unit_property_names(unit_id=unit_ids[0]))
-        for unit_id in unit_ids[1:]:
-            curr_unit_property_name_set = set(self.get_unit_property_names(unit_id=unit_id))
-            curr_property_name_set = curr_property_name_set.intersection(curr_unit_property_name_set)
-        property_names = sorted(list(curr_property_name_set))
+        if len(unit_ids) > 0:
+            curr_property_name_set = set(self.get_unit_property_names(unit_id=unit_ids[0]))
+            for unit_id in unit_ids[1:]:
+                curr_unit_property_name_set = set(self.get_unit_property_names(unit_id=unit_id))
+                curr_property_name_set = curr_property_name_set.intersection(curr_unit_property_name_set)
+            property_names = sorted(list(curr_property_name_set))
+        else:
+            property_names = []
         return property_names
 
     def copy_unit_properties(self, sorting, unit_ids=None):
