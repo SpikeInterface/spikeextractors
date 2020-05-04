@@ -88,19 +88,19 @@ class MultiSortingExtractor(SortingExtractor):
         else:
             raise ValueError("unit_id must be an int")
 
-    def set_unit_spike_features(self, unit_id, feature_name, value):
+    def set_unit_spike_features(self, unit_id, feature_name, value, indexes=None):
         if unit_id not in self._unit_map.keys():
             raise ValueError("Non-valid unit_id")
         sorting_id = self._unit_map[unit_id]['sorting_id']
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
-        self._sortings[sorting_id].set_unit_spike_features(unit_id_sorting, feature_name, value)
-        
+        self._sortings[sorting_id].set_unit_spike_features(unit_id_sorting, feature_name, value, indexes)
+
     def clear_unit_spike_features(self, unit_id, feature_name):
         if unit_id not in self._unit_map.keys():
             raise ValueError("Non-valid unit_id")
         sorting_id = self._unit_map[unit_id]['sorting_id']
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
-        self._sortings[sorting_id].clear_unit_spike_features(unit_id_sorting, feature_name)        
+        self._sortings[sorting_id].clear_unit_spike_features(unit_id_sorting, feature_name)
 
 def concatenate_sortings(sortings):
     '''
