@@ -71,16 +71,15 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        if np.array(channel_ids).size > 1:
-            if np.any(np.diff(channel_ids) < 0):
-                sorted_idx = np.argsort(channel_ids)
-                recordings = self._recordings[np.sort(channel_ids), start_frame:end_frame]
-                return recordings[sorted_idx]
-            else:
-                return self._recordings[np.array(channel_ids), start_frame:end_frame]
+        if np.any(np.diff(channel_ids) < 0):
+            sorted_idx = np.argsort(channel_ids)
+            recordings = self._recordings[np.sort(channel_ids), start_frame:end_frame]
+            return recordings[sorted_idx]
         else:
-            return self._recordings[np.array(channel_ids), start_frame:end_frame]
-
+            if sorted(channel_ids) == channel_ids and np.all(np.diff(channel_ids) == 1):
+                channel_ids = slice(channel_ids[0], channel_ids[0] + len(channel_ids))
+            return self._recordings[channel_ids, start_frame:end_frame]
+        
     @staticmethod
     def write_recording(recording, save_path, check_suffix=True):
         '''
