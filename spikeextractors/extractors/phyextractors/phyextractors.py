@@ -112,14 +112,15 @@ class PhySortingExtractor(SortingExtractor):
                         if line_count == 0:
                             property_name = row[1]
                         else:
-                            if int(row[0]) in self.get_unit_ids():
-                                if 'cluster_group' in str(f):
-                                    self.set_unit_property(int(row[0]), 'quality', row[1])
-                                elif property_name == 'chan_grp':
-                                    self.set_unit_property(int(row[0]), 'group', row[1])
-                                else:
-                                    if isinstance(row[1], (int, np.int, float, np.float, str)) and len(row) == 2:
-                                        self.set_unit_property(int(row[0]), property_name, row[1])
+                            if len(row) == 2:
+                                if int(row[0]) in self.get_unit_ids():
+                                    if 'cluster_group' in str(f):
+                                        self.set_unit_property(int(row[0]), 'quality', row[1])
+                                    elif property_name == 'chan_grp':
+                                        self.set_unit_property(int(row[0]), 'group', row[1])
+                                    else:
+                                        if isinstance(row[1], (int, np.int, float, np.float, str)) and len(row) == 2:
+                                            self.set_unit_property(int(row[0]), property_name, row[1])
                         line_count += 1
 
         for unit in self.get_unit_ids():
