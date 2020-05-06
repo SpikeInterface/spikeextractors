@@ -273,10 +273,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         channel_idxs = np.array([list(self.get_channel_ids()).index(ch) for ch in channel_ids])
         if locations_2d:
             locations = np.array(locations)[:, :2]
-        if len(channel_idxs) == 1:
-            return locations[channel_idxs][0]
-        else:
-            return locations[channel_idxs]
+        return locations[channel_idxs]
 
     def set_channel_groups(self, groups, channel_ids=None):
         '''This function sets the group property of each specified channel
@@ -332,10 +329,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             self._key_properties['group'] = groups
         groups = np.array(groups)
         channel_idxs = np.array([list(self.get_channel_ids()).index(ch) for ch in channel_ids])
-        if len(channel_idxs) == 1:
-            return groups[channel_idxs][0]
-        else:
-            return groups[channel_idxs]
+        return groups[channel_idxs]
 
     def set_channel_gains(self, channel_ids, gains):
         '''This function sets the gain property of each specified channel
