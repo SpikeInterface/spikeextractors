@@ -23,6 +23,7 @@ from .extractors.shybridextractors import SHYBRIDRecordingExtractor, SHYBRIDSort
 from .extractors.nixioextractors.nixioextractors import NIXIORecordingExtractor, NIXIOSortingExtractor
 from .extractors.neoextractors import (PlexonRecordingExtractor, PlexonSortingExtractor,
                                        NeuralynxRecordingExtractor, NeuralynxSortingExtractor)
+from .extractors.neuroscopesortingextractor import NeuroscopeSortingExtractor
 
 
 recording_extractor_full_list = [
@@ -67,7 +68,7 @@ sorting_extractor_full_list = [
     NpzSortingExtractor,
     SHYBRIDSortingExtractor,
     NIXIOSortingExtractor,
-    
+    NeuroscopeSortingExtractor,
     # neo based
     PlexonSortingExtractor,
     NeuralynxSortingExtractor,
