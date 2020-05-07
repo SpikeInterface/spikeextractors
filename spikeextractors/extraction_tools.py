@@ -203,7 +203,7 @@ def save_to_probe_file(recording, probe_file, grouping_property=None, radius=Non
         with probe_file.open('w') as f:
             if 'location' in recording.get_shared_channel_property_names():
                 for chan in recording.get_channel_ids():
-                    loc = recording.get_channel_locations(chan)
+                    loc = recording.get_channel_locations(chan)[0]
                     if len(loc) == 2:
                         f.write(str(loc[0]))
                         f.write(',')
