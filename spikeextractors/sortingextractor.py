@@ -126,9 +126,13 @@ class SortingExtractor(ABC, BaseExtractor):
             The unit id for which the features will be set
         feature_name: str
             The name of the feature to be stored
-        value
+        value: array_like
             The data associated with the given feature name. Could be many
             formats as specified by the user.
+        indexes: array_like
+            The indices of the specified spikes (if the number of spike features
+            is less than the length of the uint's spike train). If None, it is
+            assumed that value has the same length as the spike train.
         '''
         if isinstance(unit_id, (int, np.integer)):
             if unit_id in self.get_unit_ids():
@@ -144,8 +148,12 @@ class SortingExtractor(ABC, BaseExtractor):
                             raise ValueError("feature values should have the same length as the spike train")
                 else:
                     if isinstance(feature_name, str) and len(value) == len(indexes):
-                        self._features[unit_id][feature_name] = value
-                        self._features[unit_id][feature_name + '_idxs'] = np.array(indexes)
+                        indexes = np.array(indexes)
+                        indexes_sorted_indices = np.argsort(indexes)
+                        value_sorted = value[indexes_sorted_indices]
+                        indexes_sorted = indexes[indexes_sorted_indices]
+                        self._features[unit_id][feature_name] = value_sorted
+                        self._features[unit_id][feature_name + '_idxs'] = indexes_sorted
                     else:
                         if not isinstance(feature_name, str):
                             raise ValueError("feature_name must be a string")
@@ -448,11 +456,14 @@ class SortingExtractor(ABC, BaseExtractor):
         '''
         if unit_ids is None:
             unit_ids = self.get_unit_ids()
-        curr_property_name_set = set(self.get_unit_property_names(unit_id=unit_ids[0]))
-        for unit_id in unit_ids[1:]:
-            curr_unit_property_name_set = set(self.get_unit_property_names(unit_id=unit_id))
-            curr_property_name_set = curr_property_name_set.intersection(curr_unit_property_name_set)
-        property_names = sorted(list(curr_property_name_set))
+        if len(unit_ids) > 0:
+            curr_property_name_set = set(self.get_unit_property_names(unit_id=unit_ids[0]))
+            for unit_id in unit_ids[1:]:
+                curr_unit_property_name_set = set(self.get_unit_property_names(unit_id=unit_id))
+                curr_property_name_set = curr_property_name_set.intersection(curr_unit_property_name_set)
+            property_names = sorted(list(curr_property_name_set))
+        else:
+            property_names = []
         return property_names
 
     def copy_unit_properties(self, sorting, unit_ids=None):
