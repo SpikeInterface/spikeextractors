@@ -430,7 +430,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             formats as specified by the user
         '''
         if property_name in self._key_properties.keys():
-            return eval(f"self.get_channel_{property_name}s")(channel_id)
+            return eval(f"self.get_channel_{property_name}s")(channel_id)[0]
         if not isinstance(channel_id, (int, np.integer)):
             raise TypeError(str(channel_id) + " must be an int")
         if channel_id not in self.get_channel_ids():
