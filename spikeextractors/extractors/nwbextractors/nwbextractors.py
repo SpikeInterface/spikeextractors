@@ -354,8 +354,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         channel_ids = recording.get_channel_ids()
         for m in channel_ids:
             if m not in nwb_elec_ids:
-                location = recording.get_channel_locations(channel_ids=m)
-                grp_name = recording.get_channel_groups(channel_ids=m)
+                location = recording.get_channel_locations(channel_ids=m)[0]
+                grp_name = recording.get_channel_groups(channel_ids=m)[0]
                 grp = nwbfile.electrode_groups[nwb_groups_names[grp_name]]
                 impedance = -1.0
                 nwbfile.add_electrode(

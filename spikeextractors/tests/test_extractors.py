@@ -87,8 +87,8 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(self.RX.get_num_frames(), self.example_info['num_frames'])
         self.assertEqual(self.RX.get_sampling_frequency(), self.example_info['sampling_frequency'])
         self.assertEqual(self.SX.get_unit_ids(), self.example_info['unit_ids'])
-        self.assertEqual(self.RX.get_channel_locations(0)[0], self.example_info['channel_prop'][0])
-        self.assertEqual(self.RX.get_channel_locations(0)[1], self.example_info['channel_prop'][1])
+        self.assertEqual(self.RX.get_channel_locations(0)[0][0], self.example_info['channel_prop'][0])
+        self.assertEqual(self.RX.get_channel_locations(0)[0][1], self.example_info['channel_prop'][1])
         self.assertEqual(self.SX.get_unit_property(unit_id=1, property_name='stability'),
                          self.example_info['unit_prop'])
         self.assertTrue(np.array_equal(self.SX.get_unit_spike_train(1), self.example_info['train1']))
