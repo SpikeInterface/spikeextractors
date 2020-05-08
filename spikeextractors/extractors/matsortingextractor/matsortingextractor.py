@@ -4,11 +4,18 @@ from typing import Union
 
 try:
     import h5py
+    HAVE_H5PY = True
+except ImportError:
+    HAVE_H5PY = False
+
+try:
     from scipy.io.matlab import loadmat, savemat
 
-    HAVE_MAT = True
+    HAVE_LOADMAT = True
 except ImportError:
-    HAVE_MAT = False
+    HAVE_LOADMAT = False
+
+HAVE_MAT = HAVE_H5PY & HAVE_LOADMAT
 
 from spikeextractors import SortingExtractor
 
@@ -38,9 +45,14 @@ class MATSortingExtractor(SortingExtractor):
         try:  # load old-style (up to 7.2) .mat file
             self._data = loadmat(file_path, matlab_compatible=True)
             self._kwargs["old_style_mat"] = True
+        except NameError:  # loadmat not defined
+            raise ImportError("Old-style .mat file given, but `loadmat` is not defined.")
         except NotImplementedError:  # new style .mat file
-            self._data = h5py.File(file_path, "r+")
-            self._kwargs["old_style_mat"] = False
+            try:
+                self._data = h5py.File(file_path, "r+")
+                self._kwargs["old_style_mat"] = False
+            except NameError:
+                raise ImportError("Version 7.2 .mat file given, but you don't have h5py installed.")
 
     def _getfield(self, fieldname: str):
         def _drill(d: dict, keys: deque):

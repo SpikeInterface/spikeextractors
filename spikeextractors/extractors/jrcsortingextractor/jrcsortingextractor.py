@@ -1,5 +1,8 @@
 from pathlib import Path
+import re
 from typing import Union
+
+from scipy.spatial.distance import cdist
 
 import numpy as np
 
@@ -20,7 +23,7 @@ class JRCSortingExtractor(MATSortingExtractor):
         spike_times = self._getfield("spikeTimes").ravel() - 1  # int32
         spike_clusters = self._getfield("spikeClusters").ravel()  # uint32
         spike_amplitudes = self._getfield("spikeAmps").ravel()  # int16
-        spike_sites = self._getfield("spikeSites").ravel()  # uint32
+        spike_sites = self._getfield("spikeSites").ravel() - 1  # uint32
         spike_positions = self._getfield("spikePositions").T  # float32
 
         unit_centroids = self._getfield("clusterCentroids").astype(np.float).T
@@ -36,33 +39,48 @@ class JRCSortingExtractor(MATSortingExtractor):
 
         prm_file = Path(file_path.parent, file_path.name.replace("_res.mat", ".prm"))
         with prm_file.open("r") as fh:
-            line = fh.readline()
-            while line:
-                line = line.split('%')[0].strip(" ;")
-                if line.startswith("sampleRate"):
-                    line = line.split("=", 1)
-                    try:
-                        sample_rate = float(line[1])
-                    except (IndexError, ValueError):
-                        pass
-                elif line.startswith("bitScaling"):
-                    line = line.split("=", 1)
-                    try:
-                        self._kwargs["bit_scaling"] = np.float32(line[1])
-                    except (IndexError, ValueError):
-                        pass
-                elif line.startswith("filterType"):
-                    try:
-                        filter_type = line[1].strip()
-                    except IndexError:
-                        pass
-                elif line.startswith("nDiffOrder"):
-                    try:
-                        ndiff_order = int(line[1])
-                    except (IndexError, ValueError):
-                        pass
+            lines = [line.strip() for line in fh.readlines()]
 
-                line = fh.readline()
+        for line in lines:
+            try:
+                key, val = line.split('%', 1)[0].strip(" ;").split("=")
+            except ValueError:
+                continue
+
+            key = key.strip()
+            val = val.strip()
+
+            if key == "sampleRate":
+                try:
+                    sample_rate = float(val)
+                except (IndexError, ValueError):
+                    pass
+            elif key == "bitScaling":
+                try:
+                    self._kwargs["bit_scaling"] = np.float32(val)
+                except (IndexError, ValueError):
+                    pass
+            elif key == "filterType":
+                filter_type = val
+            elif key == "nDiffOrder":
+                try:
+                    ndiff_order = int(val)
+                except (IndexError, ValueError):
+                    pass
+            elif key == "siteLoc":
+                site_locs = []
+                str_locs = map(lambda v: v.strip(" ]["), val.split(";"))
+                for loc in str_locs:
+                    x, y = map(float, re.split(r",?\s+", loc))
+                    site_locs.append([x, y])
+
+                site_locs = np.array(site_locs)
+            elif key == "shankMap":
+                val = val.strip("][")
+                try:
+                    shank_map = np.array(map(float, re.split(r"[,;]?\s+", val)))
+                except:
+                    shank_map = np.array([])
 
         self.set_sampling_frequency(sample_rate)
         if filter_type == "sgdiff":
@@ -86,6 +104,8 @@ class JRCSortingExtractor(MATSortingExtractor):
         self._cluster_features = np.memmap(features_file, dtype=np.float32, mode="r",
                                            shape=features_shape, order="F")
 
+        neighbors = self._find_site_neighbors(site_locs, raw_shape[1], shank_map)  # get nearest neighbors for each site
+
         # nonpositive clusters are noise or deleted units
         if keep_good_only:
             good_mask = spike_clusters > 0
@@ -106,6 +126,7 @@ class JRCSortingExtractor(MATSortingExtractor):
             self.set_unit_spike_features(uid, "amplitudes", spike_amplitudes[mask])
             self.set_unit_spike_features(uid, "max_channels", spike_sites[mask])
             self.set_unit_spike_features(uid, "positions", spike_positions[mask, :])
+            self.set_unit_spike_features(uid, "site_neighbors", neighbors[spike_sites[mask], :])
 
             self.set_unit_property(uid, "centroid", unit_centroids[uid - 1, :])
             self.set_unit_property(uid, "max_channel", unit_sites[uid - 1])
@@ -113,6 +134,21 @@ class JRCSortingExtractor(MATSortingExtractor):
             self.set_unit_property(uid, "template_raw", mean_waveforms_raw[:, :, uid - 1])
 
         self._kwargs["keep_good_only"] = keep_good_only
+
+    def _find_site_neighbors(self, site_locs, n_neighbors, shank_map):
+        if np.unique(shank_map).size <= 1:
+            pass
+
+        n_sites = site_locs.shape[0]
+        n_neighbors = int(min(n_neighbors, n_sites))
+
+        neighbors = np.zeros((n_sites, n_neighbors), dtype=np.int)
+        for i in range(n_sites):
+            i_loc = site_locs[i, :][np.newaxis, :]
+            dists = cdist(i_loc, site_locs).ravel()
+            neighbors[i, :] = dists.argsort()[:n_neighbors]
+
+        return neighbors
 
     @check_valid_unit_id
     def get_unit_spike_features(self, unit_id, feature_name, start_frame=None, end_frame=None):
