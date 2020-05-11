@@ -44,6 +44,10 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
                 raise ValueError("recordings and groups must have same length")
         self._kwargs = {'recordings': [rec.make_serialized_dict() for rec in recordings], 'groups': groups}
 
+    @property
+    def recordings(self):
+        return self._recordings
+
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         traces = []

@@ -22,6 +22,10 @@ class MultiSortingExtractor(SortingExtractor):
                 u_id += 1
         self._kwargs = {'sortings': [sort.make_serialized_dict() for sort in sortings]}
 
+    @property
+    def sortings(self):
+        return self._sortings
+
     def get_unit_ids(self):
         return list(self._all_unit_ids)
 
