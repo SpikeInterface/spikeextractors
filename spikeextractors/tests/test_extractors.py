@@ -272,6 +272,9 @@ class TestExtractors(unittest.TestCase):
         )
         RX_sub = RX_multi.get_epoch('C')
         check_recordings_equal(self.RX, RX_sub)
+        check_recordings_equal(self.RX, RX_multi.recordings[0])
+        check_recordings_equal(self.RX, RX_multi.recordings[1])
+        check_recordings_equal(self.RX, RX_multi.recordings[2])
         self.assertEqual(4, len(RX_sub.get_channel_ids()))
 
         RX_multi = se.MultiRecordingChannelExtractor(
@@ -281,6 +284,9 @@ class TestExtractors(unittest.TestCase):
         print(RX_multi.get_channel_groups())
         RX_sub = se.SubRecordingExtractor(RX_multi, channel_ids=[4, 5, 6, 7], renamed_channel_ids=[0, 1, 2, 3])
         check_recordings_equal(self.RX2, RX_sub)
+        check_recordings_equal(self.RX, RX_multi.recordings[0])
+        check_recordings_equal(self.RX2, RX_multi.recordings[1])
+        check_recordings_equal(self.RX3, RX_multi.recordings[2])
         self.assertEqual([2, 2, 2, 2], list(RX_sub.get_channel_groups()))
         self.assertEqual(12, len(RX_multi.get_channel_ids()))
 
@@ -300,6 +306,8 @@ class TestExtractors(unittest.TestCase):
         )
         SX_sub1 = se.SubSortingExtractor(parent_sorting=SX_multi, start_frame=0, end_frame=N)
         check_sortings_equal(SX_multi, SX_sub1)
+        check_sortings_equal(self.SX, SX_multi.sortings[0])
+        check_sortings_equal(self.SX2, SX_multi.sortings[1])
 
     def test_dump_load_multi_sub_extractor(self):
         # generate dumpable formats

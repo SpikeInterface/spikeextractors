@@ -53,6 +53,10 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         self.copy_channel_properties(self._first_recording)
         self._kwargs = {'recordings': [rec.make_serialized_dict() for rec in recordings], 'epoch_names': epoch_names}
 
+    @property
+    def recordings(self):
+        return self._recordings
+
     def _find_section_for_frame(self, frame):
         inds = np.where(np.array(self._start_frames[:-1]) <= frame)[0]
         ind = inds[-1]
