@@ -28,6 +28,8 @@ class SubRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         self.copy_channel_properties(parent_recording, channel_ids=self._renamed_channel_ids)
 
+        self.is_filtered = self._parent_recording.is_filtered
+
         # update dump dict
         self._kwargs = {'parent_recording': parent_recording.make_serialized_dict(), 'channel_ids': channel_ids,
                         'renamed_channel_ids': renamed_channel_ids, 'start_frame': start_frame, 'end_frame': end_frame}
@@ -40,7 +42,7 @@ class SubRecordingExtractor(RecordingExtractor):
         return self._parent_recording.get_traces(channel_ids=original_ch_ids, start_frame=sf, end_frame=ef)
 
     def get_channel_ids(self):
-        return self._renamed_channel_ids
+        return list(self._renamed_channel_ids)
 
     def get_num_frames(self):
         return self._end_frame - self._start_frame

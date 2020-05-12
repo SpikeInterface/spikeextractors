@@ -136,9 +136,10 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                     subrecording.set_channel_property(i_ch, key_prop, prop)
                 # create dummy locations
                 if 'geometry' not in cgroup.keys() and 'location' not in cgroup.keys():
-                    locs = np.zeros((subrecording.get_num_channels(), 2))
-                    locs[:, 1] = np.arange(subrecording.get_num_channels())
-                    subrecording.set_channel_locations(locs)
+                    if 'location' not in subrecording.get_shared_channel_property_names():
+                        locs = np.zeros((subrecording.get_num_channels(), 2))
+                        locs[:, 1] = np.arange(subrecording.get_num_channels())
+                        subrecording.set_channel_locations(locs)
         else:
             raise AttributeError("'.prb' file should contain the 'channel_groups' field")
 

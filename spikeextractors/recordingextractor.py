@@ -503,17 +503,13 @@ class RecordingExtractor(ABC, BaseExtractor):
         '''
         if channel_ids is None:
             channel_ids = recording.get_channel_ids()
-        if isinstance(channel_ids, int):
-            curr_property_names = recording.get_channel_property_names(channel_id=channel_ids)
+        if isinstance(channel_ids, (int, np.integer)):
+            channel_ids = [channel_ids]
+        for channel_id in channel_ids:
+            curr_property_names = recording.get_channel_property_names(channel_id=channel_id)
             for curr_property_name in curr_property_names:
-                value = recording.get_channel_property(channel_id=channel_ids, property_name=curr_property_name)
-                self.set_channel_property(channel_id=channel_ids, property_name=curr_property_name, value=value)
-        else:
-            for channel_id in channel_ids:
-                curr_property_names = recording.get_channel_property_names(channel_id=channel_id)
-                for curr_property_name in curr_property_names:
-                    value = recording.get_channel_property(channel_id=channel_id, property_name=curr_property_name)
-                    self.set_channel_property(channel_id=channel_id, property_name=curr_property_name, value=value)
+                value = recording.get_channel_property(channel_id=channel_id, property_name=curr_property_name)
+                self.set_channel_property(channel_id=channel_id, property_name=curr_property_name, value=value)
 
     def clear_channel_property(self, channel_id, property_name):
         '''This function clears the channel property for the given property.
