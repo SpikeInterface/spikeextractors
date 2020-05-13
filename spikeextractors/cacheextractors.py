@@ -70,27 +70,6 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         self.set_tmp_folder(tmp_folder)
         self.copy_channel_properties(self._recording)
 
-    def save_to_file(self, save_path):
-        print('Warning: Deprecated function will be removed in future releases')
-        save_path = Path(save_path)
-        if save_path.suffix != '.dat' and save_path.suffix != '.bin':
-            save_path = save_path.with_suffix('.dat')
-        if not save_path.parent.is_dir():
-            os.makedirs(save_path.parent)
-        shutil.move(self._tmp_file, str(save_path))
-        self._tmp_file = str(save_path)
-        self._kwargs['file_path'] = str(Path(self._tmp_file).absolute())
-        self._bindat_kwargs['file_path'] = str(Path(self._tmp_file).absolute())
-        self._is_tmp = False
-        tmp_folder = self.get_tmp_folder()
-        # re-initialize with new file
-        BinDatRecordingExtractor.__init__(self, self._tmp_file, numchan=self._recording.get_num_channels(),
-                                          recording_channels=self._recording.get_channel_ids(),
-                                          sampling_frequency=self._recording.get_sampling_frequency(),
-                                          dtype=self._dtype, is_filtered=self.is_filtered)
-        self.set_tmp_folder(tmp_folder)
-        self.copy_channel_properties(self._recording)
-
     # override to make serialization avoid reloading and saving binary file
     def make_serialized_dict(self, include_properties=None, include_features=None):
         '''
@@ -157,26 +136,6 @@ class CacheSortingExtractor(NpzSortingExtractor, SortingExtractor):
         return str(self._tmp_file)
 
     def move_to(self, save_path):
-        save_path = Path(save_path)
-        if save_path.suffix != '.npz':
-            save_path = save_path.with_suffix('.npz')
-        if not save_path.parent.is_dir():
-            os.makedirs(save_path.parent)
-        shutil.move(self._tmp_file, str(save_path))
-        self._tmp_file = str(save_path)
-        self._kwargs['file_path'] = str(Path(self._tmp_file).absolute())
-        self._npz_kwargs['file_path'] = str(Path(self._tmp_file).absolute())
-        self._is_tmp = False
-        tmp_folder = self.get_tmp_folder()
-        # re-initialize with new file
-        NpzSortingExtractor.__init__(self, self._tmp_file)
-        # keep Npz kwargs
-        self.set_tmp_folder(tmp_folder)
-        self.copy_unit_properties(self._sorting)
-        self.copy_unit_spike_features(self._sorting)
-
-    def save_to_file(self, save_path):
-        print('Warning: Deprecated function will be removed in future releases')
         save_path = Path(save_path)
         if save_path.suffix != '.npz':
             save_path = save_path.with_suffix('.npz')
