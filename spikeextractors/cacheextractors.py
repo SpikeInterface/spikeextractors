@@ -10,13 +10,22 @@ import shutil
 
 
 class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
-    def __init__(self, recording, chunk_size=None):
+    def __init__(self, recording, chunk_size=None, save_path=None):
         RecordingExtractor.__init__(self)  # init tmp folder before constructing BinDatRecordingExtractor
         tmp_folder = self.get_tmp_folder()
         self._recording = recording
-        self._is_tmp = True
-        self._tmp_file = tempfile.NamedTemporaryFile(suffix=".dat", dir=tmp_folder).name
-        self._dtype = recording.get_traces(start_frame=0, end_frame=2).dtype
+        if save_path is None:
+            self._is_tmp = True
+            self._tmp_file = tempfile.NamedTemporaryFile(suffix=".dat", dir=tmp_folder).name
+        else:
+            save_path = Path(save_path)
+            if save_path.suffix != '.dat' and save_path.suffix != '.bin':
+                save_path = save_path.with_suffix('.dat')
+            if not save_path.parent.is_dir():
+                os.makedirs(save_path.parent)
+            self._is_tmp = False
+            self._tmp_file = save_path
+        self._dtype = recording.get_dtype()
         recording.write_to_binary_dat_format(save_path=self._tmp_file, dtype=self._dtype, chunk_size=chunk_size)
         # keep track of filter status when dumping
         self.is_filtered = self._recording.is_filtered
@@ -39,9 +48,9 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
 
     @property
     def filename(self):
-        return self._tmp_file
+        return str(self._tmp_file)
 
-    def save_to_file(self, save_path):
+    def move_to(self, save_path):
         save_path = Path(save_path)
         if save_path.suffix != '.dat' and save_path.suffix != '.bin':
             save_path = save_path.with_suffix('.dat')
@@ -91,12 +100,21 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
 
 
 class CacheSortingExtractor(NpzSortingExtractor, SortingExtractor):
-    def __init__(self, sorting):
+    def __init__(self, sorting, save_path=None):
         SortingExtractor.__init__(self)  # init tmp folder before constructing NpzSortingExtractor
         tmp_folder = self.get_tmp_folder()
         self._sorting = sorting
-        self._is_tmp = True
-        self._tmp_file = tempfile.NamedTemporaryFile(suffix=".npz", dir=tmp_folder).name
+        if save_path is None:
+            self._is_tmp = True
+            self._tmp_file = tempfile.NamedTemporaryFile(suffix=".npz", dir=tmp_folder).name
+        else:
+            save_path = Path(save_path)
+            if save_path.suffix != '.npz':
+                save_path = save_path.with_suffix('.npz')
+            if not save_path.parent.is_dir():
+                os.makedirs(save_path.parent)
+            self._is_tmp = False
+            self._tmp_file = save_path
         NpzSortingExtractor.write_sorting(self._sorting, self._tmp_file)
         NpzSortingExtractor.__init__(self, self._tmp_file)
         # keep Npz kwargs
@@ -115,9 +133,9 @@ class CacheSortingExtractor(NpzSortingExtractor, SortingExtractor):
 
     @property
     def filename(self):
-        return self._tmp_file
+        return str(self._tmp_file)
 
-    def save_to_file(self, save_path):
+    def move_to(self, save_path):
         save_path = Path(save_path)
         if save_path.suffix != '.npz':
             save_path = save_path.with_suffix('.npz')

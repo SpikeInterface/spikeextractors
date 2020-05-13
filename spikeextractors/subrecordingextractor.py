@@ -66,7 +66,6 @@ class SubRecordingExtractor(RecordingExtractor):
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
         reference_frames_shift = self._start_frame + np.array(reference_frames)
-        original_ch_ids = []
         original_ch_ids = self.get_original_channel_ids(channel_ids)
         return self._parent_recording.get_snippets(reference_frames=reference_frames_shift, snippet_len=snippet_len,
                                                    channel_ids=original_ch_ids)
