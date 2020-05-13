@@ -361,7 +361,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 nwbfile.add_electrode(
                     id=m,
                     x=np.nan, y=np.nan, z=np.nan,
-                    rel_x=float(location[0]), rel_y=float(location[1]),
+                    rel_x=float(location[0]),
+                    rel_y=float(location[1]),
                     imp=impedance,
                     location='unknown',
                     filtering='none',

@@ -149,14 +149,21 @@ class TestExtractors(unittest.TestCase):
         cache_rec = se.CacheRecordingExtractor(self.RX)
         check_recording_return_types(cache_rec)
         check_recordings_equal(self.RX, cache_rec)
-        cache_rec.save_to_file('cache_rec')
+        cache_rec.move_to('cache_rec')
 
         assert cache_rec.filename == 'cache_rec.dat'
         check_dumping(cache_rec)
 
+        cache_rec = se.CacheRecordingExtractor(self.RX, save_path='cache_rec2')
+        check_recording_return_types(cache_rec)
+        check_recordings_equal(self.RX, cache_rec)
+
+        assert cache_rec.filename == 'cache_rec2.dat'
+        check_dumping(cache_rec)
+
         # test saving to file
         del cache_rec
-        assert Path('cache_rec.dat').is_file()
+        assert Path('cache_rec2.dat').is_file()
 
         # test tmp
         cache_rec = se.CacheRecordingExtractor(self.RX)
@@ -167,7 +174,7 @@ class TestExtractors(unittest.TestCase):
         cache_sort = se.CacheSortingExtractor(self.SX)
         check_sorting_return_types(cache_sort)
         check_sortings_equal(self.SX, cache_sort)
-        cache_sort.save_to_file('cache_sort')
+        cache_sort.move_to('cache_sort')
 
         assert cache_sort.filename == 'cache_sort.npz'
         check_dumping(cache_sort)
@@ -175,6 +182,17 @@ class TestExtractors(unittest.TestCase):
         # test saving to file
         del cache_sort
         assert Path('cache_sort.npz').is_file()
+
+        cache_sort = se.CacheSortingExtractor(self.SX, save_path='cache_sort2')
+        check_sorting_return_types(cache_sort)
+        check_sortings_equal(self.SX, cache_sort)
+
+        assert cache_sort.filename == 'cache_sort2.npz'
+        check_dumping(cache_sort)
+
+        # test saving to file
+        del cache_sort
+        assert Path('cache_sort2.npz').is_file()
 
         # test tmp
         cache_sort = se.CacheSortingExtractor(self.SX)
