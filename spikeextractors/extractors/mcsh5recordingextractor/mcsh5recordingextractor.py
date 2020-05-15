@@ -1,6 +1,7 @@
 from spikeextractors import RecordingExtractor
 import numpy as np
 from pathlib import Path
+from spikeextractors.extraction_tools import check_get_traces_args
 
 try:
     import h5py
@@ -15,13 +16,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     has_default_locations = False
     installed = HAVE_MCSH5  # check at class level if installed or not
     is_writable = False
-    is_dumpable = True
-
     mode = 'file'
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
-        {'name': 'stream_id', 'type': 'int', 'title': 'ID of stream that will be loaded'},
-    ]
     installation_mesg = "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, file_path, stream_id=0, verbose=False):
@@ -70,26 +65,18 @@ class MCSH5RecordingExtractor(RecordingExtractor):
             analog_stream_names = list(rf.require_group('/Data/Recording_0/AnalogStream').keys())
             return list(range(len(analog_stream_names)))
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_idxs = []
-            for m in self._channel_ids:
-                assert m in self._channel_ids, 'channel_id {} not found'.format(m)
-                channel_idxs.append(np.where(np.array(self._channel_ids) == m)[0][0])
-        else:
-            if isinstance(channel_ids, (int, np.integer)):
-                assert channel_ids in self._channel_ids, 'channel_id {} not found'.format(channel_ids)
-                channel_idxs = np.where(np.array(self._channel_ids) == channel_ids)[0][0]
-            else:
-                channel_idxs = []
-                for m in channel_ids:
-                    assert m in self._channel_ids, 'channel_id {} not found'.format(m)
-                    channel_idxs.append(np.where(np.array(self._channel_ids) == m)[0][0])
+
+        channel_idxs = []
+        for m in channel_ids:
+            assert m in self._channel_ids, 'channel_id {} not found'.format(m)
+            channel_idxs.append(np.where(np.array(self._channel_ids) == m)[0][0])
 
         stream = self._rf.require_group('/Data/Recording_0/AnalogStream/Stream_' + str(self._stream_id))
         conv = self._convFact.astype(float) * (10.0 ** self._exponent)

@@ -3,11 +3,10 @@ import uuid
 from datetime import datetime
 from collections import defaultdict, abc
 from pathlib import Path
-
 import numpy as np
 
-
 import spikeextractors as se
+from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
 
 try:
     import pynwb
@@ -133,13 +132,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     has_default_locations = True
     installed = HAVE_NWB  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
     mode = 'file'
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
-        {'name': 'acquisition_name', 'type': 'string', 'value': None, 'default': None,
-         'title': "Name of Acquisition Method"},
-    ]
     installation_mesg = "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
 
     def __init__(self, file_path, electrical_series_name='ElectricalSeries'):
@@ -257,25 +250,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             'description': es.description
         })
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         check_nwb_install()
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if channel_ids is not None:
-            if not isinstance(channel_ids, (list, np.ndarray)):
-                raise TypeError("'channel_ids' must be a list or array of integers.")
-            if not all([id in self.channel_ids for id in channel_ids]):
-                raise ValueError("'channel_ids' contain values outside the range of valid ids.")
-        else:
-            channel_ids = self.channel_ids
-        if start_frame is not None:
-            if not isinstance(start_frame, (int, np.integer)):
-                raise TypeError("'start_frame' must be an integer")
-        else:
-            start_frame = 0
-        if end_frame is not None:
-            if not isinstance(end_frame, (int, np.integer)):
-                raise TypeError("'end_frame' must be an integer")
-
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             es = nwbfile.acquisition[self._electrical_series_name]
@@ -377,22 +354,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         channel_ids = recording.get_channel_ids()
         for m in channel_ids:
             if m not in nwb_elec_ids:
-                if 'location' in recording.get_channel_property_names(m):
-                    location = recording.get_channel_property(m, 'location')
-                    while len(location) < 2:
-                        location = np.append(location, [0])
-                else:
-                    location = [np.nan, np.nan]
-                if 'group' in recording.get_channel_property_names(m):
-                    grp_name = recording.get_channel_groups(channel_ids=[m])
-                    grp = nwbfile.electrode_groups[nwb_groups_names[grp_name[0]]]
-                else:
-                    grp = nwbfile.electrode_groups[nwb_groups_names[0]]
+                location = recording.get_channel_locations(channel_ids=m)[0]
+                grp_name = recording.get_channel_groups(channel_ids=m)[0]
+                grp = nwbfile.electrode_groups[nwb_groups_names[grp_name]]
                 impedance = -1.0
                 nwbfile.add_electrode(
                     id=m,
                     x=np.nan, y=np.nan, z=np.nan,
-                    rel_x=float(location[0]), rel_y=float(location[1]),
+                    rel_x=float(location[0]),
+                    rel_y=float(location[1]),
                     imp=impedance,
                     location='unknown',
                     filtering='none',
@@ -606,13 +576,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
 class NwbSortingExtractor(se.SortingExtractor):
     extractor_name = 'NwbSortingExtractor'
-    exporter_name = 'NwbSortingExporter'
-    exporter_gui_params = [
-        {'name': 'save_path', 'type': 'file', 'title': "Save path"},
-        {'name': 'identifier', 'type': 'str', 'value': None, 'default': None, 'title': "The session identifier"},
-        {'name': 'session_description', 'type': 'str', 'value': None, 'default': None,
-         'title': "The session description"},
-    ]
     installed = HAVE_NWB  # check at class level if installed or not
     is_writable = True
     mode = 'file'
@@ -663,11 +626,11 @@ class NwbSortingExtractor(se.SortingExtractor):
                 if item + '_index' in all_names:  # if it has index, it is a spike_feature
                     for id in units_ids:
                         ind = list(units_ids).index(id)
-                        self._unit_features.update({id: {item: nwbfile.units[item][ind]}})
+                        self.set_unit_spike_features(id, item, nwbfile.units[item][ind])
                 else:  # if it is unit_property
                     for id in units_ids:
                         ind = list(units_ids).index(id)
-                        self._unit_properties.update({id: {item: nwbfile.units[item][ind]}})
+                        self.set_unit_property(id, item, nwbfile.units[item][ind])
 
             # Fill epochs dictionary
             self._epochs = {}
@@ -694,6 +657,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             unit_ids = [int(i) for i in nwbfile.units.id[:]]
         return unit_ids
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
@@ -735,8 +699,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             t0 = 0.
 
         (all_properties, all_features) = find_all_unit_property_names(
-            properties_dict=sorting._unit_properties,
-            features_dict=sorting._unit_features
+            properties_dict=sorting._properties,
+            features_dict=sorting._features
         )
 
         if os.path.exists(save_path):
@@ -762,9 +726,9 @@ class NwbSortingExtractor(se.SortingExtractor):
 
             # Units properties
             for pr in all_properties:
-                unit_ids = [int(k) for k, v in sorting._unit_properties.items()
+                unit_ids = [int(k) for k, v in sorting._properties.items()
                             if pr in v]
-                vals = [v[pr] for k, v in sorting._unit_properties.items()
+                vals = [v[pr] for k, v in sorting._properties.items()
                         if pr in v]
                 set_dynamic_table_property(
                     dynamic_table=nwbfile.units,
@@ -795,7 +759,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             nspikes = {k: get_nspikes(nwbfile.units, int(k)) for k in ids}
             for ft in all_features:
                 vals = [v[ft] if ft in v else [np.nan] * nspikes[int(k)]
-                        for k, v in sorting._unit_features.items()]
+                        for k, v in sorting._features.items()]
                 flatten_vals = [item for sublist in vals for item in sublist]
                 nspks_list = [sp for sp in nspikes.values()]
                 spikes_index = np.cumsum(nspks_list).tolist()

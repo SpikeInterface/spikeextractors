@@ -1,10 +1,9 @@
 import os
 from pathlib import Path
 import numpy as np
-
 from spikeextractors import SortingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
-from spikeextractors.extraction_tools import save_to_probe_file, load_probe_file
+from spikeextractors.extraction_tools import save_to_probe_file, load_probe_file, check_valid_unit_id
 
 try:
     import hybridizer.io as sbio
@@ -17,11 +16,7 @@ except ImportError:
 class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
     extractor_name = 'SHYBRIDRecording'
     installed = HAVE_SBEX
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid recording (.bin, .raw, .dat)"},
-    ]
     is_writable = True
-    is_dumpable = True
     mode = 'file'
     installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
 
@@ -103,11 +98,7 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
 
 class SHYBRIDSortingExtractor(SortingExtractor):
     extractor_name = 'SHYBRIDSortingExtractor'
-    exporter_name = 'SHYBRIDSortingExporter'
     installed = HAVE_SBEX
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Full path to hybrid ground truth labels (.csv)"},
-    ]
     is_writable = True
     installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
 
@@ -125,6 +116,7 @@ class SHYBRIDSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return self._spike_clusters.keys()
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         train = self._spike_clusters[unit_id].get_actual_spike_train().spikes

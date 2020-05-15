@@ -2,6 +2,7 @@ from spikeextractors import SortingExtractor
 from spikeextractors.extractors.numpyextractors import NumpyRecordingExtractor
 import numpy as np
 from pathlib import Path
+from spikeextractors.extraction_tools import check_valid_unit_id
 
 try:
     import h5py
@@ -11,16 +12,11 @@ except ImportError:
 
 
 class SpykingCircusRecordingExtractor(NumpyRecordingExtractor):
-
     extractor_name = 'SpykingCircusRecordingExtractor'
     has_default_locations = False
     installed = True  # check at class level if installed or not
     is_writable = False
-    is_dumpable = True
     mode = 'folder'
-    extractor_gui_params = [
-        {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
-    ]
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, folder_path):
@@ -56,17 +52,10 @@ class SpykingCircusRecordingExtractor(NumpyRecordingExtractor):
 
 
 class SpykingCircusSortingExtractor(SortingExtractor):
-
     extractor_name = 'SpykingCircusSortingExtractor'
-    exporter_name = 'SpykingCircusSortingExporter'
     installed = HAVE_SCSX  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
-    exporter_gui_params = [
-        {'name': 'save_path', 'type': 'file_or_folder', 'title': "Path to file or folder (file must end with is either"
-                                                                 " a folder or an hdf5 file ending with 'result.hdf5'"
-                                                                 " or 'result-merged.hdf5'"},
-    ]
     installation_mesg = "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
 
     def __init__(self, folder_path):
@@ -124,6 +113,7 @@ class SpykingCircusSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._unit_ids)
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:

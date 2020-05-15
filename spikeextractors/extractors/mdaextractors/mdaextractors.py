@@ -1,6 +1,6 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-from ...extraction_tools import write_to_binary_dat_format
+from spikeextractors.extraction_tools import write_to_binary_dat_format, check_get_traces_args, check_valid_unit_id
 
 import json
 import numpy as np
@@ -15,11 +15,7 @@ class MdaRecordingExtractor(RecordingExtractor):
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
     mode = 'folder'
-    extractor_gui_params = [
-        {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
-    ]
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, folder_path, raw_fname='raw.mda', params_fname='params.json', geom_fname='geom.csv'):
@@ -40,10 +36,8 @@ class MdaRecordingExtractor(RecordingExtractor):
         self._num_channels = X.N1()
         self._num_timepoints = X.N2()
         RecordingExtractor.__init__(self)
-        for m in range(self._num_channels):
-            self.set_channel_property(m, 'location', self._geom[m, :])
+        self.set_channel_locations(self._geom)
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
-        #self.append_to_dump_dict()
 
     def get_channel_ids(self):
         return list(range(self._num_channels))
@@ -54,14 +48,8 @@ class MdaRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._sampling_frequency
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = self.get_channel_ids()
         X = DiskReadMda(self._timeseries_path)
         recordings = X.readChunk(i1=0, i2=start_frame, N1=X.N1(), N2=end_frame - start_frame)
         recordings = recordings[channel_ids, :]
@@ -139,12 +127,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         num_chan = recording.get_num_channels()
         num_frames = recording.get_num_frames()
 
-        location0 = recording.get_channel_property(channel_ids[0], 'location')
-        nd = len(location0)
-        geom = np.zeros((num_chan, nd))
-        for ii in range(len(channel_ids)):
-            location_ii = recording.get_channel_property(channel_ids[ii], 'location')
-            geom[ii, :] = list(location_ii)
+        geom = recording.get_channel_locations()
 
         if not save_path.is_dir():
             os.mkdir(save_path)
@@ -172,13 +155,8 @@ class MdaRecordingExtractor(RecordingExtractor):
 
 class MdaSortingExtractor(SortingExtractor):
     extractor_name = 'MdaSortingExtractor'
-    exporter_name = 'MdaSortingExporter'
-    exporter_gui_params = [
-        {'name': 'save_path', 'type': 'file', 'title': "Save path"},
-    ]
     installed = True  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
     mode = 'file'
     installation_mesg = ""  # error message when not installed
 
@@ -195,12 +173,13 @@ class MdaSortingExtractor(SortingExtractor):
         for unit_id in self._unit_ids:
             inds = np.where(self._labels == unit_id)
             max_channels = self._max_channels[inds].astype(int)
-            self.set_unit_property(unit_id, 'max_channel', max_channels[0])
+            self.set_unit_property(unit_id, 'mda_max_channel', max_channels[0])
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'sampling_frequency': sampling_frequency}
 
     def get_unit_ids(self):
         return list(self._unit_ids)
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:

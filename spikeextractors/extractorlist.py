@@ -22,7 +22,8 @@ from .extractors.mcsh5recordingextractor.mcsh5recordingextractor import MCSH5Rec
 from .extractors.shybridextractors import SHYBRIDRecordingExtractor, SHYBRIDSortingExtractor
 from .extractors.nixioextractors.nixioextractors import NIXIORecordingExtractor, NIXIOSortingExtractor
 from .extractors.neoextractors import (PlexonRecordingExtractor, PlexonSortingExtractor,
-                                        NeuralynxRecordingExtractor, NeuralynxSortingExtractor)
+                                       NeuralynxRecordingExtractor, NeuralynxSortingExtractor)
+from .extractors.neuroscopesortingextractor import NeuroscopeSortingExtractor
 
 
 recording_extractor_full_list = [
@@ -67,7 +68,7 @@ sorting_extractor_full_list = [
     NpzSortingExtractor,
     SHYBRIDSortingExtractor,
     NIXIOSortingExtractor,
-    
+    NeuroscopeSortingExtractor,
     # neo based
     PlexonSortingExtractor,
     NeuralynxSortingExtractor,
@@ -78,4 +79,4 @@ installed_sorting_extractor_list = [sx for sx in sorting_extractor_full_list if 
 sorting_extractor_dict = {sorting_class.extractor_name: sorting_class for sorting_class in sorting_extractor_full_list}
 
 writable_sorting_extractor_list = [sx for sx in installed_sorting_extractor_list if sx.is_writable]
-sorting_exporter_dict = {sorting_class.exporter_name: sorting_class for sorting_class in writable_sorting_extractor_list}
+writable_sorting_extractor_dict = {sorting_class.extractor_name: sorting_class for sorting_class in writable_sorting_extractor_list}

@@ -1,6 +1,7 @@
 from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
+from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
 
 try:
     import pyopenephys
@@ -15,15 +16,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     has_default_locations = False
     installed = HAVE_OE  # check at class level if installed or not
     is_writable = False
-    is_dumpable = True
     mode = 'folder'
-    extractor_gui_params = [
-        {'name': 'folder_path', 'type': 'folder', 'title': "str, Path to folder_path"},
-        {'name': 'experiment_id', 'type': 'int', 'value': 0, 'default': 0, 'title': "Experiment ID"},
-        {'name': 'recording_id', 'type': 'int', 'value': 0, 'default': 0, 'title': "Recording ID"},
-        {'name': 'dtype', 'type': 'str', 'value': 'float', 'default': 'float', 'title': "dtype ('float' or 'int')"},
-    ]
-
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
 
     def __init__(self, folder_path, *, experiment_id=0, recording_id=0, dtype='float'):
@@ -45,14 +38,8 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return float(self._recording.sample_rate.rescale('Hz').magnitude)
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = self.get_channel_ids()
         if self._dtype == 'int16':
             return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
         elif self._dtype == 'float':
@@ -82,6 +69,7 @@ class OpenEphysSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return self._unit_ids
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:

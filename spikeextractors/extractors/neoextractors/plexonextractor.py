@@ -1,14 +1,19 @@
 from .neobaseextractor import NeoBaseRecordingExtractor, NeoBaseSortingExtractor
 
-import neo
-
+try:
+    import neo
+    HAVE_NEO = True
+except ImportError:
+    HAVE_NEO = False
 
 class PlexonRecordingExtractor(NeoBaseRecordingExtractor):
     extractor_name = 'PlexonRecording'
     mode = 'file'
-    NeoRawIOClass = neo.rawio.PlexonRawIO
+    installed = HAVE_NEO
+    NeoRawIOClass = 'PlexonRawIO'
 
 class PlexonSortingExtractor(NeoBaseSortingExtractor):
     extractor_name = 'PlexonSorting'
     mode = 'file'
-    NeoRawIOClass = neo.rawio.PlexonRawIO
+    installed = HAVE_NEO
+    NeoRawIOClass = 'PlexonRawIO'

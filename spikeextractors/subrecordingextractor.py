@@ -1,15 +1,14 @@
 from .recordingextractor import RecordingExtractor
+from .extraction_tools import check_get_traces_args, cast_start_end_frame
 import numpy as np
 
 
 # Encapsulates a sub-dataset
 
 class SubRecordingExtractor(RecordingExtractor):
-    extractor_name = 'SubRecording'
-
     def __init__(self, parent_recording, *, channel_ids=None, renamed_channel_ids=None, start_frame=None,
                  end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
+        start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
         self._parent_recording = parent_recording
         self._channel_ids = channel_ids
         self._renamed_channel_ids = renamed_channel_ids
@@ -29,25 +28,21 @@ class SubRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         self.copy_channel_properties(parent_recording, channel_ids=self._renamed_channel_ids)
 
+        self.is_filtered = self._parent_recording.is_filtered
+
         # update dump dict
         self._kwargs = {'parent_recording': parent_recording.make_serialized_dict(), 'channel_ids': channel_ids,
                         'renamed_channel_ids': renamed_channel_ids, 'start_frame': start_frame, 'end_frame': end_frame}
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = self.get_channel_ids()
         sf = self._start_frame + start_frame
         ef = self._start_frame + end_frame
         original_ch_ids = self.get_original_channel_ids(channel_ids)
         return self._parent_recording.get_traces(channel_ids=original_ch_ids, start_frame=sf, end_frame=ef)
 
     def get_channel_ids(self):
-        return self._renamed_channel_ids
+        return list(self._renamed_channel_ids)
 
     def get_num_frames(self):
         return self._end_frame - self._start_frame
@@ -71,7 +66,6 @@ class SubRecordingExtractor(RecordingExtractor):
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
         reference_frames_shift = self._start_frame + np.array(reference_frames)
-        original_ch_ids = []
         original_ch_ids = self.get_original_channel_ids(channel_ids)
         return self._parent_recording.get_snippets(reference_frames=reference_frames_shift, snippet_len=snippet_len,
                                                    channel_ids=original_ch_ids)

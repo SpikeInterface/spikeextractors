@@ -10,6 +10,7 @@ except ImportError:
 
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
+from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
 
 # error message when not installed
 missing_nixio_msg = ("To use the NIXIORecordingExtractor install nixio:"
@@ -17,17 +18,11 @@ missing_nixio_msg = ("To use the NIXIORecordingExtractor install nixio:"
 
 
 class NIXIORecordingExtractor(RecordingExtractor):
-
     extractor_name = 'NIXIORecording'
     has_default_locations = False
     installed = HAVE_NIXIO
     is_writable = True
-    is_dumpable = True
-
     mode = 'file'
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
-    ]
 
     def __init__(self, file_path):
         if not HAVE_NIXIO:
@@ -62,12 +57,9 @@ class NIXIORecordingExtractor(RecordingExtractor):
         sampling_frequency = 1./timedim.sampling_interval
         return sampling_frequency
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if channel_ids:
-            channels = np.array([self._traces[cid] for cid in channel_ids])
-        else:
-            channels = self._traces[:]
+        channels = np.array([self._traces[cid] for cid in channel_ids])
         return channels[:, start_frame:end_frame]
 
     def _load_properties(self):
@@ -150,15 +142,10 @@ class NIXIORecordingExtractor(RecordingExtractor):
 
 
 class NIXIOSortingExtractor(SortingExtractor):
-
     extractor_name = 'NIXIOSortingExtractor'
-    exporter_name = 'NIXIOSortingExporter'
     installed = HAVE_NIXIO
     is_writable = True
     mode = 'file'
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to file"},
-    ]
 
     def __init__(self, file_path):
         SortingExtractor.__init__(self)
@@ -181,6 +168,7 @@ class NIXIOSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return [int(da.label) for da in self._spike_das]
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         name = "spikes-{}".format(unit_id)

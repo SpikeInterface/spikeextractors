@@ -1,12 +1,11 @@
 from .sortingextractor import SortingExtractor
 import numpy as np
+from .extraction_tools import check_valid_unit_id
 
 
 # Encapsulates a subset of a spike sorted data file
 
 class SubSortingExtractor(SortingExtractor):
-    extractor_name = 'SubSorting'
-
     def __init__(self, parent_sorting, *, unit_ids=None, renamed_unit_ids=None, start_frame=None, end_frame=None):
         SortingExtractor.__init__(self)
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
@@ -35,19 +34,14 @@ class SubSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._renamed_unit_ids)
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        if (isinstance(unit_id, (int, np.integer))):
-            if (unit_id in self.get_unit_ids()):
-                original_unit_id = self._original_unit_id_lookup[unit_id]
-            else:
-                raise ValueError("Non-valid unit_id")
-        else:
-            raise ValueError("unit_id must be an int")
+        original_unit_id = self._original_unit_id_lookup[unit_id]
         sf = self._start_frame + start_frame
         ef = self._start_frame + end_frame
         if sf < self._start_frame:
@@ -88,21 +82,36 @@ class SubSortingExtractor(SortingExtractor):
         if unit_ids is None:
             unit_ids = self.get_unit_ids()
         if isinstance(unit_ids, int):
-            sorting_unit_id = unit_ids
+            unit_ids = [unit_ids]
+        for unit_id in unit_ids:
+            sorting_unit_id = unit_id
             if sorting is self._parent_sorting:
-                sorting_unit_id = self.get_original_unit_ids(unit_ids)
+                sorting_unit_id = self.get_original_unit_ids(unit_id)
             curr_feature_names = sorting.get_unit_spike_feature_names(unit_id=sorting_unit_id)
             for curr_feature_name in curr_feature_names:
-                value = sorting.get_unit_spike_features(unit_id=sorting_unit_id, feature_name=curr_feature_name, start_frame=start_frame, end_frame=end_frame)
-                self.set_unit_spike_features(unit_id=unit_ids, feature_name=curr_feature_name, value=value)
-        else:
-            for unit_id in unit_ids:
-                sorting_unit_id = unit_id
-                if sorting is self._parent_sorting:
-                    sorting_unit_id = self.get_original_unit_ids(unit_id)
-                curr_feature_names = sorting.get_unit_spike_feature_names(unit_id=sorting_unit_id)
-                for curr_feature_name in curr_feature_names:
-                    value = sorting.get_unit_spike_features(unit_id=sorting_unit_id, feature_name=curr_feature_name, start_frame=start_frame, end_frame=end_frame)
+                value = sorting.get_unit_spike_features(unit_id=sorting_unit_id, feature_name=curr_feature_name,
+                                                        start_frame=start_frame, end_frame=end_frame)
+                if len(value) < len(sorting.get_unit_spike_train(sorting_unit_id, start_frame=start_frame,
+                                                                 end_frame=end_frame)):
+                    if not curr_feature_name.endswith('idxs'):
+                        assert curr_feature_name + '_idxs' in \
+                               sorting.get_unit_spike_feature_names(unit_id=sorting_unit_id)
+                        curr_feature_name_idxs = curr_feature_name + '_idxs'
+                        value_idxs = np.array(sorting.get_unit_spike_features(unit_id=sorting_unit_id,
+                                                                              feature_name=curr_feature_name_idxs,
+                                                                              start_frame=start_frame,
+                                                                              end_frame=end_frame))
+                        # find index of first spike
+                        if start_frame is not None:
+                            discarded_spikes_idxs = np.where(sorting.get_unit_spike_train(sorting_unit_id) <
+                                                             start_frame)
+                            if len(discarded_spikes_idxs) > 0:
+                                n_discarded = len(discarded_spikes_idxs[0])
+                                value_idxs = value_idxs - n_discarded
+                        self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name,
+                                                     value=value,
+                                                     indexes=value_idxs)
+                else:
                     self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name, value=value)
 
     def get_original_unit_ids(self, unit_ids):

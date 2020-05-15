@@ -1,6 +1,7 @@
 from spikeextractors import SortingExtractor
 import numpy as np
 from pathlib import Path
+from spikeextractors.extraction_tools import check_valid_unit_id
 
 
 class NeuroscopeSortingExtractor(SortingExtractor):
@@ -21,10 +22,6 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         Path to the .clu text file.
     """
     extractor_name = 'NeuroscopeSortingExtractor'
-    exporter_name = 'NeuroscopeSortingExporter'
-    exporter_gui_params = [
-        {'name': 'save_path', 'type': 'file', 'title': "Save path"},
-    ]
     installed = True  # check at class level if installed or not
     is_writable = True
     mode = 'custom'
@@ -50,6 +47,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._unit_ids)
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:

@@ -1,4 +1,5 @@
 from .recordingextractor import RecordingExtractor
+from .extraction_tools import check_get_traces_args
 import numpy as np
 
 # Concatenates the given recordings by time
@@ -52,6 +53,10 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         self.copy_channel_properties(self._first_recording)
         self._kwargs = {'recordings': [rec.make_serialized_dict() for rec in recordings], 'epoch_names': epoch_names}
 
+    @property
+    def recordings(self):
+        return self._recordings
+
     def _find_section_for_frame(self, frame):
         inds = np.where(np.array(self._start_frames[:-1]) <= frame)[0]
         ind = inds[-1]
@@ -62,12 +67,8 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         ind = inds[-1]
         return self._recordings[ind], ind, time - self._start_times[ind]
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
         recording1, i_sec1, i_start_frame = self._find_section_for_frame(start_frame)
         _, i_sec2, i_end_frame = self._find_section_for_frame(end_frame)
         if i_sec1 == i_sec2:

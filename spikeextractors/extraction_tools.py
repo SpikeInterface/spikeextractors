@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 import json
 import datetime
-import spikeextractors
+from functools import wraps
 from spikeextractors.baseextractor import BaseExtractor
 
 
@@ -108,14 +108,14 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                     if key_prop == 'channels':
                         for i_ch, prop in enumerate(prop_val):
                             if prop in subrecording.get_channel_ids():
-                                subrecording.set_channel_property(prop, 'group', int(cgroup_id))
+                                subrecording.set_channel_groups(int(cgroup_id), channel_ids=prop)
                     elif key_prop == 'geometry' or key_prop == 'location':
                         if isinstance(prop_val, dict):
                             if len(prop_val.keys()) != channels_in_group and verbose:
                                 print('geometry in PRB does not have the same length as channel in group')
                             for (i_ch, prop) in prop_val.items():
                                 if i_ch in subrecording.get_channel_ids():
-                                    subrecording.set_channel_property(i_ch, 'location', prop)
+                                    subrecording.set_channel_locations(prop, channel_ids=i_ch)
                         elif isinstance(prop_val, (list, np.ndarray)) and len(prop_val) == channels_in_group:
                             if 'channels' not in cgroup.keys():
                                 raise Exception("'geometry'/'location' in the .prb file can be a list only if "
@@ -124,7 +124,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                 print('geometry in PRB does not have the same length as channel in group')
                             for (i_ch, prop) in zip(channels_id_in_group, prop_val):
                                 if i_ch in subrecording.get_channel_ids():
-                                    subrecording.set_channel_property(i_ch, 'location', prop)
+                                    subrecording.set_channel_locations(prop, channel_ids=i_ch)
                     else:
                         if isinstance(prop_val, dict) and len(prop_val.keys()) == channels_in_group:
                             for (i_ch, prop) in prop_val.items():
@@ -136,8 +136,10 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                     subrecording.set_channel_property(i_ch, key_prop, prop)
                 # create dummy locations
                 if 'geometry' not in cgroup.keys() and 'location' not in cgroup.keys():
-                    for i, chan in enumerate(subrecording.get_channel_ids()):
-                        subrecording.set_channel_property(chan, 'location', [0, i])
+                    if 'location' not in subrecording.get_shared_channel_property_names():
+                        locs = np.zeros((subrecording.get_num_channels(), 2))
+                        locs[:, 1] = np.arange(subrecording.get_num_channels())
+                        subrecording.set_channel_locations(locs)
         else:
             raise AttributeError("'.prb' file should contain the 'channel_groups' field")
 
@@ -159,11 +161,11 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
                                                                      "rows as the number of channels in the recordings"
             for i_ch, pos in zip(subrecording.get_channel_ids(), loaded_pos):
                 if i_ch in subrecording.get_channel_ids():
-                    subrecording.set_channel_property(i_ch, 'location', list(np.array(pos).astype(float)))
+                    subrecording.set_channel_locations(list(np.array(pos).astype(float)), i_ch)
             if channel_groups is not None and len(channel_groups) == len(subrecording.get_channel_ids()):
                 for i_ch, chg in zip(subrecording.get_channel_ids(), channel_groups):
                     if i_ch in subrecording.get_channel_ids():
-                        subrecording.set_channel_property(i_ch, 'group', chg)
+                        subrecording.set_channel_groups(chg, i_ch)
     else:
         raise NotImplementedError("Only .csv and .prb probe files can be loaded.")
 
@@ -202,7 +204,7 @@ def save_to_probe_file(recording, probe_file, grouping_property=None, radius=Non
         with probe_file.open('w') as f:
             if 'location' in recording.get_shared_channel_property_names():
                 for chan in recording.get_channel_ids():
-                    loc = recording.get_channel_property(chan, 'location')
+                    loc = recording.get_channel_locations(chan)[0]
                     if len(loc) == 2:
                         f.write(str(loc[0]))
                         f.write(',')
@@ -247,13 +249,13 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
     numchan = int(numchan)
     with Path(file).open() as f:
         nsamples = (os.fstat(f.fileno()).st_size - offset) // (numchan * np.dtype(dtype).itemsize)
-        if time_axis == 0:
-            samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
-                                shape=(nsamples, numchan))
-            samples = np.memmap.transpose(samples)
-        else:
-            samples = np.memmap(f, np.dtype(dtype), mode='r', offset=offset,
-                                shape=(numchan, nsamples))
+    if time_axis == 0:
+        samples = np.memmap(file, np.dtype(dtype), mode='r', offset=offset,
+                            shape=(nsamples, numchan))
+        samples = np.memmap.transpose(samples)
+    else:
+        samples = np.memmap(file, np.dtype(dtype), mode='r', offset=offset,
+                            shape=(numchan, nsamples))
     return samples
 
 
@@ -299,7 +301,7 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
     if chunk_size is not None:
         chunk_size = int(chunk_size)
     elif chunk_mb is not None:
-        n_bytes = recording.get_dtype().itemsize
+        n_bytes = np.dtype(recording.get_dtype()).itemsize
         max_size = int(chunk_mb * 1e6)  # set Mb per chunk
         chunk_size = max_size // (recording.get_num_channels() * n_bytes)
 
@@ -432,8 +434,7 @@ def _export_prb_file(recording, file_name, grouping_property=None, graph=True, g
 
     if geometry:
         if 'location' in recording.get_shared_channel_property_names():
-            positions = np.array([recording.get_channel_property(chan, 'location')
-                                  for chan in recording.get_channel_ids()])
+            positions = recording.get_channel_locations()
         else:
             if verbose:
                 print("'location' property is not available and it will not be saved.")
@@ -563,3 +564,119 @@ def load_extractor_from_dict(d):
         The loaded extractor object
     '''
     return BaseExtractor.load_extractor_from_dict(d)
+
+
+def load_extractor_from_pickle(pkl_file):
+    '''
+    Instantiates extractor from pickle file
+
+    Parameters
+    ----------
+    pkl_file: str or Path
+        Path to pickle file
+
+    Returns
+    -------
+    extractor: RecordingExtractor or SortingExtractor
+        The loaded extractor object
+    '''
+    return BaseExtractor.load_extractor_from_pickle(pkl_file)
+
+
+def check_valid_unit_id(func):
+    @wraps(func)
+    def check_validity(*args, **kwargs):
+        # parse args and kwargs
+        if len(args) == 1:
+            sorting = args[0]
+            unit_id = kwargs.get('unit_id', None)
+        else:
+            sorting = args[0]
+            unit_id = args[1]
+        if unit_id is None:
+            raise TypeError("get_unit_spike_train() missing 1 required positional argument: 'unit_id')")
+        elif not (isinstance(unit_id, (int, np.integer))):
+            raise ValueError("unit_id must be an integer")
+        elif unit_id not in sorting.get_unit_ids():
+            raise ValueError(f"{unit_id} is an invalid unit id")
+        return func(*args, **kwargs)
+    return check_validity
+
+
+def check_get_traces_args(func):
+    @wraps(func)
+    def corrected_args(*args, **kwargs):
+        # parse args and kwargs
+        if len(args) == 1:
+            recording = args[0]
+            channel_ids = kwargs.get('channel_ids', None)
+            start_frame = kwargs.get('start_frame', None)
+            end_frame = kwargs.get('end_frame', None)
+        elif len(args) == 2:
+            recording = args[0]
+            channel_ids = args[1]
+            start_frame = kwargs.get('start_frame', None)
+            end_frame = kwargs.get('end_frame', None)
+        elif len(args) == 3:
+            recording = args[0]
+            channel_ids = args[1]
+            start_frame = args[2]
+            end_frame = kwargs.get('end_frame', None)
+        elif len(args) == 4:
+            recording = args[0]
+            channel_ids = args[1]
+            start_frame = args[2]
+            end_frame = args[3]
+        else:
+            raise Exception("Too many arguments!")
+
+        if channel_ids is not None:
+            if isinstance(channel_ids, (int, np.integer)):
+                channel_ids = list([channel_ids])
+            else:
+                channel_ids = channel_ids
+            if np.any([ch not in recording.get_channel_ids() for ch in channel_ids]):
+                print("Removing invalid 'channel_ids'", [ch for ch in channel_ids if ch not in recording.get_channel_ids()])
+                channel_ids = [ch for ch in channel_ids if ch in recording.get_channel_ids()]
+        else:
+            channel_ids = recording.get_channel_ids()
+        if start_frame is not None:
+            if start_frame < 0:
+                start_frame = recording.get_num_frames() + start_frame
+        else:
+            start_frame = 0
+        if end_frame is not None:
+            if end_frame > recording.get_num_frames():
+                print("'end_time' set to", recording.get_num_frames())
+                end_frame = recording.get_num_frames()
+            elif end_frame < 0:
+                end_frame = recording.get_num_frames() + end_frame
+        else:
+            end_frame = recording.get_num_frames()
+        assert end_frame - start_frame > 0, "'start_frame' must be less than 'end_frame'!"
+        start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
+        kwargs['channel_ids'] = channel_ids
+        kwargs['start_frame'] = start_frame
+        kwargs['end_frame'] = end_frame
+
+        # pass recording as arg and rest as kwargs
+        get_traces_correct_arg = func(args[0], **kwargs)
+
+        return get_traces_correct_arg
+    return corrected_args
+
+
+def cast_start_end_frame(start_frame, end_frame):
+    if isinstance(start_frame, (float, np.float)):
+        start_frame = int(start_frame)
+    elif isinstance(start_frame, (int, np.integer, type(None))):
+        start_frame = start_frame
+    else:
+        raise ValueError("start_frame must be an int, float (not infinity), or None")
+    if isinstance(end_frame, (float, np.float)):
+        end_frame = int(end_frame)
+    elif isinstance(end_frame, (int, np.integer, type(None))):
+        end_frame = end_frame
+    else:
+        raise ValueError("end_frame must be an int, float (not infinity), or None")
+    return start_frame, end_frame

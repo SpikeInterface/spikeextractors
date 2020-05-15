@@ -1,41 +1,37 @@
 from spikeextractors import RecordingExtractor
-from spikeextractors.extraction_tools import read_binary, write_to_binary_dat_format
-import os
+from spikeextractors.extraction_tools import read_binary, write_to_binary_dat_format, check_get_traces_args
 import shutil
 import numpy as np
 from pathlib import Path
+import os
 
 
 class BinDatRecordingExtractor(RecordingExtractor):
-
     extractor_name = 'BinDatRecordingExtractor'
     has_default_locations = False
     installed = True  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
-    mode = 'file'      
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to file (.dat)"},
-        {'name': 'sampling_frequency', 'type': 'float', 'title': "Sampling rate in HZ"},
-        {'name': 'numchan', 'type': 'int', 'title': "Number of channels"},
-        {'name': 'dtype', 'type': 'np.dtype', 'title': "The dtype of underlying data (int16, float32, etc.)"},
-        {'name': 'recording_channels', 'type': 'int_list', 'value': None, 'default': None, 'title': "List of recording channels"},
-        {'name': 'time_axis', 'type': 'int', 'value': 0, 'default': 0, 'title': "If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file. If 1, the traces shape (nb_channel, nb_sample) is kept in the file."},
-        {'name': 'offset', 'type': 'int', 'value': 0, 'default': 0, 'title': "Offset in binary file"},
-        {'name': 'gain', 'type': 'float', 'value': None, 'default': None, 'title': "gain of the recordings"},
-    ]
+    mode = 'file'
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, file_path, sampling_frequency, numchan, dtype, recording_channels=None,
-                 time_axis=0, geom=None, offset=0, gain=None):
+                 time_axis=0, geom=None, offset=0, gain=None, is_filtered=None):
         RecordingExtractor.__init__(self)
         self._datfile = Path(file_path)
         self._time_axis = time_axis
         self._dtype = str(dtype)
-        self._timeseries = read_binary(self._datfile, numchan, dtype, time_axis, offset)
         self._sampling_frequency = float(sampling_frequency)
         self._gain = gain
+        self._numchan = numchan
         self._geom = geom
+        self._offset = offset
+        self._timeseries = read_binary(self._datfile, numchan, dtype, time_axis, offset)
+
+        # keep track of filter status when dumping
+        if is_filtered is not None:
+            self.is_filtered = is_filtered
+        else:
+            self.is_filtered = False
 
         if recording_channels is not None:
             assert len(recording_channels) == self._timeseries.shape[0], \
@@ -45,12 +41,17 @@ class BinDatRecordingExtractor(RecordingExtractor):
             self._channels = list(range(self._timeseries.shape[0]))
 
         if geom is not None:
-            for idx, channel in enumerate(self._channels):
-                self.set_channel_property(channel, 'location', self._geom[idx, :])
+            self.set_channel_locations(self._geom)
+        if 'numpy' in str(dtype):
+            dtype_str = str(dtype).replace("<class '", "").replace("'>", "")
+            # drop 'numpy
+            dtype_str = dtype_str.split('.')[1]
+        else:
+            dtype_str = str(dtype)
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'sampling_frequency': sampling_frequency,
-                        'numchan': numchan, 'dtype': str(dtype), 'recording_channels': recording_channels,
-                        'time_axis': time_axis, 'geom': geom, 'offset': offset, 'gain': gain}
-
+                        'numchan': numchan, 'dtype': dtype_str, 'recording_channels': recording_channels,
+                        'time_axis': time_axis, 'geom': geom, 'offset': offset, 'gain': gain,
+                        'is_filtered': is_filtered}
 
     def get_channel_ids(self):
         return self._channels
@@ -61,17 +62,10 @@ class BinDatRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._sampling_frequency
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = list(range(self._timeseries.shape[0]))
-        else:
-            channel_ids = [self._channels.index(ch) for ch in channel_ids]
-        recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
+        channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
+        recordings = self._timeseries[:, start_frame:end_frame][channel_idxs, :]
         if self._dtype.startswith('uint'):
             exp_idx = self._dtype.find('int') + 3
             exp = int(self._dtype[exp_idx:])
@@ -110,6 +104,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         else:
             write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
                                        chunk_size=chunk_size, chunk_mb=chunk_mb)
+
 
     @staticmethod
     def write_recording(recording, save_path, time_axis=0, dtype=None, chunk_size=None):

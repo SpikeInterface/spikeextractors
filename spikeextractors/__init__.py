@@ -1,6 +1,6 @@
 from .recordingextractor import RecordingExtractor
 from .sortingextractor import SortingExtractor
-from .cacherecordingextractor import CacheRecordingExtractor
+from .cacheextractors import CacheRecordingExtractor, CacheSortingExtractor
 from .subsortingextractor import SubSortingExtractor
 from .subrecordingextractor import SubRecordingExtractor
 from .multirecordingchannelextractor import concatenate_recordings_by_channel, MultiRecordingChannelExtractor
@@ -11,6 +11,6 @@ from .extractorlist import *
 
 from . import example_datasets
 from .extraction_tools import load_probe_file, save_to_probe_file, read_binary, write_to_binary_dat_format, \
-    get_sub_extractors_by_property, load_extractor_from_json, load_extractor_from_dict
+    get_sub_extractors_by_property, load_extractor_from_json, load_extractor_from_dict, load_extractor_from_pickle
 
 from .version import version as __version__

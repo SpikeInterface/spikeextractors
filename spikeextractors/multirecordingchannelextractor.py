@@ -1,4 +1,5 @@
 from .recordingextractor import RecordingExtractor
+from .extraction_tools import check_get_traces_args
 import numpy as np
 
 # Concatenates the given recordings by channel
@@ -38,17 +39,17 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
                 for i, group in enumerate(groups):
                     recording = recordings[i]                    
                     channel_ids = recording.get_channel_ids()
-                    recording.set_channel_groups(channel_ids=channel_ids, groups=np.repeat(group,len(channel_ids)))
+                    recording.set_channel_groups(groups=np.repeat(group, len(channel_ids)), channel_ids=channel_ids)
             else:
                 raise ValueError("recordings and groups must have same length")
         self._kwargs = {'recordings': [rec.make_serialized_dict() for rec in recordings], 'groups': groups}
 
+    @property
+    def recordings(self):
+        return self._recordings
+
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
         traces = []
         if channel_ids is not None:
             for channel_id in channel_ids:

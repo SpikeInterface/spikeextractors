@@ -1,5 +1,5 @@
 from spikeextractors import RecordingExtractor, SortingExtractor
-import numpy as np
+from spikeextractors.extraction_tools import check_get_traces_args
 from pathlib import Path
 
 try:
@@ -9,16 +9,11 @@ except ImportError:
     HAVE_INTAN = False
 
 class IntanRecordingExtractor(RecordingExtractor):
-
     extractor_name = 'IntanRecording'
     has_default_locations = False
     is_writable = False
-    is_dumpable = True
     mode = 'file'
     installed = HAVE_INTAN  # check at class level if installed or not
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to file (.rhs or .rhd)"},
-    ]
     installation_mesg = "To use the Intan extractor, install pyintan: \n\n pip install pyintan\n\n"  # error message when not installed
 
     def __init__(self, file_path, verbose=False):
@@ -39,13 +34,6 @@ class IntanRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return float(self._recording.sample_rate.rescale('Hz').magnitude)
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = self.get_channel_ids()
-
         return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]

@@ -1,22 +1,17 @@
 from spikeextractors import SortingExtractor, RecordingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
-from spikeextractors.extraction_tools import read_python, write_python
+from spikeextractors.extraction_tools import read_python, write_python, check_valid_unit_id
 import numpy as np
 from pathlib import Path
 import csv
 
 
 class PhyRecordingExtractor(BinDatRecordingExtractor):
-
     extractor_name = 'PhyRecording'
     has_default_locations = True
     installed = True  # check at class level if installed or not
     is_writable = False
-    is_dumpable = True
     mode = 'folder'
-    extractor_gui_params = [
-        {'name': 'folder_path', 'type': 'folder', 'title': "Path to folder"},
-    ]
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, folder_path):
@@ -42,27 +37,20 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
         if (phy_folder / 'channel_groups.npy').is_file():
             channel_groups = np.load(phy_folder / 'channel_groups.npy')
             assert len(channel_groups) == self.get_num_channels()
-            for (ch, cg) in zip(self.get_channel_ids(), channel_groups):
-                self.set_channel_property(ch, 'group', cg)
+            self.set_channel_groups(channel_groups)
 
         if (phy_folder / 'channel_positions.npy').is_file():
             channel_locations = np.load(phy_folder / 'channel_positions.npy')
             assert len(channel_locations) == self.get_num_channels()
-            for (ch, loc) in zip(self.get_channel_ids(), channel_locations):
-                self.set_channel_property(ch, 'location', loc)
+            self.set_channel_locations(channel_locations)
 
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
 
 class PhySortingExtractor(SortingExtractor):
-
     extractor_name = 'PhySortingExtractor'
-    exporter_name = 'PhySortingExporter'
-    exporter_gui_params = [
-        {'name': 'save_path', 'type': 'folder', 'title': "Save path"},
-    ]
     installed = True  # check at class level if installed or not
-    is_writable = True
+    is_writable = False
     mode = 'folder'
     installation_mesg = ""  # error message when not installed
 
@@ -124,14 +112,15 @@ class PhySortingExtractor(SortingExtractor):
                         if line_count == 0:
                             property_name = row[1]
                         else:
-                            if int(row[0]) in self.get_unit_ids():
-                                if 'cluster_group' in str(f):
-                                    self.set_unit_property(int(row[0]), 'quality', row[1])
-                                elif property_name == 'chan_grp':
-                                    self.set_unit_property(int(row[0]), 'group', row[1])
-                                else:
-                                    if isinstance(row[1], (int, np.int, float, np.float, str)) and len(row) == 2:
-                                        self.set_unit_property(int(row[0]), property_name, row[1])
+                            if len(row) == 2:
+                                if int(row[0]) in self.get_unit_ids():
+                                    if 'cluster_group' in str(f):
+                                        self.set_unit_property(int(row[0]), 'quality', row[1])
+                                    elif property_name == 'chan_grp':
+                                        self.set_unit_property(int(row[0]), 'group', row[1])
+                                    else:
+                                        if isinstance(row[1], (int, np.int, float, np.float, str)) and len(row) == 2:
+                                            self.set_unit_property(int(row[0]), property_name, row[1])
                         line_count += 1
 
         for unit in self.get_unit_ids():
@@ -169,8 +158,7 @@ class PhySortingExtractor(SortingExtractor):
             if (phy_folder / 'channel_groups.npy').is_file():
                 channel_groups = np.load(phy_folder / 'channel_groups.npy')
                 assert len(channel_groups) == recording.get_num_channels()
-                for (ch, cg) in zip(recording.get_channel_ids(), channel_groups):
-                    recording.set_channel_property(ch, 'group', cg)
+                recording.set_channel_groups(channel_groups)
                 for u_i, u in enumerate(self.get_unit_ids()):
                     if verbose:
                         print('Computing waveform by group for unit', u)
@@ -186,7 +174,7 @@ class PhySortingExtractor(SortingExtractor):
                         wf = recording.get_snippets(reference_frames=spiketrain,
                                                     snippet_len=[frames_before, frames_after])
                         max_chan = np.unravel_index(np.argmin(np.mean(wf, axis=0)), np.mean(wf, axis=0).shape)[0]
-                        group = recording.get_channel_property(int(max_chan), 'group')
+                        group = recording.get_channel_groups(int(max_chan))
                         self.set_unit_property(u, 'group', group)
                         group_idx = np.where(channel_groups == group)[0]
                         wf = wf[:, group_idx]
@@ -208,6 +196,7 @@ class PhySortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._unit_ids)
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
@@ -217,46 +206,3 @@ class PhySortingExtractor(SortingExtractor):
         times = self._spiketrains[self.get_unit_ids().index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
-
-    @staticmethod
-    def write_sorting(sorting, save_path):
-        save_path = Path(save_path)
-        spike_times = np.array([])
-        spike_clusters = np.array([])
-        amplitudes = np.array([])
-        pc_features = np.array([])
-
-        for id in sorting.get_unit_ids():
-            st = sorting.get_unit_spike_train(id)
-            cl = [id] * len(sorting.get_unit_spike_train(id))
-            spike_times = np.concatenate((spike_times, np.array(st)))
-            spike_clusters = np.concatenate((spike_clusters, np.array(cl)))
-            if 'amplitudes' in sorting.get_shared_unit_spike_feature_names():
-                amp = sorting.get_unit_spike_features(id, 'amplitudes')
-                amplitudes = np.concatenate((amplitudes, np.array(amp)))
-            if 'pc_features' in sorting.get_shared_unit_spike_feature_names():
-                pc_feat = sorting.get_unit_spike_features(id, 'pc_features')
-                if len(pc_features) == 0:
-                    pc_features = pc_feat
-                else:
-                    pc_features = np.vstack((pc_features, np.array(pc_feat)))
-
-        sorting_idxs = np.argsort(spike_times)
-        spike_times = spike_times[sorting_idxs]
-        spike_clusters = spike_clusters[sorting_idxs]
-
-        params = {'sample_rate': sorting.get_sampling_frequency()}
-        if not save_path.is_dir():
-            save_path.mkdir(parents=True)
-        write_python(save_path / 'params.py', params)
-        np.save(save_path / 'spike_times.npy', spike_times[:, np.newaxis].astype('int64'))
-        np.save(save_path / 'spike_clusters.npy', spike_clusters[:, np.newaxis].astype('int64'))
-        np.save(save_path / 'spike_templates.npy', spike_clusters[:, np.newaxis].astype('int64'))
-        if len(amplitudes) > 0:
-            amplitudes = amplitudes[sorting_idxs]
-            np.save(save_path / 'amplitudes.npy', amplitudes[:, np.newaxis].astype('int64'))
-        if len(pc_features) > 0:
-            pc_features = pc_features[sorting_idxs]
-            np.save(save_path / 'pc_features.npy', pc_features)
-            pc_feature_ind = np.tile(np.arange(pc_features.shape[-1]), (len(sorting.get_unit_ids()), 1))
-            np.save(save_path / 'pc_feature_ind.npy', pc_feature_ind.astype('int64'))

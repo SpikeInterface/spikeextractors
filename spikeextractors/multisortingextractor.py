@@ -1,13 +1,12 @@
 from .sortingextractor import SortingExtractor
 from .recordingextractor import RecordingExtractor
 import numpy as np
+from .extraction_tools import check_valid_unit_id
 
 
 # Encapsulates a grouping of non-continuous sorting extractors
 
 class MultiSortingExtractor(SortingExtractor):
-    extractor_name = 'MultiSorting'
-
     def __init__(self, sortings):
         SortingExtractor.__init__(self)
         self._sortings = sortings
@@ -23,14 +22,16 @@ class MultiSortingExtractor(SortingExtractor):
                 u_id += 1
         self._kwargs = {'sortings': [sort.make_serialized_dict() for sort in sortings]}
 
+    @property
+    def sortings(self):
+        return self._sortings
+
     def get_unit_ids(self):
         return list(self._all_unit_ids)
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if unit_id not in self.get_unit_ids():
-            raise ValueError("Non-valid unit_id")
-
         sorting_id = self._unit_map[unit_id]['sorting_id']
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
         return self._sortings[sorting_id].get_unit_spike_train(unit_id_sorting, start_frame, end_frame)
@@ -91,19 +92,19 @@ class MultiSortingExtractor(SortingExtractor):
         else:
             raise ValueError("unit_id must be an int")
 
-    def set_unit_spike_features(self, unit_id, feature_name, value):
+    def set_unit_spike_features(self, unit_id, feature_name, value, indexes=None):
         if unit_id not in self._unit_map.keys():
             raise ValueError("Non-valid unit_id")
         sorting_id = self._unit_map[unit_id]['sorting_id']
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
-        self._sortings[sorting_id].set_unit_spike_features(unit_id_sorting, feature_name, value)
-        
+        self._sortings[sorting_id].set_unit_spike_features(unit_id_sorting, feature_name, value, indexes)
+
     def clear_unit_spike_features(self, unit_id, feature_name):
         if unit_id not in self._unit_map.keys():
             raise ValueError("Non-valid unit_id")
         sorting_id = self._unit_map[unit_id]['sorting_id']
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
-        self._sortings[sorting_id].clear_unit_spike_features(unit_id_sorting, feature_name)        
+        self._sortings[sorting_id].clear_unit_spike_features(unit_id_sorting, feature_name)
 
 def concatenate_sortings(sortings):
     '''

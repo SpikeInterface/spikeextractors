@@ -1,5 +1,6 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
+from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
 
 import numpy as np
 from pathlib import Path
@@ -14,17 +15,11 @@ except ImportError:
 
 
 class MEArecRecordingExtractor(RecordingExtractor):
-
     extractor_name = 'MEArecRecordingExtractor'
     has_default_locations = True
     installed = HAVE_MREX  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
     mode = 'file'
-    extractor_gui_params = [
-        {'name': 'file_path', 'type': 'file', 'title': "Path to file (.h5 or .hdf5)"},
-        {'name': 'locs_2d', 'type': 'bool', 'title': "If True 3d locations are converted to 2d"},
-    ]
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
 
     def __init__(self, file_path, locs_2d=True):
@@ -39,8 +34,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
 
         if self._locations is not None:
-            for chan, pos in enumerate(self._locations):
-                self.set_channel_property(chan, 'location', pos)
+            self.set_channel_locations(self._locations)
 
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'locs_2d': locs_2d}
 
@@ -64,7 +58,6 @@ class MEArecRecordingExtractor(RecordingExtractor):
                         elif probe_plane == 'xz':
                             self._locations = self._locations[:, [0, 2]]
                 if self._locations.shape[1] == 3:
-                    print("Could not load plane information. Assuming probe is in yz plane")
                     self._locations = self._locations[:, 1:]
 
     def get_channel_ids(self):
@@ -76,24 +69,17 @@ class MEArecRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._fs
 
+    @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = list(range(self.get_num_channels()))
-        if np.array(channel_ids).size > 1:
-            if np.any(np.diff(channel_ids) < 0):
-                sorted_idx = np.argsort(channel_ids)
-                recordings = self._recordings[np.sort(channel_ids), start_frame:end_frame]
-                return recordings[sorted_idx]
-            else:
-                return self._recordings[np.array(channel_ids), start_frame:end_frame]
+        if np.any(np.diff(channel_ids) < 0):
+            sorted_idx = np.argsort(channel_ids)
+            recordings = self._recordings[np.sort(channel_ids), start_frame:end_frame]
+            return recordings[sorted_idx]
         else:
-            return self._recordings[np.array(channel_ids), start_frame:end_frame]
-
+            if sorted(channel_ids) == channel_ids and np.all(np.diff(channel_ids) == 1):
+                channel_ids = slice(channel_ids[0], channel_ids[0] + len(channel_ids))
+            return self._recordings[channel_ids, start_frame:end_frame]
+        
     @staticmethod
     def write_recording(recording, save_path, check_suffix=True):
         '''
@@ -114,8 +100,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
             info = {'recordings': {'fs': recording.get_sampling_frequency()}}
             rec_dict = {'recordings': recording.get_traces()}
             if 'location' in recording.get_shared_channel_property_names():
-                positions = np.array([recording.get_channel_property(chan, 'location')
-                                      for chan in recording.get_channel_ids()])
+                positions = recording.get_channel_locations()
                 rec_dict['channel_positions'] = positions
             recgen = mr.RecordingGenerator(rec_dict=rec_dict, info=info)
             mr.save_recording_generator(recgen, str(save_path), verbose=False)
@@ -124,15 +109,9 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
 
 class MEArecSortingExtractor(SortingExtractor):
-
     extractor_name = 'MEArecSortingExtractor'
-    exporter_name = 'MEArecSortingExporter'
-    exporter_gui_params = [
-        {'name': 'save_path', 'type': 'file', 'title': "Save path (.h5 or .hdf5)"},
-    ]
     installed = HAVE_MREX  # check at class level if installed or not
     is_writable = True
-    is_dumpable = True
     mode = 'file'
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
 
@@ -173,6 +152,7 @@ class MEArecSortingExtractor(SortingExtractor):
             self._initialize()
         return self._num_units
 
+    @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
