@@ -1,1 +1,0 @@
-from .wcsortingextractor import WCSortingExtractor
