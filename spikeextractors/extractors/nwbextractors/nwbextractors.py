@@ -517,6 +517,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         if distutils.version.LooseVersion(pynwb.__version__) >= '1.3.0':
             print("'write_recording' not supported for version >= 1.3.0. Use version 1.2")
+            return
 
         if os.path.exists(save_path):
             read_mode = 'r+'
