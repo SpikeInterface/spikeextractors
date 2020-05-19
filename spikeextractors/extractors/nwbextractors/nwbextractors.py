@@ -4,6 +4,7 @@ from datetime import datetime
 from collections import defaultdict, abc
 from pathlib import Path
 import numpy as np
+import distutils.version
 
 import spikeextractors as se
 from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
@@ -343,7 +344,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         nwb_groups_names = list(nwbfile.electrode_groups.keys())
 
         # For older versions of pynwb, we need to manually add these columns
-        if pynwb.__version__ < '1.3.0':
+        if distutils.version.LooseVersion(pynwb.__version__) < '1.3.0':
             if nwbfile.electrodes is None or 'rel_x' not in nwbfile.electrodes.colnames:
                 nwbfile.add_electrode_column('rel_x', 'x position of electrode in electrode group')
             if nwbfile.electrodes is None or 'rel_y' not in nwbfile.electrodes.colnames:
@@ -513,6 +514,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             metadata info for constructing the nwb file (optional).
         '''
         check_nwb_install()
+
+        if distutils.version.LooseVersion(pynwb.__version__) >= '1.3.0':
+            print("'write_recording' not supported for version >= 1.3.0. Use version 1.2")
+            return
 
         if os.path.exists(save_path):
             read_mode = 'r+'
