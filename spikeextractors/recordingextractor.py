@@ -5,7 +5,7 @@ import shutil
 import random
 from pathlib import Path
 from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, \
-    get_sub_extractors_by_property, cast_start_end_frame
+    write_to_h5_dataset_format, get_sub_extractors_by_property, cast_start_end_frame
 from .baseextractor import BaseExtractor
 
 
@@ -709,6 +709,34 @@ class RecordingExtractor(ABC, BaseExtractor):
         '''
         write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size,
                                    chunk_mb=chunk_mb)
+
+    def write_to_h5_dataset_format(self, dataset_path, save_path=None, file_handle=None,
+                                   time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+        '''Saves the traces of a recording extractor in an h5 dataset.
+
+        Parameters
+        ----------
+        recording: RecordingExtractor
+            The recording extractor object to be saved in .dat format
+        dataset_path: str
+            Path to dataset in h5 file (e.g. '/dataset')
+        save_path: str
+            The path to the file.
+        file_handle: file handle
+            The file handle to dump data. This can be used to append data to an header. In case file_handle is given,
+            the file is NOT closed after writing the binary data.
+        time_axis: 0 (default) or 1
+            If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
+            If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
+        dtype: dtype
+            Type of the saved data. Default float32.
+        chunk_size: None or int
+            Number of chunks to save the file in. This avoid to much memory consumption for big files.
+            If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
+        chunk_mb: None or int
+            Chunk size in Mb (default 500Mb)
+        '''
+        write_to_h5_dataset_format(self, dataset_path, save_path, file_handle, time_axis, dtype, chunk_size, chunk_mb)
 
     def get_sub_extractors_by_property(self, property_name, return_property_list=False):
         '''Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given
