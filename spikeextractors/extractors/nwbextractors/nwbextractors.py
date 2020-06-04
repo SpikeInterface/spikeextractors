@@ -147,7 +147,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         check_nwb_install()
         se.RecordingExtractor.__init__(self)
         self._path = file_path
-        with NWBHDF5IO(self._path, 'a') as io:
+        with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             if electrical_series_name is not None:
                 self._electrical_series_name = electrical_series_name
