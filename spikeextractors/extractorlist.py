@@ -24,7 +24,7 @@ from .extractors.nixioextractors.nixioextractors import NIXIORecordingExtractor,
 from .extractors.neoextractors import (PlexonRecordingExtractor, PlexonSortingExtractor,
                                        NeuralynxRecordingExtractor, NeuralynxSortingExtractor)
 from .extractors.neuroscopesortingextractor import NeuroscopeSortingExtractor
-
+from .extractors.waveclussortingextractor import WaveClusSortingExtractor
 
 recording_extractor_full_list = [
     MdaRecordingExtractor,
@@ -44,7 +44,7 @@ recording_extractor_full_list = [
     MCSH5RecordingExtractor,
     SHYBRIDRecordingExtractor,
     NIXIORecordingExtractor,
-    
+
     # neo based
     PlexonRecordingExtractor,
     NeuralynxRecordingExtractor
@@ -69,6 +69,7 @@ sorting_extractor_full_list = [
     SHYBRIDSortingExtractor,
     NIXIOSortingExtractor,
     NeuroscopeSortingExtractor,
+    WaveClusSortingExtractor,
     # neo based
     PlexonSortingExtractor,
     NeuralynxSortingExtractor,

@@ -4,6 +4,7 @@ from datetime import datetime
 from collections import defaultdict, abc
 from pathlib import Path
 import numpy as np
+import distutils.version
 
 import spikeextractors as se
 from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
@@ -183,9 +184,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
             # Fill channel properties dictionary from electrodes table
             self.channel_ids = es.electrodes.table.id[:]
-            self._channel_properties = defaultdict(dict)
             for ind, i in enumerate(self.channel_ids):
-                self._channel_properties[i]['gain'] = gains[ind]
+                self.set_channel_property(i, 'gain', gains[ind])
                 this_loc = []
                 if 'rel_x' in nwbfile.electrodes:
                     this_loc.append(nwbfile.electrodes['rel_x'][ind])
@@ -193,19 +193,19 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         this_loc.append(nwbfile.electrodes['rel_y'][ind])
                     else:
                         this_loc.append(0)
-                    self._channel_properties[i]['location'] = this_loc
+                    self.set_channel_locations(this_loc, i)
 
                 for col in nwbfile.electrodes.colnames:
                     if isinstance(nwbfile.electrodes[col][ind], ElectrodeGroup):
                         continue
                     elif col == 'group_name':
-                        self._channel_properties[i]['group'] = int(unique_grp_names.index(nwbfile.electrodes[col][ind]))
+                        self.set_channel_groups(int(unique_grp_names.index(nwbfile.electrodes[col][ind])), i)
                     elif col == 'location':
-                        self._channel_properties[i]['brain_area'] = nwbfile.electrodes[col][ind]
+                        self.set_channel_property(i, 'brain_area', nwbfile.electrodes[col][ind])
                     elif col in ['x', 'y', 'z', 'rel_x', 'rel_y']:
                         continue
                     else:
-                        self._channel_properties[i][col] = nwbfile.electrodes[col][ind]
+                        self.set_channel_property(i, col, nwbfile.electrodes[col][ind])
 
             # Fill epochs dictionary
             self._epochs = {}
@@ -344,7 +344,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         nwb_groups_names = list(nwbfile.electrode_groups.keys())
 
         # For older versions of pynwb, we need to manually add these columns
-        if pynwb.__version__ < '1.3.0':
+        if distutils.version.LooseVersion(pynwb.__version__) < '1.3.0':
             if nwbfile.electrodes is None or 'rel_x' not in nwbfile.electrodes.colnames:
                 nwbfile.add_electrode_column('rel_x', 'x position of electrode in electrode group')
             if nwbfile.electrodes is None or 'rel_y' not in nwbfile.electrodes.colnames:
@@ -514,6 +514,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             metadata info for constructing the nwb file (optional).
         '''
         check_nwb_install()
+
+        if distutils.version.LooseVersion(pynwb.__version__) >= '1.3.0':
+            print("'write_recording' not supported for version >= 1.3.0. Use version 1.2")
+            return
 
         if os.path.exists(save_path):
             read_mode = 'r+'

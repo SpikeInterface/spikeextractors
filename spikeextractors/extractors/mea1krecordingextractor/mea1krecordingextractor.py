@@ -69,7 +69,7 @@ class Mea1kRecordingExtractor(RecordingExtractor):
             return self._signals[np.array(channel_ids), start_frame:end_frame].astype('float')
 
     @staticmethod
-    def write_recording(recording, save_path):
+    def write_recording(recording, save_path, chunk_size=None, chunk_mb=500):
         save_path = Path(save_path)
         if save_path.suffix == '':
             save_path = Path(str(save_path) + '.h5')
@@ -92,7 +92,5 @@ class Mea1kRecordingExtractor(RecordingExtractor):
                 mapping[i] = (ch, x[i], y[i], ch)
             ephys.create_dataset('mapping', data=mapping)
             # save traces
-            ephys.create_dataset('signal', data=recording.get_traces())
-            
-
-
+            recording.write_to_h5_dataset_format('/ephys/signal', file_handle=f, time_axis=1,
+                                                 chunk_size=chunk_size, chunk_mb=chunk_mb)
