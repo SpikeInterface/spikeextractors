@@ -256,7 +256,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             es = nwbfile.acquisition[self._electrical_series_name]
-            table_ids = [list(es.electrodes.data[:]).index(id) for id in channel_ids]
+            es_channel_ids = np.array(es.electrodes.table.id[:])[es.electrodes.data[:]].tolist()
+            table_ids = [es_channel_ids.index(id) for id in channel_ids]
             if np.array(channel_ids).size > 1 and np.any(np.diff(channel_ids) < 0):
                 sorted_idx = np.argsort(table_ids)
                 recordings = es.data[start_frame:end_frame, np.sort(table_ids)].T
