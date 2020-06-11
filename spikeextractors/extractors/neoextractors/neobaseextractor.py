@@ -10,6 +10,7 @@ try:
 except ImportError:
     HAVE_NEO = False
 
+
 class _NeoBaseExtractor:
     NeoRawIOClass = None
     installed = True
@@ -29,13 +30,13 @@ class _NeoBaseExtractor:
         if block_index is None:
             # auto select first block
             num_block = self.neo_reader.block_count()
-            assert num_block == 1, 'This file is multi block spikeextractors support only one segment'
+            assert num_block == 1, 'This file is multi block spikeextractors support only one segment, please provide block_index='
             block_index = 0
 
         if seg_index is None:
             # auto select first segment
             num_seg = self.neo_reader.segment_count(block_index)
-            assert num_seg == 1, 'This file is multi segment spikeextractors support only one segment'
+            assert num_seg == 1, 'This file is multi segment spikeextractors support only one segment, please provide seg_index='
             seg_index = 0
 
         self.block_index = block_index

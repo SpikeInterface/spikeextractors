@@ -7,6 +7,19 @@ except ImportError:
     HAVE_NEO = False
 
 class PlexonRecordingExtractor(NeoBaseRecordingExtractor):
+    """
+    The plxon extarctor is wrapped from neo.rawio.PlexonRawIO.
+    
+    Parameters
+    ----------
+    filename: str
+        The plexon file ('plx')
+    block_index: None or int
+        If the underlying dataset have several blocks the index must be specifyed.
+    seg_index_index: None or int
+        If the underlying dataset have several segments the index must be specifyed.
+    
+    """    
     extractor_name = 'PlexonRecording'
     mode = 'file'
     installed = HAVE_NEO
