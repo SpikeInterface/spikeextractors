@@ -274,9 +274,6 @@ class BaseExtractor:
             extractor._features = d['features']
         return extractor
 
-    def get_unsorted_spike_train(self):
-        raise NotImplementedError
-
     @staticmethod
     def load_extractor_from_dict(d):
         '''
