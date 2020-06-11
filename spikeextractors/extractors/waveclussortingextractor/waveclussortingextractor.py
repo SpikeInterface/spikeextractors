@@ -31,7 +31,7 @@ class WaveClusSortingExtractor(MATSortingExtractor):
         for uid in self._unit_ids:
             mask = (classes == uid)
             self._spike_trains[uid] = np.rint(spike_times[mask]*(sample_rate/1000))
-
+        self._unsorted_train = np.rint(spike_times[classes == 0] * (sample_rate / 1000))
 
     @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
@@ -44,3 +44,11 @@ class WaveClusSortingExtractor(MATSortingExtractor):
 
     def get_unit_ids(self):
         return self._unit_ids.tolist()
+
+    def get_unsorted_spike_train(self, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
+
+        start_frame = start_frame or 0
+        end_frame = end_frame or np.infty
+        u = self._unsorted_train
+        return u[(u >= start_frame) & (u < end_frame)]
