@@ -8,16 +8,16 @@ except ImportError:
 
 class PlexonRecordingExtractor(NeoBaseRecordingExtractor):
     """
-    The plxon extarctor is wrapped from neo.rawio.PlexonRawIO.
+    The plxon extractor is wrapped from neo.rawio.PlexonRawIO.
     
     Parameters
     ----------
     filename: str
         The plexon file ('plx')
     block_index: None or int
-        If the underlying dataset have several blocks the index must be specifyed.
+        If the underlying dataset have several blocks the index must be specified.
     seg_index_index: None or int
-        If the underlying dataset have several segments the index must be specifyed.
+        If the underlying dataset have several segments the index must be specified.
     
     """    
     extractor_name = 'PlexonRecording'
