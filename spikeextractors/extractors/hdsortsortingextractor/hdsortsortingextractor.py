@@ -31,7 +31,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
         # For .mat v7.3: Extracting "MultiElectrode" requires that each field is loaded separately
         _ME = self._data["MultiElectrode"]
-        self.MultiElectrode = dict( ( k, _ME.get(k)[()] ) for k in _ME.keys())
+        ME = dict( ( k, _ME.get(k)[()] ) for k in _ME.keys())
 
         # For .mat v7.3: Function to extract all fields of a struct-array:
         def extract_datasets(ds, name):
@@ -46,7 +46,46 @@ class HDSortSortingExtractor(MATSortingExtractor):
         def transpose_dict(d):
             return [dict(zip(d, col)) for col in zip(*d.values())]
 
-        self.Units = transpose_dict(tUnits)
+        Units = transpose_dict(tUnits)
+
+        #
+        self._sampling_frequency = self._getfield("samplingRate").ravel()
+
+        # Other properties:
+        self._properties["asdf"] = None
+
+        #self._unit_ids = np.array([U["ID"][0][0] for U in Units]).flatten()
+
+        # Parse through 'Units':
+        # 'ID', 'cutLeft', 'detectionChannel', 'detectionChannelUp', 'fileLocation', 'footprint', 'myFile', 'spikeAmplitudes', 'spikeAmplitudesUp', 'spikeTrain'
+        self._spike_trains = {}
+        self._unit_ids = np.empty(0)
+        #self._unit_masks = {}
+        for uc, Unit in enumerate(Units):
+            #mask = (spike_clusters == uid)
+            #self._unit_masks[uid] = mask
+            uid = Unit["ID"].flatten()[0].astype(int)
+
+            self._unit_ids = np.append(self._unit_ids, uid)
+            self._spike_trains[uc] = Unit["spikeTrain"].flatten().T
+
+            self.set_unit_spike_features(uid, "amplitudes", Unit["spikeAmplitudes"].flatten().T)
+            self.set_unit_spike_features(uid, "amplitudes_up", Unit["spikeAmplitudesUp"].flatten())
+            #self.set_unit_spike_features(uid, "max_channels", spike_sites[mask])
+            self.set_unit_spike_features(uid, "detection_channel", Unit["detectionChannel"].flatten())
+            self.set_unit_spike_features(uid, "detection_channel_up", Unit["detectionChannelUp"].flatten())
+
+            idx = Unit["detectionChannel"].astype(int) - 1
+            spikePositions = np.concatenate( (ME["electrodePositions"][0][idx], ME["electrodePositions"][1][idx]), 0).T
+            self.set_unit_spike_features(uid, "positions", spikePositions)
+
+            #self.set_unit_spike_features(uid, "site_neighbors", neighbors[spike_sites[mask], :])
+            #self.set_unit_property(uid, "centroid", unit_centroids[uid - 1, :])
+            self.set_unit_property(uid, "max_channel", Unit["detectionChannel"].flatten())
+            self.set_unit_property(uid, "template", Unit["footprint"])
+            self.set_unit_property(uid, "template_cut_left", Unit["cutLeft"].flatten())
+
+            #self.set_unit_property(uid, "template_raw", mean_waveforms_raw[:, :, uid - 1])
 
         '''
         
@@ -165,7 +204,11 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
         self._kwargs["keep_good_only"] = keep_good_only
     '''
+        # for debugging only:
+        self.Units = Units
+        self.ME = ME
 
+    '''
     def _find_site_neighbors(self, site_locs, n_neighbors, shank_map):
         if np.unique(shank_map).size <= 1:
             pass
@@ -179,10 +222,11 @@ class HDSortSortingExtractor(MATSortingExtractor):
             dists = cdist(i_loc, site_locs).ravel()
             neighbors[i, :] = dists.argsort()[:n_neighbors]
 
-        return neighbors
+        return neighbors'''
 
     @check_valid_unit_id
     def get_unit_spike_features(self, unit_id, feature_name, start_frame=None, end_frame=None):
+        # todo: what does this function do?
         if feature_name not in ("raw_traces", "filtered_traces", "cluster_features"):
             return super().get_unit_spike_features(unit_id, feature_name, start_frame, end_frame)
 
@@ -196,16 +240,19 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
     @check_valid_unit_id
     def get_unit_spike_feature_names(self, unit_id):
+        # todo: what does this function do?
         return super().get_unit_spike_feature_names(unit_id) + ["raw_traces", "filtered_traces", "cluster_features"]
 
     @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        uidx = np.where(self.get_unit_ids() == unit_id)[0][0]
+
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
 
         start_frame = start_frame or 0
         end_frame = end_frame or np.infty
 
-        st = self._spike_trains[unit_id]
+        st = self._spike_trains[uidx]
         return st[(st >= start_frame) & (st < end_frame)]
 
     def get_unit_ids(self):
