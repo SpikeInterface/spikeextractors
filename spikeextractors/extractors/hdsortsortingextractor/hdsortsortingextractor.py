@@ -102,7 +102,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
         return self._unit_ids.tolist()
 
     @staticmethod
-    def write_sorting(sorting, save_path, write_primary_channels=False):
+    def write_sorting(sorting, save_path, write_primary_channels=False, sorting_name=None):
         units = []
         for uid_ in sorting.get_unit_ids():
             uid = int(uid_)
@@ -129,6 +129,8 @@ class HDSortSortingExtractor(MATSortingExtractor):
             dict_to_save = {'Units': units}
 
         # Save Units and MultiElectrode to .mat file:
-        placeholder = "asdf"
-        matFileName = "result_" + placeholder + ".mat"
+        if sorting_name is None:
+            sorting_name = ""
+
+        matFileName = "result_" + sorting_name + ".mat"
         sio.savemat(os.path.join(save_path, matFileName), dict_to_save)
