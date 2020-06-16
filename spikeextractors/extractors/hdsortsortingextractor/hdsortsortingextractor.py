@@ -25,7 +25,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
     extractor_name = "HDSortSortingExtractor"
     installation_mesg = "To use the MATSortingExtractor install h5py and scipy: \n\n pip install h5py scipy\n\n"  # error message when not installed
 
-    def __init__(self, file_path: PathType, keep_good_only: bool = False):
+    def __init__(self, file_path: PathType, remove_noise_units: bool = True):
         super().__init__(file_path)
         file_path = self._kwargs["file_path"]
 
@@ -52,7 +52,10 @@ class HDSortSortingExtractor(MATSortingExtractor):
         #self.set_units_property("sampling_frequency", self._getfield("samplingRate").ravel())
         self._sampling_frequency = self._getfield("samplingRate").ravel()
 
-
+        # Remove noise units if necessary:
+        if remove_noise_units:
+            Units = [Unit for Unit in Units if Unit["ID"].flatten()[0].astype(int)%1000 != 0]
+        
         # Parse through 'Units':
         self._spike_trains = {}
         self._unit_ids = np.empty(0)
@@ -82,26 +85,6 @@ class HDSortSortingExtractor(MATSortingExtractor):
         # it's handy to have Units and MultiElectrode as object attributes
         self.Units = Units
         self.MultiElectrode = MultiElectrode
-
-
-    @check_valid_unit_id
-    def get_unit_spike_features(self, unit_id, feature_name, start_frame=None, end_frame=None):
-        # todo: what does this function do?
-        if feature_name not in ("raw_traces", "filtered_traces", "cluster_features"):
-            return super().get_unit_spike_features(unit_id, feature_name, start_frame, end_frame)
-
-        mask = self._unit_masks[unit_id]
-        if feature_name == "raw_traces":
-            return self._raw_traces[:, :, mask] * self._kwargs["bit_scaling"]
-        elif feature_name == "filtered_traces":
-            return self._filt_traces[:, :, mask] * self._kwargs["bit_scaling"]
-        else:
-            return self._cluster_features[:, :, mask]
-
-    @check_valid_unit_id
-    def get_unit_spike_feature_names(self, unit_id):
-        # todo: what does this function do?
-        return super().get_unit_spike_feature_names(unit_id) + ["raw_traces", "filtered_traces", "cluster_features"]
 
     @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
