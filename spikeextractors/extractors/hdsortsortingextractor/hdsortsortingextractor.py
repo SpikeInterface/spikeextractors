@@ -5,12 +5,13 @@ from typing import Union
 from scipy.spatial.distance import cdist
 
 import numpy as np
+import scipy.io as sio
+import os
 
 from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor, HAVE_MAT
 from spikeextractors.extraction_tools import check_valid_unit_id
 
 PathType = Union[str, Path]
-
 
 '''
     Run:
@@ -19,7 +20,6 @@ PathType = Union[str, Path]
     fileName = '/Volumes/BACKUP_DRIVE/imported_experiments/200113_rr_p1c2/results_200113_rr_p1c2.mat'
     H = e.HDSortSortingExtractor(fileName)
 '''
-
 
 class HDSortSortingExtractor(MATSortingExtractor):
     extractor_name = "HDSortSortingExtractor"
@@ -31,7 +31,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
         # For .mat v7.3: Extracting "MultiElectrode" requires that each field is loaded separately
         _ME = self._data["MultiElectrode"]
-        ME = dict( ( k, _ME.get(k)[()] ) for k in _ME.keys())
+        MultiElectrode = dict( ( k, _ME.get(k)[()] ) for k in _ME.keys())
 
         # For .mat v7.3: Function to extract all fields of a struct-array:
         def extract_datasets(ds, name):
@@ -48,22 +48,15 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
         Units = transpose_dict(tUnits)
 
-        #
+        # Todo: figure out which one of the following two lines is the one to use:
+        #self.set_units_property("sampling_frequency", self._getfield("samplingRate").ravel())
         self._sampling_frequency = self._getfield("samplingRate").ravel()
 
-        # Other properties:
-        self._properties["asdf"] = None
-
-        #self._unit_ids = np.array([U["ID"][0][0] for U in Units]).flatten()
 
         # Parse through 'Units':
-        # 'ID', 'cutLeft', 'detectionChannel', 'detectionChannelUp', 'fileLocation', 'footprint', 'myFile', 'spikeAmplitudes', 'spikeAmplitudesUp', 'spikeTrain'
         self._spike_trains = {}
         self._unit_ids = np.empty(0)
-        #self._unit_masks = {}
         for uc, Unit in enumerate(Units):
-            #mask = (spike_clusters == uid)
-            #self._unit_masks[uid] = mask
             uid = Unit["ID"].flatten()[0].astype(int)
 
             self._unit_ids = np.append(self._unit_ids, uid)
@@ -71,158 +64,25 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
             self.set_unit_spike_features(uid, "amplitudes", Unit["spikeAmplitudes"].flatten().T)
             self.set_unit_spike_features(uid, "amplitudes_up", Unit["spikeAmplitudesUp"].flatten())
-            #self.set_unit_spike_features(uid, "max_channels", spike_sites[mask])
+
             self.set_unit_spike_features(uid, "detection_channel", Unit["detectionChannel"].flatten())
             self.set_unit_spike_features(uid, "detection_channel_up", Unit["detectionChannelUp"].flatten())
 
             idx = Unit["detectionChannel"].astype(int) - 1
-            spikePositions = np.concatenate( (ME["electrodePositions"][0][idx], ME["electrodePositions"][1][idx]), 0).T
+            spikePositions = np.concatenate( (MultiElectrode["electrodePositions"][0][idx], MultiElectrode["electrodePositions"][1][idx]), 0).T
             self.set_unit_spike_features(uid, "positions", spikePositions)
 
-            #self.set_unit_spike_features(uid, "site_neighbors", neighbors[spike_sites[mask], :])
-            #self.set_unit_property(uid, "centroid", unit_centroids[uid - 1, :])
+            # Todo: save max_channel correctly, i.e. the maximal template location:
             self.set_unit_property(uid, "max_channel", Unit["detectionChannel"].flatten())
+
             self.set_unit_property(uid, "template", Unit["footprint"])
             self.set_unit_property(uid, "template_cut_left", Unit["cutLeft"].flatten())
 
-            #self.set_unit_property(uid, "template_raw", mean_waveforms_raw[:, :, uid - 1])
-
-        '''
-        
-        spike_times = self._getfield("spikeTimes").ravel() - 1  # int32
-        spike_clusters = self._getfield("spikeClusters").ravel()  # uint32
-        spike_amplitudes = self._getfield("spikeAmps").ravel()  # int16
-        spike_sites = self._getfield("spikeSites").ravel() - 1  # uint32
-        spike_positions = self._getfield("spikePositions").T  # float32
-
-        unit_centroids = self._getfield("clusterCentroids").astype(np.float).T
-        unit_sites = self._getfield("clusterSites").astype(np.uint32).ravel()
-        mean_waveforms = self._getfield("meanWfGlobal").T
-        mean_waveforms_raw = self._getfield("meanWfGlobalRaw").T
-
-        # try to extract various parameters from the .prm file
-        self._kwargs["bit_scaling"] = np.float32(0.30518)  # conversion factor for ADC units -> µV
-        sample_rate = 30000.
-        filter_type = "ndiff"
-        ndiff_order = 2
-
-        prm_file = Path(file_path.parent, file_path.name.replace("_res.mat", ".prm"))
-        with prm_file.open("r") as fh:
-            lines = [line.strip() for line in fh.readlines()]
-
-        for line in lines:
-            try:
-                key, val = line.split('%', 1)[0].strip(" ;").split("=")
-            except ValueError:
-                continue
-
-            key = key.strip()
-            val = val.strip()
-
-            if key == "sampleRate":
-                try:
-                    sample_rate = float(val)
-                except (IndexError, ValueError):
-                    pass
-            elif key == "bitScaling":
-                try:
-                    self._kwargs["bit_scaling"] = np.float32(val)
-                except (IndexError, ValueError):
-                    pass
-            elif key == "filterType":
-                filter_type = val
-            elif key == "nDiffOrder":
-                try:
-                    ndiff_order = int(val)
-                except (IndexError, ValueError):
-                    pass
-            elif key == "siteLoc":
-                site_locs = []
-                str_locs = map(lambda v: v.strip(" ]["), val.split(";"))
-                for loc in str_locs:
-                    x, y = map(float, re.split(r",?\s+", loc))
-                    site_locs.append([x, y])
-
-                site_locs = np.array(site_locs)
-            elif key == "shankMap":
-                val = val.strip("][")
-                try:
-                    shank_map = np.array(map(float, re.split(r"[,;]?\s+", val)))
-                except:
-                    shank_map = np.array([])
-
-        self.set_sampling_frequency(sample_rate)
-        if filter_type == "sgdiff":
-            self._kwargs["bit_scaling"] /= (2 * (np.arange(1, ndiff_order + 1) ** 2).sum())
-        elif filter_type == "ndiff":
-            self._kwargs["bit_scaling"] /= 2
-
-        # traces, features
-        raw_file = Path(file_path.parent, file_path.name.replace("_res.mat", "_raw.jrc"))
-        raw_shape = tuple(self._getfield("rawShape").ravel().astype(np.int))
-        self._raw_traces = np.memmap(raw_file, dtype=np.int16, mode="r",
-                                     shape=raw_shape, order="F")
-
-        filt_file = Path(file_path.parent, file_path.name.replace("_res.mat", "_filt.jrc"))
-        filt_shape = tuple(self._getfield("filtShape").ravel().astype(np.int))
-        self._filt_traces = np.memmap(filt_file, dtype=np.int16, mode="r",
-                                      shape=filt_shape, order="F")
-
-        features_file = Path(file_path.parent, file_path.name.replace("_res.mat", "_features.jrc"))
-        features_shape = tuple(self._getfield("featuresShape").ravel().astype(np.int))
-        self._cluster_features = np.memmap(features_file, dtype=np.float32, mode="r",
-                                           shape=features_shape, order="F")
-
-        neighbors = self._find_site_neighbors(site_locs, raw_shape[1], shank_map)  # get nearest neighbors for each site
-
-        # nonpositive clusters are noise or deleted units
-        if keep_good_only:
-            good_mask = spike_clusters > 0
-        else:
-            good_mask = np.ones_like(spike_clusters, dtype=np.bool)
-
-        self._unit_ids = np.unique(spike_clusters[good_mask])
-
-        # load spike trains
-        self._spike_trains = {}
-        self._unit_masks = {}
-        for uid in self._unit_ids:
-            mask = (spike_clusters == uid)
-            self._unit_masks[uid] = mask
-
-            self._spike_trains[uid] = spike_times[mask]
-
-            self.set_unit_spike_features(uid, "amplitudes", spike_amplitudes[mask])
-            self.set_unit_spike_features(uid, "max_channels", spike_sites[mask])
-            self.set_unit_spike_features(uid, "positions", spike_positions[mask, :])
-            self.set_unit_spike_features(uid, "site_neighbors", neighbors[spike_sites[mask], :])
-
-            self.set_unit_property(uid, "centroid", unit_centroids[uid - 1, :])
-            self.set_unit_property(uid, "max_channel", unit_sites[uid - 1])
-            self.set_unit_property(uid, "template", mean_waveforms[:, :, uid - 1])
-            self.set_unit_property(uid, "template_raw", mean_waveforms_raw[:, :, uid - 1])
-
-        self._kwargs["keep_good_only"] = keep_good_only
-    '''
-        # for debugging only:
+        # This should be changed in the future, but for debugging and saving of the MultiElectrode,
+        # it's handy to have Units and MultiElectrode as object attributes
         self.Units = Units
-        self.ME = ME
+        self.MultiElectrode = MultiElectrode
 
-    '''
-    def _find_site_neighbors(self, site_locs, n_neighbors, shank_map):
-        if np.unique(shank_map).size <= 1:
-            pass
-
-        n_sites = site_locs.shape[0]
-        n_neighbors = int(min(n_neighbors, n_sites))
-
-        neighbors = np.zeros((n_sites, n_neighbors), dtype=np.int)
-        for i in range(n_sites):
-            i_loc = site_locs[i, :][np.newaxis, :]
-            dists = cdist(i_loc, site_locs).ravel()
-            neighbors[i, :] = dists.argsort()[:n_neighbors]
-
-        return neighbors'''
 
     @check_valid_unit_id
     def get_unit_spike_features(self, unit_id, feature_name, start_frame=None, end_frame=None):
@@ -245,7 +105,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
     @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        uidx = np.where(self.get_unit_ids() == unit_id)[0][0]
+        uidx = np.where(np.array(self.get_unit_ids()) == unit_id)[0][0]
 
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
 
@@ -257,3 +117,35 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
     def get_unit_ids(self):
         return self._unit_ids.tolist()
+
+    @staticmethod
+    def write_sorting(sorting, save_path, write_primary_channels=False):
+        units = []
+        for uid_ in sorting.get_unit_ids():
+            uid = int(uid_)
+            #print('uid: {}'.format(uid))
+            unit = {"ID": uid,
+                    "spikeTrain": sorting.get_unit_spike_train(uid),
+                    "spikeAmplitudes": sorting.get_unit_spike_features(uid, "amplitudes"),
+                    "spikeAmplitudesUp": sorting.get_unit_spike_features(uid, "amplitudes_up"),
+                    "detectionChannel": sorting.get_unit_spike_features(uid, "detection_channel"),
+                    "detectionChannelUp": sorting.get_unit_spike_features(uid, "detection_channel_up"),
+                    "footprint": sorting.get_unit_property(uid, "template"),
+                    "cutLeft": sorting.get_unit_property(uid, "template_cut_left"),
+                    }
+            units.append(unit)
+
+        # Save MultiElectrode (so far there are problems with the orientation of each vector)
+        if hasattr(sorting, 'MultiElectrode'):
+            MultiElectrode = sorting.MultiElectrode
+            MultiElectrode["electrodePositions"] = MultiElectrode["electrodePositions"].T
+            MultiElectrode["electrodeNumbers"] = MultiElectrode["electrodeNumbers"].T
+            MultiElectrode["parentElectrodeIndex"] = MultiElectrode["parentElectrodeIndex"].T
+            dict_to_save = {'Units': units, 'MultiElectrode': MultiElectrode}
+        else:
+            dict_to_save = {'Units': units}
+
+        # Save Units and MultiElectrode to .mat file:
+        placeholder = "asdf"
+        matFileName = "result_" + placeholder + ".mat"
+        sio.savemat(os.path.join(save_path, matFileName), dict_to_save)
