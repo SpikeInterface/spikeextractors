@@ -25,7 +25,7 @@ class WaveClusSortingExtractor(MATSortingExtractor):
         sample_rate = par[0, 0][np.where(np.array(par.dtype.names) == 'sr')[0][0]][0][0]
 
         self.set_sampling_frequency(sample_rate)
-        self._unit_ids = np.unique(classes[classes > 0])
+        self._unit_ids = np.unique(classes[classes > 0]).astype('int')
 
         self._spike_trains = {}
         for uid in self._unit_ids:
