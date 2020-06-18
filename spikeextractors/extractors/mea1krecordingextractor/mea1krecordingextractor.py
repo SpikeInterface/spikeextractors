@@ -11,7 +11,7 @@ except ImportError:
 
 
 class Mea1kRecordingExtractor(RecordingExtractor):
-    extractor_name = 'MaxOneRecording'
+    extractor_name = 'Mea1kRecording'
     has_default_locations = True
     installed = HAVE_MEA1k  # check at class level if installed or not
     is_writable = True

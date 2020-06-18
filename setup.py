@@ -10,7 +10,7 @@ setuptools.setup(
     name=pkg_name,
     version=version,
     author="Alessio Buccino, Cole Hurwitz, Samuel Garcia, Jeremy Magland, Matthias Hennig",
-    author_email="colehurwitz@gmail.com",
+    author_email="alessiob@ifi.uio.no",
     description="Python module for extracting recorded and spike sorted extracellular data from different file types and formats",
     url="https://github.com/SpikeInterface/spikeextractors",
     long_description=long_description,
