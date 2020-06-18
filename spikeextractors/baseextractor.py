@@ -210,7 +210,7 @@ class BaseExtractor:
                     tmp_file = tmp_folder / (name + '.raw')
                 else:
                     tmp_file = tmp_folder / name
-            arr = np.memmap(tmp_file, mode='w+', shape=shape, dtype=dtype)
+            arr = np.memmap(str(tmp_file), mode='w+', shape=shape, dtype=dtype)
             if array is not None:
                 arr[:] = array
                 del array

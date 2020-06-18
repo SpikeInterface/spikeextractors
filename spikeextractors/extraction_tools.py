@@ -744,7 +744,7 @@ def check_get_traces_args(func):
             start_frame = 0
         if end_frame is not None:
             if end_frame > recording.get_num_frames():
-                print("'end_time' set to", recording.get_num_frames())
+                print("'end_frame' set to", recording.get_num_frames())
                 end_frame = recording.get_num_frames()
             elif end_frame < 0:
                 end_frame = recording.get_num_frames() + end_frame
