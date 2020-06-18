@@ -7,6 +7,8 @@ from pathlib import Path
 
 try:
     import MEArec as mr
+    import neo
+    import quantities as pq
     HAVE_MREX = True
 except ImportError:
     HAVE_MREX = False
