@@ -7,8 +7,6 @@ from pathlib import Path
 
 try:
     import MEArec as mr
-    import quantities as pq
-    import neo
     HAVE_MREX = True
 except ImportError:
     HAVE_MREX = False
@@ -39,7 +37,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'locs_2d': locs_2d}
 
     def _initialize(self):
-        assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
+        assert HAVE_MREX, self.installation_mesg
         self._recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True, check_suffix=False,
                                           load=['recordings', 'channel_positions'])
         self._fs = self._recgen.info['recordings']['fs']
@@ -91,7 +89,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         save_path: str
             .h5 or .hdf5 path
         '''
-        assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
+        assert HAVE_MREX, MEArecRecordingExtractor.installation_mesg
         save_path = Path(save_path)
         if save_path.is_dir():
             print("The file will be saved as recording.h5 in the provided folder")
@@ -180,7 +178,7 @@ class MEArecSortingExtractor(SortingExtractor):
             Sampling frequency in Hz
 
         '''
-        assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
+        assert HAVE_MREX, MEArecSortingExtractor.installation_mesg
         save_path = Path(save_path)
         if save_path.is_dir():
             print("The file will be saved as sorting.h5 in the provided folder")

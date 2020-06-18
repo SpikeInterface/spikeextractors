@@ -144,7 +144,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         file_path: path to NWB file
         electrical_series_name: str, optional
         """
-        check_nwb_install()
+        assert HAVE_NWB, self.installation_mesg
         se.RecordingExtractor.__init__(self)
         self._path = file_path
         with NWBHDF5IO(self._path, 'r') as io:
@@ -252,7 +252,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        check_nwb_install()
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             es = nwbfile.acquisition[self._electrical_series_name]
@@ -514,7 +513,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         metadata: dict
             metadata info for constructing the nwb file (optional).
         '''
-        check_nwb_install()
+        assert HAVE_NWB, NwbRecordingExtractor.installation_mesg
 
         if distutils.version.LooseVersion(pynwb.__version__) >= '1.3.0':
             print("'write_recording' not supported for version >= 1.3.0. Use version 1.2")
@@ -594,7 +593,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         path: path to NWB file
         electrical_series: pynwb.ecephys.ElectricalSeries object
         """
-        check_nwb_install()
+        assert HAVE_NWB, self.installation_mesg
         se.SortingExtractor.__init__(self)
         self._path = file_path
         with NWBHDF5IO(self._path, 'r') as io:
@@ -694,7 +693,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         save_path: str
         nwbfile_kwargs: optional, pynwb.NWBFile args
         """
-        check_nwb_install()
+        assert HAVE_NWB, NwbSortingExtractor.installation_mesg
 
         ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()

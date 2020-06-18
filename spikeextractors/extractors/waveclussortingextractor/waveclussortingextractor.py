@@ -14,7 +14,7 @@ PathType = Union[str, Path]
 
 class WaveClusSortingExtractor(MATSortingExtractor):
     extractor_name = "WaveClusSortingExtractor"
-    installation_mesg = "To use the MATSortingExtractor install h5py and scipy: \n\n pip install h5py scipy\n\n"  # error message when not installed
+    installation_mesg = ""  # error message when not installed
 
     def __init__(self, file_path: PathType, keep_good_only: bool = False):
         super().__init__(file_path)
@@ -31,7 +31,6 @@ class WaveClusSortingExtractor(MATSortingExtractor):
         for uid in self._unit_ids:
             mask = (classes == uid)
             self._spike_trains[uid] = np.rint(spike_times[mask]*(sample_rate/1000))
-
 
     @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
