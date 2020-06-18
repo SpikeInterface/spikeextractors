@@ -1,25 +1,11 @@
 from pathlib import Path
-import re
 from typing import Union
-
-from scipy.spatial.distance import cdist
-
 import numpy as np
-import scipy.io as sio
-import os
 
 from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor, HAVE_MAT
 from spikeextractors.extraction_tools import check_valid_unit_id
 
 PathType = Union[str, Path]
-
-'''
-    Run:
-    
-    import spikeextractors.extractors.hdsortsortingextractor as e
-    fileName = '/Volumes/BACKUP_DRIVE/imported_experiments/200113_rr_p1c2/results_200113_rr_p1c2.mat'
-    H = e.HDSortSortingExtractor(fileName)
-'''
 
 class HDSortSortingExtractor(MATSortingExtractor):
     extractor_name = "HDSortSortingExtractor"
@@ -30,19 +16,15 @@ class HDSortSortingExtractor(MATSortingExtractor):
         assert(not self._kwargs['old_style_mat'])
         file_path = self._kwargs["file_path"]
 
-        # Extracting all fields of all units:
+        # Extracting units that are saved as struct arrays into a list of dicts:
         _units = self._data["Units"]
-        #t_units = dict((k, _extract_datasets(self._data, _units, k) ) for k in _units.keys())
-        #units = _transpose_dict(t_units)
-        units = _extract_units(self._data, _units)
+        units = _extract_struct_array(self._data, _units)
 
-        # For .mat v7.3: Extracting "MultiElectrode" requires that each field is loaded separately
+        # Extracting MutliElectrode field by field:
         _ME = self._data["MultiElectrode"]
         multi_electrode = dict( ( k, _ME.get(k)[()] ) for k in _ME.keys())
-        #multi_electrode = dict((k, _extract_datasets(self._data, _ME, k)) for k in _ME.keys())
 
-        # Todo: figure out which one of the following two lines is the one to use:
-        #self.set_units_property("sampling_frequency", self._getfield("samplingRate").ravel())
+        # Extracting sampling_frequency:
         self._sampling_frequency = self._getfield("samplingRate").ravel()
 
         # Remove noise units if necessary:
@@ -62,25 +44,19 @@ class HDSortSortingExtractor(MATSortingExtractor):
             # X = self.allocate_array( "amplitudes_" + uid, array= unit["spikeAmplitudes"].flatten().T)
             # self.set_unit_spike_features(uid, "amplitudes", X)
             self.set_unit_spike_features(uid, "amplitudes", unit["spikeAmplitudes"].flatten().T)
-            # --- self.set_unit_spike_features(uid, "amplitudes_up", unit["spikeAmplitudesUp"].flatten())
-
             self.set_unit_spike_features(uid, "detection_channel", unit["detectionChannel"].flatten().astype(np.int))
-            # --- self.set_unit_spike_features(uid, "detection_channel_up", unit["detectionChannelUp"].flatten())
 
             idx = unit["detectionChannel"].astype(int) - 1
             spikePositions = np.vstack( (multi_electrode["electrodePositions"][0][idx], multi_electrode["electrodePositions"][1][idx])).T
             self.set_unit_spike_features(uid, "positions", spikePositions)
 
-            #--- Todo: save max_channel correctly, i.e. the maximal template location:
-            #--- self.set_unit_property(uid, "max_channel", unit["detectionChannel"].flatten())
-
             self.set_unit_property(uid, "template", unit["footprint"])
             self.set_unit_property(uid, "template_frames_cut_before", unit["cutLeft"].flatten())
 
-        # This should be changed in the future, but for debugging and saving of the multi_electrode,
-        # it's handy to have units and multi_electrode as object attributes
         self._units = units
         self._multi_electrode = multi_electrode
+
+        # Close the h5py.File:
         self._data.close()
 
     @check_valid_unit_id
@@ -88,10 +64,8 @@ class HDSortSortingExtractor(MATSortingExtractor):
         uidx = np.where(np.array(self.get_unit_ids()) == unit_id)[0][0]
 
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-
         start_frame = start_frame or 0
         end_frame = end_frame or np.infty
-
         st = self._spike_trains[uidx]
         return st[(st >= start_frame) & (st < end_frame)]
 
@@ -100,7 +74,6 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, save_path, locations=None, noise_std_by_channel=None):
-
         # First, find out how many channels there are
         if locations is not None:
             # write_locations must be a 2D numpy array with n_channels in first dim., (x,y) in second dim.
@@ -159,7 +132,6 @@ class HDSortSortingExtractor(MATSortingExtractor):
             # Create artificial locations if none are provided:
             x = np.zeros(n_channels, np.double)
             y = np.array(np.arange(n_channels), np.double)
-            #locations = np.array([np.zeros((1, n_channels),np.double), np.array(np.arange(n_channels).T,np.double)])
             locations = np.vstack((x,y)).T
 
         multi_electrode = {"electrodePositions": locations, "electrodeNumbers": np.arange(n_channels)}
@@ -173,63 +145,35 @@ class HDSortSortingExtractor(MATSortingExtractor):
                         "samplingRate": sorting._sampling_frequency}
 
         # Save Units and MultiElectrode to .mat file:
-        #if sorting_name is None:
-        #    sorting_name = "hdsort"
-        #matFileName = "result_" + sorting_name + ".mat"
-        #sio.savemat(os.path.join(save_path, matFileName), dict_to_save)
-        #sio.savemat(save_path, dict_to_save, appendmat=True, oned_as='column')
         MATSortingExtractor.write_dict_v7_3(save_path, dict_to_save)
 
 
 # For .mat v7.3: Function to extract all fields of a struct-array:
-def _extract_datasetsxxx(_data, ds, name):
-    x = ds[name]
-    return [_data[xx[0]][()] for xx in x]
-
-def _extract_units(_data, ds):
+def _extract_struct_array(_data, ds):
     try:
+        # Try loading structure fields directly as datasets
         t_units = {}
         for name in ds.keys():
             x = ds[name]
             r = [_data[xx[0]][()] for xx in x]
             t_units[name] = r
-
-
+    
     except:
+        # Sometimes, a .mat -v7.3 file contains #refs#, i.e. datasets don't correspond directly
+        # to structure fields but instead point to a different datasets with a hashed name.
+        # Here, we solve this by looping through all fields, read the reference and then load the
+        # referenced dataset.
         t_units = {}
         for name in _data[ds[0][0]].keys():
-            r = []#np.empty(0)
+            r = []
             for _ds in ds:
                 reference = _ds[0]
                 val = _data[reference][name][()]
-                #r = np.append(r, val)
                 r.append(val.flatten())
 
             t_units[name] = np.array(r)
 
-    return _transpose_dict(t_units)
-
-def _extract_datasetsxxxx(_data, ds, name):
-    try:
-        x = ds[name]
-        r = [_data[xx[0]][()] for xx in x]
-    except:
-        # If the data is not stored directly in datasets, but in #refs#,
-        # we need to access each dataset via a reference:
-        #gr = _data[xx[0]]
-        r = np.empty(0)
-        for _ds in ds:
-            reference = _ds[0]
-            unit = _data[reference]
-            val = _data[reference][name][()]
-            #val = dict( (k, _data[reference][k][()]) for k in unit.keys)
-            #val = _data[reference]['ID'][()]
-            r = np.append(r, val)
-        #r =  dict( (k, gr[k][()]) for k in gr.keys())
-        #r = np.array(r)
-    return r
-
-
-# "Transpose" the dict elements:
-def _transpose_dict(d):
+    # The data (t_units) is now a dict where each entry is a numpy array with
+    # N elements. To get a struct array, we need now to "transpose" it, such that the
+    # return value is a N-list of dicts where all have the same keys.
     return [dict(zip(d, col)) for col in zip(*d.values())]
