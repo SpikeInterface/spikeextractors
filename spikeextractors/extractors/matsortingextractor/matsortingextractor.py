@@ -1,6 +1,7 @@
 from collections import deque
 from pathlib import Path
 from typing import Union
+import numpy as np
 
 try:
     import h5py
@@ -15,7 +16,14 @@ try:
 except ImportError:
     HAVE_LOADMAT = False
 
-HAVE_MAT = HAVE_H5PY & HAVE_LOADMAT
+
+try:
+    import hdf5storage
+    HAVE_HDF5STORAGE = True
+except ImportError:
+    HAVE_HDF5STORAGE = False
+
+HAVE_MAT = HAVE_H5PY & HAVE_LOADMAT & HAVE_HDF5STORAGE
 
 from spikeextractors import SortingExtractor
 
@@ -27,7 +35,7 @@ class MATSortingExtractor(SortingExtractor):
     installed = HAVE_MAT  # check at class level if installed or not
     is_writable = False
     mode = "file"
-    installation_mesg = "To use the MATSortingExtractor install h5py and scipy: \n\n pip install h5py scipy\n\n"  # error message when not installed
+    installation_mesg = "To use the MATSortingExtractor install h5py, scipy and hdf5storage: \n\n pip install h5py scipy hdf5storage\n\n"  # error message when not installed
 
     def __init__(self, file_path: PathType):
         super().__init__()
@@ -53,7 +61,7 @@ class MATSortingExtractor(SortingExtractor):
                 self._kwargs["old_style_mat"] = False
             except NameError:
                 raise ImportError("Version 7.2 .mat file given, but you don't have h5py installed.")
-
+                
     def _getfield(self, fieldname: str):
         def _drill(d: dict, keys: deque):
             if len(keys) == 1:
@@ -66,3 +74,6 @@ class MATSortingExtractor(SortingExtractor):
         else:
             return self._data[fieldname][()]
 
+    @staticmethod
+    def write_dict_v7_3(mat_file_path, dict_to_write): # field must be a dict
+        hdf5storage.write(dict_to_write, '/', mat_file_path, matlab_compatible=True, options='w')
