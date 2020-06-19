@@ -15,6 +15,7 @@ class _NeoBaseExtractor:
     NeoRawIOClass = None
     installed = True
     is_writable = False
+    installation_mesg = "To use the Neo extractors, install Neo: \n\n pip install neo\n\n"
 
     def __init__(self, block_index=None, seg_index=None, **kargs):
         """
@@ -22,7 +23,7 @@ class _NeoBaseExtractor:
         if seg_index is None then check if only one segment
 
         """
-        assert HAVE_NEO, "To use the Neo extractors, install Neo: \n\n pip install neo\n\n"
+        assert HAVE_NEO, self.installation_mesg
         neoIOclass = eval('neo.rawio.' + self.NeoRawIOClass)
         self.neo_reader = neoIOclass(**kargs)
         self.neo_reader.parse_header()

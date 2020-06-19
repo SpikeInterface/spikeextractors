@@ -59,7 +59,7 @@ class SpykingCircusSortingExtractor(SortingExtractor):
     installation_mesg = "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
 
     def __init__(self, folder_path):
-        assert HAVE_SCSX, "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
+        assert HAVE_SCSX, self.installation_mesg
         SortingExtractor.__init__(self)
         spykingcircus_folder = Path(folder_path)
         listfiles = spykingcircus_folder.iterdir()
@@ -126,7 +126,7 @@ class SpykingCircusSortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, save_path):
-        assert HAVE_SCSX, "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
+        assert HAVE_SCSX, SpykingCircusSortingExtractor.installation_mesg
         save_path = Path(save_path)
         if save_path.is_dir():
             save_path = save_path / 'data.result.hdf5'

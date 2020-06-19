@@ -30,6 +30,7 @@ class MATSortingExtractor(SortingExtractor):
     installation_mesg = "To use the MATSortingExtractor install h5py and scipy: \n\n pip install h5py scipy\n\n"  # error message when not installed
 
     def __init__(self, file_path: PathType):
+        assert HAVE_MAT, self.installation_mesg
         super().__init__()
 
         file_path = Path(file_path) if isinstance(file_path, str) else file_path
