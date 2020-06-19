@@ -5,8 +5,14 @@ services:
 - docker
 python:
 - '3.6'
+before_install:  # install dev version of pynwb
+- git clone --recurse-submodules git@github.com:NeurodataWithoutBorders/pynwb.git
+- cd pynwb
+- pip install -r requirements.txt -r requirements-dev.txt
+- pip install .
+- cd ..
 install:
-- pip install mountainlab_pytools pynwb==1.2.1 pyopenephys kbucket h5py MEArec exdir ruamel.yaml nixio shybrid neo>=0.8
+- pip install mountainlab_pytools pyopenephys kbucket h5py MEArec exdir ruamel.yaml nixio shybrid neo>=0.8
 - pip install .
 - pip install pytest==3.6
 script: pytest
