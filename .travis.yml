@@ -6,7 +6,7 @@ services:
 python:
 - '3.6'
 before_install:  # install dev version of pynwb
-- git clone --recurse-submodules git@github.com:NeurodataWithoutBorders/pynwb.git
+- git clone --recurse-submodules https://github.com/NeurodataWithoutBorders/pynwb.git
 - cd pynwb
 - pip install -r requirements.txt -r requirements-dev.txt
 - pip install .
