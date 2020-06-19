@@ -54,18 +54,18 @@ class MATSortingExtractor(SortingExtractor):
 
         try:  # load old-style (up to 7.2) .mat file
             self._data = loadmat(file_path, matlab_compatible=True)
-            self._kwargs["old_style_mat"] = True
+            self._old_style_mat = True
         except NameError:  # loadmat not defined
             raise ImportError("Old-style .mat file given, but `loadmat` is not defined.")
         except NotImplementedError:  # new style .mat file
             try:
                 self._data = h5py.File(file_path, "r+")
-                self._kwargs["old_style_mat"] = False
+                self._old_style_mat = False
             except NameError:
                 raise ImportError("Version 7.2 .mat file given, but you don't have h5py installed.")
 
     def __del__(self):
-        if not self._kwargs["old_style_mat"]:
+        if not self._old_style_mat:
             self._data.close()
                 
     def _getfield(self, fieldname: str):
@@ -75,7 +75,7 @@ class MATSortingExtractor(SortingExtractor):
             else:
                 return _drill(d[keys.popleft()], keys)
 
-        if self._kwargs["old_style_mat"]:
+        if self._old_style_mat:
             return _drill(self._data, deque(fieldname.split("/")))
         else:
             return self._data[fieldname][()]

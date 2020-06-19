@@ -18,7 +18,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
         # Extracting units that are saved as struct arrays into a list of dicts:
         _units = self._data["Units"]
 
-        if not self._kwargs['old_style_mat']:
+        if not self._old_style_mat:
             units = _extract_struct_array(self._data, _units)
 
             # Extracting MutliElectrode field by field:
