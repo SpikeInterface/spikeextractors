@@ -105,7 +105,6 @@ class HDSortSortingExtractor(MATSortingExtractor):
                 unit["spikeAmplitudes"] = sorting.get_unit_spike_features(uid, "amplitudes")
             else:
                 # Save a spikeAmplitudes = 1
-                print("asdf")
                 unit["spikeAmplitudes"] = np.ones(unit["spikeTrain"].shape, np.double)
 
             if "detection_channel" in sorting.get_unit_spike_feature_names(uid):
