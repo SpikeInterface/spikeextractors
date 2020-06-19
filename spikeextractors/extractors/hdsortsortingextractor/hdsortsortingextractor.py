@@ -145,7 +145,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
                         "samplingRate": sorting._sampling_frequency}
 
         # Save Units and MultiElectrode to .mat file:
-        MATSortingExtractor.write_dict_v7_3(save_path, dict_to_save)
+        MATSortingExtractor.write_dict_to_mat(save_path, dict_to_save, version='7.3')
 
 
 # For .mat v7.3: Function to extract all fields of a struct-array:
@@ -176,4 +176,4 @@ def _extract_struct_array(_data, ds):
     # The data (t_units) is now a dict where each entry is a numpy array with
     # N elements. To get a struct array, we need now to "transpose" it, such that the
     # return value is a N-list of dicts where all have the same keys.
-    return [dict(zip(d, col)) for col in zip(*d.values())]
+    return [dict(zip(t_units, col)) for col in zip(*t_units.values())]

@@ -76,5 +76,8 @@ class MATSortingExtractor(SortingExtractor):
             return self._data[fieldname][()]
 
     @staticmethod
-    def write_dict_v7_3(mat_file_path, dict_to_write): # field must be a dict
-        hdf5storage.write(dict_to_write, '/', mat_file_path, matlab_compatible=True, options='w')
+    def write_dict_to_mat(mat_file_path, dict_to_write, version='7.3'):  # field must be a dict
+        if version == '7.3':
+            hdf5storage.write(dict_to_write, '/', mat_file_path, matlab_compatible=True, options='w')
+        elif version < '7.3' and version > '4':
+            savemat(mat_file_path, dict_to_write)

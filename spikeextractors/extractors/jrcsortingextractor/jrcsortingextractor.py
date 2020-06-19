@@ -1,9 +1,6 @@
 from pathlib import Path
 import re
 from typing import Union
-
-from scipy.spatial.distance import cdist
-
 import numpy as np
 
 from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor, HAVE_MAT
@@ -136,6 +133,8 @@ class JRCSortingExtractor(MATSortingExtractor):
         self._kwargs["keep_good_only"] = keep_good_only
 
     def _find_site_neighbors(self, site_locs, n_neighbors, shank_map):
+        from scipy.spatial.distance import cdist
+
         if np.unique(shank_map).size <= 1:
             pass
 
