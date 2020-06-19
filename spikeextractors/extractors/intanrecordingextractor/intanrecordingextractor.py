@@ -17,7 +17,7 @@ class IntanRecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the Intan extractor, install pyintan: \n\n pip install pyintan\n\n"  # error message when not installed
 
     def __init__(self, file_path, verbose=False):
-        assert HAVE_INTAN, "To use the Intan extractor, install pyintan: \n\n pip install pyintan\n\n"
+        assert HAVE_INTAN, self.installation_mesg
         RecordingExtractor.__init__(self)
         assert Path(file_path).suffix == '.rhs' or Path(file_path).suffix == '.rhd', \
             "Only '.rhd' and '.rhs' files are supported"

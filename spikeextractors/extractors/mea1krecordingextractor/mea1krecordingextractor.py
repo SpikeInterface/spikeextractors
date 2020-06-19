@@ -16,9 +16,10 @@ class Mea1kRecordingExtractor(RecordingExtractor):
     installed = HAVE_MEA1k  # check at class level if installed or not
     is_writable = True
     mode = 'file'
-    installation_mesg = ""  # error message when not installed
+    installation_mesg = "To use the Mea1kRecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, file_path):
+        assert HAVE_MEA1k, self.installation_mesg
         RecordingExtractor.__init__(self)
         self._file_path = file_path
         self._fs = None
@@ -103,6 +104,7 @@ class Mea1kRecordingExtractor(RecordingExtractor):
 
     @staticmethod
     def write_recording(recording, save_path, chunk_size=None, chunk_mb=500):
+        assert HAVE_MEA1k, Mea1kRecordingExtractor.installation_mesg
         save_path = Path(save_path)
         if save_path.suffix == '':
             save_path = Path(str(save_path) + '.h5')

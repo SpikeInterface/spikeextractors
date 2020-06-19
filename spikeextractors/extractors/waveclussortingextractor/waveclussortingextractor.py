@@ -14,7 +14,7 @@ PathType = Union[str, Path]
 
 class WaveClusSortingExtractor(MATSortingExtractor):
     extractor_name = "WaveClusSortingExtractor"
-    installation_mesg = "To use the MATSortingExtractor install h5py and scipy: \n\n pip install h5py scipy\n\n"  # error message when not installed
+    installation_mesg = ""  # error message when not installed
 
     def __init__(self, file_path: PathType, keep_good_only: bool = False):
         super().__init__(file_path)

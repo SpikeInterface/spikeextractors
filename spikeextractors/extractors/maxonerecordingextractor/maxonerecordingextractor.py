@@ -16,9 +16,10 @@ class MaxOneRecordingExtractor(RecordingExtractor):
     installed = HAVE_MAX  # check at class level if installed or not
     is_writable = False
     mode = 'file'
-    installation_mesg = ""  # error message when not installed
+    installation_mesg = "To use the MaxOneRecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, file_path):
+        assert HAVE_MAX, self.installation_mesg
         RecordingExtractor.__init__(self)
         self._file_path = file_path
         self._fs = None

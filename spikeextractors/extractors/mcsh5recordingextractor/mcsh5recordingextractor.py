@@ -20,7 +20,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, file_path, stream_id=0, verbose=False):
-        assert HAVE_MCSH5, "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"
+        assert HAVE_MCSH5, self.installation_mesg
         self._recording_file = file_path
         self._verbose = verbose
         self._available_stream_ids = self.get_available_stream_ids()
