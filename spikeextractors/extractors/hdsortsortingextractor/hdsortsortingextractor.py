@@ -78,17 +78,17 @@ class HDSortSortingExtractor(MATSortingExtractor):
             uid = int(_squeeze_ds(unit["ID"]))
 
             self._unit_ids = np.append(self._unit_ids, uid)
-            self._spike_trains[uc] = unit["spikeTrain"].squeeze().astype(np.int) - self.start_frame
+            self._spike_trains[uc] = _squeeze(unit["spikeTrain"]).astype(np.int) - self.start_frame
 
             # For memory efficiency in case it's necessary:
             # X = self.allocate_array( "amplitudes_" + uid, array= unit["spikeAmplitudes"].flatten().T)
             # self.set_unit_spike_features(uid, "amplitudes", X)
-            self.set_unit_spike_features(uid, "amplitudes", unit["spikeAmplitudes"].squeeze())
-            self.set_unit_spike_features(uid, "detection_channel", unit["detectionChannel"].squeeze().astype(np.int))
+            self.set_unit_spike_features(uid, "amplitudes", _squeeze(unit["spikeAmplitudes"]))
+            self.set_unit_spike_features(uid, "detection_channel", _squeeze(unit["detectionChannel"]).astype(np.int))
 
             idx = unit["detectionChannel"].astype(int) - 1
-            spikePositions = np.vstack((multi_electrode["electrodePositions"][0][idx].squeeze(),
-                                        multi_electrode["electrodePositions"][1][idx].squeeze())).T
+            spikePositions = np.vstack((_squeeze(multi_electrode["electrodePositions"][0][idx]),
+                                        _squeeze(multi_electrode["electrodePositions"][1][idx]))).T
             self.set_unit_spike_features(uid, "positions", spikePositions)
 
             if self._old_style_mat:
@@ -148,7 +148,6 @@ class HDSortSortingExtractor(MATSortingExtractor):
                     "spikeTrain": sorting.get_unit_spike_train(uid)}
             num_spikes = len(sorting.get_unit_spike_train(uid))
 
-            # TODO fix wrong shapes when saving
             if "amplitudes" in sorting.get_unit_spike_feature_names(uid):
                 unit["spikeAmplitudes"] = sorting.get_unit_spike_features(uid, "amplitudes")
             else:
@@ -227,3 +226,13 @@ def _squeeze_ds(ds):
     while not isinstance(ds, (int, float, np.integer, np.float)):
         ds = ds[0]
     return ds
+
+
+def _squeeze(arr):
+    shape = arr.shape
+    if len(shape) == 2:
+        if shape[0] == 1:
+            arr = arr[0]
+        elif shape[1] == 1:
+            arr = arr[:, 0]
+    return arr
