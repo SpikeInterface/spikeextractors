@@ -10,16 +10,13 @@ PathType = Union[str, Path]
 
 class HDSortSortingExtractor(MATSortingExtractor):
     extractor_name = "HDSortSortingExtractor"
-    installation_mesg = "To use the MATSortingExtractor install h5py and scipy: \n\n pip install h5py scipy\n\n"  # error message when not installed
 
     def __init__(self, file_path: PathType, remove_noise_units: bool = True):
         super().__init__(file_path)
 
-        # Extracting units that are saved as struct arrays into a list of dicts:
-        _units = self._data["Units"]
-
         if not self._old_style_mat:
-            units = _extract_struct_array(self._data, _units)
+            _units = self._data['Units']
+            units = _parse_units(self._data, _units)
 
             # Extracting MutliElectrode field by field:
             _ME = self._data["MultiElectrode"]
@@ -36,10 +33,8 @@ class HDSortSortingExtractor(MATSortingExtractor):
                 units = [unit for unit in units if unit["ID"].flatten()[0].astype(int) % 1000 != 0]
 
             if 'sortingInfo' in self._data.keys():
-                info = self._getfield("sortingInfo")
-                start_frame = info['startTimes']
-                while not isinstance(start_frame, (int, float, np.integer, np.float)):
-                    start_frame = start_frame[0]
+                info = self._data["sortingInfo"]
+                start_frame = _squeeze_ds(info['startTimes'])
                 self.start_frame = int(start_frame)
             else:
                 self.start_frame = 0
@@ -71,9 +66,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
             if 'sortingInfo' in self._data.keys():
                 info = self._getfield("sortingInfo")
-                start_frame = info['startTimes']
-                while not isinstance(start_frame, (int, float, np.integer, np.float)):
-                    start_frame = start_frame[0]
+                start_frame = _squeeze_ds(info['startTimes'])
                 self.start_frame = int(start_frame)
             else:
                 self.start_frame = 0
@@ -82,23 +75,27 @@ class HDSortSortingExtractor(MATSortingExtractor):
         self._spike_trains = {}
         self._unit_ids = np.empty(0, np.int)
         for uc, unit in enumerate(units):
-            uid = unit["ID"].flatten()[0].astype(int)
+            uid = int(_squeeze_ds(unit["ID"]))
 
             self._unit_ids = np.append(self._unit_ids, uid)
-            self._spike_trains[uc] = unit["spikeTrain"].flatten().T.astype(np.int) - self.start_frame
+            self._spike_trains[uc] = unit["spikeTrain"].squeeze().astype(np.int) - self.start_frame
 
             # For memory efficiency in case it's necessary:
             # X = self.allocate_array( "amplitudes_" + uid, array= unit["spikeAmplitudes"].flatten().T)
             # self.set_unit_spike_features(uid, "amplitudes", X)
-            self.set_unit_spike_features(uid, "amplitudes", unit["spikeAmplitudes"].flatten().T)
-            self.set_unit_spike_features(uid, "detection_channel", unit["detectionChannel"].flatten().astype(np.int))
+            self.set_unit_spike_features(uid, "amplitudes", unit["spikeAmplitudes"].squeeze())
+            self.set_unit_spike_features(uid, "detection_channel", unit["detectionChannel"].squeeze().astype(np.int))
 
             idx = unit["detectionChannel"].astype(int) - 1
             spikePositions = np.vstack((multi_electrode["electrodePositions"][0][idx].squeeze(),
                                         multi_electrode["electrodePositions"][1][idx].squeeze())).T
             self.set_unit_spike_features(uid, "positions", spikePositions)
 
-            self.set_unit_property(uid, "template", unit["footprint"].T)
+            if self._old_style_mat:
+                template = unit["footprint"].T
+            else:
+                template = unit["footprint"]
+            self.set_unit_property(uid, "template", template)
             self.set_unit_property(uid, "template_frames_cut_before", unit["cutLeft"].flatten())
 
         self._units = units
@@ -149,23 +146,23 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
             unit = {"ID": uid,
                     "spikeTrain": sorting.get_unit_spike_train(uid)}
+            num_spikes = len(sorting.get_unit_spike_train(uid))
 
             # TODO fix wrong shapes when saving
             if "amplitudes" in sorting.get_unit_spike_feature_names(uid):
                 unit["spikeAmplitudes"] = sorting.get_unit_spike_features(uid, "amplitudes")
             else:
                 # Save a spikeAmplitudes = 1
-                unit["spikeAmplitudes"] = np.ones(unit["spikeTrain"].shape, np.double)
+                unit["spikeAmplitudes"] = np.ones(num_spikes, np.double)
 
             if "detection_channel" in sorting.get_unit_spike_feature_names(uid):
                 unit["detectionChannel"] = sorting.get_unit_spike_features(uid, "detection_channel")
             else:
                 # Save a detectionChannel = 1
-                unit["detectionChannel"] = np.ones(unit["spikeTrain"].shape, np.double)
+                unit["detectionChannel"] = np.ones(num_spikes, np.double)
 
             if "template" in sorting.get_unit_property_names(uid):
                 unit["footprint"] = sorting.get_unit_property(uid, "template")
-                print(unit['footprint'].shape)
             else:
                 # If this unit does not have a footprint, create an empty one:
                 unit["footprint"] = np.zeros((3, n_channels), np.double)
@@ -198,31 +195,63 @@ class HDSortSortingExtractor(MATSortingExtractor):
         MATSortingExtractor.write_dict_to_mat(save_path, dict_to_save, version='7.3')
 
 
-# For .mat v7.3: Function to extract all fields of a struct-array:
-def _extract_struct_array(_data, ds):
-    try:
-        # Try loading structure fields directly as datasets
-        t_units = {}
-        for name in ds.keys():
-            x = ds[name]
-            r = [_data[xx[0]][()] for xx in x]
-            t_units[name] = r
-    except:
-        # Sometimes, a .mat -v7.3 file contains #refs#, i.e. datasets don't correspond directly
-        # to structure fields but instead point to a different datasets with a hashed name.
-        # Here, we solve this by looping through all fields, read the reference and then load the
-        # referenced dataset.
-        t_units = {}
-        for name in _data[ds[0][0]].keys():
-            r = []
-            for _ds in ds:
-                reference = _ds[0]
-                val = _data[reference][name][()]
-                r.append(val.flatten())
+# # For .mat v7.3: Function to extract all fields of a struct-array:
+# # def _extract_struct_array(_data, ds):
+# #     try:
+# #         # Try loading structure fields directly as datasets
+# #         t_units = {}
+# #         for name in ds.keys():
+# #             x = ds[name]
+# #             r = [_data[xx[0]][()] for xx in x]
+# #             t_units[name] = r
+# #     except:
+# #         # Sometimes, a .mat -v7.3 file contains #refs#, i.e. datasets don't correspond directly
+# #         # to structure fields but instead point to a different datasets with a hashed name.
+# #         # Here, we solve this by looping through all fields, read the reference and then load the
+# #         # referenced dataset.
+# #         t_units = {}
+# #         for name in _data[ds[0][0]].keys():
+# #             r = []
+# #             for _ds in ds:
+# #                 reference = _ds[0]
+# #                 val = _data[reference][name][()]
+# #                 r.append(val.flatten())
+# #
+# #             t_units[name] = np.array(r)
+# #
+# #     # The data (t_units) is now a dict where each entry is a numpy array with
+# #     # N elements. To get a struct array, we need now to "transpose" it, such that the
+# #     # return value is a N-list of dicts where all have the same keys.
+# #     return [dict(zip(t_units, col)) for col in zip(*t_units.values())]
 
-            t_units[name] = np.array(r)
+def _parse_units(file, _units):
+    import h5py
 
-    # The data (t_units) is now a dict where each entry is a numpy array with
-    # N elements. To get a struct array, we need now to "transpose" it, such that the
-    # return value is a N-list of dicts where all have the same keys.
-    return [dict(zip(t_units, col)) for col in zip(*t_units.values())]
+    t_units = {}
+    if isinstance(_units, h5py.Group):
+        for name in _units.keys():
+            value = _units[name]
+            dict_val = []
+            for val in value:
+                if isinstance(file[val[0]], h5py.Dataset):
+                    dict_val.append(file[val[0]][()])
+                    t_units[name] = dict_val
+                else:
+                    break
+        out = [dict(zip(t_units, col)) for col in zip(*t_units.values())]
+    else:
+        out = []
+        for unit in _units:
+            group = file[unit[()][0]]
+            unit_dict = {}
+            for k in group.keys():
+                unit_dict[k] = group[k][()]
+            out.append(unit_dict)
+
+    return out
+
+
+def _squeeze_ds(ds):
+    while not isinstance(ds, (int, float, np.integer, np.float)):
+        ds = ds[0]
+    return ds
