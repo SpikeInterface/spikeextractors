@@ -12,7 +12,18 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     The .clu file is a file with one more row than the .res with the first row corresponding to
     the total number of unit ids and the rest of the rows indicating which unit id the corresponding
     entry in the .res file refers to.
-    Unit ID 1 is to be treated as noise.
+    
+    In the original Neuroscope format:
+        Unit ID 0 is the cluster of unsorted spikes (noise).
+        Unit ID 1 is a cluster of multi-unit spikes.
+        
+    The function defaults to returning multi-unit activity.
+    To return only the fully sorted units, set keep_mua_units=False.
+        
+    The sorting extractor always returns unit IDs from 1, ..., number of chosen clusters.
+        
+    Until get_unsorted_spike_train is implemented into the base for sortingextractor objects,
+    that group will be ignored by this function (consistent with the original implementation).
 
     Parameters
     ----------
@@ -26,17 +37,31 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     is_writable = True
     mode = 'custom'
 
-    def __init__(self, resfile, clufile):
+    def __init__(self, resfile, clufile, keep_mua_units=True):
         SortingExtractor.__init__(self)
         res = np.loadtxt(resfile, dtype=np.int64, usecols=0, ndmin=1)
         clu = np.loadtxt(clufile, dtype=np.int64, usecols=0, ndmin=1)
         if len(res) > 0:
+            # Extract the number of clusters read as the first line of the clufile
+            # then remove it from the clu list
             n_clu = clu[0]
             clu = np.delete(clu, 0)
+            
+            # Initialize spiketrains and extract times from .res and appropriate clusters from .clu
+            # based on user input for ignoring multi-unit activity
             self._spiketrains = []
-            self._unit_ids = list(x + 1 for x in range(n_clu))
-            for s_id in self._unit_ids:
-                self._spiketrains.append(res[(clu == s_id).nonzero()])
+            if keep_mua_units: # default
+                n_clu -= 1;
+                self._unit_ids = list(x+1 for x in range(n_clu)) # generates list from 1,...,clu[0]-1
+                for s_id in self._unit_ids:
+                    self._spiketrains.append(res[(clu == s_id).nonzero()])
+            else:
+                # Ignoring IDs of 0 until get_unsorted_spike_train is implemented into base
+                # Also ignoring IDs of 1 since user called keep_mua_units=False
+                n_clu -= 2;
+                self._unit_ids = list(x+1 for x in range(n_clu)) # generates list from 1,...,clu[0]-2
+                for s_id in self._unit_ids:
+                    self._spiketrains.append(res[(clu == s_id+1).nonzero()]) # only reading cluster IDs 2,...,clu[0]-1
         else:
             self._spiketrains = []
             self._unit_ids = []
