@@ -195,35 +195,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
         MATSortingExtractor.write_dict_to_mat(save_path, dict_to_save, version='7.3')
 
 
-# # For .mat v7.3: Function to extract all fields of a struct-array:
-# # def _extract_struct_array(_data, ds):
-# #     try:
-# #         # Try loading structure fields directly as datasets
-# #         t_units = {}
-# #         for name in ds.keys():
-# #             x = ds[name]
-# #             r = [_data[xx[0]][()] for xx in x]
-# #             t_units[name] = r
-# #     except:
-# #         # Sometimes, a .mat -v7.3 file contains #refs#, i.e. datasets don't correspond directly
-# #         # to structure fields but instead point to a different datasets with a hashed name.
-# #         # Here, we solve this by looping through all fields, read the reference and then load the
-# #         # referenced dataset.
-# #         t_units = {}
-# #         for name in _data[ds[0][0]].keys():
-# #             r = []
-# #             for _ds in ds:
-# #                 reference = _ds[0]
-# #                 val = _data[reference][name][()]
-# #                 r.append(val.flatten())
-# #
-# #             t_units[name] = np.array(r)
-# #
-# #     # The data (t_units) is now a dict where each entry is a numpy array with
-# #     # N elements. To get a struct array, we need now to "transpose" it, such that the
-# #     # return value is a N-list of dicts where all have the same keys.
-# #     return [dict(zip(t_units, col)) for col in zip(*t_units.values())]
-
+# For .mat v7.3: Function to extract all fields of a struct-array:
 def _parse_units(file, _units):
     import h5py
 
