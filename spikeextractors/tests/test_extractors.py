@@ -427,8 +427,9 @@ class TestExtractors(unittest.TestCase):
         units_ids = SX_neuroscope.get_unit_ids()
         no_mua_units_ids = SX_neuroscope_no_mua.get_unit_ids()
         
-        self.assertEqual(list(units_ids), list(range(1,nUnits)))
-        self.assertEqual(list(no_mua_units_ids), list(range(1,nUnits-1)))
+        nUnits = len(SX_neuroscope.get_unit_ids())
+        self.assertEqual(list(units_ids), list(range(1,nUnits+1)))
+        self.assertEqual(list(no_mua_units_ids), list(range(1,nUnits)))
 
 
 if __name__ == '__main__':
