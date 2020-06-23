@@ -37,8 +37,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     is_writable = True
     mode = 'custom'
 
-    def __init__(self, resfile_path, clufile_path):
-        SortingExtractor.__init__(self, resfile_path, clufile_path)
+    def __init__(self, resfile_path, clufile_path, keep_mua_units=True):
+        SortingExtractor.__init__(self, resfile_path, clufile_path, keep_mua_units=keep_mua_units)
         self._kwargs = {'resfile_path': str(Path(resfile).absolute()),
                         'clufile_path': str(Path(clufile).absolute()),
                         'keep_mua_units': keep_mua_units=True}
