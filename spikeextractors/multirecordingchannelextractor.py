@@ -2,8 +2,8 @@ from .recordingextractor import RecordingExtractor
 from .extraction_tools import check_get_traces_args
 import numpy as np
 
-# Concatenates the given recordings by channel
 
+# Concatenates the given recordings by channel
 class MultiRecordingChannelExtractor(RecordingExtractor):
     def __init__(self, recordings, groups=None):
         self._recordings = recordings

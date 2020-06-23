@@ -21,15 +21,7 @@ class RecordingExtractor(ABC, BaseExtractor):
     def __init__(self):
         BaseExtractor.__init__(self)
         self._key_properties = {'group': None, 'location': None}
-        self._epochs = {}
-        self.id = random.randint(a=0, b=9223372036854775807)
-
-    def __del__(self):
-        if getattr(self, '_tmp_folder', None):
-            try:
-                shutil.rmtree(self._tmp_folder)
-            except Exception as e:
-                print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
+        self.is_filtered = False
 
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
