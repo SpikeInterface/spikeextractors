@@ -38,10 +38,10 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     mode = 'custom'
 
     def __init__(self, resfile_path, clufile_path):
-        SortingExtractor.__init__(self, resfile_path, clufile_path, keep_mua_units=True)
+        SortingExtractor.__init__(self, resfile_path, clufile_path)
         self._kwargs = {'resfile_path': str(Path(resfile).absolute()),
                         'clufile_path': str(Path(clufile).absolute()),
-                        'keep_mua_units': keep_mua_units}
+                        'keep_mua_units': keep_mua_units=True}
         
         
         res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
