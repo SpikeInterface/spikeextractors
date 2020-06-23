@@ -1,10 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import json
-import os
-import tempfile
-from pathlib import Path
-import shutil
+
 from .extraction_tools import get_sub_extractors_by_property
 from .baseextractor import BaseExtractor
 

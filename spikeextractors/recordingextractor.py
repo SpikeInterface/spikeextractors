@@ -1,9 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import tempfile
-import shutil
-import random
-from pathlib import Path
+
 from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, \
     write_to_h5_dataset_format, get_sub_extractors_by_property, cast_start_end_frame
 from .baseextractor import BaseExtractor
