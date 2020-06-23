@@ -68,8 +68,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             self._unit_ids = []
             
         self._kwargs = {'resfile_path': str(Path(resfile_path).absolute()),
-            'clufile_path': str(Path(clufile_path).absolute()),
-            'keep_mua_units': keep_mua_units}
+                        'clufile_path': str(Path(clufile_path).absolute()),
+                        'keep_mua_units': keep_mua_units}
 
 
     def get_unit_ids(self):
@@ -105,8 +105,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         # Cody: Why? Commenting this out as it seems problematic for the testing method
         # clu = np.insert(clu, 0, 1)
         # res = np.insert(res, 0, 1)
-        # clu = np.insert(clu, 0, len(unit_ids)+1) # the + 1 seems to make the format believe there is an additional cluster
-        clu = np.insert(clu, 0, len(unit_ids))
+        clu = np.insert(clu, 0, len(unit_ids)+1) # The +1 is necessary here b/c the convention for the base sorting object is from 1,...,nUnits
 
         np.savetxt(save_res, res, fmt='%i')
         np.savetxt(save_clu, clu, fmt='%i')
