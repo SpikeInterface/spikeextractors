@@ -3,6 +3,7 @@ from .extractors.mearecextractors.mearecextractors import MEArecRecordingExtract
 from .extractors.biocamrecordingextractor.biocamrecordingextractor import BiocamRecordingExtractor
 from .extractors.exdirextractors.exdirextractors import ExdirRecordingExtractor, ExdirSortingExtractor
 from .extractors.intanrecordingextractor.intanrecordingextractor import IntanRecordingExtractor
+from .extractors.hdsortsortingextractor.hdsortsortingextractor import HDSortSortingExtractor
 from .extractors.hs2sortingextractor.hs2sortingextractor import HS2SortingExtractor
 from .extractors.klustaextractors.klustaextractors import KlustaSortingExtractor, KlustaRecordingExtractor
 from .extractors.kilosortextractors.kilosortextractors import KiloSortSortingExtractor, KiloSortRecordingExtractor
@@ -58,6 +59,7 @@ sorting_extractor_full_list = [
     MdaSortingExtractor,
     MEArecSortingExtractor,
     ExdirSortingExtractor,
+    HDSortSortingExtractor,
     HS2SortingExtractor,
     KlustaSortingExtractor,
     KiloSortSortingExtractor,

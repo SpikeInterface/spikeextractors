@@ -6,7 +6,7 @@ services:
 python:
 - '3.6'
 install:
-- pip install mountainlab_pytools pynwb==1.2.1 pyopenephys kbucket h5py MEArec exdir ruamel.yaml nixio shybrid neo>=0.8
+- pip install mountainlab_pytools pynwb==1.2.1 pyopenephys kbucket h5py MEArec exdir ruamel.yaml nixio shybrid neo>=0.8 hdf5storage
 - pip install .
 - pip install pytest==3.6
 script: pytest

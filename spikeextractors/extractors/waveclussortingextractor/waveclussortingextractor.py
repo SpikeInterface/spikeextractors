@@ -16,7 +16,7 @@ class WaveClusSortingExtractor(MATSortingExtractor):
     extractor_name = "WaveClusSortingExtractor"
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, file_path: PathType, keep_good_only: bool = False):
+    def __init__(self, file_path: PathType):
         super().__init__(file_path)
         cluster_classes = self._getfield("cluster_class")
         classes = cluster_classes[:, 0]
