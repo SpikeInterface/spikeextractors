@@ -11,7 +11,7 @@ PathType = Union[str, Path]
 class HDSortSortingExtractor(MATSortingExtractor):
     extractor_name = "HDSortSortingExtractor"
 
-    def __init__(self, file_path: PathType, remove_noise_units: bool = True):
+    def __init__(self, file_path: PathType, keep_good_only: bool = True):
         super().__init__(file_path)
 
         if not self._old_style_mat:
@@ -29,7 +29,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
             self._sampling_frequency = float(sr)
 
             # Remove noise units if necessary:
-            if remove_noise_units:
+            if keep_good_only:
                 units = [unit for unit in units if unit["ID"].flatten()[0].astype(int) % 1000 != 0]
 
             if 'sortingInfo' in self._data.keys():
@@ -61,7 +61,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
             self._sampling_frequency = self._getfield("samplingRate").ravel()
 
             # Remove noise units if necessary:
-            if remove_noise_units:
+            if keep_good_only:
                 units = [unit for unit in units if unit["ID"].flatten()[0].astype(int) % 1000 != 0]
 
             if 'sortingInfo' in self._data.keys():
@@ -100,7 +100,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
         self._units = units
         self._multi_electrode = multi_electrode
-        self._kwargs['remove_noise_units'] = remove_noise_units
+        self._kwargs['keep_good_only'] = keep_good_only
 
     @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
