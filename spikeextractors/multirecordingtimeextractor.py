@@ -2,8 +2,8 @@ from .recordingextractor import RecordingExtractor
 from .extraction_tools import check_get_traces_args
 import numpy as np
 
-# Concatenates the given recordings by time
 
+# Concatenates the given recordings by time
 class MultiRecordingTimeExtractor(RecordingExtractor):
     def __init__(self, recordings, epoch_names=None):
         self._recordings = recordings
