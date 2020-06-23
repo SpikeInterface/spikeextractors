@@ -94,7 +94,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         if len(unit_ids) > 0:
             spiketrains = [sorting.get_unit_spike_train(u) for u in unit_ids]
             res = np.concatenate(spiketrains).ravel()
-            clu = np.concatenate([np.repeat(i+2,len(st)) for i,st in enumerate(spiketrains)]).ravel()
+            clu = np.concatenate([np.repeat(i+1,len(st)) for i,st in enumerate(spiketrains)]).ravel() # i here counts from 0
             res_sort = np.argsort(res)
             res = res[res_sort]
             clu = clu[res_sort]
@@ -102,7 +102,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             res = []
             clu = []
         # add fake 'unit 1'
-        # Cody: Why? Commenting this out as it seems problematic for the testing method
+        # Cody: Why is this here? commenting it out for now
         # clu = np.insert(clu, 0, 1)
         # res = np.insert(res, 0, 1)
         clu = np.insert(clu, 0, len(unit_ids)+1) # The +1 is necessary here b/c the convention for the base sorting object is from 1,...,nUnits

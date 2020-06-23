@@ -421,7 +421,6 @@ class TestExtractors(unittest.TestCase):
         check_dumping(SX_neuroscope)
         SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile, keep_mua_units=False)
         check_sorting_return_types(SX_neuroscope_no_mua)
-        check_sortings_equal(self.SX, SX_neuroscope_no_mua)
         check_dumping(SX_neuroscope_no_mua)
         
         # Extra test to ensure arguments resulted in the right output
