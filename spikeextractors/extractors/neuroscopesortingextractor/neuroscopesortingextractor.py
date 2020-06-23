@@ -37,17 +37,22 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     is_writable = True
     mode = 'custom'
 
-    def __init__(self, resfile, clufile, keep_mua_units=True):
-        SortingExtractor.__init__(self)
-        res = np.loadtxt(resfile, dtype=np.int64, usecols=0, ndmin=1)
-        clu = np.loadtxt(clufile, dtype=np.int64, usecols=0, ndmin=1)
+    def __init__(self, resfile_path, clufile_path):
+        SortingExtractor.__init__(self, resfile_path, clufile_path, keep_mua_units=True)
+        self._kwargs = {'resfile_path': str(Path(resfile).absolute()),
+                        'clufile_path': str(Path(clufile).absolute()),
+                        'keep_mua_units': keep_mua_units}
+        
+        
+        res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
+        clu = np.loadtxt(clufile_path, dtype=np.int64, usecols=0, ndmin=1)
         if len(res) > 0:
             # Extract the number of clusters read as the first line of the clufile
             # then remove it from the clu list
             n_clu = clu[0]
             clu = np.delete(clu, 0)
             
-            # Initialize spiketrains and extract times from .res and appropriate clusters from .clu
+            # Initialize spike trains and extract times from .res and appropriate clusters from .clu
             # based on user input for ignoring multi-unit activity
             self._spiketrains = []
             if keep_mua_units: # default
@@ -99,9 +104,11 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             res = []
             clu = []
         # add fake 'unit 1'
-        clu = np.insert(clu, 0, 1)
-        res = np.insert(res, 0, 1)
-        clu = np.insert(clu, 0, len(unit_ids)+1)
+        # Cody: Why? Commenting this out as it seems problematic for the testing method
+        # clu = np.insert(clu, 0, 1)
+        # res = np.insert(res, 0, 1)
+        # clu = np.insert(clu, 0, len(unit_ids)+1) # the + 1 seems to make the format believe there is an additional cluster
+        clu = np.insert(clu, 0, len(unit_ids))
 
         np.savetxt(save_res, res, fmt='%i')
         np.savetxt(save_clu, clu, fmt='%i')

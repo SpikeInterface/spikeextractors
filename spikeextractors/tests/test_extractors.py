@@ -5,7 +5,7 @@ import unittest
 import tempfile
 import shutil
 import spikeextractors as se
-from .utils import check_sortings_equal, check_recordings_equal, check_dumping, check_recording_return_types, \
+from utils import check_sortings_equal, check_recordings_equal, check_dumping, check_recording_return_types, \
     check_sorting_return_types
 from spikeextractors.exceptions import NotDumpableExtractorError
 
@@ -410,6 +410,26 @@ class TestExtractors(unittest.TestCase):
         check_recording_return_types(RX_shybrid)
         check_recordings_equal(self.RX, RX_shybrid)
         check_dumping(RX_shybrid)
+        
+    def test_neuroscope_extractor(self):
+        se.NeuroscopeSortingExtractor.write_sorting(self.SX, self.test_dir)
+        initial_sorting_resfile = "{}.res".format(self.test_dir)
+        initial_sorting_clufile = "{}.clu".format(self.test_dir)
+        SX_neuroscope = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile)
+        check_sorting_return_types(SX_neuroscope)
+        check_sortings_equal(self.SX, SX_neuroscope)
+        check_dumping(SX_neuroscope)
+        SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile, keep_mua_units=False)
+        check_sorting_return_types(SX_neuroscope_no_mua)
+        check_sortings_equal(self.SX, SX_neuroscope_no_mua)
+        check_dumping(SX_neuroscope_no_mua)
+        
+        # Extra test to ensure arguments resulted in the right output
+        units_ids = SX_neuroscope.get_unit_ids()
+        no_mua_units_ids = SX_neuroscope_no_mua.get_unit_ids()
+        
+        self.assertEqual(list(units_ids), list(range(1,nUnits)))
+        self.assertEqual(list(no_mua_units_ids), list(range(1,nUnits-1)))
 
 
 if __name__ == '__main__':
