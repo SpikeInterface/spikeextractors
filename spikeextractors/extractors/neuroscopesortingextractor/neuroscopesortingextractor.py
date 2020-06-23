@@ -39,10 +39,6 @@ class NeuroscopeSortingExtractor(SortingExtractor):
 
     def __init__(self, resfile_path, clufile_path, keep_mua_units=True):
         SortingExtractor.__init__(self)
-        self._kwargs = {'resfile_path': str(Path(resfile_path).absolute()),
-                        'clufile_path': str(Path(clufile_path).absolute()),
-                        'keep_mua_units': keep_mua_units}
-        
         
         res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
         clu = np.loadtxt(clufile_path, dtype=np.int64, usecols=0, ndmin=1)
@@ -70,8 +66,10 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         else:
             self._spiketrains = []
             self._unit_ids = []
-        self._kwargs = {'resfile': str(Path(resfile).absolute()),
-                        'clufile': str(Path(clufile).absolute())}
+            
+        self._kwargs = {'resfile_path': str(Path(resfile_path).absolute()),
+            'clufile_path': str(Path(clufile_path).absolute()),
+            'keep_mua_units': keep_mua_units}
 
 
     def get_unit_ids(self):
