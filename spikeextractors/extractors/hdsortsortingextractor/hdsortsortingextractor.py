@@ -23,10 +23,8 @@ class HDSortSortingExtractor(MATSortingExtractor):
             multi_electrode = dict((k, _ME.get(k)[()]) for k in _ME.keys())
 
             # Extracting sampling_frequency:
-            sr = self._getfield("samplingRate")
-            while not isinstance(sr, (int, float, np.integer, np.float)):
-                sr = sr[0]
-            self._sampling_frequency = float(sr)
+            sr = self._data["samplingRate"]
+            self._sampling_frequency = float(_squeeze_ds(sr))
 
             # Remove noise units if necessary:
             if keep_good_only:
@@ -50,15 +48,10 @@ class HDSortSortingExtractor(MATSortingExtractor):
                 units.append(unit_dict)
 
             sr = self._getfield("samplingRate")
-            while not isinstance(sr, (int, float, np.integer, np.float)):
-                sr = sr[0]
-            self._sampling_frequency = float(sr)
+            self._sampling_frequency = float(_squeeze_ds(sr))
 
             _ME = self._data["MultiElectrode"]
             multi_electrode = dict((k, _ME[k][0][0].T) for k in _ME.dtype.fields.keys())
-
-            # Extracting sampling_frequency:
-            self._sampling_frequency = self._getfield("samplingRate").ravel()
 
             # Remove noise units if necessary:
             if keep_good_only:

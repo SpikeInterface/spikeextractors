@@ -231,10 +231,24 @@ class TestExtractors(unittest.TestCase):
         path = self.test_dir + '/results_test_hdsort_extractor.mat'
         locations = np.ones((10,2))
         se.HDSortSortingExtractor.write_sorting(self.SX, path, locations=locations, noise_std_by_channel=None)
-        SX_mda = se.HDSortSortingExtractor(path)
-        check_sorting_return_types(SX_mda)
-        check_sortings_equal(self.SX, SX_mda)
-        check_dumping(SX_mda)
+        SX_hd = se.HDSortSortingExtractor(path)
+        check_sorting_return_types(SX_hd)
+        check_sortings_equal(self.SX, SX_hd)
+        check_dumping(SX_hd)
+
+    def test_npz_extractor(self):
+        path = self.test_dir + '/sorting.npz'
+        se.NpzSortingExtractor.write_sorting(self.SX, path)
+        SX_npz = se.NpzSortingExtractor(path)
+
+        # empty write
+        sorting_empty = se.NumpySortingExtractor()
+        path_empty = self.test_dir + '/sorting_empty.npz'
+        se.NpzSortingExtractor.write_sorting(sorting_empty, path_empty)
+
+        check_sorting_return_types(SX_npz)
+        check_sortings_equal(self.SX, SX_npz)
+        check_dumping(SX_npz)
 
     def test_biocam_extractor(self):
         path1 = self.test_dir + '/raw.brw'
@@ -243,6 +257,14 @@ class TestExtractors(unittest.TestCase):
         check_recording_return_types(RX_biocam)
         check_recordings_equal(self.RX, RX_biocam)
         check_dumping(RX_biocam)
+
+    def test_mea1k_extractors(self):
+        path1 = self.test_dir + '/raw.h5'
+        se.Mea1kRecordingExtractor.write_recording(self.RX, path1)
+        RX_mea1k = se.Mea1kRecordingExtractor(path1)
+        check_recording_return_types(RX_mea1k)
+        check_recordings_equal(self.RX, RX_mea1k)
+        check_dumping(RX_mea1k)
 
     def test_mearec_extractors(self):
         path1 = self.test_dir + '/raw.h5'

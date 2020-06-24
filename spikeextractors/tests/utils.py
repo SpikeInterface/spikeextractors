@@ -54,7 +54,7 @@ def check_recording_return_types(RX):
     assert (type(RX.get_sampling_frequency()) == float) or (type(RX.get_sampling_frequency()) == np.float64)
     assert type(RX.get_traces(start_frame=0, end_frame=10)) == np.ndarray
     for channel_id in channel_ids:
-        assert (type(channel_id) == int) or (type(channel_id) == np.int64)
+        assert isinstance(channel_id, (int, np.integer))
 
 
 def check_sorting_return_types(SX):
