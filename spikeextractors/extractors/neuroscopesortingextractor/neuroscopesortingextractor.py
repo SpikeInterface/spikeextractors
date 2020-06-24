@@ -17,13 +17,10 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         Unit ID 0 is the cluster of unsorted spikes (noise).
         Unit ID 1 is a cluster of multi-unit spikes.
         
-    The function defaults to returning multi-unit activity.
+    The function defaults to returning multi-unit activity, and ignoring unsorted noise.
     To return only the fully sorted units, set keep_mua_units=False.
         
     The sorting extractor always returns unit IDs from 1, ..., number of chosen clusters.
-        
-    Until get_unsorted_spike_train is implemented into the base for sortingextractor objects,
-    that group will be ignored by this function (consistent with the original implementation).
 
     Parameters
     ----------
@@ -53,14 +50,14 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             self._spiketrains = []
             if keep_mua_units: # default
                 n_clu -= 1;
-                self._unit_ids = list(x+1 for x in range(n_clu)) # generates list from 1,...,clu[0]-1
+                self._unit_ids = [x+1 for x in range(n_clu)] # generates list from 1,...,clu[0]-1
                 for s_id in self._unit_ids:
                     self._spiketrains.append(res[(clu == s_id).nonzero()])
             else:
                 # Ignoring IDs of 0 until get_unsorted_spike_train is implemented into base
                 # Also ignoring IDs of 1 since user called keep_mua_units=False
                 n_clu -= 2;
-                self._unit_ids = list(x+1 for x in range(n_clu)) # generates list from 1,...,clu[0]-2
+                self._unit_ids = [x+1 for x in range(n_clu)] # generates list from 1,...,clu[0]-2
                 for s_id in self._unit_ids:
                     self._spiketrains.append(res[(clu == s_id+1).nonzero()]) # only reading cluster IDs 2,...,clu[0]-1
         else:
@@ -101,10 +98,6 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         else:
             res = []
             clu = []
-        # add fake 'unit 1'
-        # Cody: Why is this here? commenting it out for now
-        # clu = np.insert(clu, 0, 1)
-        # res = np.insert(res, 0, 1)
         clu = np.insert(clu, 0, len(unit_ids)+1) # The +1 is necessary here b/c the convention for the base sorting object is from 1,...,nUnits
 
         np.savetxt(save_res, res, fmt='%i')
