@@ -19,9 +19,9 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     mode = 'folder'
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
 
-    def __init__(self, folder_path, *, experiment_id=0, recording_id=0, dtype='float'):
+    def __init__(self, folder_path, *, experiment_id=0, dtype='int32'):
         assert HAVE_OE, self.installation_mesg
-        assert dtype == 'int16' or 'float' in dtype, "'dtype' can be int16 (memory map) or 'float' (load into memory)"
+        assert dtype == 'int16' or 'int32' in dtype, "'dtype' can be int16 or 'int32' (both memory map)"
         RecordingExtractor.__init__(self)
         self._recording_file = folder_path
         self._recording = pyopenephys.File(folder_path).experiments[experiment_id].recordings[recording_id]

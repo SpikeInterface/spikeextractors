@@ -4,10 +4,62 @@ from pathlib import Path
 from spikeextractors.extraction_tools import check_valid_unit_id
 
 
+class NeuroscopeRecordingExtractor(RecordingExtractor):
+    
+    """
+    Extracts raw neural recordings from large binary .dat files in the neuroscope format.
+
+    Parameters
+    ----------
+    folder_path : str
+        Path to the folder containing the .dat file.
+    """
+    
+    extractor_name = 'NeuroscopeRecordingExtractor'
+    is_writable = True
+            
+    def __init__(self, folder_path, *, recording_id=0, dtype='float'):
+        RecordingExtractor.__init__(self)
+        self._recording_file = folder_path
+        
+        # Read in dtype from .xml in the folder path, as well as channel_ids, sampling frequency, number of frames...
+        #dtype = 1
+        #channel_ids = 1;
+        #num_frames = 1;
+        #sampling_frequency = 1;
+        assert dtype == 'int16' or 'float' in dtype, "'dtype' can be int16 (memory map) or 'float' (load into memory)"
+        #self._dtype = dtype;
+        #self._channel_ids = channel_ids;
+        #self._num_frames = num_frames;
+        #self._sampling_frequency = sampling_frequency;
+        
+        # fill in with correct command for neuroscope data, accounting for recording ID as well
+        #self._recording = pyopenephys.File(folder_path).recordings[recording_id]
+        #self._recording = 1;
+        
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute()),
+                        'recording_id': recording_id, 'dtype': dtype}
+
+    def get_channel_ids(self):
+        return list(range(self._recording.analog_signals[0].signal.shape[0]))
+
+    def get_num_frames(self):
+        return self._recording.analog_signals[0].signal.shape[1]
+
+    def get_sampling_frequency(self):
+        return float(self._recording.sample_rate.rescale('Hz').magnitude)
+
+    @check_get_traces_args
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        if self._dtype == 'int16' or self._dtype == 'int32':
+            # return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
+            #return self._recording[channel_ids, start_frame:end_frame]
+        
+
 class NeuroscopeSortingExtractor(SortingExtractor):
 
     """
-    Extracts sorting information from pair of .res and .clu files . The .res is a text file with
+    Extracts spiking information from pair of .res and .clu files. The .res is a text file with
     a sorted list of all spiketimes from all units displayed in sample (integer '%i') units.
     The .clu file is a file with one more row than the .res with the first row corresponding to
     the total number of unit ids and the rest of the rows indicating which unit id the corresponding
@@ -24,10 +76,12 @@ class NeuroscopeSortingExtractor(SortingExtractor):
 
     Parameters
     ----------
-    resfile : str
+    resfile_path : str
         Path to the .res text file.
-    clufile : str
+    clufile_path : str
         Path to the .clu text file.
+    keep_mua_units : bool
+        Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
     """
     extractor_name = 'NeuroscopeSortingExtractor'
     installed = True  # check at class level if installed or not
