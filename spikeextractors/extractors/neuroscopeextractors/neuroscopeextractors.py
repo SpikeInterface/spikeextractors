@@ -2,6 +2,7 @@ from spikeextractors import SortingExtractor
 import numpy as np
 from pathlib import Path
 from spikeextractors.extraction_tools import check_valid_unit_id
+from bs4 import BeautifulSoup
 
 
 class NeuroscopeRecordingExtractor(RecordingExtractor):
@@ -18,28 +19,36 @@ class NeuroscopeRecordingExtractor(RecordingExtractor):
     extractor_name = 'NeuroscopeRecordingExtractor'
     is_writable = True
             
-    def __init__(self, folder_path, *, recording_id=0, dtype='float'):
+    def __init__(self, folder_path):
         RecordingExtractor.__init__(self)
         self._recording_file = folder_path
         
-        # Read in dtype from .xml in the folder path, as well as channel_ids, sampling frequency, number of frames...
-        #dtype = 1
-        #channel_ids = 1;
-        #num_frames = 1;
-        #sampling_frequency = 1;
-        assert dtype == 'int16' or 'float' in dtype, "'dtype' can be int16 (memory map) or 'float' (load into memory)"
-        #self._dtype = dtype;
-        #self._channel_ids = channel_ids;
-        #self._num_frames = num_frames;
-        #self._sampling_frequency = sampling_frequency;
+        fpath_base, fname = os.path.split(folder_path)
+        xml_filepath = os.path.join(folder_path, fname + '.xml')
         
-        # fill in with correct command for neuroscope data, accounting for recording ID as well
-        #self._recording = pyopenephys.File(folder_path).recordings[recording_id]
-        #self._recording = 1;
+        with open(xml_filepath, 'r') as xml_file:
+            contents = xml_file.read()
+            soup = BeautifulSoup(contents, 'xml')
         
-        self._kwargs = {'folder_path': str(Path(folder_path).absolute()),
-                        'recording_id': recording_id, 'dtype': dtype}
+        n_bits = int(soup.nBits.string)
+        channel_ids = np.arange(1,int(soup.nChannels.string)+1)
+        num_frames = int(soup.nSamples.string);
+        sampling_frequency = float(soup.lfpSamplingRate.string);
+        
+        assert dtype == 'int16' or 'int32' in dtype, "'dtype' can be int16 or int32 (memory map)"
+        
+        self._dtype = bitType;
+        self._channel_ids = channel_ids;
+        self._num_frames = num_frames;
+        self._sampling_frequency = sampling_frequency;
+        
+        dat_filepath = os.path.join(folder_path, fname + '.dat')
+        self._recording = np.memmap(dat_filepath, mode='r', shape=(nSamples,nChannels), dtype='int'+str(n_bits)) # memmap reads row-wise
+        
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
+        
+    # Fix below here
     def get_channel_ids(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))
 
