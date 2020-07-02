@@ -6,6 +6,7 @@ services:
 python:
 - '3.6'
 install:
+- pip install matplotlib==3.1.2 # provisional fix for shybrid
 - pip install mountainlab_pytools pynwb==1.2.1 pyopenephys kbucket h5py MEArec exdir ruamel.yaml nixio shybrid neo>=0.8 hdf5storage
 - pip install .
 - pip install pytest==3.6
