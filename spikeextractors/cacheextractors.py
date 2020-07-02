@@ -91,7 +91,7 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
 
         if self._is_tmp:
             print("Warning: dumping a CacheRecordingExtractor. The path to the tmp binary file will be lost in "
-                  "further sessions. To prevent this, use the 'CacheRecordingExtractor.save_to_file('path-to-file)' "
+                  "further sessions. To prevent this, use the 'CacheRecordingExtractor.move_to('path-to-file)' "
                   "function")
 
         dump_dict = {'class': class_name, 'module': module, 'kwargs': self._bindat_kwargs,
@@ -175,7 +175,7 @@ class CacheSortingExtractor(NpzSortingExtractor, SortingExtractor):
 
         if self._is_tmp:
             print("Warning: dumping a CacheSortingExtractor. The path to the tmp binary file will be lost in "
-                  "further sessions. To prevent this, use the 'CacheSortingExtractor.save_to_file('path-to-file)' "
+                  "further sessions. To prevent this, use the 'CacheSortingExtractor.move_to('path-to-file)' "
                   "function")
 
         dump_dict = {'class': class_name, 'module': module, 'kwargs': self._npz_kwargs,
