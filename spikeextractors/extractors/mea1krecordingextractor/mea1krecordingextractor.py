@@ -40,7 +40,7 @@ class Mea1kRecordingExtractor(RecordingExtractor):
             try:
                 self._version = self._filehandle['chipinformation']['software_version'][0].decode()
             except:
-                self._version = 'n.a.'
+                self._version = '20161003'
         print(f"Chip version: {self._version}")
         self._lsb = 1
         if int(self._version) == 20160704:
@@ -72,7 +72,7 @@ class Mea1kRecordingExtractor(RecordingExtractor):
         channels = np.array(self._mapping['channel'])
         electrodes = np.array(self._mapping['electrode'])
         # remove unused channels
-        self._channel_ids = list(channels[np.where(electrodes > 0)])
+        self._channel_ids = list(channels[np.where(electrodes > -1)])
         self._num_channels = len(self._channel_ids)
         self._num_frames = self._signals.shape[1]
 
@@ -116,6 +116,7 @@ class Mea1kRecordingExtractor(RecordingExtractor):
 
         with h5py.File(save_path, 'w') as f:
             f.create_group('ephys')
+            f.create_dataset('version', data=str(20161003))
             ephys = f['ephys']
             ephys.create_dataset('frame_rate', data=recording.get_sampling_frequency())
             ephys.create_dataset('frame_numbers', data=np.arange(recording.get_num_frames()))

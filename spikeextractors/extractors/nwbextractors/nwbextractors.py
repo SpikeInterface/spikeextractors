@@ -515,8 +515,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         '''
         assert HAVE_NWB, NwbRecordingExtractor.installation_mesg
 
-        # assert distutils.version.LooseVersion(pynwb.__version__) >= '1.3.3', \
-        #     "'write_recording' not supported for version < 1.3.3. Run pip install --upgrade pynwb"
+        assert distutils.version.LooseVersion(pynwb.__version__) >= '1.3.3', \
+            "'write_recording' not supported for version < 1.3.3. Run pip install --upgrade pynwb"
 
         if os.path.exists(save_path):
             read_mode = 'r+'

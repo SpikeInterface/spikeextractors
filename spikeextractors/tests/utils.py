@@ -3,6 +3,7 @@ import shutil
 from spikeextractors.extraction_tools import load_extractor_from_pickle, load_extractor_from_dict, \
     load_extractor_from_json
 import os
+import h5py
 from pathlib import Path
 
 
@@ -37,6 +38,13 @@ def check_recordings_equal(RX1, RX2):
 def check_recording_properties(RX1, RX2):
     # check properties
     assert sorted(RX1.get_shared_channel_property_names()) == sorted(RX2.get_shared_channel_property_names())
+    for prop in RX1.get_shared_channel_property_names():
+        for ch in RX1.get_channel_ids():
+            if not isinstance(RX1.get_channel_property(ch, prop), str):
+                assert np.allclose(np.array(RX1.get_channel_property(ch, prop)),
+                                   np.array(RX2.get_channel_property(ch, prop)))
+            else:
+                assert RX1.get_channel_property(ch, prop) == RX2.get_channel_property(ch, prop)
 
 
 def check_recording_return_types(RX):
@@ -46,7 +54,7 @@ def check_recording_return_types(RX):
     assert (type(RX.get_sampling_frequency()) == float) or (type(RX.get_sampling_frequency()) == np.float64)
     assert type(RX.get_traces(start_frame=0, end_frame=10)) == np.ndarray
     for channel_id in channel_ids:
-        assert (type(channel_id) == int) or (type(channel_id) == np.int64)
+        assert isinstance(channel_id, (int, np.integer))
 
 
 def check_sorting_return_types(SX):
@@ -74,9 +82,21 @@ def check_sorting_properties_features(SX1, SX2):
     print(SX1.__class__)
     print('Properties', sorted(SX1.get_shared_unit_property_names()), sorted(SX2.get_shared_unit_property_names()))
     assert sorted(SX1.get_shared_unit_property_names()) == sorted(SX2.get_shared_unit_property_names())
+    for prop in SX1.get_shared_unit_property_names():
+        for u in SX1.get_unit_ids():
+            if not isinstance(SX1.get_unit_property(u, prop), str):
+                assert np.allclose(np.array(SX1.get_unit_property(u, prop)),
+                                   np.array(SX2.get_unit_property(u, prop)))
+            else:
+                assert SX1.get_unit_property(u, prop) == SX2.get_unit_property(u, prop)
     # check features
     print('Features', sorted(SX1.get_shared_unit_spike_feature_names()), sorted(SX2.get_shared_unit_spike_feature_names()))
     assert sorted(SX1.get_shared_unit_spike_feature_names()) == sorted(SX2.get_shared_unit_spike_feature_names())
+    for feat in SX1.get_shared_unit_spike_feature_names():
+        for u in SX1.get_unit_ids():
+            assert np.allclose(np.array(SX1.get_unit_spike_features(u, feat)),
+                               np.array(SX2.get_unit_spike_features(u, feat)))
+
 
 
 def check_dumping(extractor):

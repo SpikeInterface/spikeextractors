@@ -1,10 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import json
-import os
-import tempfile
-from pathlib import Path
-import shutil
+
 from .extraction_tools import get_sub_extractors_by_property
 from .baseextractor import BaseExtractor
 
@@ -20,16 +16,7 @@ class SortingExtractor(ABC, BaseExtractor):
 
     def __init__(self):
         BaseExtractor.__init__(self)
-        self._epochs = {}
         self._sampling_frequency = None
-        self.id = np.random.randint(low=0, high=9223372036854775807, dtype='int64')
-
-    def __del__(self):
-        if self._tmp_folder is not None:
-            try:
-                shutil.rmtree(self._tmp_folder)
-            except Exception as e:
-                print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
 
     @abstractmethod
     def get_unit_ids(self):

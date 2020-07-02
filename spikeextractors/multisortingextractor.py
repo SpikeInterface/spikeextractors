@@ -5,7 +5,6 @@ from .extraction_tools import check_valid_unit_id
 
 
 # Encapsulates a grouping of non-continuous sorting extractors
-
 class MultiSortingExtractor(SortingExtractor):
     def __init__(self, sortings):
         SortingExtractor.__init__(self)
@@ -13,7 +12,7 @@ class MultiSortingExtractor(SortingExtractor):
         self._all_unit_ids = []
         self._unit_map = {}
 
-        u_id  = 0
+        u_id = 0
         for s_i, sorting in enumerate(self._sortings):
             unit_ids = sorting.get_unit_ids()
             for unit_id in unit_ids:

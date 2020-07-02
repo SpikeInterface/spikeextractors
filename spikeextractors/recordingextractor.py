@@ -1,9 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import tempfile
-import shutil
-import random
-from pathlib import Path
+
 from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, \
     write_to_h5_dataset_format, get_sub_extractors_by_property, cast_start_end_frame
 from .baseextractor import BaseExtractor
@@ -21,15 +18,7 @@ class RecordingExtractor(ABC, BaseExtractor):
     def __init__(self):
         BaseExtractor.__init__(self)
         self._key_properties = {'group': None, 'location': None}
-        self._epochs = {}
-        self.id = random.randint(a=0, b=9223372036854775807)
-
-    def __del__(self):
-        if getattr(self, '_tmp_folder', None):
-            try:
-                shutil.rmtree(self._tmp_folder)
-            except Exception as e:
-                print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
+        self.is_filtered = False
 
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):

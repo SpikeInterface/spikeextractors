@@ -1,9 +1,6 @@
 from pathlib import Path
 import re
 from typing import Union
-
-from scipy.spatial.distance import cdist
-
 import numpy as np
 
 from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor, HAVE_MAT
@@ -32,7 +29,7 @@ class JRCSortingExtractor(MATSortingExtractor):
         mean_waveforms_raw = self._getfield("meanWfGlobalRaw").T
 
         # try to extract various parameters from the .prm file
-        self._kwargs["bit_scaling"] = np.float32(0.30518)  # conversion factor for ADC units -> µV
+        self._bit_scaling = np.float32(0.30518)  # conversion factor for ADC units -> µV
         sample_rate = 30000.
         filter_type = "ndiff"
         ndiff_order = 2
@@ -57,7 +54,7 @@ class JRCSortingExtractor(MATSortingExtractor):
                     pass
             elif key == "bitScaling":
                 try:
-                    self._kwargs["bit_scaling"] = np.float32(val)
+                    self._bit_scaling = np.float32(val)
                 except (IndexError, ValueError):
                     pass
             elif key == "filterType":
@@ -84,9 +81,9 @@ class JRCSortingExtractor(MATSortingExtractor):
 
         self.set_sampling_frequency(sample_rate)
         if filter_type == "sgdiff":
-            self._kwargs["bit_scaling"] /= (2 * (np.arange(1, ndiff_order + 1) ** 2).sum())
+            self._bit_scaling /= (2 * (np.arange(1, ndiff_order + 1) ** 2).sum())
         elif filter_type == "ndiff":
-            self._kwargs["bit_scaling"] /= 2
+            self._bit_scaling /= 2
 
         # traces, features
         raw_file = Path(file_path.parent, file_path.name.replace("_res.mat", "_raw.jrc"))
@@ -104,7 +101,7 @@ class JRCSortingExtractor(MATSortingExtractor):
         self._cluster_features = np.memmap(features_file, dtype=np.float32, mode="r",
                                            shape=features_shape, order="F")
 
-        neighbors = self._find_site_neighbors(site_locs, raw_shape[1], shank_map)  # get nearest neighbors for each site
+        neighbors = _find_site_neighbors(site_locs, raw_shape[1], shank_map)  # get nearest neighbors for each site
 
         # nonpositive clusters are noise or deleted units
         if keep_good_only:
@@ -135,20 +132,6 @@ class JRCSortingExtractor(MATSortingExtractor):
 
         self._kwargs["keep_good_only"] = keep_good_only
 
-    def _find_site_neighbors(self, site_locs, n_neighbors, shank_map):
-        if np.unique(shank_map).size <= 1:
-            pass
-
-        n_sites = site_locs.shape[0]
-        n_neighbors = int(min(n_neighbors, n_sites))
-
-        neighbors = np.zeros((n_sites, n_neighbors), dtype=np.int)
-        for i in range(n_sites):
-            i_loc = site_locs[i, :][np.newaxis, :]
-            dists = cdist(i_loc, site_locs).ravel()
-            neighbors[i, :] = dists.argsort()[:n_neighbors]
-
-        return neighbors
 
     @check_valid_unit_id
     def get_unit_spike_features(self, unit_id, feature_name, start_frame=None, end_frame=None):
@@ -157,9 +140,9 @@ class JRCSortingExtractor(MATSortingExtractor):
 
         mask = self._unit_masks[unit_id]
         if feature_name == "raw_traces":
-            return self._raw_traces[:, :, mask] * self._kwargs["bit_scaling"]
+            return self._raw_traces[:, :, mask] * self._bit_scaling
         elif feature_name == "filtered_traces":
-            return self._filt_traces[:, :, mask] * self._kwargs["bit_scaling"]
+            return self._filt_traces[:, :, mask] * self._bit_scaling
         else:
             return self._cluster_features[:, :, mask]
 
@@ -179,3 +162,21 @@ class JRCSortingExtractor(MATSortingExtractor):
 
     def get_unit_ids(self):
         return self._unit_ids.tolist()
+
+
+def _find_site_neighbors(site_locs, n_neighbors, shank_map):
+    from scipy.spatial.distance import cdist
+
+    if np.unique(shank_map).size <= 1:
+        pass
+
+    n_sites = site_locs.shape[0]
+    n_neighbors = int(min(n_neighbors, n_sites))
+
+    neighbors = np.zeros((n_sites, n_neighbors), dtype=np.int)
+    for i in range(n_sites):
+        i_loc = site_locs[i, :][np.newaxis, :]
+        dists = cdist(i_loc, site_locs).ravel()
+        neighbors[i, :] = dists.argsort()[:n_neighbors]
+
+    return neighbors

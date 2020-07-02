@@ -27,7 +27,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         self._timeseries_path = os.path.abspath(timeseries0)
         geom0 = dataset_directory / geom_fname
         self._geom_fname = geom0
-        self._geom = np.genfromtxt(self._geom_fname, delimiter=',')
+        self._geom = np.loadtxt(self._geom_fname, delimiter=',',ndmin=2)
         X = DiskReadMda(self._timeseries_path)
         if self._geom.shape[0] != X.N1():
             raise Exception(
