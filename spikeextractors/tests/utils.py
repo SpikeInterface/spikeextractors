@@ -3,7 +3,6 @@ import shutil
 from spikeextractors.extraction_tools import load_extractor_from_pickle, load_extractor_from_dict, \
     load_extractor_from_json
 import os
-import h5py
 from pathlib import Path
 
 
