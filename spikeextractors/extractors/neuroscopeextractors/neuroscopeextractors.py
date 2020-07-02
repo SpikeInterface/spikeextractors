@@ -1,14 +1,21 @@
-from spikeextractors import SortingExtractor
+from spikeextractors import RecordingExtractor,SortingExtractor
+from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 import numpy as np
 from pathlib import Path
-from spikeextractors.extraction_tools import check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args,check_valid_unit_id
 from bs4 import BeautifulSoup
+import os
+
 
 
 class NeuroscopeRecordingExtractor(RecordingExtractor):
     
     """
     Extracts raw neural recordings from large binary .dat files in the neuroscope format.
+    
+    The recording extractor always returns channel IDs starting from 0.
+    
+    The recording data will always be returned in the shape of (num_channels,num_frames).
 
     Parameters
     ----------
@@ -17,7 +24,10 @@ class NeuroscopeRecordingExtractor(RecordingExtractor):
     """
     
     extractor_name = 'NeuroscopeRecordingExtractor'
+    installed = True  # check at class level if installed or not
     is_writable = True
+    mode = 'folder'
+    installation_mesg = ""  # error message when not installed
             
     def __init__(self, folder_path):
         RecordingExtractor.__init__(self)
@@ -28,41 +38,85 @@ class NeuroscopeRecordingExtractor(RecordingExtractor):
         
         with open(xml_filepath, 'r') as xml_file:
             contents = xml_file.read()
-            soup = BeautifulSoup(contents, 'xml')
+            soup = BeautifulSoup(contents, 'lxml')
+            # Normally, this would be a .xml, but there were strange issues
+            # in the write_recording method that require it to be a .lxml instead
+            # which also requires all capital letters to be removed from the tag names
         
-        n_bits = int(soup.nBits.string)
-        channel_ids = np.arange(1,int(soup.nChannels.string)+1)
-        num_frames = int(soup.nSamples.string);
-        sampling_frequency = float(soup.lfpSamplingRate.string);
+        n_bits = int(soup.nbits.string)
+        num_channels = int(soup.nchannels.string)
+        channel_ids = np.arange(num_channels)
+        num_frames = int(soup.nsamples.string)
+        sampling_frequency = float(soup.lfpsamplingrate.string)
         
-        assert dtype == 'int16' or 'int32' in dtype, "'dtype' can be int16 or int32 (memory map)"
-        
-        self._dtype = bitType;
-        self._channel_ids = channel_ids;
-        self._num_frames = num_frames;
-        self._sampling_frequency = sampling_frequency;
+        self._channel_ids = channel_ids
+        self._num_frames = num_frames
+        self._sampling_frequency = sampling_frequency
         
         dat_filepath = os.path.join(folder_path, fname + '.dat')
-        self._recording = np.memmap(dat_filepath, mode='r', shape=(nSamples,nChannels), dtype='int'+str(n_bits)) # memmap reads row-wise
+        self._recording = np.memmap(dat_filepath, mode='r', shape=(num_channels,num_frames), dtype='int'+str(n_bits)) # memmap reads row-wise
         
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
-
-        
-    # Fix below here
+    
     def get_channel_ids(self):
-        return list(range(self._recording.analog_signals[0].signal.shape[0]))
+        return self._channel_ids
 
     def get_num_frames(self):
-        return self._recording.analog_signals[0].signal.shape[1]
+        return self._num_frames
 
     def get_sampling_frequency(self):
-        return float(self._recording.sample_rate.rescale('Hz').magnitude)
+        return self._sampling_frequency
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        if self._dtype == 'int16' or self._dtype == 'int32':
-            # return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
-            #return self._recording[channel_ids, start_frame:end_frame]
+        return self._recording[channel_ids,start_frame:end_frame]
+            
+    @staticmethod
+    def write_recording(recording, save_path):
+        """ Convert and save the recording extractor to SHYBRID format
+
+        parameters
+        ----------
+        recording: RecordingExtractor
+            The recording extractor to be converted and saved
+        save_path: str
+            Full path to desired target folder
+        """
+        RECORDING_NAME = save_path + '.dat'
+        PARAMETERS_NAME = save_path + '.xml'
+
+        # write recording
+        recording_fn = os.path.join(save_path, RECORDING_NAME)
+        BinDatRecordingExtractor.write_recording(recording, recording_fn,
+                                                 time_axis=1, dtype=str(recording.get_dtype()))
+
+        # create parameters file
+        soup = BeautifulSoup("",'xml')
+        
+        new_tag = soup.new_tag('nbits')
+        dataType = recording.get_dtype();
+        assert any([dataType == x for x in ['int16', 'int32']]),"NeuroscopeRecordingExtractor only permits data of type 'int16' or 'int32'"
+        nBits = str(dataType)[3:5]
+        new_tag.string = str(nBits)
+        soup.append(new_tag)
+        
+        new_tag = soup.new_tag('nchannels')
+        new_tag.string = str(len(recording.get_channel_ids()))
+        soup.append(new_tag)
+        
+        new_tag = soup.new_tag('nsamples')
+        new_tag.string = str(recording.get_num_frames())
+        soup.append(new_tag)
+        
+        new_tag = soup.new_tag('lfpsamplingrate')
+        new_tag.string = str(recording.get_sampling_frequency())
+        soup.append(new_tag)
+
+        # write parameters file
+        parameters_fn = os.path.join(save_path, PARAMETERS_NAME)
+        f = open(parameters_fn, "w")
+        f.write(str(soup))
+        f.close()
         
 
 class NeuroscopeSortingExtractor(SortingExtractor):
@@ -96,6 +150,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     installed = True  # check at class level if installed or not
     is_writable = True
     mode = 'custom'
+    installation_mesg = ""  # error message when not installed
 
     def __init__(self, resfile_path, clufile_path, keep_mua_units=True):
         SortingExtractor.__init__(self)

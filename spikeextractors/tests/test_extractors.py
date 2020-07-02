@@ -443,6 +443,23 @@ class TestExtractors(unittest.TestCase):
         check_dumping(RX_shybrid)
         
     def test_neuroscope_extractor(self):
+        # NeuroscopeRecordingExtractor tests
+        path1 = self.test_dir + '/test'
+        se.NeuroscopeRecordingExtractor.write_recording(self.RX, path1)
+        RX_ns = se.NeuroscopeRecordingExtractor(path1)
+        check_recording_return_types(RX_ns)
+        check_recordings_equal(self.RX, RX_ns)
+        check_dumping(RX_ns)
+
+        del RX_ns
+        # overwrite
+        se.NeuroscopeRecordingExtractor.write_recording(recording=self.RX, save_path=path1)
+        RX_ns = se.NeuroscopeRecordingExtractor(path1)
+        check_recording_return_types(RX_ns)
+        check_recordings_equal(self.RX, RX_ns)
+        check_dumping(RX_ns)
+        
+        # NeuroscopeSortingExtractor tests
         se.NeuroscopeSortingExtractor.write_sorting(self.SX, self.test_dir)
         initial_sorting_resfile = "{}.res".format(self.test_dir)
         initial_sorting_clufile = "{}.clu".format(self.test_dir)
@@ -454,7 +471,7 @@ class TestExtractors(unittest.TestCase):
         check_sorting_return_types(SX_neuroscope_no_mua)
         check_dumping(SX_neuroscope_no_mua)
         
-        # Extra test to ensure arguments resulted in the right output
+        # Extra test for NeuroscopeSortingExtractor to ensure extra arguments resulted in the right output
         units_ids = SX_neuroscope.get_unit_ids()
         no_mua_units_ids = SX_neuroscope_no_mua.get_unit_ids()
         

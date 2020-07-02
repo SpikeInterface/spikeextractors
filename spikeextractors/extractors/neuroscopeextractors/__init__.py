@@ -1,1 +1,1 @@
-from .neuroscopesortingextractor import NeuroscopeSortingExtractor
+from .neuroscopeextractors import NeuroscopeRecordingExtractor,NeuroscopeSortingExtractor
