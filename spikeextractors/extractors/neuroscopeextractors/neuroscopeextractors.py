@@ -73,7 +73,7 @@ class NeuroscopeRecordingExtractor(RecordingExtractor):
             
     @staticmethod
     def write_recording(recording, save_path):
-        """ Convert and save the recording extractor to SHYBRID format
+        """ Convert and save the recording extractor to Neuroscope format
 
         parameters
         ----------
@@ -83,40 +83,40 @@ class NeuroscopeRecordingExtractor(RecordingExtractor):
             Full path to desired target folder
         """
         RECORDING_NAME = save_path + '.dat'
-        PARAMETERS_NAME = save_path + '.xml'
+        save_xml = "{}/{}.xml".format(save_path,save_path)
 
         # write recording
         recording_fn = os.path.join(save_path, RECORDING_NAME)
         BinDatRecordingExtractor.write_recording(recording, recording_fn,
                                                  time_axis=1, dtype=str(recording.get_dtype()))
 
-        # create parameters file
-        soup = BeautifulSoup("",'xml')
-        
-        new_tag = soup.new_tag('nbits')
-        dataType = recording.get_dtype();
-        assert any([dataType == x for x in ['int16', 'int32']]),"NeuroscopeRecordingExtractor only permits data of type 'int16' or 'int32'"
-        nBits = str(dataType)[3:5]
-        new_tag.string = str(nBits)
-        soup.append(new_tag)
-        
-        new_tag = soup.new_tag('nchannels')
-        new_tag.string = str(len(recording.get_channel_ids()))
-        soup.append(new_tag)
-        
-        new_tag = soup.new_tag('nsamples')
-        new_tag.string = str(recording.get_num_frames())
-        soup.append(new_tag)
-        
-        new_tag = soup.new_tag('lfpsamplingrate')
-        new_tag.string = str(recording.get_sampling_frequency())
-        soup.append(new_tag)
+        # create parameters file if none exists
+        if not os.path.isfile(save_xml):
+            soup = BeautifulSoup("",'xml')
 
-        # write parameters file
-        parameters_fn = os.path.join(save_path, PARAMETERS_NAME)
-        f = open(parameters_fn, "w")
-        f.write(str(soup))
-        f.close()
+            new_tag = soup.new_tag('nbits')
+            dataType = recording.get_dtype();
+            assert any([dataType == x for x in ['int16', 'int32']]),"NeuroscopeRecordingExtractor only permits data of type 'int16' or 'int32'"
+            nBits = str(dataType)[3:5]
+            new_tag.string = str(nBits)
+            soup.append(new_tag)
+
+            new_tag = soup.new_tag('nchannels')
+            new_tag.string = str(len(recording.get_channel_ids()))
+            soup.append(new_tag)
+
+            new_tag = soup.new_tag('nsamples')
+            new_tag.string = str(recording.get_num_frames())
+            soup.append(new_tag)
+
+            new_tag = soup.new_tag('lfpsamplingrate')
+            new_tag.string = str(recording.get_sampling_frequency())
+            soup.append(new_tag)
+
+            # write parameters file
+            f = open(save_xml, "w")
+            f.write(str(soup))
+            f.close()
         
 
 class NeuroscopeSortingExtractor(SortingExtractor):
@@ -168,9 +168,9 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         
         self._sampling_frequency = float(soup.lfpsamplingrate.string)
         
-        shank_channels = [[int(channel.string) for channel in group.find_all('channel')]
-                                       for group in soup.spikeDetection.channelGroups.find_all('group')]
-        n_shanks = len(get_shank_channels(session_path))
+        #shank_channels = [[int(channel.string) for channel in group.find_all('channel')]
+        #                               for group in soup.spikeDetection.channelGroups.find_all('group')]
+        #n_shanks = len(get_shank_channels(session_path))
         
         res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
         clu = np.loadtxt(clufile_path, dtype=np.int64, usecols=0, ndmin=1)
@@ -207,23 +207,44 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._unit_ids)
     
+    
     def get_sampling_frequency(self):
         return self._sampling_frequency
     
-    def merge_sorting_as_shanks(self,other_sorting)
+    
+    def add_unit(self, unit_id, spike_times):
+        '''This function adds a new unit with the given spike times.
+
+        Parameters
+        ----------
+        unit_id: int
+            The unit_id of the unit to be added.
+        '''
+        self._unit_ids.append(unit_id)
+        self._spiketrains.append(spike_times)
+    
+    
+    def merge_sorting(self,other_sorting):
         """
         Helper function for merging a second sorting extractor object into the first
-        with the new data being appended as additional shanks.
 
         Parameters
         ----------
         other_sorting : SortingExtractor object
         """
         # Merge IDS; make new incremental unit IDS if any overlap
-        #self._unit_ids = self._unit_ids
+        unit_ids_1 = self.get_unit_ids()
+        unit_ids_2 = other_sorting.get_unit_ids()
         
-        # If spiketrain is 1d, append new dimension then write second spiketrain as new column
-        # otherwise, append second spiketrain to the existing columns
+        shared_ids = list(set(unit_ids_1) & set(unit_ids_2))
+        exclusive_other_ids = list(set(unit_ids_2).difference(shared_ids))
+        
+        for id in exclusive_other_ids:
+            self.add_unit(id,other_sorting.get_unit_spike_train(id))
+            
+        id_shift = len(unit_ids_1)+len(exclusive_other_ids)
+        for id in shared_ids:
+            self.add_unit(id+id_shift,other_sorting.get_unit_spike_train(id))
         
 
     @check_valid_unit_id
@@ -239,8 +260,11 @@ class NeuroscopeSortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, save_path):
-        save_res = "{}.res".format(save_path)
-        save_clu = "{}.clu".format(save_path)
+        save_xml = "{}/{}.xml".format(save_path,save_path)
+            
+        # Create and save .res and .clu files from the current sorting object
+        save_res = "{}/{}.res".format(save_path,save_path)
+        save_clu = "{}/{}.clu".format(save_path,save_path)
         unit_ids = sorting.get_unit_ids()
         if len(unit_ids) > 0:
             spiketrains = [sorting.get_unit_spike_train(u) for u in unit_ids]
@@ -256,3 +280,16 @@ class NeuroscopeSortingExtractor(SortingExtractor):
 
         np.savetxt(save_res, res, fmt='%i')
         np.savetxt(save_clu, clu, fmt='%i')
+        
+        # create parameters file if none exists
+        if not os.path.isfile(save_xml):
+            soup = BeautifulSoup("",'xml')
+
+            new_tag = soup.new_tag('lfpsamplingrate')
+            new_tag.string = str(sorting.get_sampling_frequency())
+            soup.append(new_tag)
+
+            # write parameters file
+            f = open(save_xml, "w")
+            f.write(str(soup))
+            f.close()

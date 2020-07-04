@@ -471,28 +471,30 @@ class TestExtractors(unittest.TestCase):
         check_sorting_return_types(SX_neuroscope_no_mua)
         check_dumping(SX_neuroscope_no_mua)
         
+        # Tests for the merge_sorting functionalities
+        original_units_ids = SX_neuroscope.get_unit_ids()
+        num_original_units = len(original_units_ids)
         
-        # ToDo: tests of the shank merging functionality
-        se.NeuroscopeSortingExtractor.write_sorting(self.SX3, self.test_dir)
-        initial_sorting_resfile_1 = "{}.res.1".format(self.test_dir)
-        initial_sorting_clufile_1 = "{}.clu.1".format(self.test_dir)
-        initial_sorting_resfile_2 = "{}.res.2".format(self.test_dir)
-        initial_sorting_clufile_2 = "{}.clu.2".format(self.test_dir)
-        SX_neuroscope = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile)
-        check_sorting_return_types(SX_neuroscope)
-        check_sortings_equal(self.SX, SX_neuroscope)
-        check_dumping(SX_neuroscope)
+        SX_merge = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile)
+        se.NeuroscopeSortingExtractor.merge_sorting(SX_merge,SX_neuroscope)
+        SX_merge_2 = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile)
+        se.NeuroscopeSortingExtractor.merge_sorting(SX_merge_2,SX_merge)
+        
+        self.assertEqual(list(SX_merge.get_unit_ids()), list(range(1,2*num_original_units+1)))
+        self.assertEqual(list(SX_merge_2.get_unit_ids()), list(range(1,3*num_original_units+1)))
+        
+        check_sorting_return_types(SX_merge)
+        check_dumping(SX_merge)
+        check_sorting_return_types(SX_merge_2)
+        check_dumping(SX_merge_2)
+        
+        # Test for extra argument 'keep_mua_units' resulted in the right output
         SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile, keep_mua_units=False)
         check_sorting_return_types(SX_neuroscope_no_mua)
         check_dumping(SX_neuroscope_no_mua)
         
-        # Extra test for NeuroscopeSortingExtractor to ensure extra arguments resulted in the right output
-        units_ids = SX_neuroscope.get_unit_ids()
-        no_mua_units_ids = SX_neuroscope_no_mua.get_unit_ids()
-        
-        nUnits = len(SX_neuroscope.get_unit_ids())
-        self.assertEqual(list(units_ids), list(range(1,nUnits+1)))
-        self.assertEqual(list(no_mua_units_ids), list(range(1,nUnits)))
+        self.assertEqual(list(SX_neuroscope.get_unit_ids()), list(range(1,num_original_units+1)))
+        self.assertEqual(list(SX_neuroscope_no_mua.get_unit_ids()), list(range(1,num_original_units)))
 
 
 if __name__ == '__main__':
