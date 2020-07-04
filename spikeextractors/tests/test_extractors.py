@@ -459,10 +459,43 @@ class TestExtractors(unittest.TestCase):
         check_recordings_equal(self.RX, RX_ns)
         check_dumping(RX_ns)
         
-        # NeuroscopeSortingExtractor tests
+        # NeuroscopeSortingExtractor tests, original non-shank functionality
         se.NeuroscopeSortingExtractor.write_sorting(self.SX, self.test_dir)
         initial_sorting_resfile = "{}.res".format(self.test_dir)
         initial_sorting_clufile = "{}.clu".format(self.test_dir)
+        SX_neuroscope = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile)
+        check_sorting_return_types(SX_neuroscope)
+        check_sortings_equal(self.SX, SX_neuroscope)
+        check_dumping(SX_neuroscope)
+        SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile, keep_mua_units=False)
+        check_sorting_return_types(SX_neuroscope_no_mua)
+        check_dumping(SX_neuroscope_no_mua)
+        
+        # NeuroscopeSortingExtractor tests, new shank functionality
+        SX2 = self.SX
+        SX3 = self.SX
+        
+        # Sub-test of the shift_units function
+        se.NeuroscopeSortingExtractor.shift_units(SX2,len(self.SX.get_units()))
+        units_ids = self.SX.get_unit_ids()
+        nUnits = len(units_ids)
+        self.assertEqual(list(SX2.get_unit_ids()), list(range(nUnits+1,2*nUnits+1)))
+        
+        # Sub-test of the add_units function
+        se.NeuroscopeSortingExtractor.add_units(self.SX3,SX2.get_units())
+        self.assertEqual(list(SX3.get_unit_ids()), list(range(1,2*nUnits+1)))
+        
+        # Sub-test of the add_shank_spiketrain function
+        SX3._n_shanks = 2
+        se.NeuroscopeSortingExtractor.add_shank_spiketrain(SX3,SX3.get_unit_spike_train())
+        self.assertEqual(list(SX3.get_unit_ids()), list(range(1,2*nUnits+1)))
+        
+        # Test of new shank-based functionality
+        se.NeuroscopeSortingExtractor.write_sorting(self.SX3, self.test_dir)
+        initial_sorting_resfile_1 = "{}.res.1".format(self.test_dir)
+        initial_sorting_clufile_1 = "{}.clu.1".format(self.test_dir)
+        initial_sorting_resfile_2 = "{}.res.2".format(self.test_dir)
+        initial_sorting_clufile_2 = "{}.clu.2".format(self.test_dir)
         SX_neuroscope = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile)
         check_sorting_return_types(SX_neuroscope)
         check_sortings_equal(self.SX, SX_neuroscope)

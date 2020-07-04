@@ -140,9 +140,9 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     Parameters
     ----------
     resfile_path : str
-        Path to the .res text file.
+        Path to the collection of .res text file.
     clufile_path : str
-        Path to the .clu text file.
+        Path to the collection of .clu text file.
     keep_mua_units : bool
         Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
     """
@@ -154,6 +154,23 @@ class NeuroscopeSortingExtractor(SortingExtractor):
 
     def __init__(self, resfile_path, clufile_path, keep_mua_units=True):
         SortingExtractor.__init__(self)
+        
+        folder_path = os.path.split(resfile_path)[0]
+        fpath_base, fname = os.path.split(folder_path)
+        xml_filepath = os.path.join(folder_path, fname + '.xml')
+        
+        with open(xml_filepath, 'r') as xml_file:
+            contents = xml_file.read()
+            soup = BeautifulSoup(contents, 'lxml')
+            # Normally, this would be a .xml, but there were strange issues
+            # in the write_recording method that require it to be a .lxml instead
+            # which also requires all capital letters to be removed from the tag names
+        
+        self._sampling_frequency = float(soup.lfpsamplingrate.string)
+        
+        shank_channels = [[int(channel.string) for channel in group.find_all('channel')]
+                                       for group in soup.spikeDetection.channelGroups.find_all('group')]
+        n_shanks = len(get_shank_channels(session_path))
         
         res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
         clu = np.loadtxt(clufile_path, dtype=np.int64, usecols=0, ndmin=1)
@@ -189,9 +206,28 @@ class NeuroscopeSortingExtractor(SortingExtractor):
 
     def get_unit_ids(self):
         return list(self._unit_ids)
+    
+    def get_sampling_frequency(self):
+        return self._sampling_frequency
+    
+    def merge_sorting_as_shanks(self,other_sorting)
+        """
+        Helper function for merging a second sorting extractor object into the first
+        with the new data being appended as additional shanks.
+
+        Parameters
+        ----------
+        other_sorting : SortingExtractor object
+        """
+        # Merge IDS; make new incremental unit IDS if any overlap
+        #self._unit_ids = self._unit_ids
+        
+        # If spiketrain is 1d, append new dimension then write second spiketrain as new column
+        # otherwise, append second spiketrain to the existing columns
+        
 
     @check_valid_unit_id
-    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+    def get_unit_spike_train(self, unit_id, shank_id=None, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
