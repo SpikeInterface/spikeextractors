@@ -725,7 +725,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             # If no Units present in nwb file
             if nwbfile.units is None:
                 for id in ids:
-                    spkt = sorting.get_unit_spike_train(unit_id=id) / fs
+                    spkt = sorting.get_unit_spike_train(unit_id=id) / fs # spike trains withinin the SortingExtractor object are not scaled by sampling frequency
                     nwbfile.add_unit(id=id, spike_times=spkt)
 
             # Units properties
