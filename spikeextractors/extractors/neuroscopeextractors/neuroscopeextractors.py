@@ -2,11 +2,9 @@ from spikeextractors import RecordingExtractor,SortingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 import numpy as np
 from pathlib import Path
-from spikeextractors.extraction_tools import check_get_traces_args,check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args,check_valid_unit_id,read_binary
 from bs4 import BeautifulSoup
 import os
-
-
 
 class NeuroscopeRecordingExtractor(RecordingExtractor):
     
@@ -50,27 +48,28 @@ class NeuroscopeRecordingExtractor(RecordingExtractor):
         num_frames = int(num_elem/num_channels)
         channel_ids = np.arange(num_channels)
         sampling_frequency = float(soup.samplingrate.string)
-        
+
+        self._num_frames = num_frames
         self._channel_ids = channel_ids
         self._num_frames = num_frames
         self._sampling_frequency = sampling_frequency
-        
-        self._recording = np.memmap(dat_filepath, mode='r', shape=(num_frames,num_channels), dtype='int'+str(n_bits))
+
+        self._recording = read_binary(dat_filepath, num_channels, dtype='int'+str(n_bits))
         
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
     
     def get_channel_ids(self):
         return self._channel_ids
-
+    
     def get_num_frames(self):
         return self._num_frames
-
+    
     def get_sampling_frequency(self):
         return self._sampling_frequency
-
+    
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        return self._recording[start_frame:end_frame,channel_ids].transpose()
+        return self._recording[channel_ids,start_frame:end_frame]
             
     @staticmethod
     def write_recording(recording, save_path):
@@ -284,7 +283,18 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         else:
             res = []
             clu = []
-        clu = np.insert(clu, 0, len(unit_ids)+1)
+        
+        unique_ids = np.unique(clu)
+        n_clu = len(unique_ids)
+        
+#         if not unique_ids==np.arange(n_clu+1): # some missing IDs somewhere
+#             if 0 not in unique_ids: # missing unsorted IDs
+#                 n_clu += 1
+#             if 1 not in unique_ids: # missing mua IDs
+#                 n_clu += 1
+#             # If it is any other kinda of ID, then it is very strange that it is missing...
+            
+        clu = np.insert(clu, 0, n_clu) # The +1 is necessary here b/c the convention for the base sorting object is from 1,...,nUnits
 
         np.savetxt(save_res, res, fmt='%i')
         np.savetxt(save_clu, clu, fmt='%i')
