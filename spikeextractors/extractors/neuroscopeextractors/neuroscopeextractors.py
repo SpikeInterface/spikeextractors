@@ -6,16 +6,6 @@ from spikeextractors.extraction_tools import check_get_traces_args,check_valid_u
 from bs4 import BeautifulSoup
 import os
 
-try:
-    import bs4
-
-    HAVE_BS4 = True
-except ModuleNotFoundError:
-    HAVE_BS4 = False
-
-def check_bs4_install():
-    assert HAVE_BS4, "To use the Neuroscope extractors, install bs4: \n\n pip install bs4\n\n"
-
 class NeuroscopeRecordingExtractor(RecordingExtractor):
     
     """
