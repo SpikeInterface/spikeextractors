@@ -58,19 +58,24 @@ class NeuroscopeRecordingExtractor(RecordingExtractor):
         
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
     
+    
     def get_channel_ids(self):
         return self._channel_ids
+    
     
     def get_num_frames(self):
         return self._num_frames
     
+    
     def get_sampling_frequency(self):
         return self._sampling_frequency
+    
     
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         return self._recording[channel_ids,start_frame:end_frame]
-            
+        
+        
     @staticmethod
     def write_recording(recording, save_path):
         """ Convert and save the recording extractor to Neuroscope format
@@ -155,6 +160,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         folder_path = os.path.split(resfile_path)[0]
         fpath_base, fname = os.path.split(folder_path)
         xml_filepath = os.path.join(folder_path, fname + '.xml')
+        print(xml_filepath)
         
         with open(xml_filepath, 'r') as xml_file:
             contents = xml_file.read()
@@ -228,31 +234,41 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         '''
         self._unit_ids.append(unit_id)
         self._spiketrains.append(spike_times)
-    
-    
-    def merge_sorting(self,other_sorting):
-        """
-        Helper function for merging a second sorting extractor object into the first.
-        Occurences of identical unit IDs are appended as additional units.
+        
+        
+    def read_shanks(general_path, shanks, keep_mua_units=True):
+        '''
+        This function streamlines the iterative concatenation of multiple
+        NeuroscopeSortingExtractor objects into a single list, with each
+        element representing data specific to that index of the shanks list.
 
         Parameters
         ----------
-        other_sorting : SortingExtractor object
-        """
-        # Merge IDS; make new incremental unit IDS if any overlap
-        unit_ids_1 = self.get_unit_ids()
-        unit_ids_2 = other_sorting.get_unit_ids()
-        
-        shared_ids = list(set(unit_ids_1) & set(unit_ids_2))
-        exclusive_other_ids = list(set(unit_ids_2).difference(shared_ids))
-        
-        for id in exclusive_other_ids:
-            self.add_unit(id,other_sorting.get_unit_spike_train(id))
+        general_path: str
+            The basic path to the location of multiple .res and .clu files
+        shanks: list
+            List of indices corresponding to which shanks to read from; this index
+            must be the value appended onto the .res.%i and .res.%i files
+        keep_mua_units: bool
+            Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
+        '''
+        nse_shank = []
+        for shankn in shanks:
+            # Get isolated cluster-based spike activity from .res and .clu files on a per-shank basis
+            #res_file = os.path.join(general_path, '.res.' + str(shankn))
+            #clu_file = os.path.join(general_path, '.clu.' + str(shankn))
+            res_file = general_path + '.res.' + str(shankn)
+            clu_file = general_path + '.clu.' + str(shankn)
+
+            if not os.path.isfile(res_file):
+                print('spike times for shank{} not found'.format(shankn))
+            if not os.path.isfile(clu_file):
+                print('spike clusters for shank{} not found'.format(shankn))
+
+            nse_shank.append(NeuroscopeSortingExtractor(res_file,clu_file,keep_mua_units=keep_mua_units))
             
-        id_shift = len(unit_ids_1)+len(exclusive_other_ids)
-        for id in shared_ids:
-            self.add_unit(id+id_shift,other_sorting.get_unit_spike_train(id))
-        
+        return nse_shank
+    
 
     @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, shank_id=None, start_frame=None, end_frame=None):
@@ -265,6 +281,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
 
+    
     @staticmethod
     def write_sorting(sorting, save_path):
         save_xml = "{}/{}.xml".format(save_path,save_path)
