@@ -6,7 +6,14 @@ from spikeextractors.extraction_tools import check_get_traces_args,check_valid_u
 from bs4 import BeautifulSoup
 import os
 
-class NeuroscopeRecordingExtractor(RecordingExtractor):
+try:
+    import bs4
+    import lxml
+    HAVE_BS4_LXML = True
+except ImportError:
+    HAVE_BS4_LXML = False
+
+class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     
     """
     Extracts raw neural recordings from large binary .dat files in the neuroscope format.
@@ -20,14 +27,14 @@ class NeuroscopeRecordingExtractor(RecordingExtractor):
     folder_path : str
         Path to the folder containing the .dat file.
     """
-    
     extractor_name = 'NeuroscopeRecordingExtractor'
     installed = True  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
-    installation_mesg = ""  # error message when not installed
+    installation_mesg = 'please install bs4 and lxml to use this extractor'  # error message when not installed
             
     def __init__(self, folder_path):
+        assert HAVE_BS4_LXML, self.installation_mesg
         RecordingExtractor.__init__(self)
         self._recording_file = folder_path
         
@@ -43,37 +50,14 @@ class NeuroscopeRecordingExtractor(RecordingExtractor):
             # which also requires all capital letters to be removed from the tag names
         
         n_bits = int(soup.nbits.string)
+        dtype='int'+str(n_bits)
         num_channels = int(soup.nchannels.string)
-        num_elem = len(np.memmap(dat_filepath, dtype='int'+str(n_bits)))
-        num_frames = int(num_elem/num_channels)
-        channel_ids = np.arange(num_channels)
         sampling_frequency = float(soup.samplingrate.string)
-
-        self._num_frames = num_frames
-        self._channel_ids = channel_ids
-        self._num_frames = num_frames
-        self._sampling_frequency = sampling_frequency
-
-        self._recording = read_binary(dat_filepath, num_channels, dtype='int'+str(n_bits))
+        
+        BinDatRecordingExtractor.__init__(self, dat_filepath, sampling_frequency=sampling_frequency,
+                                          dtype=dtype, numchan=num_channels)
         
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
-    
-    
-    def get_channel_ids(self):
-        return self._channel_ids
-    
-    
-    def get_num_frames(self):
-        return self._num_frames
-    
-    
-    def get_sampling_frequency(self):
-        return self._sampling_frequency
-    
-    
-    @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        return self._recording[channel_ids,start_frame:end_frame]
         
         
     @staticmethod
@@ -92,18 +76,17 @@ class NeuroscopeRecordingExtractor(RecordingExtractor):
 
         # write recording
         recording_fn = os.path.join(save_path, RECORDING_NAME)
-        BinDatRecordingExtractor.write_recording(recording, recording_fn,
-                                                 time_axis=0, dtype=str(recording.get_dtype()))
+        BinDatRecordingExtractor.write_recording(recording, recording_fn, dtype=str(recording.get_dtype()))
 
         # create parameters file if none exists
         if not os.path.isfile(save_xml):
             soup = BeautifulSoup("",'xml')
 
             new_tag = soup.new_tag('nbits')
-            dataType = recording.get_dtype();
+            dtype = recording.get_dtype();
             assert any([dataType == x for x in ['int16', 'int32']]),"NeuroscopeRecordingExtractor only permits data of type 'int16' or 'int32'"
-            nBits = str(dataType)[3:5]
-            new_tag.string = str(nBits)
+            n_bits = str(dtype)[3:5]
+            new_tag.string = str(n_bits)
             soup.append(new_tag)
 
             new_tag = soup.new_tag('nchannels')
@@ -236,38 +219,38 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         self._spiketrains.append(spike_times)
         
         
-    def read_shanks(general_path, shanks, keep_mua_units=True):
-        '''
-        This function streamlines the iterative concatenation of multiple
-        NeuroscopeSortingExtractor objects into a single list, with each
-        element representing data specific to that index of the shanks list.
+#     def read_shanks(general_path, shanks, keep_mua_units=True):
+#         '''
+#         This function streamlines the iterative concatenation of multiple
+#         NeuroscopeSortingExtractor objects into a single list, with each
+#         element representing data specific to that index of the shanks list.
 
-        Parameters
-        ----------
-        general_path: str
-            The basic path to the location of multiple .res and .clu files
-        shanks: list
-            List of indices corresponding to which shanks to read from; this index
-            must be the value appended onto the .res.%i and .res.%i files
-        keep_mua_units: bool
-            Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
-        '''
-        nse_shank = []
-        for shankn in shanks:
-            # Get isolated cluster-based spike activity from .res and .clu files on a per-shank basis
-            #res_file = os.path.join(general_path, '.res.' + str(shankn))
-            #clu_file = os.path.join(general_path, '.clu.' + str(shankn))
-            res_file = general_path + '.res.' + str(shankn)
-            clu_file = general_path + '.clu.' + str(shankn)
+#         Parameters
+#         ----------
+#         general_path: str
+#             The basic path to the location of multiple .res and .clu files
+#         shanks: list
+#             List of indices corresponding to which shanks to read from; this index
+#             must be the value appended onto the .res.%i and .res.%i files
+#         keep_mua_units: bool
+#             Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
+#         '''
+#         nse_shank = []
+#         for shankn in shanks:
+#             # Get isolated cluster-based spike activity from .res and .clu files on a per-shank basis
+#             #res_file = os.path.join(general_path, '.res.' + str(shankn))
+#             #clu_file = os.path.join(general_path, '.clu.' + str(shankn))
+#             res_file = general_path + '.res.' + str(shankn)
+#             clu_file = general_path + '.clu.' + str(shankn)
 
-            if not os.path.isfile(res_file):
-                print('spike times for shank{} not found'.format(shankn))
-            if not os.path.isfile(clu_file):
-                print('spike clusters for shank{} not found'.format(shankn))
+#             if not os.path.isfile(res_file):
+#                 print('spike times for shank{} not found'.format(shankn))
+#             if not os.path.isfile(clu_file):
+#                 print('spike clusters for shank{} not found'.format(shankn))
 
-            nse_shank.append(NeuroscopeSortingExtractor(res_file,clu_file,keep_mua_units=keep_mua_units))
+#             nse_shank.append(NeuroscopeSortingExtractor(res_file,clu_file,keep_mua_units=keep_mua_units))
             
-        return nse_shank
+#         return nse_shank
     
 
     @check_valid_unit_id
@@ -303,13 +286,6 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         
         unique_ids = np.unique(clu)
         n_clu = len(unique_ids)
-        
-#         if not unique_ids==np.arange(n_clu+1): # some missing IDs somewhere
-#             if 0 not in unique_ids: # missing unsorted IDs
-#                 n_clu += 1
-#             if 1 not in unique_ids: # missing mua IDs
-#                 n_clu += 1
-#             # If it is any other kinda of ID, then it is very strange that it is missing...
             
         clu = np.insert(clu, 0, n_clu) # The +1 is necessary here b/c the convention for the base sorting object is from 1,...,nUnits
 

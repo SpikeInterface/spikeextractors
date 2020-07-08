@@ -18,7 +18,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     package_data={},
     install_requires=[
-        'numpy','bs4'
+        'numpy'
     ],
     classifiers=(
         "Programming Language :: Python :: 3",
