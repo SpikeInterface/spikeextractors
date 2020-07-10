@@ -69,7 +69,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         if self._dtype.startswith('uint'):
             exp_idx = self._dtype.find('int') + 3
             exp = int(self._dtype[exp_idx:])
-            recordings = recordings.astype('float32') - 2**(exp - 1) - 1
+            recordings = recordings.astype('float32') - 2**(exp - 1)
         if self._gain is not None:
             recordings = recordings * self._gain
         return recordings
