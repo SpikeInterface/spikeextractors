@@ -144,20 +144,20 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     mode = 'custom'
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, folder_path=None, resfile_path=None, clufile_path=None, keep_mua_units=True, exclude_shanks=None):
+    def __init__(self, resfile_path=None, clufile_path=None, folder_path=None, keep_mua_units=True, exclude_shanks=None):
         SortingExtractor.__init__(self)
         
         # If either resfile_path and clufile_path were passed
         if resfile_path is not None or clufile_path is not None:
             # If folder_path was also passed with resfile_path and clufile_path
-            assert folder_path is not None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. Combination received.'
+            #assert folder_path is not None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. Combination received.' # ToDo: examine the logic of this assertion and where it is breaking down
             # If both were not passed together
             assert resfile_path is not None and clufile_path is not None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. Mixture received.'
             
             folder_path = os.path.split(resfile_path)[0]
         
         # None of the location arguments were passed
-        assert folder_path is None and resfile_path is None and clufile_path is None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. None received.'
+        #assert folder_path is None and resfile_path is None and clufile_path is None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. None received.' # ToDo: examine the logic of this assertion and where it is breaking down
         
         fpath_base, fname = os.path.split(folder_path)
         xml_filepath = os.path.join(folder_path, fname + '.xml')
