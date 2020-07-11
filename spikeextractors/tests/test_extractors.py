@@ -478,6 +478,7 @@ class TestExtractors(unittest.TestCase):
         check_sorting_return_types(SX_neuroscope_no_mua)
         check_dumping(SX_neuroscope_no_mua)
         
+        num_original_units = len(SX_neuroscope.get_unit_ids())
         self.assertEqual(list(SX_neuroscope.get_unit_ids()), list(range(1,num_original_units+1)))
         self.assertEqual(list(SX_neuroscope_no_mua.get_unit_ids()), list(range(1,num_original_units)))
 
