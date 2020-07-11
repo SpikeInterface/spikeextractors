@@ -154,13 +154,12 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             # If both were not passed together
             assert resfile_path is not None and clufile_path is not None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. Mixture received.'
             
-            folder_path = os.path.split(resfile_path)[0]
+        folder_path, _ = os.path.split(resfile_path)
+        _, SORTING_NAME = os.path.split(folder_path)
+        xml_filepath = "{}/{}.xml".format(folder_path,SORTING_NAME)
         
         # None of the location arguments were passed
         #assert folder_path is None and resfile_path is None and clufile_path is None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. None received.' # ToDo: examine the logic of this assertion and where it is breaking down
-        
-        fpath_base, fname = os.path.split(folder_path)
-        xml_filepath = os.path.join(folder_path, fname + '.xml')
         
         with open(xml_filepath, 'r') as xml_file:
             contents = xml_file.read()

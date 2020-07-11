@@ -462,8 +462,9 @@ class TestExtractors(unittest.TestCase):
         
         # NeuroscopeSortingExtractor tests
         se.NeuroscopeSortingExtractor.write_sorting(self.SX, self.test_dir)
-        initial_sorting_resfile = "{}.res".format(self.test_dir)
-        initial_sorting_clufile = "{}.clu".format(self.test_dir)
+        _,SORTING_NAME = os.path.split(self.test_dir)
+        initial_sorting_resfile = "{}/{}.res".format(self.test_dir,SORTING_NAME)
+        initial_sorting_clufile = "{}/{}.clu".format(self.test_dir,SORTING_NAME)
         SX_neuroscope = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile)
         check_sorting_return_types(SX_neuroscope)
         check_sortings_equal(self.SX, SX_neuroscope)
