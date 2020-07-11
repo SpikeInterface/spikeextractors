@@ -73,8 +73,8 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         dtype: str
             Data type to be used in writing. Will throw a warning if stored recording type from get_traces() does not match.
         """
-        RECORDING_NAME = save_path
-        save_xml = "{}/{}.xml".format(save_path,save_path)
+        _, RECORDING_NAME = os.path.split(save_path)
+        save_xml = "{}/{}.xml".format(save_path,RECORDING_NAME)
 
         # write recording
         recording_fn = os.path.join(save_path, RECORDING_NAME)
