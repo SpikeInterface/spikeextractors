@@ -294,6 +294,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         _, SORTING_NAME = os.path.split(save_path)
             
         # Create and save .res and .clu files from the current sorting object
+        save_xml = "{}/{}.xml".format(save_path,SORTING_NAME)
         save_res = "{}/{}.res".format(save_path,SORTING_NAME)
         save_clu = "{}/{}.clu".format(save_path,SORTING_NAME)
         unit_ids = sorting.get_unit_ids()
