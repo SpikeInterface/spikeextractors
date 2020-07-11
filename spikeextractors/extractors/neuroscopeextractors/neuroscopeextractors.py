@@ -84,7 +84,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
             new_tag = soup.new_tag('nbits')
             dtype = recording.get_dtype();
-            assert any([dtype == x for x in ['int16', 'int32']]),"NeuroscopeRecordingExtractor only permits data of type 'int16' or 'int32'"
+            assert any([str(dtype) == x for x in ['int16', 'int32']]),"NeuroscopeRecordingExtractor only permits data of type 'int16' or 'int32'"
             n_bits = str(dtype)[3:5]
             new_tag.string = str(n_bits)
             soup.append(new_tag)
@@ -137,13 +137,23 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     mode = 'custom'
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, resfile_path, clufile_path, keep_mua_units=True):
+    def __init__(self, folder_path=None, resfile_path=None, clufile_path=None, keep_mua_units=True, exclude_shanks=None):
         SortingExtractor.__init__(self)
         
-        folder_path = os.path.split(resfile_path)[0]
+        # If either resfile_path and clufile_path were passed
+        if resfile_path is not None or clufile_path is not None:
+            # If folder_path was also passed with resfile_path and clufile_path
+            assert folder_path is not None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. Combination received.'
+            # If both were not passed together
+            assert resfile_path is not None and clufile_path is not None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. Mixture received.'
+            
+            folder_path = os.path.split(resfile_path)[0]
+        
+        # None of the location arguments were passed
+        assert folder_path is None and resfile_path is None and clufile_path is None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. None received.'
+        
         fpath_base, fname = os.path.split(folder_path)
         xml_filepath = os.path.join(folder_path, fname + '.xml')
-        print(xml_filepath)
         
         with open(xml_filepath, 'r') as xml_file:
             contents = xml_file.read()
@@ -152,47 +162,54 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             # in the write_recording method that require it to be a .lxml instead
             # which also requires all capital letters to be removed from the tag names
         
-        self._sampling_frequency = float(soup.samplingrate.string) # careful not to confuse it with the lfpSamplingRate
+        self._sampling_frequency = float(soup.samplingrate.string) # careful not to confuse it with the lfpsamplingsate
         
-        res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
-        clu = np.loadtxt(clufile_path, dtype=np.int64, usecols=0, ndmin=1)
-        if len(res) > 0:
-            # Extract the number of clusters read as the first line of the clufile
-            # then remove it from the clu list
-            n_clu = clu[0]
-            clu = np.delete(clu, 0)
-            unique_ids = np.unique(clu)
-            
-            if not unique_ids==np.arange(n_clu+1): # some missing IDs somewhere
-                if 0 not in unique_ids: # missing unsorted IDs
-                    n_clu += 1
-                if 1 not in unique_ids: # missing mua IDs
-                    n_clu += 1
-                # If it is any other kinda of ID, then it is very strange that it is missing...
-                
-            
-            # Initialize spike trains and extract times from .res and appropriate clusters from .clu
-            # based on user input for ignoring multi-unit activity
-            self._spiketrains = []
-            if keep_mua_units: # default
-                n_clu -= 1;
-                self._unit_ids = [x+1 for x in range(n_clu)] # generates list from 1,...,clu[0]-1
-                for s_id in self._unit_ids:
-                    self._spiketrains.append(res[(clu == s_id).nonzero()])
+        # If both resfile_path and clufile_path were passed
+        # Classic functionality reading only a single shank
+        if resfile_path is not None and clufile_path is not None:
+            res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
+            clu = np.loadtxt(clufile_path, dtype=np.int64, usecols=0, ndmin=1)
+            if len(res) > 0:
+                # Extract the number of clusters read as the first line of the clufile
+                # then remove it from the clu list
+                n_clu = clu[0]
+                clu = np.delete(clu, 0)
+                unique_ids = np.unique(clu)
+
+                if not unique_ids==np.arange(n_clu+1): # some missing IDs somewhere
+                    if 0 not in unique_ids: # missing unsorted IDs
+                        n_clu += 1
+                    if 1 not in unique_ids: # missing mua IDs
+                        n_clu += 1
+                    # If it is any other kinda of ID, then it is very strange that it is missing...
+
+
+                # Initialize spike trains and extract times from .res and appropriate clusters from .clu
+                # based on user input for ignoring multi-unit activity
+                self._spiketrains = []
+                if keep_mua_units: # default
+                    n_clu -= 1;
+                    self._unit_ids = [x+1 for x in range(n_clu)] # generates list from 1,...,clu[0]-1
+                    for s_id in self._unit_ids:
+                        self._spiketrains.append(res[(clu == s_id).nonzero()])
+                else:
+                    # Ignoring IDs of 0 until get_unsorted_spike_train is implemented into base
+                    # Also ignoring IDs of 1 since user called keep_mua_units=False
+                    n_clu -= 2;
+                    self._unit_ids = [x+1 for x in range(n_clu)] # generates list from 1,...,clu[0]-2
+                    for s_id in self._unit_ids:
+                        self._spiketrains.append(res[(clu == s_id+1).nonzero()]) # only reading cluster IDs 2,...,clu[0]-1
             else:
-                # Ignoring IDs of 0 until get_unsorted_spike_train is implemented into base
-                # Also ignoring IDs of 1 since user called keep_mua_units=False
-                n_clu -= 2;
-                self._unit_ids = [x+1 for x in range(n_clu)] # generates list from 1,...,clu[0]-2
-                for s_id in self._unit_ids:
-                    self._spiketrains.append(res[(clu == s_id+1).nonzero()]) # only reading cluster IDs 2,...,clu[0]-1
-        else:
-            self._spiketrains = []
-            self._unit_ids = []
+                self._spiketrains = []
+                self._unit_ids = []
+        #else: # If only the folder_path was passed; new auto-detecting file structure functionality which can also read from multiple shanks
             
-        self._kwargs = {'resfile_path': str(Path(resfile_path).absolute()),
+            
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute()),
+                        'resfile_path': str(Path(resfile_path).absolute()),
                         'clufile_path': str(Path(clufile_path).absolute()),
-                        'keep_mua_units': keep_mua_units}
+                        'keep_mua_units': keep_mua_units,
+                        'exclude_shanks': exclude_shanks}
 
 
     def get_unit_ids(self):
