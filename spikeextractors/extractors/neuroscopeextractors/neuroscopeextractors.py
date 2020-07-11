@@ -61,7 +61,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         
         
     @staticmethod
-    def write_recording(recording, save_path):
+    def write_recording(recording, save_path, dtype='int32'):
         """ Convert and save the recording extractor to Neuroscope format
 
         parameters
@@ -70,13 +70,14 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
             The recording extractor to be converted and saved
         save_path: str
             Full path to desired target folder
+        dtype: str
+            Data type to be used in writing. Will throw a warning if stored recording type from get_traces() does not match.
         """
         RECORDING_NAME = save_path
         save_xml = "{}/{}.xml".format(save_path,save_path)
 
         # write recording
         recording_fn = os.path.join(save_path, RECORDING_NAME)
-        BinDatRecordingExtractor.write_recording(recording, recording_fn, dtype=str(recording.get_dtype()))
 
         # create parameters file if none exists
         if not os.path.isfile(save_xml):
@@ -84,9 +85,11 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
             new_tag = soup.new_tag('nbits')
             dtype = recording.get_dtype()
-            print(dtype)
-            print(dtype.type)
-            assert any([str(dtype) == x for x in ['int16', 'int32']]),"NeuroscopeRecordingExtractor only permits data of type 'int16' or 'int32'"
+            
+            if not any([dtype == x for x in ['int16', 'int32']]):
+                print('Warning: Unsupported data type passed (',dtype,'); converting to default of int32!',sep="")
+                dtype = 'int32'
+                
             n_bits = str(dtype)[3:5]
             new_tag.string = str(n_bits)
             soup.append(new_tag)
@@ -103,6 +106,8 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
             f = open(save_xml, "w")
             f.write(str(soup))
             f.close()
+            
+        BinDatRecordingExtractor.write_recording(recording, recording_fn, dtype=dtype)
         
 
 class NeuroscopeSortingExtractor(SortingExtractor):
