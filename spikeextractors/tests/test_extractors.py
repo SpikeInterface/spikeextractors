@@ -445,7 +445,7 @@ class TestExtractors(unittest.TestCase):
         
     def test_neuroscope_extractor(self):
         # NeuroscopeRecordingExtractor tests
-        path1 = self.test_dir + '/test'
+        path1 = self.test_dir
         se.NeuroscopeRecordingExtractor.write_recording(self.RX, path1)
         RX_ns = se.NeuroscopeRecordingExtractor(path1)
         check_recording_return_types(RX_ns)
