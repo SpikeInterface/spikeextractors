@@ -71,7 +71,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         save_path: str
             Full path to desired target folder
         """
-        RECORDING_NAME = save_path + '.dat'
+        RECORDING_NAME = save_path #+ '.dat'
         save_xml = "{}/{}.xml".format(save_path,save_path)
 
         # write recording
@@ -84,7 +84,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
             new_tag = soup.new_tag('nbits')
             dtype = recording.get_dtype();
-            assert any([dataType == x for x in ['int16', 'int32']]),"NeuroscopeRecordingExtractor only permits data of type 'int16' or 'int32'"
+            assert any([dtype == x for x in ['int16', 'int32']]),"NeuroscopeRecordingExtractor only permits data of type 'int16' or 'int32'"
             n_bits = str(dtype)[3:5]
             new_tag.string = str(n_bits)
             soup.append(new_tag)
