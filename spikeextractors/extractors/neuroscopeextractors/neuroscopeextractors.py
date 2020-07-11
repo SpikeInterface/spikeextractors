@@ -291,11 +291,11 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     
     @staticmethod
     def write_sorting(sorting, save_path):
-        save_xml = "{}/{}.xml".format(save_path,save_path)
+        _, SORTING_NAME = os.path.split(save_path)
             
         # Create and save .res and .clu files from the current sorting object
-        save_res = "{}/{}.res".format(save_path,save_path)
-        save_clu = "{}/{}.clu".format(save_path,save_path)
+        save_res = "{}/{}.res".format(save_path,SORTING_NAME)
+        save_clu = "{}/{}.clu".format(save_path,SORTING_NAME)
         unit_ids = sorting.get_unit_ids()
         if len(unit_ids) > 0:
             spiketrains = [sorting.get_unit_spike_train(u) for u in unit_ids]
