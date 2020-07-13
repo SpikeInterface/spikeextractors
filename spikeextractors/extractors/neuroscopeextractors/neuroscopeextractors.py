@@ -113,7 +113,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         BinDatRecordingExtractor.write_recording(recording, recording_fn, dtype=dtype)
         
 
-class NeuroscopeSortingExtractor(MultiSortingExtractor):
+class NeuroscopeSortingExtractor(SortingExtractor):
 
     """
     Extracts spiking information from pair of .res and .clu files. The .res is a text file with
@@ -135,11 +135,15 @@ class NeuroscopeSortingExtractor(MultiSortingExtractor):
     Parameters
     ----------
     resfile_path : str
-        Path to the collection of .res text file.
+        Optional. Path to a particular .res text file.
     clufile_path : str
-        Path to the collection of .clu text file.
+        Optional. Path to a particular of .clu text file.
+    folder_path : str
+        Optional. Path to the collection of .res and .clu text files. Will auto-detect format.
     keep_mua_units : bool
         Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
+    exclude_shanks : list
+        Optional. List of 
     """
     extractor_name = 'NeuroscopeSortingExtractor'
     installed = True  # check at class level if installed or not
@@ -150,11 +154,16 @@ class NeuroscopeSortingExtractor(MultiSortingExtractor):
     def __init__(self, resfile_path=None, clufile_path=None, folder_path=None, keep_mua_units=True, exclude_shanks=None):
         SortingExtractor.__init__(self)
         
-        if resfile_path is not None or clufile_path is not None: # Either res or clu was passed
-            assert resfile_path is not None and clufile_path is not None and folder_path is None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path.'
+        assert resfile_path is not None or clufile_path is not None or folder_path is not None, 'Pass either a single folder_path location, or a pair of resfile_path and clufile_path'
         
-        if folder_path is None:
+        # At least one passed
+        if resfile_path is not None or clufile_path is not None:
+            assert resfile_path is not None and clufile_path is not None, 'If passing resfile_path or clufile_path, both are required.'
+        
+            if folder_path is not None:
+                print('Warning: Pass either a single folder_path location, or a pair of resfile_path and clufile_path. Ignoring passed folder_path.')
             folder_path, _ = os.path.split(resfile_path)
+            
         _, SORTING_NAME = os.path.split(folder_path)
         xml_filepath = "{}/{}.xml".format(folder_path,SORTING_NAME)
         
@@ -235,9 +244,20 @@ class NeuroscopeSortingExtractor(MultiSortingExtractor):
                 for shank_id in shank_res_ids:
                     resfile_path = '{}/{}.res.{}'.format(folder_path,SORTING_NAME,shank_id)
                     clufile_path = '{}/{}.clu.{}'.format(folder_path,SORTING_NAME,shank_id)
+                    
+                    # doesn't recognize the items in the sorting as being NeuroscopeSortingExtractors
+                    # all_shanks_list_se.append(NeuroscopeSortingExtractor.__init__(self, resfile_path=resfile_path,
+                    #                                                                     clufile_path=clufile_path,
+                    #                                                                     keep_mua_units=keep_mua_units))
+                    
+                    # runs correct, but final object does not inherit basic functions like 'get_unit_ids' from MultiSortingExtractor
+                    # and also doesn't seem to set the interval values of _all_unit_ids and such correctly...
+                    # Maybe the issue lies in calling NeuroscopeSortingExtractor() within its own __init__?
                     all_shanks_list_se.append(NeuroscopeSortingExtractor(resfile_path=resfile_path,
                                                                          clufile_path=clufile_path,
                                                                          keep_mua_units=keep_mua_units))
+                    
+                    
                 MultiSortingExtractor.__init__(self, all_shanks_list_se)
         else:
             self._spiketrains = []
