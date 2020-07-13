@@ -113,6 +113,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         BinDatRecordingExtractor.write_recording(recording, recording_fn, dtype=dtype)
         
 
+# class NeuroscopeSortingExtractor(MultiSortingExtractor):
 class NeuroscopeSortingExtractor(SortingExtractor):
 
     """
@@ -245,17 +246,19 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                     resfile_path = '{}/{}.res.{}'.format(folder_path,SORTING_NAME,shank_id)
                     clufile_path = '{}/{}.clu.{}'.format(folder_path,SORTING_NAME,shank_id)
                     
-                    # doesn't recognize the items in the sorting as being NeuroscopeSortingExtractors
-                    # all_shanks_list_se.append(NeuroscopeSortingExtractor.__init__(self, resfile_path=resfile_path,
-                    #                                                                     clufile_path=clufile_path,
-                    #                                                                     keep_mua_units=keep_mua_units))
+                    
+                    # when called with either NeuroscopeSortingExtractor(MultiSortingExtractor) or NeuroscopeSortingExtractor(SortingExtractor)
+                    # doesn't recognize the items in the sorting as being NeuroscopeSortingExtractors, thinks they are 'Nonetype'
+                    all_shanks_list_se.append(NeuroscopeSortingExtractor.__init__(self, resfile_path=resfile_path,
+                                                                                        clufile_path=clufile_path,
+                                                                                        keep_mua_units=keep_mua_units))
                     
                     # runs correct, but final object does not inherit basic functions like 'get_unit_ids' from MultiSortingExtractor
                     # and also doesn't seem to set the interval values of _all_unit_ids and such correctly...
                     # Maybe the issue lies in calling NeuroscopeSortingExtractor() within its own __init__?
-                    all_shanks_list_se.append(NeuroscopeSortingExtractor(resfile_path=resfile_path,
-                                                                         clufile_path=clufile_path,
-                                                                         keep_mua_units=keep_mua_units))
+                    # all_shanks_list_se.append(NeuroscopeSortingExtractor(resfile_path=resfile_path,
+                    #                                                      clufile_path=clufile_path,
+                    #                                                      keep_mua_units=keep_mua_units))
                     
                     
                 MultiSortingExtractor.__init__(self, all_shanks_list_se)
