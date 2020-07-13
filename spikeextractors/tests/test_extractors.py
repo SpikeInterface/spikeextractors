@@ -1,11 +1,11 @@
 import numpy as np
-import os, sys
+import os
 from pathlib import Path
 import unittest
 import tempfile
 import shutil
 import spikeextractors as se
-from .utils import check_sortings_equal, check_recordings_equal, check_dumping, check_recording_return_types, \
+from utils import check_sortings_equal, check_recordings_equal, check_dumping, check_recording_return_types, \
     check_sorting_return_types
 from spikeextractors.exceptions import NotDumpableExtractorError
 

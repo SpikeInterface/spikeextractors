@@ -1,10 +1,13 @@
-from spikeextractors import RecordingExtractor,SortingExtractor
+from spikeextractors import RecordingExtractor,SortingExtractor,MultiSortingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 import numpy as np
 from pathlib import Path
 from spikeextractors.extraction_tools import check_get_traces_args,check_valid_unit_id,read_binary
 from bs4 import BeautifulSoup
 import os
+
+from os import listdir
+from os.path import isfile, join
 
 try:
     import bs4
@@ -110,7 +113,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         BinDatRecordingExtractor.write_recording(recording, recording_fn, dtype=dtype)
         
 
-class NeuroscopeSortingExtractor(SortingExtractor):
+class NeuroscopeSortingExtractor(MultiSortingExtractor):
 
     """
     Extracts spiking information from pair of .res and .clu files. The .res is a text file with
@@ -147,14 +150,11 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     def __init__(self, resfile_path=None, clufile_path=None, folder_path=None, keep_mua_units=True, exclude_shanks=None):
         SortingExtractor.__init__(self)
         
-        # If either resfile_path and clufile_path were passed
-        if resfile_path is not None or clufile_path is not None:
-            # If folder_path was also passed with resfile_path and clufile_path
-            #assert folder_path is not None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. Combination received.' # ToDo: examine the logic of this assertion and where it is breaking down
-            # If both were not passed together
-            assert resfile_path is not None and clufile_path is not None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. Mixture received.'
-            
-        folder_path, _ = os.path.split(resfile_path)
+        if resfile_path is not None or clufile_path is not None: # Either res or clu was passed
+            assert resfile_path is not None and clufile_path is not None and folder_path is None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path.'
+        
+        if folder_path is None:
+            folder_path, _ = os.path.split(resfile_path)
         _, SORTING_NAME = os.path.split(folder_path)
         xml_filepath = "{}/{}.xml".format(folder_path,SORTING_NAME)
         
@@ -170,8 +170,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         
         self._sampling_frequency = float(soup.samplingrate.string) # careful not to confuse it with the lfpsamplingsate
         
-        # If both resfile_path and clufile_path were passed
-        # Classic functionality reading only a single shank
+        # Classic functionality reading only a single pair of res and clu files
         if resfile_path is not None and clufile_path is not None:
             res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
             clu = np.loadtxt(clufile_path, dtype=np.int64, usecols=0, ndmin=1)
@@ -205,15 +204,50 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                     self._unit_ids = [x+1 for x in range(n_clu)] # generates list from 1,...,clu[0]-2
                     for s_id in self._unit_ids:
                         self._spiketrains.append(res[(clu == s_id+1).nonzero()]) # only reading cluster IDs 2,...,clu[0]-1
+            
+            # Multi-shank functionality, auto-detects files from general_path
+        elif resfile_path is None and clufile_path is None:
+            onlyfiles = [f for f in listdir(folder_path) if isfile(join(folder_path, f))]
+            
+            end_res = [x[-3:]=='res' for x in onlyfiles]
+            end_clu = [x[-3:]=='clu' for x in onlyfiles]
+            any_res = any(end_res)
+            any_clu = any(end_clu)
+            
+            if any_res or any_clu:
+                assert any_res == True and any_clu == True, 'Unmatched .res and .clu files detected!'
+                
+                resfile_path = '{}/{}.res'.format(folder_path,SORTING_NAME)
+                clufile_path = '{}/{}.clu'.format(folder_path,SORTING_NAME)
+                # NeuroscopeSortingExtractor(self,resfile_path=resfile_path,
+                #                            clufile_path=clufile_path,
+                #                            keep_mua_units=keep_mua_units)
+                NeuroscopeSortingExtractor.__init__(self, resfile_path=resfile_path,
+                                                          clufile_path=clufile_path,
+                                                          keep_mua_units=keep_mua_units)
             else:
-                self._spiketrains = []
-                self._unit_ids = []
+                shank_res_ids = [x[-1] for x in onlyfiles if x[-5:-2] == 'res' and x[-10:-6] != 'temp']
+                shank_clu_ids = [x[-1] for x in onlyfiles if x[-5:-2] == 'clu' and x[-10:-6] != 'temp']
+
+                assert shank_res_ids==shank_clu_ids, 'Unmatched .clu.%i and .res.%i files detected!'
+                
+                all_shanks_list_se = []
+                for shank_id in shank_res_ids:
+                    resfile_path = '{}/{}.res.{}'.format(folder_path,SORTING_NAME,shank_id)
+                    clufile_path = '{}/{}.clu.{}'.format(folder_path,SORTING_NAME,shank_id)
+                    all_shanks_list_se.append(NeuroscopeSortingExtractor(resfile_path=resfile_path,
+                                                                         clufile_path=clufile_path,
+                                                                         keep_mua_units=keep_mua_units))
+                MultiSortingExtractor.__init__(self, all_shanks_list_se)
+        else:
+            self._spiketrains = []
+            self._unit_ids = []
         #else: # If only the folder_path was passed; new auto-detecting file structure functionality which can also read from multiple shanks
             
             
-        self._kwargs = {'folder_path': str(Path(folder_path).absolute()),
-                        'resfile_path': str(Path(resfile_path).absolute()),
+        self._kwargs = {'resfile_path': str(Path(resfile_path).absolute()),
                         'clufile_path': str(Path(clufile_path).absolute()),
+                        'folder_path': str(Path(folder_path).absolute()),
                         'keep_mua_units': keep_mua_units,
                         'exclude_shanks': exclude_shanks}
 
