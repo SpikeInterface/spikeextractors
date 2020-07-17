@@ -417,11 +417,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         Adds traces from recording object as ElectricalSeries to nwbfile object.
         """
         # ElectricalSeries
-        if 'Ecephys' not in metadata:
-            metadata['Ecephys'] = []
-            if 'ElectricalSeries' not in metadata['Ecephys']:
-                metadata['Ecephys']['ElectricalSeries'] = [{'name': 'ElectricalSeries',
-                                                            'description': 'electrical_series_description'}]
+        if 'ElectricalSeries' not in metadata['Ecephys']:
+                    metadata['Ecephys']['ElectricalSeries'] = [{'name': 'ElectricalSeries',
+                                                                'description': 'electrical_series_description'}]
         # Tests if ElectricalSeries already exists in acquisition
         channel_ids = recording.get_channel_ids()
         nwb_es_names = [ac for ac in nwbfile.acquisition]
