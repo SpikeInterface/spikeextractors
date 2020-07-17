@@ -443,7 +443,7 @@ class TestExtractors(unittest.TestCase):
         check_recordings_equal(self.RX, RX_shybrid)
         check_dumping(RX_shybrid)
         
-    def test_neuroscope_extractor(self):
+    def test_neuroscope_extractors(self):
         # NeuroscopeRecordingExtractor tests
         path1 = self.test_dir
         se.NeuroscopeRecordingExtractor.write_recording(self.RX, path1)
@@ -481,6 +481,24 @@ class TestExtractors(unittest.TestCase):
         num_original_units = len(SX_neuroscope.get_unit_ids())
         self.assertEqual(list(SX_neuroscope.get_unit_ids()), list(range(1,num_original_units+1)))
         self.assertEqual(list(SX_neuroscope_no_mua.get_unit_ids()), list(range(1,num_original_units)))
+        
+        # Tests for the auto-detection of format for NeuroscopeSortingExtractor
+        SX_neuroscope_from_fp = se.NeuroscopeSortingExtractor(folder_path=self.test_dir)
+        check_sorting_return_types(SX_neuroscope_from_fp)
+        check_sortings_equal(self.SX, SX_neuroscope_from_fp)
+        check_dumping(SX_neuroscope_from_fp)
+        
+        # Clear single .res and .clu from temporary directory so they don't cause assertion in NeuroscopeMultiSortingExtractor
+        os.remove(initial_sorting_resfile)
+        os.remove(initial_sorting_clufile)
+        
+        # Tests for the NeuroscopeMultiSortingExtractor
+        SX_multisorting = se.MultiSortingExtractor(sortings=[self.SX, self.SX]) # re-using same SX for simplicity
+        se.NeuroscopeMultiSortingExtractor.write_sorting(SX_multisorting, self.test_dir)
+        SX_neuroscope_mse = se.NeuroscopeMultiSortingExtractor(self.test_dir)
+        check_sorting_return_types(SX_neuroscope_mse)
+        check_sortings_equal(SX_multisorting, SX_neuroscope_mse)
+        check_dumping(SX_neuroscope_mse)
 
 
 if __name__ == '__main__':

@@ -381,7 +381,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         any_res = any(end_res)
         any_clu = any(end_clu)
         
-        assert any_res != True and any_clu != True, 'Single pair of .res and .clu files identified. Please use the NeuroscopeSortingExtractor to obtain spiking data.'
+        assert any_res == False and any_clu == False, 'Single pair of .res and .clu files identified. Please use the NeuroscopeSortingExtractor to obtain spiking data.'
         
         shank_res_ids = [x[-1] for x in onlyfiles if x[-5:-2] == 'res' and x[-10:-6] != 'temp']
         shank_clu_ids = [x[-1] for x in onlyfiles if x[-5:-2] == 'clu' and x[-10:-6] != 'temp']
@@ -406,33 +406,36 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
     
     
     @staticmethod
-    def write_sorting(sorting, save_path):
+    def write_sorting(multisorting, save_path):
         _, SORTING_NAME = os.path.split(save_path)
-            
-        # Create and save .res and .clu files from the current sorting object
+        
+        counter = 1
         save_xml = "{}/{}.xml".format(save_path,SORTING_NAME)
-        save_res = "{}/{}.res".format(save_path,SORTING_NAME)
-        save_clu = "{}/{}.clu".format(save_path,SORTING_NAME)
-        unit_ids = sorting.get_unit_ids()
-        if len(unit_ids) > 0:
-            spiketrains = [sorting.get_unit_spike_train(u) for u in unit_ids]
-            res = np.concatenate(spiketrains).ravel()
-            clu = np.concatenate([np.repeat(i+1,len(st)) for i,st in enumerate(spiketrains)]).ravel() # i here counts from 0
-            res_sort = np.argsort(res)
-            res = res[res_sort]
-            clu = clu[res_sort]
-        else:
-            res = []
-            clu = []
-        
-        unique_ids = np.unique(clu)
-        n_clu = len(unique_ids)
+        for sorting in multisorting.sortings:
+            # Create and save .res.%i and .clu.%i files from the current sorting object
+            save_res = "{}/{}.res.{}".format(save_path,SORTING_NAME,counter)
+            save_clu = "{}/{}.clu.{}".format(save_path,SORTING_NAME,counter)
+            counter += 1
+            unit_ids = sorting.get_unit_ids()
+            if len(unit_ids) > 0:
+                spiketrains = [sorting.get_unit_spike_train(u) for u in unit_ids]
+                res = np.concatenate(spiketrains).ravel()
+                clu = np.concatenate([np.repeat(i+1,len(st)) for i,st in enumerate(spiketrains)]).ravel() # i here counts from 0
+                res_sort = np.argsort(res)
+                res = res[res_sort]
+                clu = clu[res_sort]
+            else:
+                res = []
+                clu = []
             
-        clu = np.insert(clu, 0, n_clu) # The +1 is necessary here b/c the convention for the base sorting object is from 1,...,nUnits
-
-        np.savetxt(save_res, res, fmt='%i')
-        np.savetxt(save_clu, clu, fmt='%i')
-        
+            unique_ids = np.unique(clu)
+            n_clu = len(unique_ids)
+                
+            clu = np.insert(clu, 0, n_clu) # The +1 is necessary here b/c the convention for the base sorting object is from 1,...,nUnits
+    
+            np.savetxt(save_res, res, fmt='%i')
+            np.savetxt(save_clu, clu, fmt='%i')
+            
         # create parameters file if none exists
         if not os.path.isfile(save_xml):
             soup = BeautifulSoup("",'xml')
