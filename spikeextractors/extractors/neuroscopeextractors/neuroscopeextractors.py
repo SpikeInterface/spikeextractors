@@ -165,11 +165,9 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             assert resfile_path is not None and clufile_path is not None, 'If passing resfile_path or clufile_path, both are required.'
         
             # If all three file paths were passed, throw warning but override folder_path anyway
-            if folder_path is not None:
-                print('Warning: Pass either a single folder_path location, or a pair of resfile_path and clufile_path. Ignoring passed folder_path.')
-            
+            assert folder_path is None, 'Pass either a single folder_path location, or a pair of resfile_path and clufile_path. Ignoring passed folder_path ('+folder_path+').'
             folder_path, _ = os.path.split(resfile_path)
-            
+        
         _, SORTING_NAME = os.path.split(folder_path)
         xml_filepath = "{}/{}.xml".format(folder_path,SORTING_NAME)
         
@@ -213,7 +211,6 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                     self._unit_ids = [x+1 for x in range(n_clu)] # generates list from 1,...,clu[0]-2
                     for s_id in self._unit_ids:
                         self._spiketrains.append(res[(clu == s_id+1).nonzero()]) # only reading cluster IDs 2,...,clu[0]-1
-                        
         elif resfile_path is None and clufile_path is None:
             # Auto-detects files from general_path
             onlyfiles = [f for f in listdir(folder_path) if isfile(join(folder_path, f))]
@@ -232,16 +229,20 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                 NeuroscopeSortingExtractor.__init__(self, resfile_path=resfile_path,
                                                           clufile_path=clufile_path,
                                                           keep_mua_units=keep_mua_units)
-
         else:
             self._spiketrains = []
             self._unit_ids = []
              
-            
-        self._kwargs = {'resfile_path': str(Path(resfile_path).absolute()),
-                        'clufile_path': str(Path(clufile_path).absolute()),
-                        'folder_path': str(Path(folder_path).absolute()),
-                        'keep_mua_units': keep_mua_units}
+        if folder_path is None:
+            self._kwargs = {'resfile_path': str(Path(resfile_path).absolute()),
+                            'clufile_path': str(Path(clufile_path).absolute()),
+                            'folder_path': None,
+                            'keep_mua_units': keep_mua_units}
+        else:
+            self._kwargs = {'resfile_path': None,
+                            'clufile_path': None,
+                            'folder_path': str(Path(folder_path).absolute()),
+                            'keep_mua_units': keep_mua_units}
 
 
     def get_unit_ids(self):

@@ -5,7 +5,7 @@ import unittest
 import tempfile
 import shutil
 import spikeextractors as se
-from .utils import check_sortings_equal, check_recordings_equal, check_dumping, check_recording_return_types, \
+from utils import check_sortings_equal, check_recordings_equal, check_dumping, check_recording_return_types, \
     check_sorting_return_types
 from spikeextractors.exceptions import NotDumpableExtractorError
 
@@ -465,16 +465,21 @@ class TestExtractors(unittest.TestCase):
         _,SORTING_NAME = os.path.split(self.test_dir)
         initial_sorting_resfile = "{}/{}.res".format(self.test_dir,SORTING_NAME)
         initial_sorting_clufile = "{}/{}.clu".format(self.test_dir,SORTING_NAME)
-        SX_neuroscope = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile)
+        SX_neuroscope = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile,
+                                                      clufile_path=initial_sorting_clufile)
         check_sorting_return_types(SX_neuroscope)
         check_sortings_equal(self.SX, SX_neuroscope)
         check_dumping(SX_neuroscope)
-        SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile, keep_mua_units=False)
+        SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile, 
+                                                             clufile_path=initial_sorting_clufile, 
+                                                             keep_mua_units=False)
         check_sorting_return_types(SX_neuroscope_no_mua)
         check_dumping(SX_neuroscope_no_mua)
         
         # Test for extra argument 'keep_mua_units' resulted in the right output
-        SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(initial_sorting_resfile, initial_sorting_clufile, keep_mua_units=False)
+        SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile, 
+                                                             clufile_path=initial_sorting_clufile, 
+                                                             keep_mua_units=False)
         check_sorting_return_types(SX_neuroscope_no_mua)
         check_dumping(SX_neuroscope_no_mua)
         
