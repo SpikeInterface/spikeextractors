@@ -5,7 +5,7 @@ import unittest
 import tempfile
 import shutil
 import spikeextractors as se
-from .utils import check_sortings_equal, check_recordings_equal, check_dumping, check_recording_return_types, \
+from utils import check_sortings_equal, check_recordings_equal, check_dumping, check_recording_return_types, \
     check_sorting_return_types
 from spikeextractors.exceptions import NotDumpableExtractorError
 
@@ -445,26 +445,27 @@ class TestExtractors(unittest.TestCase):
         
     def test_neuroscope_extractors(self):
         # NeuroscopeRecordingExtractor tests
-        path1 = self.test_dir
-        se.NeuroscopeRecordingExtractor.write_recording(self.RX, path1)
-        RX_ns = se.NeuroscopeRecordingExtractor(path1)
+        _,DAT_NAME = os.path.split(Path(self.test_dir).absolute())
+        initial_dat_file = "{}\{}.dat".format(self.test_dir,DAT_NAME)
+        se.NeuroscopeRecordingExtractor.write_recording(self.RX, self.test_dir)
+        RX_ns = se.NeuroscopeRecordingExtractor(initial_dat_file)
         check_recording_return_types(RX_ns)
         check_recordings_equal(self.RX, RX_ns)
         check_dumping(RX_ns)
 
         del RX_ns
         # overwrite
-        se.NeuroscopeRecordingExtractor.write_recording(recording=self.RX, save_path=path1)
-        RX_ns = se.NeuroscopeRecordingExtractor(path1)
+        se.NeuroscopeRecordingExtractor.write_recording(recording=self.RX, save_path=self.test_dir)
+        RX_ns = se.NeuroscopeRecordingExtractor(initial_dat_file)
         check_recording_return_types(RX_ns)
         check_recordings_equal(self.RX, RX_ns)
         check_dumping(RX_ns)
         
         # NeuroscopeSortingExtractor tests
+        _,SORTING_NAME = os.path.split(Path(self.test_dir).absolute())
+        initial_sorting_resfile = "{}\{}.res".format(self.test_dir,SORTING_NAME)
+        initial_sorting_clufile = "{}\{}.clu".format(self.test_dir,SORTING_NAME)
         se.NeuroscopeSortingExtractor.write_sorting(self.SX, self.test_dir)
-        _,SORTING_NAME = os.path.split(self.test_dir)
-        initial_sorting_resfile = "{}/{}.res".format(self.test_dir,SORTING_NAME)
-        initial_sorting_clufile = "{}/{}.clu".format(self.test_dir,SORTING_NAME)
         SX_neuroscope = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile,
                                                       clufile_path=initial_sorting_clufile)
         check_sorting_return_types(SX_neuroscope)
