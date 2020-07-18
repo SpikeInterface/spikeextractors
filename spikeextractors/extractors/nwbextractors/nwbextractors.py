@@ -418,8 +418,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         """
         # ElectricalSeries
         if 'ElectricalSeries' not in metadata['Ecephys']:
-                    metadata['Ecephys']['ElectricalSeries'] = [{'name': 'ElectricalSeries',
-                                                                'description': 'electrical_series_description'}]
+            metadata['Ecephys']['ElectricalSeries'] = [{'name': 'ElectricalSeries',
+                                                        'description': 'electrical_series_description'}]
         # Tests if ElectricalSeries already exists in acquisition
         channel_ids = recording.get_channel_ids()
         nwb_es_names = [ac for ac in nwbfile.acquisition]
