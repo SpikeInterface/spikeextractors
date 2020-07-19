@@ -97,10 +97,10 @@ class Mea1kRecordingExtractor(RecordingExtractor):
                 recordings = self._signals[np.sort(channel_ids), start_frame:end_frame]
                 return recordings[sorted_idx].astype('float')
             else:
-                return self._signals[np.array(channel_ids), start_frame:end_frame].astype('float')
+                return self._signals[np.array(channel_ids), start_frame:end_frame].astype('float32')
         else:
             assert channel_ids in self.get_channel_ids()
-            return self._signals[np.array(channel_ids), start_frame:end_frame].astype('float')
+            return self._signals[np.array(channel_ids), start_frame:end_frame].astype('float32')
 
     @staticmethod
     def write_recording(recording, save_path, chunk_size=None, chunk_mb=500):
