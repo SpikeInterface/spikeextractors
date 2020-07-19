@@ -2,16 +2,14 @@ from spikeextractors import RecordingExtractor,SortingExtractor,MultiSortingExtr
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 import numpy as np
 from pathlib import Path
-from spikeextractors.extraction_tools import check_get_traces_args,check_valid_unit_id,read_binary
-from bs4 import BeautifulSoup
+from spikeextractors.extraction_tools import check_valid_unit_id
 import os
-from pathlib import Path
 
 from os import listdir
 from os.path import isfile, isdir, join, split
 
 try:
-    import bs4
+    from bs4 import BeautifulSoup
     import lxml
     HAVE_BS4_LXML = True
 except ImportError:
@@ -51,7 +49,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         xml_files = [f for f in listdir(folder_path) if isfile(join(folder_path, f)) if f[-4:] == '.xml']
         assert any(xml_files), 'No .xml file found in the folder_path.'
         assert len(xml_files)==1, 'More than one .xml file found in the folder_path.'
-        xml_filepath = '{}\{}'.format(folder_path, xml_files[0])
+        xml_filepath = '{}/{}'.format(folder_path, xml_files[0])
         
         with open(xml_filepath, 'r') as xml_file:
             contents = xml_file.read()
@@ -106,10 +104,10 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         abs_save_path = Path(save_path).absolute()
         _, RECORDING_NAME = os.path.split(abs_save_path)
         XML_NAME = RECORDING_NAME
-        save_xml_filpath = '{}\{}.xml'.format(save_path,XML_NAME)
+        save_xml_filpath = '{}/{}.xml'.format(save_path,XML_NAME)
 
         # write recording
-        recording_fn = '{}\{}'.format(save_path,RECORDING_NAME) # .dat extension handled in BinDataRecordingExtractor
+        recording_fn = '{}/{}'.format(save_path,RECORDING_NAME) # .dat extension handled in BinDataRecordingExtractor
 
         # create parameters file if none exists
         if not os.path.isfile(save_xml_filpath):
@@ -218,8 +216,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             if any(multi_res_files) or any(multi_clu_files):
                 print('Warning: Multiple .res and .clu files found in the folder_path; use the NeuroscopeMultiSortingExtractor to read all of them. Reading detected .res and .clu pair instead.')
             
-            resfile_path = '{}\{}'.format(folder_path,single_res_files[0])
-            clufile_path = '{}\{}'.format(folder_path,single_clu_files[0])
+            resfile_path = '{}/{}'.format(folder_path,single_res_files[0])
+            clufile_path = '{}/{}'.format(folder_path,single_clu_files[0])
         else:
             folder_path_passed = False
             folder_path = split(Path(resfile_path).absolute())[0]
@@ -240,7 +238,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         xml_files = [f for f in listdir(folder_path) if isfile(join(folder_path, f)) if f[-4:] == '.xml']
         assert any(xml_files), 'No .xml file found in the folder.'
         assert len(xml_files) == 1, 'More than one .xml file found in the folder.'
-        xml_filepath = '{}\{}'.format(folder_path, xml_files[0])
+        xml_filepath = '{}/{}'.format(folder_path, xml_files[0])
         
         with open(xml_filepath, 'r') as xml_file:
             contents = xml_file.read()
@@ -334,13 +332,13 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         abs_save_path = Path(save_path).absolute()
         _, SORTING_NAME = os.path.split(abs_save_path)
         XML_NAME = SORTING_NAME
-        save_xml_filpath = '{}\{}.xml'.format(save_path,XML_NAME)
+        save_xml_filpath = '{}/{}.xml'.format(save_path,XML_NAME)
         
         _, SORTING_NAME = os.path.split(save_path)
             
         # Create and save .res and .clu files from the current sorting object
-        save_res = "{}\{}.res".format(save_path,SORTING_NAME)
-        save_clu = "{}\{}.clu".format(save_path,SORTING_NAME)
+        save_res = "{}/{}.res".format(save_path,SORTING_NAME)
+        save_clu = "{}/{}.clu".format(save_path,SORTING_NAME)
         unit_ids = sorting.get_unit_ids()
         if len(unit_ids) > 0:
             spiketrains = [sorting.get_unit_spike_train(u) for u in unit_ids]
@@ -425,7 +423,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         xml_files = [f for f in listdir(folder_path) if isfile(join(folder_path, f)) if f[-4:] == '.xml']
         assert any(xml_files), 'No .xml file found in the folder.'
         assert len(xml_files) == 1, 'More than one .xml file found in the folder.'
-        xml_filepath = '{}\{}'.format(folder_path, xml_files[0])
+        xml_filepath = '{}/{}'.format(folder_path, xml_files[0])
         
         # None of the location arguments were passed
         #assert folder_path is None and resfile_path is None and clufile_path is None, 'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. None received.' # ToDo: examine the logic of this assertion and where it is breaking down
@@ -487,7 +485,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         abs_save_path = Path(save_path).absolute()
         _, SORTING_NAME = os.path.split(abs_save_path)
         XML_NAME = SORTING_NAME
-        save_xml_filpath = '{}\{}.xml'.format(save_path,XML_NAME)
+        save_xml_filpath = '{}/{}.xml'.format(save_path,XML_NAME)
         
         counter = 1
         for sorting in multisorting.sortings:
