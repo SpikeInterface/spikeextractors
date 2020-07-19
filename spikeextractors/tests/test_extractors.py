@@ -453,7 +453,9 @@ class TestExtractors(unittest.TestCase):
         
         print(self.RX.get_num_frames()) # not throwing error when I run local tests
         print(RX_ns.get_num_frames()) # not throwing error when I run local tests
-        print(type(RX_ns.get_num_frames()))
+        
+        print(self.RX.get_channel_ids()) # not throwing error when I run local tests
+        print(RX_ns.get_channel_ids()) # not throwing error when I run local tests
         
         check_recording_return_types(RX_ns)
         check_recordings_equal(self.RX, RX_ns)
