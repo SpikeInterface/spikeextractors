@@ -72,6 +72,8 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         
         sampling_frequency = float(soup.samplingrate.string)
         
+        print(file_path)
+        
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
                                           dtype=dtype, numchan=numchan)
         
@@ -108,6 +110,9 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
         # write recording
         recording_fn = '{}/{}'.format(save_path,RECORDING_NAME) # .dat extension handled in BinDataRecordingExtractor
+
+        print(save_xml_filpath)
+        print(recording_fn)
 
         # create parameters file if none exists
         if not os.path.isfile(save_xml_filpath):

@@ -447,6 +447,7 @@ class TestExtractors(unittest.TestCase):
         # NeuroscopeRecordingExtractor tests
         _,DAT_NAME = os.path.split(Path(self.test_dir).absolute())
         initial_dat_file = "{}/{}.dat".format(self.test_dir,DAT_NAME)
+        print(initial_dat_file)
         se.NeuroscopeRecordingExtractor.write_recording(self.RX, self.test_dir)
         RX_ns = se.NeuroscopeRecordingExtractor(initial_dat_file)
         
