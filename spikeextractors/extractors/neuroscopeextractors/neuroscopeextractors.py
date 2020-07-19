@@ -105,10 +105,11 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         abs_save_path = Path(save_path).absolute()
         _, RECORDING_NAME = os.path.split(abs_save_path)
         XML_NAME = RECORDING_NAME
-        save_xml_filpath = '{}/{}.xml'.format(save_path,XML_NAME)
+        save_xml_filpath = Path('{}/{}.xml'.format(save_path,XML_NAME))
 
         # write recording
-        recording_fn = '{}/{}'.format(save_path,RECORDING_NAME) # .dat extension handled in BinDataRecordingExtractor
+        # recording_fn = Path('{}/{}'.format(save_path,RECORDING_NAME)) # .dat extension handled in BinDataRecordingExtractor
+        recording_fn = Path('{}/{}'.format(save_path,RECORDING_NAME))
 
         # create parameters file if none exists
         if not os.path.isfile(save_xml_filpath):
@@ -120,11 +121,13 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
             recording_n_bits = recording_dtype[(int_loc+3):(int_loc+5)]
             
             if dtype is None: # user did not specify data type
-                if int_loc == -1 or recording_n_bits not in ['16','32']:
+                if int_loc != -1 and recording_n_bits in ['16','32']:
+                    n_bits = recording_n_bits
+                else:
                     print('Warning: Recording data type must be int16 or int32! Defaulting to int32.')
                     n_bits = '32'
-                elif int_loc != -1 and recording_n_bits in ['16','32']:
-                    n_bits = recording_n_bits
+                    # the data typing methods rely on the actual type of the implicit data, not just the value passed into BinDatRecordingExtractor
+                    recording._timeseries = recording._timeseries.astype('int32') 
                 dtype = 'int' + n_bits # update dtype in pass to BinDatRecordingExtractor.write_recording
             
             new_tag.string = n_bits

@@ -446,10 +446,13 @@ class TestExtractors(unittest.TestCase):
     def test_neuroscope_extractors(self):
         # NeuroscopeRecordingExtractor tests
         _,DAT_NAME = os.path.split(Path(self.test_dir).absolute())
-        initial_dat_file = "{}/{}.dat".format(self.test_dir,DAT_NAME)
-        print(initial_dat_file)
+        initial_dat_file = '{}/{}.dat'.format(self.test_dir,DAT_NAME)
         se.NeuroscopeRecordingExtractor.write_recording(self.RX, self.test_dir)
         RX_ns = se.NeuroscopeRecordingExtractor(initial_dat_file)
+        
+        check_recording_return_types(RX_ns)
+        check_recordings_equal(self.RX, RX_ns)
+        check_dumping(RX_ns)
         
         check_recording_return_types(RX_ns)
         check_recordings_equal(self.RX, RX_ns)
@@ -465,8 +468,8 @@ class TestExtractors(unittest.TestCase):
         
         # NeuroscopeSortingExtractor tests
         _,SORTING_NAME = os.path.split(Path(self.test_dir).absolute())
-        initial_sorting_resfile = "{}/{}.res".format(self.test_dir,SORTING_NAME)
-        initial_sorting_clufile = "{}/{}.clu".format(self.test_dir,SORTING_NAME)
+        initial_sorting_resfile = '{}/{}.res'.format(self.test_dir,SORTING_NAME)
+        initial_sorting_clufile = '{}/{}.clu'.format(self.test_dir,SORTING_NAME)
         se.NeuroscopeSortingExtractor.write_sorting(self.SX, self.test_dir)
         SX_neuroscope = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile,
                                                       clufile_path=initial_sorting_clufile)
