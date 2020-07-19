@@ -449,6 +449,10 @@ class TestExtractors(unittest.TestCase):
         initial_dat_file = "{}/{}.dat".format(self.test_dir,DAT_NAME)
         se.NeuroscopeRecordingExtractor.write_recording(self.RX, self.test_dir)
         RX_ns = se.NeuroscopeRecordingExtractor(initial_dat_file)
+        
+        print(self.RX.get_num_frames()) # not throwing error when I run local tests
+        print(RX_ns.get_num_frames()) # not throwing error when I run local tests
+        
         check_recording_return_types(RX_ns)
         check_recordings_equal(self.RX, RX_ns)
         check_dumping(RX_ns)
