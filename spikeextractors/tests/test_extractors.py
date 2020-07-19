@@ -445,32 +445,35 @@ class TestExtractors(unittest.TestCase):
         
     def test_neuroscope_extractors(self):
         # NeuroscopeRecordingExtractor tests
-        _,DAT_NAME = os.path.split(Path(self.test_dir).absolute())
-        initial_dat_file = '{}/{}.dat'.format(self.test_dir,DAT_NAME)
-        se.NeuroscopeRecordingExtractor.write_recording(self.RX, self.test_dir)
-        RX_ns = se.NeuroscopeRecordingExtractor(initial_dat_file)
+        nscope_dir = Path(self.test_dir) / 'neuroscope_rec0'
+        dat_file = nscope_dir / 'neuroscope_rec0.dat'
+        se.NeuroscopeRecordingExtractor.write_recording(self.RX, nscope_dir)
+        RX_ns = se.NeuroscopeRecordingExtractor(dat_file)
         
         check_recording_return_types(RX_ns)
-        check_recordings_equal(self.RX, RX_ns)
+        check_recordings_equal(self.RX, RX_ns, force_dtype='int32')
         check_dumping(RX_ns)
         
         check_recording_return_types(RX_ns)
-        check_recordings_equal(self.RX, RX_ns)
+        check_recordings_equal(self.RX, RX_ns, force_dtype='int32')
         check_dumping(RX_ns)
 
         del RX_ns
         # overwrite
-        se.NeuroscopeRecordingExtractor.write_recording(recording=self.RX, save_path=self.test_dir)
-        RX_ns = se.NeuroscopeRecordingExtractor(initial_dat_file)
+        nscope_dir = Path(self.test_dir) / 'neuroscope_rec1'
+        dat_file = nscope_dir / 'neuroscope_rec1.dat'
+        se.NeuroscopeRecordingExtractor.write_recording(recording=self.RX, save_path=nscope_dir)
+        RX_ns = se.NeuroscopeRecordingExtractor(dat_file)
         check_recording_return_types(RX_ns)
         check_recordings_equal(self.RX, RX_ns)
         check_dumping(RX_ns)
         
         # NeuroscopeSortingExtractor tests
-        _,SORTING_NAME = os.path.split(Path(self.test_dir).absolute())
-        initial_sorting_resfile = '{}/{}.res'.format(self.test_dir,SORTING_NAME)
-        initial_sorting_clufile = '{}/{}.clu'.format(self.test_dir,SORTING_NAME)
-        se.NeuroscopeSortingExtractor.write_sorting(self.SX, self.test_dir)
+        nscope_dir = Path(self.test_dir) / 'neuroscope_sort0'
+        sort_name = 'neuroscope_sort0'
+        initial_sorting_resfile = Path(self.test_dir) / sort_name / f'{sort_name}.res'
+        initial_sorting_clufile = Path(self.test_dir) / sort_name / f'{sort_name}.clu'
+        se.NeuroscopeSortingExtractor.write_sorting(self.SX, nscope_dir)
         SX_neuroscope = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile,
                                                       clufile_path=initial_sorting_clufile)
         check_sorting_return_types(SX_neuroscope)
@@ -494,19 +497,16 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(list(SX_neuroscope_no_mua.get_unit_ids()), list(range(1,num_original_units)))
         
         # Tests for the auto-detection of format for NeuroscopeSortingExtractor
-        SX_neuroscope_from_fp = se.NeuroscopeSortingExtractor(folder_path=self.test_dir)
+        SX_neuroscope_from_fp = se.NeuroscopeSortingExtractor(folder_path=nscope_dir)
         check_sorting_return_types(SX_neuroscope_from_fp)
         check_sortings_equal(self.SX, SX_neuroscope_from_fp)
         check_dumping(SX_neuroscope_from_fp)
         
-        # Clear single .res and .clu from temporary directory so they don't cause assertion in NeuroscopeMultiSortingExtractor
-        os.remove(initial_sorting_resfile)
-        os.remove(initial_sorting_clufile)
-        
         # Tests for the NeuroscopeMultiSortingExtractor
-        SX_multisorting = se.MultiSortingExtractor(sortings=[self.SX, self.SX]) # re-using same SX for simplicity
-        se.NeuroscopeMultiSortingExtractor.write_sorting(SX_multisorting, self.test_dir)
-        SX_neuroscope_mse = se.NeuroscopeMultiSortingExtractor(self.test_dir)
+        nscope_dir = Path(self.test_dir) / 'neuroscope_sort1'
+        SX_multisorting = se.MultiSortingExtractor(sortings=[self.SX, self.SX])  # re-using same SX for simplicity
+        se.NeuroscopeMultiSortingExtractor.write_sorting(SX_multisorting, nscope_dir)
+        SX_neuroscope_mse = se.NeuroscopeMultiSortingExtractor(nscope_dir)
         check_sorting_return_types(SX_neuroscope_mse)
         check_sortings_equal(SX_multisorting, SX_neuroscope_mse)
         check_dumping(SX_neuroscope_mse)
