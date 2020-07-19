@@ -73,6 +73,8 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         sampling_frequency = float(soup.samplingrate.string)
         
         print(file_path)
+        print(type(numchan))
+        print(numchan)
         
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
                                           dtype=dtype, numchan=numchan)
