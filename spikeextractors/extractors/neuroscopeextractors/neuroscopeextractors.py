@@ -72,10 +72,6 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         
         sampling_frequency = float(soup.samplingrate.string)
         
-        print(file_path)
-        print(type(numchan))
-        print(numchan)
-        
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
                                           dtype=dtype, numchan=numchan)
         
@@ -104,6 +100,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
             assert int_loc != -1, 'Data type must be int16 or int32! Non-integer received.'
             n_bits = dtype[(int_loc+3):(int_loc+5)]
             assert n_bits in ['16','32'], 'Data type must be int16 or int32!'
+            print('Warning: Recording data type must be int16 or int32! Coercing to int'+n_bits+'.')
         
         abs_save_path = Path(save_path).absolute()
         _, RECORDING_NAME = os.path.split(abs_save_path)
@@ -112,9 +109,6 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
         # write recording
         recording_fn = '{}/{}'.format(save_path,RECORDING_NAME) # .dat extension handled in BinDataRecordingExtractor
-
-        print(save_xml_filpath)
-        print(recording_fn)
 
         # create parameters file if none exists
         if not os.path.isfile(save_xml_filpath):
@@ -125,15 +119,13 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
             int_loc = recording_dtype.find('int')
             recording_n_bits = recording_dtype[(int_loc+3):(int_loc+5)]
             
-            if dtype is not None: # user specified the data type manually
-                if int_loc == -1 or recording_n_bits not in ['16','32']:
-                    print('Warning: Recording data type must be int16 or int32! Coercing to int'+n_bits+'.')
-            else: # user did not specify data type
+            if dtype is None: # user did not specify data type
                 if int_loc == -1 or recording_n_bits not in ['16','32']:
                     print('Warning: Recording data type must be int16 or int32! Defaulting to int32.')
-                    n_bits = '32';
+                    n_bits = '32'
                 elif int_loc != -1 and recording_n_bits in ['16','32']:
                     n_bits = recording_n_bits
+                dtype = 'int' + n_bits # update dtype in pass to BinDatRecordingExtractor.write_recording
             
             new_tag.string = n_bits
             soup.append(new_tag)
