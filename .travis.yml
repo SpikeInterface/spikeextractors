@@ -7,7 +7,7 @@ python:
 - '3.6'
 install:
 # - pip install shybrid
-- pip install mountainlab_pytools pynwb==1.2.1 pyopenephys kbucket h5py MEArec==1.4.1 exdir ruamel.yaml nixio shybrid neo>=0.8 hdf5storage bs4 lxml
+- pip install mountainlab_pytools pynwb==1.2.1 pyopenephys kbucket h5py MEArec==1.4.1 exdir ruamel.yaml nixio shybrid neo>=0.8 hdf5storage
 - pip install .
 - pip install pytest==3.6
 script: pytest
