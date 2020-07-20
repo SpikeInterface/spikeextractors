@@ -71,7 +71,8 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
     @staticmethod
-    def write_recording(recording: RecordingExtractor, save_path: PathType, dtype: DtypeType = None):
+    def write_recording(recording: RecordingExtractor, save_path: PathType, dtype: DtypeType = None,
+                        **write_binary_kwargs):
         """
         Convert and save the recording extractor to Neuroscope format.
 
@@ -81,9 +82,12 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
             The recording extractor to be converted and saved.
         save_path: str
             Path to desired target folder. The name of the files will be the same as the final directory.
-        dtype: str or numpy data type
+        dtype: dtype
             Optional. Data type to be used in writing; must be int16 or int32 (default).
                       Will throw a warning if stored recording type from get_traces() does not match.
+        **write_binary_kwargs: keyword arguments for write_to_binary_dat_format function
+            - chunk_size
+            - chunk_mb
         """
         save_path = Path(save_path)
 
@@ -101,7 +105,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
         # create parameters file if none exists
         if save_xml_filepath.is_file():
-            os.remove(str(save_xml_filepath))
+            raise FileExistsError(f'{save_xml_filepath} already exists!')
 
         soup = BeautifulSoup("", 'xml')
         new_tag = soup.new_tag('nbits')
@@ -139,10 +143,8 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         # create parameters file if none exists
         with save_xml_filepath.open("w") as f:
             f.write(str(soup))
-    # else:
-    #     raise FileExistsError(f'{save_xml_filepath} already exists!')
 
-        BinDatRecordingExtractor.write_recording(recording, recording_filepath, dtype=dtype)
+        recording.write_to_binary_dat_format(recording_filepath, dtype=dtype, **write_binary_kwargs)
 
 
 class NeuroscopeSortingExtractor(SortingExtractor):
@@ -335,18 +337,18 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             save_xml_filepath = save_path / (str(xml_name) + '.xml')
 
             # create parameters file if none exists
-            if not save_xml_filepath.is_file():
-                soup = BeautifulSoup("", 'xml')
-
-                new_tag = soup.new_tag('samplingrate')
-                new_tag.string = str(sorting.get_sampling_frequency())
-                soup.append(new_tag)
-
-                # write parameters file
-                with save_xml_filepath.open("w") as f:
-                    f.write(str(soup))
-            else:
+            if save_xml_filepath.is_file():
                 raise FileExistsError(f'{save_xml_filepath} already exists!')
+
+            soup = BeautifulSoup("", 'xml')
+
+            new_tag = soup.new_tag('samplingrate')
+            new_tag.string = str(sorting.get_sampling_frequency())
+            soup.append(new_tag)
+
+            # write parameters file
+            with save_xml_filepath.open("w") as f:
+                f.write(str(soup))
 
             # Create and save .res and .clu files from the current sorting object
             save_res = save_path / f'{sorting_name}.res'
@@ -366,6 +368,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
     The .clu file is a file with one more row than the .res with the first row corresponding to the total number of
     unique ids in the file (and may exclude 0 & 1 from this count)
     with the rest of the rows indicating which unit id the corresponding entry in the .res file refers to.
+    The group id is loaded as unit property 'group'.
     
     In the original Neuroscope format:
         Unit ID 0 is the cluster of unsorted spikes (noise).
@@ -480,19 +483,18 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         if not save_path.is_dir():
             os.makedirs(save_path)
 
-        # create parameters file if none exists
-        if not os.path.isfile(save_xml_filepath):
-            soup = BeautifulSoup("", 'xml')
-
-            new_tag = soup.new_tag('samplingrate')
-            new_tag.string = str(sorting.get_sampling_frequency())
-            soup.append(new_tag)
-
-            # write parameters file
-            with open(save_xml_filepath, "w") as f:
-                f.write(str(soup))
-        else:
+        if save_xml_filepath.is_file():
             raise FileExistsError(f'{save_xml_filepath} already exists!')
+
+        soup = BeautifulSoup("", 'xml')
+
+        new_tag = soup.new_tag('samplingrate')
+        new_tag.string = str(sorting.get_sampling_frequency())
+        soup.append(new_tag)
+
+        # write parameters file
+        with open(save_xml_filepath, "w") as f:
+            f.write(str(soup))
 
         if isinstance(sorting, MultiSortingExtractor):
             counter = 1
