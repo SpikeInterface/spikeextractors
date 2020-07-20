@@ -10,7 +10,7 @@ import shutil
 
 
 class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
-    def __init__(self, recording, chunk_size=None, save_path=None):
+    def __init__(self, recording, chunk_size=None, chunk_mb=500, save_path=None):
         RecordingExtractor.__init__(self)  # init tmp folder before constructing BinDatRecordingExtractor
         tmp_folder = self.get_tmp_folder()
         self._recording = recording
@@ -26,7 +26,8 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
             self._is_tmp = False
             self._tmp_file = save_path
         self._dtype = recording.get_dtype()
-        recording.write_to_binary_dat_format(save_path=self._tmp_file, dtype=self._dtype, chunk_size=chunk_size)
+        recording.write_to_binary_dat_format(save_path=self._tmp_file, dtype=self._dtype, chunk_size=chunk_size,
+                                             chunk_mb=chunk_mb)
         # keep track of filter status when dumping
         self.is_filtered = self._recording.is_filtered
         BinDatRecordingExtractor.__init__(self, self._tmp_file, numchan=recording.get_num_channels(),
@@ -37,7 +38,7 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         self._bindat_kwargs = deepcopy(self._kwargs)
         self.set_tmp_folder(tmp_folder)
         self.copy_channel_properties(recording)
-        self._kwargs = {'recording': recording, 'chunk_size': chunk_size}
+        self._kwargs = {'recording': recording, 'chunk_size': chunk_size, 'chunk_mb': chunk_mb}
 
     def __del__(self):
         if self._is_tmp:
@@ -91,7 +92,7 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
 
         if self._is_tmp:
             print("Warning: dumping a CacheRecordingExtractor. The path to the tmp binary file will be lost in "
-                  "further sessions. To prevent this, use the 'CacheRecordingExtractor.save_to_file('path-to-file)' "
+                  "further sessions. To prevent this, use the 'CacheRecordingExtractor.move_to('path-to-file)' "
                   "function")
 
         dump_dict = {'class': class_name, 'module': module, 'kwargs': self._bindat_kwargs,
@@ -175,7 +176,7 @@ class CacheSortingExtractor(NpzSortingExtractor, SortingExtractor):
 
         if self._is_tmp:
             print("Warning: dumping a CacheSortingExtractor. The path to the tmp binary file will be lost in "
-                  "further sessions. To prevent this, use the 'CacheSortingExtractor.save_to_file('path-to-file)' "
+                  "further sessions. To prevent this, use the 'CacheSortingExtractor.move_to('path-to-file)' "
                   "function")
 
         dump_dict = {'class': class_name, 'module': module, 'kwargs': self._npz_kwargs,

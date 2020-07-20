@@ -66,7 +66,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
                 recordings = self._signals[np.sort(channel_ids), start_frame:end_frame]
                 return (recordings[sorted_idx] * self._lsb).astype('float')
             else:
-                return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float')
+                return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
         else:
             assert channel_ids in self.get_channel_ids()
-            return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float')
+            return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
