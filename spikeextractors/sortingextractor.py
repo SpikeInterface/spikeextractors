@@ -135,6 +135,7 @@ class SortingExtractor(ABC, BaseExtractor):
                             raise ValueError("feature values should have the same length as the spike train")
                 else:
                     if isinstance(feature_name, str) and len(value) == len(indexes):
+                        indexes = np.array(indexes)
                         self._features[unit_id][feature_name] = value
                         self._features[unit_id][feature_name + '_idxs'] = indexes
                     else:
