@@ -136,11 +136,8 @@ class SortingExtractor(ABC, BaseExtractor):
                 else:
                     if isinstance(feature_name, str) and len(value) == len(indexes):
                         indexes = np.array(indexes)
-                        indexes_sorted_indices = np.argsort(indexes)
-                        value_sorted = value[indexes_sorted_indices]
-                        indexes_sorted = indexes[indexes_sorted_indices]
-                        self._features[unit_id][feature_name] = value_sorted
-                        self._features[unit_id][feature_name + '_idxs'] = indexes_sorted
+                        self._features[unit_id][feature_name] = value
+                        self._features[unit_id][feature_name + '_idxs'] = indexes
                     else:
                         if not isinstance(feature_name, str):
                             raise ValueError("feature_name must be a string")
