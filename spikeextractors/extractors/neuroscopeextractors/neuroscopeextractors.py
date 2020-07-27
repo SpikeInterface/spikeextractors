@@ -410,7 +410,6 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         else:
             exclude_shanks = []
             exclude_shanks_passed = False
-
         xml_files = [f for f in folder_path.iterdir() if f.is_file if f.suffix == '.xml']
         assert len(xml_files) > 0, 'No .xml file found in the folder.'
         assert len(xml_files) == 1, 'More than one .xml file found in the folder.'

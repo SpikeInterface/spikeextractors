@@ -403,6 +403,24 @@ class TestExtractors(unittest.TestCase):
         SX_nwb = se.NwbSortingExtractor(path1)
         check_sortings_equal(self.SX, SX_nwb)
         check_dumping(SX_nwb)
+        
+        # Test for handling unit property with dictionary values
+        path3 = self.test_dir + '/dictionary_props.nwb'
+        SX_dict_prop = self.SX
+        # Currently does not respond well to having multiple mixed
+        # unit properties of the basic type AND a dictionary
+        SX_dict_prop.clear_units_property('stability')
+        example_dict_list = []
+        for unit_id in SX_dict_prop.get_unit_ids():
+            example_dict_list.append({'name': 'example_dict',
+                                      'description': 'This is an example of a unit property which is a dictionary.',
+                                      'data': np.random.uniform(0,1)})
+        SX_dict_prop.set_units_property(property_name='example_dict_info',
+                                        values=example_dict_list)
+        se.NwbSortingExtractor.write_sorting(sorting=SX_dict_prop, save_path=path3)
+        SX_nwb = se.NwbSortingExtractor(path1)
+        check_sortings_equal(self.SX, SX_nwb)
+        check_dumping(SX_nwb)
 
     def test_nixio_extractor(self):
         path1 = os.path.join(self.test_dir, 'raw.nix')

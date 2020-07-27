@@ -27,7 +27,7 @@ def check_nwb_install():
 
 
 def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, index=False,
-                               default_value=np.nan, description='no description'):
+                               default_value=np.nan, table=False, description='no description'):
     check_nwb_install()
     if not isinstance(row_ids, list) or not all(isinstance(x, int) for x in row_ids):
         raise TypeError("'ids' must be a list of integers")
@@ -51,7 +51,8 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, in
                 name=property_name,
                 description=description,
                 data=col_data,
-                index=index
+                index=index,
+                table=table
             )
     else:
         if property_name in dynamic_table:
@@ -62,7 +63,8 @@ def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, in
                 name=property_name,
                 description=description,
                 data=values,
-                index=index
+                index=index,
+                table=table
             )
 
 
@@ -415,8 +417,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         """
         Auxiliary static method for nwbextractor.
         Adds traces from recording object as ElectricalSeries to nwbfile object.
-        """
-        # ElectricalSeries
+        """            
+        if 'Ecephys' not in metadata:
+            metadata['Ecephys'] = {}
+        
         if 'ElectricalSeries' not in metadata['Ecephys']:
             metadata['Ecephys']['ElectricalSeries'] = [{'name': 'ElectricalSeries',
                                                         'description': 'electrical_series_description'}]
@@ -685,10 +689,15 @@ class NwbSortingExtractor(se.SortingExtractor):
     @staticmethod
     def write_sorting(sorting, save_path, **nwbfile_kwargs):
         """
+        For writing of custom columns to units, either set unit properties
+        with the basic name and value pair and the write method will populate
+        with defaults (e.g., description='no description'); otherwise, set the
+        unit property value to a dictionary with ('name','description','data')
+        fields.
 
         Parameters
         ----------
-        sorting: SortingExtractor
+        sorting: SortingExtractor or MultiSortingExtractor
         save_path: str
         nwbfile_kwargs: optional, pynwb.NWBFile args
         """
@@ -696,16 +705,22 @@ class NwbSortingExtractor(se.SortingExtractor):
 
         ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
-        if hasattr(sorting, '_t0'):
-            t0 = sorting._t0
-        else:
-            t0 = 0.
 
+        if isinstance(sorting,se.MultiSortingExtractor):
+            total_prop_dict = {}
+            counter = 0
+            for this_sorting in sorting.sortings:
+                for k,v in this_sorting._properties.items():
+                    total_prop_dict.update({counter:v})
+                    counter += 1
+        else:
+            total_prop_dict = sorting._properties
+            
         (all_properties, all_features) = find_all_unit_property_names(
-            properties_dict=sorting._properties,
+            properties_dict=total_prop_dict,
             features_dict=sorting._features
         )
-
+            
         if os.path.exists(save_path):
             read_mode = 'r+'
         else:
@@ -727,51 +742,97 @@ class NwbSortingExtractor(se.SortingExtractor):
                     spkt = sorting.get_unit_spike_train(unit_id=id) / fs # spike trains withinin the SortingExtractor object are not scaled by sampling frequency
                     nwbfile.add_unit(id=id, spike_times=spkt)
 
+            # Always add column for shank ids if a MultiSortingExtractor
+            if isinstance(sorting,se.MultiSortingExtractor):
+                set_dynamic_table_property(
+                        dynamic_table=nwbfile.units,
+                        row_ids=[int(k) for k, v in sorting._unit_map.items()],
+                        property_name='shank_id',
+                        values=[unit_dict['unit_id']-1 for ind,unit_dict in sorting._unit_map.items()],
+                        default_value=np.nan,
+                        description='0-indexed id of cluster of shank'
+                )
+
             # Units properties
             for pr in all_properties:
-                unit_ids = [int(k) for k, v in sorting._properties.items()
+                unit_ids = [int(k) for k, v in total_prop_dict.items()
                             if pr in v]
-                vals = [v[pr] for k, v in sorting._properties.items()
-                        if pr in v]
+                
+                # We can always guarantee two levelx of nested dictionaries based
+                # based on the current structure
+                # If the value inside that is also a dictionary, require that 
+                # it is of the {'name': my_name, 'description':my_description, 'data':my_data} format
+                unit_prop = next(iter(next(iter(total_prop_dict.values())).values()))
+                if type(unit_prop) is dict:
+                    item_names = [x for x in unit_prop.keys()]
+                    
+                    if 'name' not in item_names:
+                        name = pr
+                    else:
+                        name = [v[pr]['name'] for k, v in total_prop_dict.items()][0]
+                        
+                    if 'description' not in item_names:
+                        description = 'no description'
+                    else:
+                        description = [v[pr]['description'] for k, v in total_prop_dict.items()][0]
+                    
+                    if 'data' not in item_names:
+                        assert False, 'If setting a unit_property to be a dictionary, ensure a "data" field exists!'
+                    else:
+                        vals = [v[pr]['data'] for k, v in total_prop_dict.items()]
+                else:
+                    name = pr
+                    vals = [v[pr] for k, v in total_prop_dict.items()
+                            if pr in v]
+                    description = 'no description'
+                
+                # Special case of setting max_electrodes requires a table to be
+                # passed to become a dynamic table region
+                if name == 'max_electrode':
+                    table = nwbfile.electrodes
+                else:
+                    table = False
+                    
                 set_dynamic_table_property(
                     dynamic_table=nwbfile.units,
                     row_ids=unit_ids,
-                    property_name=pr,
+                    property_name=name,
                     values=vals,
                     default_value=np.nan,
-                    description='no description'
+                    description=description,
+                    table=table
                 )
-
-            # # Stores average and std of spike traces
-            # if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
-            #     wf = sorting.get_unit_spike_features(unit_id=id,
-            #                                          feature_name='waveforms')
-            #     relevant_ch = most_relevant_ch(wf)
-            #     # Spike traces on the most relevant channel
-            #     traces = wf[:, relevant_ch, :]
-            #     traces_avg = np.mean(traces, axis=0)
-            #     traces_std = np.std(traces, axis=0)
-            #     nwbfile.add_unit(
-            #         id=id,
-            #         spike_times=spkt,
-            #         waveform_mean=traces_avg,
-            #         waveform_sd=traces_std
-            #     )
-
-            # Units spike features
-            nspikes = {k: get_nspikes(nwbfile.units, int(k)) for k in ids}
-            for ft in all_features:
-                vals = [v[ft] if ft in v else [np.nan] * nspikes[int(k)]
-                        for k, v in sorting._features.items()]
-                flatten_vals = [item for sublist in vals for item in sublist]
-                nspks_list = [sp for sp in nspikes.values()]
-                spikes_index = np.cumsum(nspks_list).tolist()
-                set_dynamic_table_property(
-                    dynamic_table=nwbfile.units,
-                    row_ids=ids,
-                    property_name=ft,
-                    values=flatten_vals,
-                    index=spikes_index,
-                )
-
+                    
+                # # Stores average and std of spike traces
+                # This will soon be updated to the current NWB standard
+                # if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
+                #     wf = sorting.get_unit_spike_features(unit_id=id,
+                #                                          feature_name='waveforms')
+                #     relevant_ch = most_relevant_ch(wf)
+                #     # Spike traces on the most relevant channel
+                #     traces = wf[:, relevant_ch, :]
+                #     traces_avg = np.mean(traces, axis=0)
+                #     traces_std = np.std(traces, axis=0)
+                #     nwbfile.add_unit(
+                #         id=id,
+                #         spike_times=spkt,
+                #         waveform_mean=traces_avg,
+                #         waveform_sd=traces_std
+                #     )
+                
+                nspikes = {k: get_nspikes(nwbfile.units, int(k)) for k in ids}
+                for ft in all_features:
+                    vals = [v[ft] if ft in v else [np.nan] * nspikes[int(k)]
+                            for k, v in sorting._features.items()]
+                    flatten_vals = [item for sublist in vals for item in sublist]
+                    nspks_list = [sp for sp in nspikes.values()]
+                    spikes_index = np.cumsum(nspks_list).tolist()
+                    set_dynamic_table_property(
+                        dynamic_table=nwbfile.units,
+                        row_ids=ids,
+                        property_name=ft,
+                        values=flatten_vals,
+                        index=spikes_index,
+                    )
+                
             io.write(nwbfile)
