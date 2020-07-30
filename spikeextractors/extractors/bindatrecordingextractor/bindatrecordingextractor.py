@@ -64,8 +64,11 @@ class BinDatRecordingExtractor(RecordingExtractor):
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
-        recordings = self._timeseries[:, start_frame:end_frame][channel_idxs, :]
+        if np.all(channel_ids == self.get_channel_ids()):
+            recordings = self._timeseries[:, start_frame:end_frame]
+        else:
+            channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
+            recordings = self._timeseries[:, start_frame:end_frame][channel_idxs, :]
         if self._dtype.startswith('uint'):
             exp_idx = self._dtype.find('int') + 3
             exp = int(self._dtype[exp_idx:])
