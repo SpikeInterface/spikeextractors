@@ -708,11 +708,9 @@ class NwbSortingExtractor(se.SortingExtractor):
 
         if isinstance(sorting,se.MultiSortingExtractor):
             total_prop_dict = {}
-            counter = 0
-            for this_sorting in sorting.sortings:
+            for i,this_sorting in enumerate(sorting.sortings):
                 for k,v in this_sorting._properties.items():
-                    total_prop_dict.update({counter:v})
-                    counter += 1
+                    total_prop_dict.update({i:v})
         else:
             total_prop_dict = sorting._properties
             
