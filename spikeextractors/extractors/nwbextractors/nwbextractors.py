@@ -747,34 +747,31 @@ class NwbSortingExtractor(se.SortingExtractor):
                 unit_ids = [int(k) for k, v in total_prop_dict.items()
                             if pr in v]
 
-
-                # We can always guarantee two levels of nested dictionaries based
-                # based on the current structure
-                # If the value inside that is also a dictionary, require that 
-                # it is of the {'name': my_name, 'description':my_description, 'data':my_data} format
+                # We can always guarantee two levels of nested dictionaries
+                # based on structure of set_unit_property
                 unit_prop = next(iter(next(iter(total_prop_dict.values())).values()))
                 if type(unit_prop) is dict:
                     item_names = [x for x in unit_prop.keys()]
-
-                    if 'name' not in item_names:
-                        name = pr
-                    else:
-                        name = [v[pr]['name'] for k, v in total_prop_dict.items()][0]
-
-                    if 'description' not in item_names:
-                        description = 'no description'
-                    else:
-                        description = [v[pr]['description'] for k, v in total_prop_dict.items()][0]
-
-                    if 'data' not in item_names:
-                        assert False, 'If setting a unit_property to be a dictionary, ensure a "data" field exists!'
-                    else:
-                        vals = [v[pr]['data'] for k, v in total_prop_dict.items()]
+                    # This checks for the ordering as well
+                    assert item_names is ['name', 'description', 'data'], \
+                           'NwbSortingExtract.write_sorting() requires, if a unit property is a dictionary, the keys must be "name, description, data" in order!'
+                    
+                    names = [v[pr]['name'] for k, v in total_prop_dict.items()]
+                    assert all(elem == names[0] for elem in names), \
+                           'The "name" key in the dictionary of each unit should be the same!'
+                           
+                    descriptions = [v[pr]['description'] for k, v in total_prop_dict.items()]
+                    assert all(elem == descriptions[0] for elem in descriptions), \
+                           'The "description" key in the dictionary of each unit should be the same!'
+                    
+                    name = names[0]
+                    description = descriptions[0]
+                    vals = [v[pr]['data'] for k, v in total_prop_dict.items()]
                 else:
                     name = pr
+                    description = 'no description'
                     vals = [v[pr] for k, v in total_prop_dict.items()
                             if pr in v]
-                    description = 'no description'
 
                 # Special case of setting max_electrodes requires a table to be
                 # passed to become a dynamic table region
