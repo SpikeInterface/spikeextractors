@@ -753,7 +753,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                 if type(unit_prop) is dict:
                     item_names = [x for x in unit_prop.keys()]
                     # This checks for the ordering as well
-                    assert item_names is ['name', 'description', 'data'], \
+                    assert item_names == ['name', 'description', 'data'], \
                            'NwbSortingExtract.write_sorting() requires, if a unit property is a dictionary, the keys must be "name, description, data" in order!'
                     
                     names = [v[pr]['name'] for k, v in total_prop_dict.items()]
