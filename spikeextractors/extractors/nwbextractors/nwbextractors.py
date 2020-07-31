@@ -96,7 +96,7 @@ def get_nspikes(units_table, unit_id):
     check_nwb_install()
     if unit_id not in units_table.id[:]:
         raise ValueError(str(unit_id) + " is an invalid unit_id. "
-                         "Valid ids: " + str(units_table.id[:].tolist()))
+                                        "Valid ids: " + str(units_table.id[:].tolist()))
     nSpikes = np.diff([0] + list(units_table['spike_times_index'].data[:])).tolist()
     ind = np.where(np.array(units_table.id[:]) == unit_id)[0][0]
     return nSpikes[ind]
@@ -218,7 +218,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     'end_frame': self.time_to_frame(row['stop_time'])}
                     for _, row in df_epochs.iterrows()}
 
-            self._kwargs = {'file_path': str(Path(file_path).absolute()), 'electrical_series_name': electrical_series_name}
+            self._kwargs = {'file_path': str(Path(file_path).absolute()),
+                            'electrical_series_name': electrical_series_name}
             self.make_nwb_metadata(nwbfile=nwbfile, es=es)
 
     def make_nwb_metadata(self, nwbfile, es):
@@ -417,10 +418,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         """
         Auxiliary static method for nwbextractor.
         Adds traces from recording object as ElectricalSeries to nwbfile object.
-        """            
+        """
         if 'Ecephys' not in metadata:
             metadata['Ecephys'] = {}
-        
+
         if 'ElectricalSeries' not in metadata['Ecephys']:
             metadata['Ecephys']['ElectricalSeries'] = [{'name': 'ElectricalSeries',
                                                         'description': 'electrical_series_description'}]
@@ -706,19 +707,19 @@ class NwbSortingExtractor(se.SortingExtractor):
         ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
 
-        if isinstance(sorting,se.MultiSortingExtractor):
+        if isinstance(sorting, se.MultiSortingExtractor):
             total_prop_dict = {}
-            for i,this_sorting in enumerate(sorting.sortings):
-                for k,v in this_sorting._properties.items():
-                    total_prop_dict.update({i:v})
+            for i, this_sorting in enumerate(sorting.sortings):
+                for k, v in this_sorting._properties.items():
+                    total_prop_dict.update({i: v})
         else:
             total_prop_dict = sorting._properties
-            
+
         (all_properties, all_features) = find_all_unit_property_names(
             properties_dict=total_prop_dict,
             features_dict=sorting._features
         )
-            
+
         if os.path.exists(save_path):
             read_mode = 'r+'
         else:
@@ -737,43 +738,34 @@ class NwbSortingExtractor(se.SortingExtractor):
             # If no Units present in nwb file
             if nwbfile.units is None:
                 for id in ids:
-                    spkt = sorting.get_unit_spike_train(unit_id=id) / fs # spike trains withinin the SortingExtractor object are not scaled by sampling frequency
+                    spkt = sorting.get_unit_spike_train(
+                        unit_id=id) / fs  # spike trains withinin the SortingExtractor object are not scaled by sampling frequency
                     nwbfile.add_unit(id=id, spike_times=spkt)
-
-            # Always add column for shank ids if a MultiSortingExtractor
-            if isinstance(sorting,se.MultiSortingExtractor):
-                set_dynamic_table_property(
-                        dynamic_table=nwbfile.units,
-                        row_ids=[int(k) for k, v in sorting._unit_map.items()],
-                        property_name='shank_id',
-                        values=[unit_dict['unit_id']-1 for ind,unit_dict in sorting._unit_map.items()],
-                        default_value=np.nan,
-                        description='0-indexed id of cluster of shank'
-                )
 
             # Units properties
             for pr in all_properties:
                 unit_ids = [int(k) for k, v in total_prop_dict.items()
                             if pr in v]
-                
-                # We can always guarantee two levelx of nested dictionaries based
+
+
+                # We can always guarantee two levels of nested dictionaries based
                 # based on the current structure
                 # If the value inside that is also a dictionary, require that 
                 # it is of the {'name': my_name, 'description':my_description, 'data':my_data} format
                 unit_prop = next(iter(next(iter(total_prop_dict.values())).values()))
                 if type(unit_prop) is dict:
                     item_names = [x for x in unit_prop.keys()]
-                    
+
                     if 'name' not in item_names:
                         name = pr
                     else:
                         name = [v[pr]['name'] for k, v in total_prop_dict.items()][0]
-                        
+
                     if 'description' not in item_names:
                         description = 'no description'
                     else:
                         description = [v[pr]['description'] for k, v in total_prop_dict.items()][0]
-                    
+
                     if 'data' not in item_names:
                         assert False, 'If setting a unit_property to be a dictionary, ensure a "data" field exists!'
                     else:
@@ -783,14 +775,14 @@ class NwbSortingExtractor(se.SortingExtractor):
                     vals = [v[pr] for k, v in total_prop_dict.items()
                             if pr in v]
                     description = 'no description'
-                
+
                 # Special case of setting max_electrodes requires a table to be
                 # passed to become a dynamic table region
-                if name == 'max_electrode':
+                if name in ['max_channel', 'max_electrode']:
                     table = nwbfile.electrodes
                 else:
                     table = False
-                    
+
                 set_dynamic_table_property(
                     dynamic_table=nwbfile.units,
                     row_ids=unit_ids,
@@ -800,7 +792,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     description=description,
                     table=table
                 )
-                    
+
                 # # Stores average and std of spike traces
                 # This will soon be updated to the current NWB standard
                 # if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
@@ -817,7 +809,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                 #         waveform_mean=traces_avg,
                 #         waveform_sd=traces_std
                 #     )
-                
+
                 nspikes = {k: get_nspikes(nwbfile.units, int(k)) for k in ids}
                 for ft in all_features:
                     vals = [v[ft] if ft in v else [np.nan] * nspikes[int(k)]
@@ -832,5 +824,5 @@ class NwbSortingExtractor(se.SortingExtractor):
                         values=flatten_vals,
                         index=spikes_index,
                     )
-                
+
             io.write(nwbfile)
