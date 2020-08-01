@@ -643,7 +643,8 @@ class NwbSortingExtractor(se.SortingExtractor):
                             prop_value = nwbfile.units[item][ind].index[0]
                         else:
                             prop_value = nwbfile.units[item][ind]
-                        self.set_unit_property(id, item, prop_value)
+                        if prop_value == prop_value:  # not nan
+                            self.set_unit_property(id, item, prop_value)
 
             # Fill epochs dictionary
             self._epochs = {}
@@ -753,17 +754,30 @@ class NwbSortingExtractor(se.SortingExtractor):
                             if pr in v]
                 all_units = sorting.get_unit_ids()
                 vals = []
+
                 # We can always guarantee two levels of nested dictionaries
                 # based on structure of set_unit_property
-                unit_prop = next(iter(next(iter(total_prop_dict.values())).values()))
+                # Find non null unit property
+                for u in all_units:
+                    if pr in sorting.get_unit_property_names(u):
+                        unit_prop = sorting.get_unit_property(u, pr)
+                        break
+                # unit_prop = next(iter(next(iter(total_prop_dict.values())).values()))
+                print('Unit prop', pr, unit_prop)
                 if type(unit_prop) is dict:
                     item_names = [x for x in unit_prop.keys()]
                     # This checks for the ordering as well
                     if sorted(item_names) == sorted(['name', 'description', 'data']):
-                        names = [v[pr]['name'] for k, v in total_prop_dict.items()]
+                        names = []
+                        descriptions = []
+                        for u in all_units:
+                            if pr in sorting.get_unit_property_names(u):
+                                names.append(sorting.get_unit_property(u, pr)['name'])
+                                descriptions.append(sorting.get_unit_property(u, pr)['description'])
+                        # names = [v[pr]['name'] for k, v in total_prop_dict.items()]
                         assert all(elem == names[0] for elem in names), \
                             'The "name" key in the dictionary of each unit should be the same!'
-                        descriptions = [v[pr]['description'] for k, v in total_prop_dict.items()]
+                        # descriptions = [v[pr]['description'] for k, v in total_prop_dict.items()]
                         assert all(elem == descriptions[0] for elem in descriptions), \
                             'The "description" key in the dictionary of each unit should be the same!'
 
@@ -773,8 +787,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                             if pr in sorting.get_unit_property_names(u):
                                 vals.append(sorting.get_unit_property(u, pr)['data'])
                             else:
-                                vals.append('undefined')
-                                print('here')
+                                vals.append(np.nan)
                     else:
                         print('Warning: NwbSortingExtract.write_sorting() requires, if a unit property' +
                               'is a dictionary, the keys must be "name, description, data" in order!')
@@ -786,7 +799,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                         if pr in sorting.get_unit_property_names(u):
                             vals.append(sorting.get_unit_property(u, pr))
                         else:
-                            vals.append('undefined')
+                            vals.append(np.nan)
 
                 # Special case of setting max_electrodes requires a table to be
                 # passed to become a dynamic table region
@@ -794,9 +807,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                     table = nwbfile.electrodes
                 else:
                     table = False
-
-                if len(unit_ids) != len(sorting.get_unit_ids()):
-                    print(all_units, vals)
 
                 set_dynamic_table_property(
                     dynamic_table=nwbfile.units,

@@ -203,8 +203,8 @@ class TestExtractors(unittest.TestCase):
         # cleanup
         os.remove('cache_rec.dat')
         os.remove('cache_rec2.dat')
-        os.remove('cache_sort.dat')
-        os.remove('cache_sort2.dat')
+        os.remove('cache_sort.npz')
+        os.remove('cache_sort2.npz')
 
     def test_not_dumpable_exception(self):
         try:
@@ -403,26 +403,31 @@ class TestExtractors(unittest.TestCase):
         se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1)
         # create new
         path2 = self.test_dir + '/firings_true.nwb'
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path2)
         se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2)
-        SX_nwb = se.NwbSortingExtractor(path1)
+        SX_nwb = se.NwbSortingExtractor(path2)
         check_sortings_equal(self.SX, SX_nwb)
         check_dumping(SX_nwb)
         
         # Test for handling unit property with dictionary values
         path3 = self.test_dir + '/dictionary_props.nwb'
         SX_dict_prop = self.SX
-        # Currently does not respond well to having multiple mixed
-        # unit properties of the basic type AND a dictionary
-        SX_dict_prop.clear_units_property('stability')
         example_dict_list = []
         for unit_id in SX_dict_prop.get_unit_ids():
+            if unit_id == 1:
+                d = {'name': 'example_dict',
+                     'description': 'This is an example of a unit property which is a dictionary.',
+                     'data': np.random.uniform(0, 1)}
+                SX_dict_prop.set_unit_property(unit_id, property_name='example_dict_single',
+                                               value=d)
             example_dict_list.append({'name': 'example_dict',
                                       'description': 'This is an example of a unit property which is a dictionary.',
-                                      'data': np.random.uniform(0,1)})
+                                      'data': np.random.uniform(0, 1)})
         SX_dict_prop.set_units_property(property_name='example_dict_info',
                                         values=example_dict_list)
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path3)
         se.NwbSortingExtractor.write_sorting(sorting=SX_dict_prop, save_path=path3)
-        SX_nwb = se.NwbSortingExtractor(path1)
+        SX_nwb = se.NwbSortingExtractor(path3)
         check_sortings_equal(self.SX, SX_nwb)
         check_dumping(SX_nwb)
 
