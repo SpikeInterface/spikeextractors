@@ -200,6 +200,12 @@ class TestExtractors(unittest.TestCase):
         del cache_sort
         assert not Path(tmp_file).is_file()
 
+        # cleanup
+        os.remove('cache_rec.dat')
+        os.remove('cache_rec2.dat')
+        os.remove('cache_sort.dat')
+        os.remove('cache_sort2.dat')
+
     def test_not_dumpable_exception(self):
         try:
             self.RX.dump_to_json()
@@ -210,8 +216,6 @@ class TestExtractors(unittest.TestCase):
             self.RX.dump_to_pickle()
         except Exception as e:
             assert isinstance(e, NotDumpableExtractorError)
-
-
 
     def test_mda_extractor(self):
         path1 = self.test_dir + '/mda'

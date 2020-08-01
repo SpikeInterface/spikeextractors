@@ -11,6 +11,7 @@ from spikeextractors.extraction_tools import check_get_traces_args, check_valid_
 
 try:
     import pynwb
+    import pandas as pd
     from pynwb import NWBHDF5IO
     from pynwb import NWBFile
     from pynwb.ecephys import ElectricalSeries
@@ -638,7 +639,11 @@ class NwbSortingExtractor(se.SortingExtractor):
                 else:  # if it is unit_property
                     for id in units_ids:
                         ind = list(units_ids).index(id)
-                        self.set_unit_property(id, item, nwbfile.units[item][ind])
+                        if isinstance(nwbfile.units[item][ind], pd.DataFrame):
+                            prop_value = nwbfile.units[item][ind].index[0]
+                        else:
+                            prop_value = nwbfile.units[item][ind]
+                        self.set_unit_property(id, item, prop_value)
 
             # Fill epochs dictionary
             self._epochs = {}
@@ -746,24 +751,30 @@ class NwbSortingExtractor(se.SortingExtractor):
             for pr in all_properties:
                 unit_ids = [int(k) for k, v in total_prop_dict.items()
                             if pr in v]
-
+                all_units = sorting.get_unit_ids()
+                vals = []
                 # We can always guarantee two levels of nested dictionaries
                 # based on structure of set_unit_property
                 unit_prop = next(iter(next(iter(total_prop_dict.values())).values()))
                 if type(unit_prop) is dict:
                     item_names = [x for x in unit_prop.keys()]
                     # This checks for the ordering as well
-                    if item_names == ['name', 'description', 'data']:
+                    if sorted(item_names) == sorted(['name', 'description', 'data']):
                         names = [v[pr]['name'] for k, v in total_prop_dict.items()]
                         assert all(elem == names[0] for elem in names), \
-                             'The "name" key in the dictionary of each unit should be the same!'
+                            'The "name" key in the dictionary of each unit should be the same!'
                         descriptions = [v[pr]['description'] for k, v in total_prop_dict.items()]
                         assert all(elem == descriptions[0] for elem in descriptions), \
-                               'The "description" key in the dictionary of each unit should be the same!'
-                        
+                            'The "description" key in the dictionary of each unit should be the same!'
+
                         name = names[0]
                         description = descriptions[0]
-                        vals = [v[pr]['data'] for k, v in total_prop_dict.items()]
+                        for u in all_units:
+                            if pr in sorting.get_unit_property_names(u):
+                                vals.append(sorting.get_unit_property(u, pr)['data'])
+                            else:
+                                vals.append('undefined')
+                                print('here')
                     else:
                         print('Warning: NwbSortingExtract.write_sorting() requires, if a unit property' +
                               'is a dictionary, the keys must be "name, description, data" in order!')
@@ -771,8 +782,11 @@ class NwbSortingExtractor(se.SortingExtractor):
                 else:
                     name = pr
                     description = 'no description'
-                    vals = [v[pr] for k, v in total_prop_dict.items() 
-                            if pr in v]
+                    for u in all_units:
+                        if pr in sorting.get_unit_property_names(u):
+                            vals.append(sorting.get_unit_property(u, pr))
+                        else:
+                            vals.append('undefined')
 
                 # Special case of setting max_electrodes requires a table to be
                 # passed to become a dynamic table region
@@ -781,9 +795,12 @@ class NwbSortingExtractor(se.SortingExtractor):
                 else:
                     table = False
 
+                if len(unit_ids) != len(sorting.get_unit_ids()):
+                    print(all_units, vals)
+
                 set_dynamic_table_property(
                     dynamic_table=nwbfile.units,
-                    row_ids=unit_ids,
+                    row_ids=all_units,
                     property_name=name,
                     values=vals,
                     default_value=np.nan,
