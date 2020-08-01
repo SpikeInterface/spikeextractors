@@ -764,16 +764,15 @@ class NwbSortingExtractor(se.SortingExtractor):
                         name = names[0]
                         description = descriptions[0]
                         vals = [v[pr]['data'] for k, v in total_prop_dict.items()]
-                        add_property = True
                     else:
                         print('Warning: NwbSortingExtract.write_sorting() requires, if a unit property' +
                               'is a dictionary, the keys must be "name, description, data" in order!')
-                        add_property = False
+                        continue
                 else:
                     name = pr
                     description = 'no description'
-                    vals = [v[pr] for k, v in total_prop_dict.items() if pr in v]
-                    add_property = True
+                    vals = [v[pr] for k, v in total_prop_dict.items() 
+                            if pr in v]
 
                 # Special case of setting max_electrodes requires a table to be
                 # passed to become a dynamic table region
@@ -782,16 +781,15 @@ class NwbSortingExtractor(se.SortingExtractor):
                 else:
                     table = False
 
-                if add_property:
-                    set_dynamic_table_property(
-                        dynamic_table=nwbfile.units,
-                        row_ids=unit_ids,
-                        property_name=name,
-                        values=vals,
-                        default_value=np.nan,
-                        description=description,
-                        table=table
-                    )
+                set_dynamic_table_property(
+                    dynamic_table=nwbfile.units,
+                    row_ids=unit_ids,
+                    property_name=name,
+                    values=vals,
+                    default_value=np.nan,
+                    description=description,
+                    table=table
+                )
 
                 # # Stores average and std of spike traces
                 # This will soon be updated to the current NWB standard
