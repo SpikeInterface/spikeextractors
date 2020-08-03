@@ -677,7 +677,8 @@ class RecordingExtractor(ABC, BaseExtractor):
         save_to_probe_file(self, probe_file, grouping_property=grouping_property, radius=radius,
                            graph=graph, geometry=geometry, verbose=verbose)
 
-    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500,
+                                   verbose=False):
         '''Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
@@ -695,12 +696,14 @@ class RecordingExtractor(ABC, BaseExtractor):
             If 'auto' the file is saved in chunks of ~ 500Mb
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
+        verbose: bool
+            If True, output is verbose (when chunks are used)
         '''
         write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size,
-                                   chunk_mb=chunk_mb)
+                                   chunk_mb=chunk_mb, verbose=verbose)
 
     def write_to_h5_dataset_format(self, dataset_path, save_path=None, file_handle=None,
-                                   time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+                                   time_axis=0, dtype=None, chunk_size=None, chunk_mb=500, verbose=False):
         '''Saves the traces of a recording extractor in an h5 dataset.
 
         Parameters
@@ -724,8 +727,11 @@ class RecordingExtractor(ABC, BaseExtractor):
             If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
+        verbose: bool
+            If True, output is verbose (when chunks are used)
         '''
-        write_to_h5_dataset_format(self, dataset_path, save_path, file_handle, time_axis, dtype, chunk_size, chunk_mb)
+        write_to_h5_dataset_format(self, dataset_path, save_path, file_handle, time_axis, dtype, chunk_size, chunk_mb,
+                                   verbose)
 
     def get_sub_extractors_by_property(self, property_name, return_property_list=False):
         '''Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given
