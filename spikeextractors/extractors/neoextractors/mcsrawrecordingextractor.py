@@ -1,4 +1,4 @@
-from .neobaseextractor import NeoBaseRecordingExtractor, NeoBaseSortingExtractor
+from .neobaseextractor import NeoBaseRecordingExtractor
 
 try:
     import neo
@@ -7,9 +7,7 @@ except ImportError:
     HAVE_NEO = False
  
 
-class mcsrawRecordingExtractor(NeoBaseRecordingExtractor):
-  extractor_name='mcsrawRecoding'
-  mode='file'
-  NeoRawIOClass='RawMCSRawIO'
-
-
+class MCSRawRecordingExtractor(NeoBaseRecordingExtractor):
+    extractor_name='mcsrawRecoding'
+    mode='file'
+    NeoRawIOClass='RawMCSRawIO'
