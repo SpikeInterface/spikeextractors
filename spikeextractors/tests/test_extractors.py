@@ -409,27 +409,21 @@ class TestExtractors(unittest.TestCase):
         check_sortings_equal(self.SX, SX_nwb)
         check_dumping(SX_nwb)
         
-        # Test for handling unit property with dictionary values
-        path3 = self.test_dir + '/dictionary_props.nwb'
-        SX_dict_prop = self.SX
-        example_dict_list = []
-        for unit_id in SX_dict_prop.get_unit_ids():
-            if unit_id == 1:
-                d = {'name': 'example_dict',
-                     'description': 'This is an example of a unit property which is a dictionary.',
-                     'data': np.random.uniform(0, 1)}
-                SX_dict_prop.set_unit_property(unit_id, property_name='example_dict_single',
-                                               value=d)
-            example_dict_list.append({'name': 'example_dict',
-                                      'description': 'This is an example of a unit property which is a dictionary.',
-                                      'data': np.random.uniform(0, 1)})
-        SX_dict_prop.set_units_property(property_name='example_dict_info',
-                                        values=example_dict_list)
-        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path3)
-        se.NwbSortingExtractor.write_sorting(sorting=SX_dict_prop, save_path=path3)
-        SX_nwb = se.NwbSortingExtractor(path3)
+        # Test for handling unit property descriptions argument
+        property_descriptions = {'stability': 'this is a description of stability'}
+        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1, 
+                                             property_descriptions=property_descriptions)
+        # create new
+        path2 = self.test_dir + '/firings_true.nwb'
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path2)
+        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2, 
+                                             property_descriptions=property_descriptions)
+        SX_nwb = se.NwbSortingExtractor(path2)
         check_sortings_equal(self.SX, SX_nwb)
         check_dumping(SX_nwb)
+        
+        # TODO
+        # Tests for nwbfile argument passing and modification?
 
     def test_nixio_extractor(self):
         path1 = os.path.join(self.test_dir, 'raw.nix')

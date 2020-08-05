@@ -1,10 +1,11 @@
 import os
 import uuid
 from datetime import datetime
-from collections import defaultdict, abc
+from collections import abc
 from pathlib import Path
 import numpy as np
 import distutils.version
+from typing import Union
 
 import spikeextractors as se
 from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
@@ -21,6 +22,8 @@ try:
     HAVE_NWB = True
 except ModuleNotFoundError:
     HAVE_NWB = False
+    
+PathType = Union[str, Path, None]
 
 
 def check_nwb_install():
@@ -74,22 +77,6 @@ def get_dynamic_table_property(dynamic_table, *, row_ids=None, property_name):
     if row_ids is None:
         row_ids = all_row_ids
     return [dynamic_table[property_name][all_row_ids.index(x)] for x in row_ids]
-
-
-def find_all_unit_property_names(properties_dict: dict, features_dict: dict):
-    """
-    Finds all existing units properties and units spikes features in the sorting
-    dictionaries.
-    """
-    properties_set = set()
-    for k, v in properties_dict.items():
-        properties_set.update(list(v.keys()))
-
-    features_set = set()
-    for k, v in features_dict.items():
-        features_set.update(list(v.keys()))
-
-    return properties_set, features_set
 
 
 def get_nspikes(units_table, unit_id):
@@ -353,6 +340,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 nwbfile.add_electrode_column('rel_x', 'x position of electrode in electrode group')
             if nwbfile.electrodes is None or 'rel_y' not in nwbfile.electrodes.colnames:
                 nwbfile.add_electrode_column('rel_y', 'y position of electrode in electrode group')
+                
+        # ToDo: add electrode columns specified in metadatta
 
         # add new electrodes with id, (rel_x, rel_y) and groups
         channel_ids = recording.get_channel_ids()
@@ -372,6 +361,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     filtering='none',
                     group=grp,
                 )
+                # ... **metadata[...])
         electrode_table = nwbfile.electrodes
 
         # add/update electrode properties
@@ -507,15 +497,63 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     )
 
         return nwbfile
+    
+    @staticmethod
+    def add_all_to_nwbfile(recording: se.RecordingExtractor, nwbfile: NWBFile, 
+                           metadata: dict = None):
+        # Add devices
+        nwbfile = se.NwbRecordingExtractor.add_devices(
+            recording=recording,
+            nwbfile=nwbfile,
+            metadata=metadata
+        )
+
+        # Add electrode groups
+        nwbfile = se.NwbRecordingExtractor.add_electrode_groups(
+            recording=recording,
+            nwbfile=nwbfile,
+            metadata=metadata
+        )
+
+        # Add electrodes
+        nwbfile = se.NwbRecordingExtractor.add_electrodes(
+            recording=recording,
+            nwbfile=nwbfile,
+            metadata=metadata
+        )
+
+        # Add electrical series
+        nwbfile = se.NwbRecordingExtractor.add_electrical_series(
+            recording=recording,
+            nwbfile=nwbfile,
+            metadata=metadata
+        )
+
+        # Add epochs
+        nwbfile = se.NwbRecordingExtractor.add_epochs(
+            recording=recording,
+            nwbfile=nwbfile
+        )
 
     @staticmethod
-    def write_recording(recording, save_path, metadata=None):
+    def write_recording(recording: se.RecordingExtractor, save_path: PathType = None,
+                        nwbfile: NWBFile = None, metadata: dict = None):
         '''
-
         Parameters
         ----------
         recording: RecordingExtractor
-        save_path: str
+        save_path: PathType
+            Required if an nwbfile is not passed. Must be the path to the nwbfile
+            being appended, otherwise one is created and written.
+        nwbfile: NWBFile
+            Required if a save_path is not specified. If passed, this function
+            will fill the relevant fields within the nwbfile. E.g., calling
+            
+            spikeextractors.NwbRecordingExtractor.write_recording(
+                my_recording_extractor, my_nwbfile
+            )
+            
+            will result in the appropriate changes to the my_nwbfile object.
         metadata: dict
             metadata info for constructing the nwb file (optional).
         '''
@@ -523,64 +561,46 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         assert distutils.version.LooseVersion(pynwb.__version__) >= '1.3.3', \
             "'write_recording' not supported for version < 1.3.3. Run pip install --upgrade pynwb"
-
-        if os.path.exists(save_path):
-            read_mode = 'r+'
-        else:
-            read_mode = 'w'
-
+            
+        assert save_path is None or nwbfile is None, \
+            'Either pass a save_path location, or nwbfile object, but not both!'
+            
         # Update any previous metadata with user passed dictionary
         if metadata is None:
             metadata = dict()
         if hasattr(recording, 'nwb_metadata'):
             metadata = update_dict(recording.nwb_metadata, metadata)
 
-        with NWBHDF5IO(save_path, mode=read_mode) as io:
-            if read_mode == 'r+':
-                nwbfile = io.read()
+        if nwbfile is None:
+            if os.path.exists(save_path):
+                read_mode = 'r+'
             else:
-                if 'NWBFile' not in metadata:
-                    metadata['NWBFile'] = {'session_description': 'no description',
-                                           'identifier': str(uuid.uuid4()),
-                                           'session_start_time': datetime.now()}
-                nwbfile = NWBFile(**metadata['NWBFile'])
-
-            # Add devices
-            nwbfile = se.NwbRecordingExtractor.add_devices(
-                recording=recording,
-                nwbfile=nwbfile,
-                metadata=metadata
+                read_mode = 'w'
+    
+            with NWBHDF5IO(save_path, mode=read_mode) as io:
+                if read_mode == 'r+':
+                    nwbfile = io.read()
+                else:
+                    if 'NWBFile' not in metadata:
+                        metadata['NWBFile'] = {'session_description': 'no description',
+                                               'identifier': str(uuid.uuid4()),
+                                               'session_start_time': datetime.now()}
+                    nwbfile = NWBFile(**metadata['NWBFile'])
+                    
+                    se.NwbRecordingExtractor.add_all_to_nwbfile(
+                        recording = recording, 
+                        nwbfile = nwbfile, 
+                        metadata = metadata
+                    )
+                        
+                # Write to file
+                io.write(nwbfile)
+        else:
+            se.NwbRecordingExtractor.add_all_to_nwbfile(
+                recording = recording, 
+                nwbfile = nwbfile, 
+                metadata = metadata
             )
-
-            # Add electrode groups
-            nwbfile = se.NwbRecordingExtractor.add_electrode_groups(
-                recording=recording,
-                nwbfile=nwbfile,
-                metadata=metadata
-            )
-
-            # Add electrodes
-            nwbfile = se.NwbRecordingExtractor.add_electrodes(
-                recording=recording,
-                nwbfile=nwbfile,
-                metadata=metadata
-            )
-
-            # Add electrical series
-            nwbfile = se.NwbRecordingExtractor.add_electrical_series(
-                recording=recording,
-                nwbfile=nwbfile,
-                metadata=metadata
-            )
-
-            # Add epochs
-            nwbfile = se.NwbRecordingExtractor.add_epochs(
-                recording=recording,
-                nwbfile=nwbfile
-            )
-
-            # Write to file
-            io.write(nwbfile)
 
 
 class NwbSortingExtractor(se.SortingExtractor):
@@ -692,162 +712,156 @@ class NwbSortingExtractor(se.SortingExtractor):
 
     def frame_to_time(self, frame):
         return frame / self.get_sampling_frequency()
-
+    
+    
     @staticmethod
-    def write_sorting(sorting, save_path, **nwbfile_kwargs):
-        """
-        For writing of custom columns to units, either set unit properties
-        with the basic name and value pair and the write method will populate
-        with defaults (e.g., description='no description'); otherwise, set the
-        unit property value to a dictionary with ('name','description','data')
-        fields.
-
-        Parameters
-        ----------
-        sorting: SortingExtractor or MultiSortingExtractor
-        save_path: str
-        nwbfile_kwargs: optional, pynwb.NWBFile args
-        """
-        assert HAVE_NWB, NwbSortingExtractor.installation_mesg
-
-        ids = sorting.get_unit_ids()
+    def write_units(sorting: se.SortingExtractor, nwbfile: NWBFile, 
+                    property_descriptions: dict):
+        '''
+        Helper function for write_sorting.
+        '''
+        unit_ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
-
-        if isinstance(sorting, se.MultiSortingExtractor):
-            total_prop_dict = {}
-            for i, this_sorting in enumerate(sorting.sortings):
-                for k, v in this_sorting._properties.items():
-                    total_prop_dict.update({i: v})
+        
+        all_properties = set()
+        all_features = set()
+        for unit_id in unit_ids:
+            all_properties.update(sorting.get_unit_property_names(unit_id))
+            all_features.update(sorting.get_unit_spike_feature_names(unit_id))
+        
+        if property_descriptions is not None:
+            property_description_names = set(property_descriptions.keys())
+            print(all_properties)
+            print(property_description_names)
+            if not all_properties == property_description_names:
+                print('Warning: property_descriptions were specified, ' +
+                      'but not all unit properties have a description!')
+                for pr in all_properties - property_description_names:
+                    property_descriptions.update({pr: 'no description'})
         else:
-            total_prop_dict = sorting._properties
-
-        (all_properties, all_features) = find_all_unit_property_names(
-            properties_dict=total_prop_dict,
-            features_dict=sorting._features
-        )
-
-        if os.path.exists(save_path):
-            read_mode = 'r+'
-        else:
-            read_mode = 'w'
-
-        with NWBHDF5IO(save_path, mode=read_mode) as io:
-            if read_mode == 'r+':
-                nwbfile = io.read()
-            else:
-                kwargs = {'session_description': 'No description',
-                          'identifier': str(uuid.uuid4()),
-                          'session_start_time': datetime.now()}
-                kwargs.update(**nwbfile_kwargs)
-                nwbfile = NWBFile(**kwargs)
-
-            # If no Units present in nwb file
-            if nwbfile.units is None:
-                for id in ids:
-                    spkt = sorting.get_unit_spike_train(
-                        unit_id=id) / fs  # spike trains withinin the SortingExtractor object are not scaled by sampling frequency
-                    nwbfile.add_unit(id=id, spike_times=spkt)
-
-            # Units properties
+            property_descriptions = {}
             for pr in all_properties:
-                unit_ids = [int(k) for k, v in total_prop_dict.items()
-                            if pr in v]
-                all_units = sorting.get_unit_ids()
-                vals = []
-
-                # We can always guarantee two levels of nested dictionaries
-                # based on structure of set_unit_property
-                # Find non null unit property
-                for u in all_units:
-                    if pr in sorting.get_unit_property_names(u):
-                        unit_prop = sorting.get_unit_property(u, pr)
-                        break
-                # unit_prop = next(iter(next(iter(total_prop_dict.values())).values()))
-                print('Unit prop', pr, unit_prop)
-                if type(unit_prop) is dict:
-                    item_names = [x for x in unit_prop.keys()]
-                    # This checks for the ordering as well
-                    if sorted(item_names) == sorted(['name', 'description', 'data']):
-                        names = []
-                        descriptions = []
-                        for u in all_units:
-                            if pr in sorting.get_unit_property_names(u):
-                                names.append(sorting.get_unit_property(u, pr)['name'])
-                                descriptions.append(sorting.get_unit_property(u, pr)['description'])
-                        # names = [v[pr]['name'] for k, v in total_prop_dict.items()]
-                        assert all(elem == names[0] for elem in names), \
-                            'The "name" key in the dictionary of each unit should be the same!'
-                        # descriptions = [v[pr]['description'] for k, v in total_prop_dict.items()]
-                        assert all(elem == descriptions[0] for elem in descriptions), \
-                            'The "description" key in the dictionary of each unit should be the same!'
-
-                        name = names[0]
-                        description = descriptions[0]
-                        for u in all_units:
-                            if pr in sorting.get_unit_property_names(u):
-                                vals.append(sorting.get_unit_property(u, pr)['data'])
-                            else:
-                                vals.append(np.nan)
-                    else:
-                        print('Warning: NwbSortingExtract.write_sorting() requires, if a unit property' +
-                              'is a dictionary, the keys must be "name, description, data" in order!')
-                        continue
-                else:
-                    name = pr
-                    description = 'no description'
-                    for u in all_units:
-                        if pr in sorting.get_unit_property_names(u):
-                            vals.append(sorting.get_unit_property(u, pr))
-                        else:
-                            vals.append(np.nan)
-
+                property_descriptions.update({pr: 'no description'})
+        
+        # If no Units present in nwb file
+        if nwbfile.units is None:
+            for pr in all_properties:
                 # Special case of setting max_electrodes requires a table to be
                 # passed to become a dynamic table region
-                if name in ['max_channel', 'max_electrode']:
-                    table = nwbfile.electrodes
+                if pr in ['max_channel', 'max_electrode']:
+                    if nwbfile.electrodes is None:
+                        print('Warning: Attempted to make a custom column for max_channel ' +
+                              'or max_electrode, but there are no electrodes to reference! ' +
+                              'Column will not be added.')
+                    else:
+                        nwbfile.add_unit_column(pr, property_descriptions[pr],
+                                                table = nwbfile.electrodes)
                 else:
-                    table = False
+                    nwbfile.add_unit_column(pr, property_descriptions[pr])
+            
+            for unit_id in unit_ids:
+                unit_kwargs = {}
+                # spike trains withinin the SortingExtractor object are not scaled by sampling frequency
+                spkt = sorting.get_unit_spike_train(unit_id=unit_id) / fs
+                for pr in all_properties:
+                    if pr in sorting.get_unit_property_names(unit_id):
+                        unit_kwargs.update({pr: sorting.get_unit_property(unit_id,pr)})
+                    else: # Case of missing data for this unit and this property
+                        unit_kwargs.update({pr: np.nan})
+                nwbfile.add_unit(id=unit_id, spike_times=spkt, **unit_kwargs)
+                
+                
+            # TODO
+            # # Stores average and std of spike traces
+            # This will soon be updated to the current NWB standard
+            # if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
+            #     wf = sorting.get_unit_spike_features(unit_id=id,
+            #                                          feature_name='waveforms')
+            #     relevant_ch = most_relevant_ch(wf)
+            #     # Spike traces on the most relevant channel
+            #     traces = wf[:, relevant_ch, :]
+            #     traces_avg = np.mean(traces, axis=0)
+            #     traces_std = np.std(traces, axis=0)
+            #     nwbfile.add_unit(
+            #         id=id,
+            #         spike_times=spkt,
+            #         waveform_mean=traces_avg,
+            #         waveform_sd=traces_std
+            #     )
 
+            # TODO
+            # remove reference to _features here
+            nspikes = {k: get_nspikes(nwbfile.units, int(k)) for k in unit_ids}
+            for ft in all_features:
+                vals = [v[ft] if ft in v else [np.nan] * nspikes[int(k)]
+                        for k, v in sorting._features.items()]
+                flatten_vals = [item for sublist in vals for item in sublist]
+                nspks_list = [sp for sp in nspikes.values()]
+                spikes_index = np.cumsum(nspks_list).tolist()
                 set_dynamic_table_property(
                     dynamic_table=nwbfile.units,
-                    row_ids=all_units,
-                    property_name=name,
-                    values=vals,
-                    default_value=np.nan,
-                    description=description,
-                    table=table
+                    row_ids=unit_ids,
+                    property_name=ft,
+                    values=flatten_vals,
+                    index=spikes_index,
                 )
+        else: # there are already units in the nwbfile
+            print('Warning: The nwbfile already contains units. ' +
+                  'These units will not be over-written.')
 
-                # # Stores average and std of spike traces
-                # This will soon be updated to the current NWB standard
-                # if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
-                #     wf = sorting.get_unit_spike_features(unit_id=id,
-                #                                          feature_name='waveforms')
-                #     relevant_ch = most_relevant_ch(wf)
-                #     # Spike traces on the most relevant channel
-                #     traces = wf[:, relevant_ch, :]
-                #     traces_avg = np.mean(traces, axis=0)
-                #     traces_std = np.std(traces, axis=0)
-                #     nwbfile.add_unit(
-                #         id=id,
-                #         spike_times=spkt,
-                #         waveform_mean=traces_avg,
-                #         waveform_sd=traces_std
-                #     )
+    @staticmethod
+    def write_sorting(sorting: se.SortingExtractor, save_path: PathType = None, 
+                      nwbfile: NWBFile = None, property_descriptions: dict = None,
+                      nbwbfile_kwargs: dict = None):
+        '''
+        Parameters
+        ----------
+        sorting: SortingExtractor
+        save_path: PathType
+            Required if an nwbfile is not passed. Must be the path to the nwbfile
+            being appended, otherwise one is created and written.
+        nwbfile: NWBFile
+            Required if a save_path is not specified. If passed, this function
+            will fill the relevant fields within the nwbfile. E.g., calling
+            
+            spikeextractors.NwbRecordingExtractor.write_recording(
+                my_recording_extractor, my_nwbfile
+            )
+            
+            will result in the appropriate changes to the my_nwbfile object.
+        property_descriptions: dict
+            For each key in this dictionary which matches the name of a unit
+            property in sorting, adds the value as a description to that 
+            custom unit column.
+        nbwbfile_kwargs: dict
+            Information for constructing the nwb file (optional).
+            Only used if no nwbfile exists at the save_path, and no nwbfile 
+            was directly passed.
+        '''
+        assert HAVE_NWB, NwbSortingExtractor.installation_mesg
+        assert save_path is None or nwbfile is None, \
+            'Either pass a save_path location, or nwbfile object, but not both!'
 
-                nspikes = {k: get_nspikes(nwbfile.units, int(k)) for k in ids}
-                for ft in all_features:
-                    vals = [v[ft] if ft in v else [np.nan] * nspikes[int(k)]
-                            for k, v in sorting._features.items()]
-                    flatten_vals = [item for sublist in vals for item in sublist]
-                    nspks_list = [sp for sp in nspikes.values()]
-                    spikes_index = np.cumsum(nspks_list).tolist()
-                    set_dynamic_table_property(
-                        dynamic_table=nwbfile.units,
-                        row_ids=ids,
-                        property_name=ft,
-                        values=flatten_vals,
-                        index=spikes_index,
-                    )
+        if nwbfile is None:
+            if os.path.exists(save_path):
+                read_mode = 'r+'
+            else:
+                read_mode = 'w'
+    
+            with NWBHDF5IO(save_path, mode = read_mode) as io:
+                if read_mode == 'r+':
+                    nwbfile = io.read()
+                else:
+                    kwargs = {'session_description': 'No description',
+                              'identifier': str(uuid.uuid4()),
+                              'session_start_time': datetime.now()}
+                    kwargs.update(**nbwbfile_kwargs)
+                    nwbfile = NWBFile(**kwargs)
+                
+                se.NwbSortingExtractor.write_units(sorting, nwbfile,
+                                                   property_descriptions)
 
-            io.write(nwbfile)
+                io.write(nwbfile)
+        else:
+            se.NwbSortingExtractor.write_units(sorting, nwbfile,
+                                               property_descriptions)
