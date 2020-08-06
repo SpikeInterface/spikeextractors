@@ -581,11 +581,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 if read_mode == 'r+':
                     nwbfile = io.read()
                 else:
-                    if 'NWBFile' not in metadata:
-                        metadata['NWBFile'] = {'session_description': 'no description',
-                                               'identifier': str(uuid.uuid4()),
-                                               'session_start_time': datetime.now()}
-                    nwbfile = NWBFile(**metadata['NWBFile'])
+                    # Default arguments will be over-written if contained in metadata
+                    nwbfile_kwargs = dict(session_description='no description',
+                                identifier=str(uuid.uuid4()),
+                                session_start_time=datetime.now())
+                    if 'NWBFile' in metadata:
+                        nwbfile_kwargs.update(metadata['NWBFile'])
+                    nwbfile = NWBFile(**nwbfile_kwargs)
 
                     se.NwbRecordingExtractor.add_all_to_nwbfile(
                         recording=recording,
@@ -733,16 +735,12 @@ class NwbSortingExtractor(se.SortingExtractor):
             all_features.update(sorting.get_unit_spike_feature_names(unit_id))
 
         if property_descriptions is not None:
-            property_description_names = set(property_descriptions.keys())
-
             for pr in all_properties:
                 if pr not in property_descriptions:
                     print(f"Warning: description for property {pr} not found in property_descriptions. "
                           f"Setting description to 'no description'")
         else:
             property_descriptions = {}
-            for pr in all_properties:
-                property_descriptions[pr] = 'no description'
 
         # If no Units present in nwb file
         if nwbfile.units is None:
@@ -755,10 +753,10 @@ class NwbSortingExtractor(se.SortingExtractor):
                               'or max_electrode, but there are no electrodes to reference! ' +
                               'Column will not be added.')
                     else:
-                        nwbfile.add_unit_column(pr, property_descriptions[pr],
+                        nwbfile.add_unit_column(pr, property_descriptions.get(pr, 'no description'),
                                                 table=nwbfile.electrodes)
                 else:
-                    nwbfile.add_unit_column(pr, property_descriptions[pr])
+                    nwbfile.add_unit_column(pr, property_descriptions.get(pr, 'no description'))
 
             for unit_id in unit_ids:
                 unit_kwargs = {}
