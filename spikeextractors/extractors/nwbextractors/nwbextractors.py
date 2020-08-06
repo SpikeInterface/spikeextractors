@@ -413,7 +413,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if 'Ecephys' not in metadata:
             metadata['Ecephys'] = {}
 
-        if 'ElectricalSeries' not in metadata['Ecephys']:
+        if 'Ecephys' not in metadata or 'ElectricalSeries' not in metadata['Ecephys']:
             metadata['Ecephys']['ElectricalSeries'] = [{'name': 'ElectricalSeries',
                                                         'description': 'electrical_series_description'}]
         # Tests if ElectricalSeries already exists in acquisition
