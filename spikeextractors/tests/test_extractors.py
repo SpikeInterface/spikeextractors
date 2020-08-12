@@ -200,6 +200,12 @@ class TestExtractors(unittest.TestCase):
         del cache_sort
         assert not Path(tmp_file).is_file()
 
+        # cleanup
+        os.remove('cache_rec.dat')
+        os.remove('cache_rec2.dat')
+        os.remove('cache_sort.npz')
+        os.remove('cache_sort2.npz')
+
     def test_not_dumpable_exception(self):
         try:
             self.RX.dump_to_json()
@@ -210,8 +216,6 @@ class TestExtractors(unittest.TestCase):
             self.RX.dump_to_pickle()
         except Exception as e:
             assert isinstance(e, NotDumpableExtractorError)
-
-
 
     def test_mda_extractor(self):
         path1 = self.test_dir + '/mda'
@@ -399,10 +403,27 @@ class TestExtractors(unittest.TestCase):
         se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1)
         # create new
         path2 = self.test_dir + '/firings_true.nwb'
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path2)
         se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2)
-        SX_nwb = se.NwbSortingExtractor(path1)
+        SX_nwb = se.NwbSortingExtractor(path2)
         check_sortings_equal(self.SX, SX_nwb)
         check_dumping(SX_nwb)
+        
+        # Test for handling unit property descriptions argument
+        property_descriptions = {'stability': 'this is a description of stability'}
+        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1, 
+                                             property_descriptions=property_descriptions)
+        # create new
+        path2 = self.test_dir + '/firings_true.nwb'
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path2)
+        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2, 
+                                             property_descriptions=property_descriptions)
+        SX_nwb = se.NwbSortingExtractor(path2)
+        check_sortings_equal(self.SX, SX_nwb)
+        check_dumping(SX_nwb)
+        
+        # TODO
+        # Tests for nwbfile argument passing and modification?
 
     def test_nixio_extractor(self):
         path1 = os.path.join(self.test_dir, 'raw.nix')
