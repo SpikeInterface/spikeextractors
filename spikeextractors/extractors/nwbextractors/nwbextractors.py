@@ -501,6 +501,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     @staticmethod
     def add_all_to_nwbfile(recording: se.RecordingExtractor, nwbfile,
                            metadata: dict = None):
+
+        assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
+
         # Add devices
         nwbfile = se.NwbRecordingExtractor.add_devices(
             recording=recording,
