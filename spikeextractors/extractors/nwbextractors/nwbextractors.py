@@ -319,7 +319,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return nwbfile
 
     @staticmethod
-    def add_electrodes(recording, nwbfile):
+    def add_electrodes(recording, nwbfile, metadata):
         """
         Auxiliary static method for nwbextractor.
         Adds channels from recording object as electrodes to nwbfile object.
