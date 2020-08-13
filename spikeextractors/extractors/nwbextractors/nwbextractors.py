@@ -319,7 +319,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return nwbfile
 
     @staticmethod
-    def add_electrodes(recording, nwbfile, metadata):
+    def add_electrodes(recording, nwbfile):
         """
         Auxiliary static method for nwbextractor.
         Adds channels from recording object as electrodes to nwbfile object.
@@ -499,7 +499,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return nwbfile
 
     @staticmethod
-    def add_all_to_nwbfile(recording: se.RecordingExtractor, nwbfile: NWBFile,
+    def add_all_to_nwbfile(recording: se.RecordingExtractor, nwbfile,
                            metadata: dict = None):
         # Add devices
         nwbfile = se.NwbRecordingExtractor.add_devices(
@@ -537,7 +537,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def write_recording(recording: se.RecordingExtractor, save_path: PathType = None,
-                        nwbfile: NWBFile = None, metadata: dict = None):
+                        nwbfile=None, metadata: dict = None):
         '''
         Parameters
         ----------
@@ -558,6 +558,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             metadata info for constructing the nwb file (optional).
         '''
         assert HAVE_NWB, NwbRecordingExtractor.installation_mesg
+
+        if nwbfile is not None:
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
 
         assert distutils.version.LooseVersion(pynwb.__version__) >= '1.3.3', \
             "'write_recording' not supported for version < 1.3.3. Run pip install --upgrade pynwb"
@@ -720,7 +723,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         return frame / self.get_sampling_frequency()
 
     @staticmethod
-    def write_units(sorting: se.SortingExtractor, nwbfile: NWBFile,
+    def write_units(sorting: se.SortingExtractor, nwbfile,
                     property_descriptions: dict):
         '''
         Helper function for write_sorting.
@@ -829,7 +832,7 @@ class NwbSortingExtractor(se.SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting: se.SortingExtractor, save_path: PathType = None,
-                      nwbfile: NWBFile = None, property_descriptions: dict = None,
+                      nwbfile=None, property_descriptions: dict = None,
                       **nbwbfile_kwargs):
         '''
         Parameters
@@ -881,5 +884,6 @@ class NwbSortingExtractor(se.SortingExtractor):
 
                 io.write(nwbfile)
         else:
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
             se.NwbSortingExtractor.write_units(sorting, nwbfile,
                                                property_descriptions)
