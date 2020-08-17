@@ -18,7 +18,8 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     package_data={},
     install_requires=[
-        'numpy'
+        'numpy',
+        'tqdm'
     ],
     classifiers=(
         "Programming Language :: Python :: 3",
