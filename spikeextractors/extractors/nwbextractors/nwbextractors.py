@@ -690,7 +690,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return nwbfile
 
     @staticmethod
-    def add_recording_to_nwbfile(recording: se.RecordingExtractor, nwbfile: NWBFile,
+    def add_all_to_nwbfile(recording: se.RecordingExtractor, nwbfile: NWBFile,
                                  metadata: dict = None):
         '''
         Auxiliary static method for nwbextractor.
@@ -796,7 +796,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         nwbfile_kwargs.update(metadata['NWBFile'])
                     nwbfile = NWBFile(**nwbfile_kwargs)
 
-                    se.NwbRecordingExtractor.add_recording_to_nwbfile(
+                    se.NwbRecordingExtractor.add_all_to_nwbfile(
                         recording=recording,
                         nwbfile=nwbfile,
                         metadata=metadata
@@ -805,7 +805,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 # Write to file
                 io.write(nwbfile)
         else:
-            se.NwbRecordingExtractor.add_recording_to_nwbfile(
+            se.NwbRecordingExtractor.add_all_to_nwbfile(
                 recording=recording,
                 nwbfile=nwbfile,
                 metadata=metadata
