@@ -486,7 +486,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 else:
                     print(f"Warning: Expected metadata['Ecephy']['Electrodes'][{j}] to be" +
                           " a dictionary with keys 'name', 'description', and 'data'," + 
-                          " with 'data' being a list of items!' +
+                          " with 'data' being a list of items!" +
                           " The custom column will not be added.")
         else:
             metadata_columns = []
@@ -514,8 +514,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     and type(metadata_column['data']) is list:
                         if metadata_column['name'] == 'group':
                             if list_get(metadata_column['data'], j, np.nan) not in nwbfile.electrode_groups:
-                                print(f"Warning: Electrode group for electrode {channel_id} was not found in the nwbfile.' +
-                                      ' Automatically adding!")
+                                print(f"Warning: Electrode group for electrode {channel_id} was not found in the nwbfile." +
+                                      " Automatically adding!")
                                 nwbfile = se.NwbRecordingExtractor.add_electrode_groups(recording, nwbfile, metadata)
                             electrode_kwargs.update({
                                 metadata_column['name']: nwbfile.electrode_groups[list_get(metadata_column['data'],
