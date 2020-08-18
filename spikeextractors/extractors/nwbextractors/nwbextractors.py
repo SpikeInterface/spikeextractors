@@ -625,7 +625,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
             # channels gains - for RecordingExtractor, these are values to cast traces to uV
             # for nwb, the conversions (gains) cast the data to Volts
-            gains = np.squeeze([recording.get_channel_gains(channel_ids = [ch])
+            gains = np.squeeze([recording.get_channel_gains(channel_ids=[ch])
                                 if 'gain' in recording.get_channel_property_names(channel_id=ch) else 1
                                 for ch in channel_ids])
             if len(np.unique(gains)) == 1:  # if all gains are equal
@@ -978,7 +978,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                               'Column will not be added.')
                     else:
                         nwbfile.add_unit_column(pr, property_descriptions.get(pr, 'no description'),
-                                                table = nwbfile.electrodes)
+                                                table=nwbfile.electrodes)
                 else:
                     nwbfile.add_unit_column(pr, property_descriptions.get(pr, 'no description'))
 
@@ -991,7 +991,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                         unit_kwargs.update({pr: sorting.get_unit_property(unit_id, pr)})
                     else:  # Case of missing data for this unit and this property
                         unit_kwargs.update({pr: np.nan})
-                nwbfile.add_unit(id = unit_id, spike_times = spkt, **unit_kwargs)
+                nwbfile.add_unit(id=unit_id, spike_times=spkt, **unit_kwargs)
 
             # TODO
             # # Stores average and std of spike traces
