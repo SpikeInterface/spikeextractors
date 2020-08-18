@@ -292,7 +292,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     # available, otherwise set all to defaults.
 
     @staticmethod
-    def add_devices(recording: se.RecordingExtractor, nwbfile: NWBFile,
+    def add_devices(recording: se.RecordingExtractor, nwbfile = None,
                     metadata: dict = None):
         '''
         Auxiliary static method for nwbextractor.
@@ -311,6 +311,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 metadata['Ecephys']['Device'] = [{'name': my_name,
                                                   'description': my_description}, ...]
         '''
+        if nwbfile is not None:
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
         defaults = {'name': 'Device',
                     'description': 'no description'}
         
@@ -325,24 +327,24 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         device_kwargs = fill_kwargs_from_defaults(defaults, dev)
                         nwbfile.create_device(**device_kwargs)
                 else:
-                    print(f'Warning: Expected metadata[\'Ecephys\'][\'Device\'][{j}] to be' +
-                          ' a dictionary with keys \'name\' and \'description\'!' +
-                          f' Device [{j}] will not be created.')
+                    print(f"Warning: Expected metadata['Ecephys']['Device'][{j}] to be" +
+                          " a dictionary with keys 'name' and 'description'!" +
+                          f" Device [{j}] will not be created.")
         else:
-            print('Warning: metadata must be a dictionary of the form' +
-                  ' metadata[\'Ecephys\'][\'Device\'] = [{\'name\': my_name,' +
-                  ' \'description\': my_description}, ...]!')
+            print("Warning: metadata must be a dictionary of the form" +
+                  " metadata['Ecephys']['Device'] = [{'name': my_name," +
+                  " 'description': my_description}, ...]!")
         
         # If no device created above
         if not nwbfile.devices:
             device_kwargs = fill_kwargs_from_defaults(defaults)
             nwbfile.create_device(**device_kwargs)
-            print('Warning: No device metadata provided. Generating default device!')
+            print("Warning: No device metadata provided. Generating default device!")
             
         return nwbfile
 
     @staticmethod
-    def add_electrode_groups(recording: se.RecordingExtractor, nwbfile: NWBFile,
+    def add_electrode_groups(recording: se.RecordingExtractor, nwbfile = None,
                              metadata: dict = None):
         '''
         Auxiliary static method for nwbextractor.
@@ -364,6 +366,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                                           'location': electrode_location,
                                                           'device_name': my_device_name}, ...]
         '''
+        if nwbfile is not None:
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
         defaults = {'name': 'Electrode Group',
                     'description': 'no description',
                     'location': 'unknown'}
@@ -380,27 +384,27 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         # If named device link in electrode group does not exist, make it
                         if grp.get('device_name', default_dev_name) not in nwbfile.devices:
                             new_device = {'Ecephys': {'Device': {'name': grp.get('device_name', default_dev_name)}}}
-                            nwbfile = se.NwbRecordingExtractor.add_devices(recording, nwbfile, metadata = new_device)
-                            print('Warning: device name not detected in attempted link to electrode group! ' +
-                                  'Automatically generating.')
+                            nwbfile = se.NwbRecordingExtractor.add_devices(recording, nwbfile, metadata=new_device)
+                            print("Warning: device name not detected in attempted link to electrode group! " +
+                                  "Automatically generating.")
                         
                         electrode_group_kwargs = fill_kwargs_from_defaults(defaults, grp)
                         electrode_group_kwargs.update({'device': nwbfile.devices[grp.get('device_name', default_dev_name)]})
                         nwbfile.create_electrode_group(**electrode_group_kwargs)
                 else:
-                    print(f'Warning: Expected metadata[\'Ecephy\'][\'ElectrodeGroup\'][{j}] to be' +
-                          ' a dictionary with keys \'name\', \'description\', \'location\', and \'device\'!' +
-                          f'Electrode Group [{j}] will not be created.')
+                    print(f"Warning: Expected metadata['Ecephy']['ElectrodeGroup'][{j}] to be" +
+                          " a dictionary with keys 'name', 'description', 'location', and 'device'!" +
+                          f"Electrode Group [{j}] will not be created.")
         else:
-            print('Warning: metadata must be a dictionary of the form' +
-                  ' metadata[\'Ecephys\'][\'ElectrodeGroup\'] = [{\'name\': my_name,' +
-                ' \'description\': my_description, \'location\': electrode_location,' +
-                ' \'device_name\': my_device_name}, ...]!')
+            print("Warning: metadata must be a dictionary of the form" +
+                  " metadata['Ecephys']['ElectrodeGroup'] = [{'name': my_name," +
+                  " 'description': my_description, 'location': electrode_location," +
+                  " 'device_name': my_device_name}, ...]!")
                     
         if not nwbfile.electrode_groups:
             if default_dev_name not in nwbfile.devices:
                 new_device = {'Ecephys': {'Device': {'name': default_dev_name}}}
-                nwbfile = se.NwbRecordingExtractor.add_devices(recording, nwbfile, metadata = new_device)
+                nwbfile = se.NwbRecordingExtractor.add_devices(recording, nwbfile, metadata=new_device)
                 
             electrode_group_kwargs = fill_kwargs_from_defaults(defaults)
             electrode_group_kwargs.update({'device': nwbfile.devices[default_dev_name]})
@@ -412,13 +416,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     nwbfile.create_electrode_group(**electrode_group_kwargs)
             else:
                 nwbfile.add_electrode_groups(**electrode_group_kwargs)
-                print('Warning: No electrode group metadata provided, and no' +
-                      ' internal group properties set. Generating default device!')
+                print("Warning: No electrode group metadata provided, and no" +
+                      " internal group properties set. Generating default device!")
         
         return nwbfile
 
     @staticmethod
-    def add_electrodes(recording: se.RecordingExtractor, nwbfile: NWBFile,
+    def add_electrodes(recording: se.RecordingExtractor, nwbfile = None,
                        metadata: dict = None):
         '''
         Auxiliary static method for nwbextractor.
@@ -438,6 +442,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             where [my_electrode_data] is a list in one-to-one correspondence with
             the nwbfile electrode ids and RecordingExtractor channel ids.
         '''
+        if nwbfile is not None:
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
         defaults = {'id': np.nan,
                     'x': np.nan,
                     'y': np.nan,
@@ -478,17 +484,17 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     nwbfile.add_electrode_column(str(custom_col['name']),
                                                  str(custom_col['description']))
                 else:
-                    print(f'Warning: Expected metadata[\'Ecephy\'][\'Electrodes\'][{j}] to be' +
-                          ' a dictionary with keys \'name\', \'description\', and \'data\',' + 
-                          ' with \'data\' being a list of items!' +
-                          ' The custom column will not be added.')
+                    print(f"Warning: Expected metadata['Ecephy']['Electrodes'][{j}] to be" +
+                          " a dictionary with keys 'name', 'description', and 'data'," + 
+                          " with 'data' being a list of items!' +
+                          " The custom column will not be added.")
         else:
             metadata_columns = []
-            print('Warning: metadata must be a dictionary of the form' +
-                  ' metadata[\'Ecephys\'][\'Electrodes\'] = [{\'name\': my_name,' +
-                ' \'description\': my_description, \'data\': [my_electrode_data]}, ...]' +
-                ' where [my_electrode_data] is a list in one-to-one correspondence with' +
-                ' the nwbfile electrode ids and RecordingExtractor channel ids!')
+            print("Warning: metadata must be a dictionary of the form" +
+                  " metadata['Ecephys']['Electrodes'] = [{'name': my_name," +
+                  " 'description': my_description, 'data': [my_electrode_data]}, ...]" +
+                  " where [my_electrode_data] is a list in one-to-one correspondence with" +
+                  " the nwbfile electrode ids and RecordingExtractor channel ids!")
                 
         for j, channel_id in enumerate(channel_ids):
             # Will not overwrite the electrode id if already in nwbfile
@@ -497,7 +503,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 electrode_kwargs.update({'id': channel_id})
                 
                 # recording.get_channel_locations defaults to np.nan is there are none
-                location = recording.get_channel_locations(channel_ids = channel_id)[0]
+                location = recording.get_channel_locations(channel_ids=channel_id)[0]
                 if location[0] is not np.nan or location[1] is not np.nan:
                     electrode_kwargs.update({'rel_x': float(location[0]),
                                              'rel_y': float(location[1])})
@@ -508,8 +514,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     and type(metadata_column['data']) is list:
                         if metadata_column['name'] == 'group':
                             if list_get(metadata_column['data'], j, np.nan) not in nwbfile.electrode_groups:
-                                print(f'Warning: Electrode group for electrode {channel_id} was not found in the nwbfile.' +
-                                      ' Automatically adding!')
+                                print(f"Warning: Electrode group for electrode {channel_id} was not found in the nwbfile.' +
+                                      ' Automatically adding!")
                                 nwbfile = se.NwbRecordingExtractor.add_electrode_groups(recording, nwbfile, metadata)
                             electrode_kwargs.update({
                                 metadata_column['name']: nwbfile.electrode_groups[list_get(metadata_column['data'],
@@ -528,19 +534,19 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                     })
                                 else:
                                     metadata_column_name = metadata_column['name']
-                                    print(f'Warning: Custom column {metadata_column_name}' +
-                                          ' has incomplete data for channel id [{j}] and no' +
-                                          ' set default! Electrode will not be added.')
+                                    print(f"Warning: Custom column {metadata_column_name}" +
+                                          " has incomplete data for channel id [{j}] and no" +
+                                          " set default! Electrode will not be added.")
                 
                 if not any([metadata_column.get('name','') == 'group' for metadata_column in metadata_columns]):
-                    grp_id = recording.get_channel_groups(channel_ids = channel_id)[0]
+                    grp_id = recording.get_channel_groups(channel_ids=channel_id)[0]
                     if grp_id in range(len(nwb_groups_names)):
                         electrode_kwargs.update({'group': nwbfile.electrode_groups[nwb_groups_names[grp_id]]})
                     else:
-                        print('Warning: No metadata was passed specifying the electrode group for' + 
-                              f' electrode {channel_id}, and the internal recording channel group was' +
-                              f' assigned a value ({grp_id}) outside the indices of the electrode' + 
-                              ' groups in the nwbfile! Electrode will not be added.')
+                        print("Warning: No metadata was passed specifying the electrode group for" + 
+                              f" electrode {channel_id}, and the internal recording channel group was" +
+                              f" assigned a value ({grp_id}) outside the indices of the electrode" + 
+                              " groups in the nwbfile! Electrode will not be added.")
                         continue
                 nwbfile.add_electrode(**electrode_kwargs)
         
@@ -563,19 +569,19 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         channel_prop_name = 'location'
                         descr = 'brain area location'
                 set_dynamic_table_property(
-                    dynamic_table = nwbfile.electrodes,
-                    row_ids = [channel_id],
-                    property_name = channel_prop_name,
-                    values = [val],
-                    default_value = np.nan,
-                    description = descr
+                    dynamic_table=nwbfile.electrodes,
+                    row_ids=[channel_id],
+                    property_name=channel_prop_name,
+                    values=[val],
+                    default_value=np.nan,
+                    description=descr
                 )
                 
         return nwbfile
                 
 
     @staticmethod
-    def add_electrical_series(recording: se.RecordingExtractor, nwbfile: NWBFile,
+    def add_electrical_series(recording: se.RecordingExtractor, nwbfile = None,
                               metadata: dict = None):
         '''
         Auxiliary static method for nwbextractor.
@@ -592,6 +598,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 metadata['Ecephys']['ElectricalSeries'] = [{'name': my_name,
                                                            'description': my_description}, ...]
         '''
+        if nwbfile is not None:
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
         defaults = {'name': 'ElectricalSeries',
                     'description': 'electrical_series_description'}
         
@@ -611,8 +619,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         for es_name in set(metadata_names) - set([ac for ac in nwbfile.acquisition]):
             table_ids = [list(nwbfile.electrodes.id[:]).index(id) for id in channel_ids]
             electrode_table_region = nwbfile.create_electrode_table_region(
-                region = table_ids,
-                description = 'electrode_table_region'
+                region=table_ids,
+                description='electrode_table_region'
             )
 
             # channels gains - for RecordingExtractor, these are values to cast traces to uV
@@ -630,30 +638,30 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             def data_generator(recording, channels_ids):
                 #  generates data chunks for iterator
                 for id in channels_ids:
-                    data = recording.get_traces(channel_ids = [id]).flatten()
+                    data = recording.get_traces(channel_ids=[id]).flatten()
                     yield data
 
-            data = data_generator(recording = recording, channels_ids = channel_ids)
-            ephys_data = DataChunkIterator(data=data, iter_axis = 1)
+            data = data_generator(recording=recording, channels_ids=channel_ids)
+            ephys_data = DataChunkIterator(data=data, iter_axis=1)
 
             # To get traces in Volts = data*channel_conversion*conversion
             ephys_ts = ElectricalSeries(
-                name = es_name,
-                data = ephys_data,
-                electrodes = electrode_table_region,
-                starting_time = recording.frame_to_time(0),
-                rate = rate,
-                conversion = scalar_conversion,
-                channel_conversion = channel_conversion,
-                comments = 'Generated from SpikeInterface::NwbRecordingExtractor',
-                description = defaults['description']
+                name=es_name,
+                data=ephys_data,
+                electrodes=electrode_table_region,
+                starting_time=recording.frame_to_time(0),
+                rate=rate,
+                conversion=scalar_conversion,
+                channel_conversion=channel_conversion,
+                comments='Generated from SpikeInterface::NwbRecordingExtractor',
+                description=defaults['description']
             )
             nwbfile.add_acquisition(ephys_ts)
 
         return nwbfile
 
     @staticmethod
-    def add_epochs(recording: se.RecordingExtractor, nwbfile: NWBFile,
+    def add_epochs(recording: se.RecordingExtractor, nwbfile = None,
                    metadata: dict = None):
         '''
         Auxiliary static method for nwbextractor.
@@ -667,6 +675,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         metadata: dict
             metadata info for constructing the nwb file (optional).
         '''
+        if nwbfile is not None:
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
+            
         # add/update epochs
         for (name, ep) in recording._epochs.items():
             if nwbfile.epochs is None:
@@ -690,7 +701,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return nwbfile
 
     @staticmethod
-    def add_all_to_nwbfile(recording: se.RecordingExtractor, nwbfile: NWBFile,
+    def add_all_to_nwbfile(recording: se.RecordingExtractor, nwbfile = None,
                                  metadata: dict = None):
         '''
         Auxiliary static method for nwbextractor.
@@ -705,23 +716,26 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         metadata: dict
             metadata info for constructing the nwb file (optional).
         '''
+        if nwbfile is not None:
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
+        
         nwbfile = se.NwbRecordingExtractor.add_devices(
-            recording = recording,
-            nwbfile = nwbfile,
-            metadata = metadata
+            recording=recording,
+            nwbfile=nwbfile,
+            metadata=metadata
         )
         
         nwbfile = se.NwbRecordingExtractor.add_electrode_groups(
-            recording = recording,
-            nwbfile = nwbfile,
-            metadata = metadata
+            recording=recording,
+            nwbfile=nwbfile,
+            metadata=metadata
         )
 
         # Add electrodes
         nwbfile = se.NwbRecordingExtractor.add_electrodes(
-            recording = recording,
-            nwbfile = nwbfile,
-            metadata = metadata
+            recording=recording,
+            nwbfile=nwbfile,
+            metadata=metadata
         )
 
         # Add electrical series
@@ -770,7 +784,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             "'write_recording' not supported for version < 1.3.3. Run pip install --upgrade pynwb"
 
         assert save_path is None or nwbfile is None, \
-            'Either pass a save_path location, or nwbfile object, but not both!'
+            "Either pass a save_path location, or nwbfile object, but not both!"
 
         # Update any previous metadata with user passed dictionary
         if metadata is None:
@@ -1065,7 +1079,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         '''
         assert HAVE_NWB, NwbSortingExtractor.installation_mesg
         assert save_path is None or nwbfile is None, \
-            'Either pass a save_path location, or nwbfile object, but not both!'
+            "Either pass a save_path location, or nwbfile object, but not both!"
 
         if nwbfile is None:
             if os.path.exists(save_path):
