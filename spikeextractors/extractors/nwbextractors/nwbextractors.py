@@ -136,7 +136,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         """
         assert HAVE_NWB, self.installation_mesg
         se.RecordingExtractor.__init__(self)
-        self._path = file_path
+        self._path = str(file_path)
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             if electrical_series_name is not None:
@@ -628,7 +628,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         """
         assert HAVE_NWB, self.installation_mesg
         se.SortingExtractor.__init__(self)
-        self._path = file_path
+        self._path = str(file_path)
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             if sampling_frequency is None:
