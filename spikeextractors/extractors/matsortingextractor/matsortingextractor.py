@@ -1,6 +1,7 @@
 from collections import deque
 from pathlib import Path
 from typing import Union
+import numpy as np
 
 try:
     import h5py
@@ -15,6 +16,13 @@ try:
 except ImportError:
     HAVE_LOADMAT = False
 
+
+try:
+    import hdf5storage
+    HAVE_HDF5STORAGE = True
+except ImportError:
+    HAVE_HDF5STORAGE = False
+
 HAVE_MAT = HAVE_H5PY & HAVE_LOADMAT
 
 from spikeextractors import SortingExtractor
@@ -27,9 +35,11 @@ class MATSortingExtractor(SortingExtractor):
     installed = HAVE_MAT  # check at class level if installed or not
     is_writable = False
     mode = "file"
-    installation_mesg = "To use the MATSortingExtractor install h5py and scipy: \n\n pip install h5py scipy\n\n"  # error message when not installed
+    installation_mesg = "To use the MATSortingExtractor install h5py and scipy: " \
+                        "\n\n pip install h5py scipy\n\n"  # error message when not installed
 
     def __init__(self, file_path: PathType):
+        assert HAVE_MAT, self.installation_mesg
         super().__init__()
 
         file_path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -40,20 +50,24 @@ class MATSortingExtractor(SortingExtractor):
         if not file_path.is_file():
             raise ValueError(f"Specified file path '{file_path}' is not a file.")
 
-        self._kwargs = {"file_path": file_path}
+        self._kwargs = {"file_path": str(file_path.absolute())}
 
         try:  # load old-style (up to 7.2) .mat file
             self._data = loadmat(file_path, matlab_compatible=True)
-            self._kwargs["old_style_mat"] = True
+            self._old_style_mat = True
         except NameError:  # loadmat not defined
             raise ImportError("Old-style .mat file given, but `loadmat` is not defined.")
         except NotImplementedError:  # new style .mat file
             try:
                 self._data = h5py.File(file_path, "r+")
-                self._kwargs["old_style_mat"] = False
+                self._old_style_mat = False
             except NameError:
                 raise ImportError("Version 7.2 .mat file given, but you don't have h5py installed.")
 
+    def __del__(self):
+        if not self._old_style_mat:
+            self._data.close()
+                
     def _getfield(self, fieldname: str):
         def _drill(d: dict, keys: deque):
             if len(keys) == 1:
@@ -61,8 +75,16 @@ class MATSortingExtractor(SortingExtractor):
             else:
                 return _drill(d[keys.popleft()], keys)
 
-        if self._kwargs["old_style_mat"]:
+        if self._old_style_mat:
             return _drill(self._data, deque(fieldname.split("/")))
         else:
             return self._data[fieldname][()]
 
+    @staticmethod
+    def write_dict_to_mat(mat_file_path, dict_to_write, version='7.3'):  # field must be a dict
+        assert HAVE_HDF5STORAGE, "To use the MATSortingExtractor write_dict_to_mat function install hdf5storage: " \
+                                 "\n\n pip install hdf5storage\n\n"
+        if version == '7.3':
+            hdf5storage.write(dict_to_write, '/', mat_file_path, matlab_compatible=True, options='w')
+        elif version < '7.3' and version > '4':
+            savemat(mat_file_path, dict_to_write)

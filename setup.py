@@ -9,8 +9,8 @@ long_description = open("README.md").read()
 setuptools.setup(
     name=pkg_name,
     version=version,
-    author="Cole Hurwitz, Jeremy Magland, Alessio Paolo Buccino, Matthias Hennig",
-    author_email="colehurwitz@gmail.com",
+    author="Alessio Buccino, Cole Hurwitz, Samuel Garcia, Jeremy Magland, Matthias Hennig",
+    author_email="alessiob@ifi.uio.no",
     description="Python module for extracting recorded and spike sorted extracellular data from different file types and formats",
     url="https://github.com/SpikeInterface/spikeextractors",
     long_description=long_description,
@@ -19,6 +19,7 @@ setuptools.setup(
     package_data={},
     install_requires=[
         'numpy',
+        'tqdm'
     ],
     classifiers=(
         "Programming Language :: Python :: 3",

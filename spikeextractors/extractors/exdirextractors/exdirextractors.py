@@ -24,7 +24,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
     def __init__(self, folder_path):
-        assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
+        assert HAVE_EXDIR, self.installation_mesg
         self._exdir_file = folder_path
         exdir_group = exdir.File(folder_path, plugins=[exdir.plugins.quantities])
 
@@ -198,7 +198,7 @@ class ExdirSortingExtractor(SortingExtractor):
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
     def __init__(self, folder_path, sampling_frequency=None, channel_group=None, load_waveforms=False):
-        assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
+        assert HAVE_EXDIR, self.installation_mesg
         SortingExtractor.__init__(self)
         self._exdir_file = folder_path
         exdir_group = exdir.File(folder_path, plugins=exdir.plugins.quantities)

@@ -22,7 +22,7 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
 
     def __init__(self, file_path):
         # load params file related to the given shybrid recording
-        assert HAVE_SBEX, "To use the SHYBRID extractors, install shybrid: \n\n pip install shybrid\n\n"
+        assert HAVE_SBEX, self.installation_mesg
         params = sbio.get_params(file_path)['data']
 
         # create a shybrid probe object
@@ -64,7 +64,7 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
         dtype: dtype
             Type of the saved data. Default float32.
         """
-        assert HAVE_SBEX, "To use the SHYBRID extractors, install shybrid: \n\n pip install shybrid\n\n"
+        assert HAVE_SBEX, SHYBRIDRecordingExtractor.installation_mesg
         RECORDING_NAME = 'recording.bin'
         PROBE_NAME = 'probe.prb'
         PARAMETERS_NAME = 'recording.yml'
@@ -103,7 +103,7 @@ class SHYBRIDSortingExtractor(SortingExtractor):
     installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
 
     def __init__(self, file_path, delimiter=','):
-        assert HAVE_SBEX, "To use the SHYBRID extractors, install shybrid: \n\n pip install shybrid\n\n"
+        assert HAVE_SBEX, self.installation_mesg
         SortingExtractor.__init__(self)
 
         if os.path.isfile(file_path):
@@ -140,8 +140,8 @@ class SHYBRIDSortingExtractor(SortingExtractor):
         save_path : str
             Full path to the desired target folder
         """
-        assert HAVE_SBEX, "To use the SHYBRID extractors, install shybrid: \n\n pip install shybrid\n\n"
-        dump = np.empty((0,2))
+        assert HAVE_SBEX, SHYBRIDSortingExtractor.installation_mesg
+        dump = np.empty((0, 2))
 
         for unit_id in sorting.get_unit_ids():
             spikes = sorting.get_unit_spike_train(unit_id)[:,np.newaxis]

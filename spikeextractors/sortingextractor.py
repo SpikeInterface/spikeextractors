@@ -1,10 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import json
-import os
-import tempfile
-from pathlib import Path
-import shutil
+
 from .extraction_tools import get_sub_extractors_by_property
 from .baseextractor import BaseExtractor
 
@@ -20,16 +16,7 @@ class SortingExtractor(ABC, BaseExtractor):
 
     def __init__(self):
         BaseExtractor.__init__(self)
-        self._epochs = {}
         self._sampling_frequency = None
-        self.id = np.random.randint(low=0, high=9223372036854775807, dtype='int64')
-
-    def __del__(self):
-        if self._tmp_folder is not None:
-            try:
-                shutil.rmtree(self._tmp_folder)
-            except Exception as e:
-                print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
 
     @abstractmethod
     def get_unit_ids(self):
@@ -149,11 +136,8 @@ class SortingExtractor(ABC, BaseExtractor):
                 else:
                     if isinstance(feature_name, str) and len(value) == len(indexes):
                         indexes = np.array(indexes)
-                        indexes_sorted_indices = np.argsort(indexes)
-                        value_sorted = value[indexes_sorted_indices]
-                        indexes_sorted = indexes[indexes_sorted_indices]
-                        self._features[unit_id][feature_name] = value_sorted
-                        self._features[unit_id][feature_name + '_idxs'] = indexes_sorted
+                        self._features[unit_id][feature_name] = value
+                        self._features[unit_id][feature_name + '_idxs'] = indexes
                     else:
                         if not isinstance(feature_name, str):
                             raise ValueError("feature_name must be a string")
@@ -699,3 +683,33 @@ class SortingExtractor(ABC, BaseExtractor):
         '''
         raise NotImplementedError("The write_sorting function is not \
                                   implemented for this extractor")
+
+    def get_unsorted_spike_train(self, start_frame=None, end_frame=None):
+        '''This function extracts spike frames from the unsorted events.
+        It will return spike frames from within three ranges:
+
+            [start_frame, t_start+1, ..., end_frame-1]
+            [start_frame, start_frame+1, ..., final_unit_spike_frame - 1]
+            [0, 1, ..., end_frame-1]
+            [0, 1, ..., final_unit_spike_frame - 1]
+
+        if both start_frame and end_frame are given, if only start_frame is
+        given, if only end_frame is given, or if neither start_frame or end_frame
+        are given, respectively. Spike frames are returned in the form of an
+        array_like of spike frames. In this implementation, start_frame is inclusive
+        and end_frame is exclusive conforming to numpy standards.
+
+        Parameters
+        ----------
+        start_frame: int
+            The frame above which a spike frame is returned  (inclusive)
+        end_frame: int
+            The frame below which a spike frame is returned  (exclusive)
+        Returns
+        ----------
+        spike_train: numpy.ndarray
+            An 1D array containing all the frames for each spike in the
+            specified unit given the range of start and end frames
+        '''
+
+        raise NotImplementedError

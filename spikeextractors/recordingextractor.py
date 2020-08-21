@@ -1,9 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import tempfile
-import shutil
-import random
-from pathlib import Path
+
 from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, \
     write_to_h5_dataset_format, get_sub_extractors_by_property, cast_start_end_frame
 from .baseextractor import BaseExtractor
@@ -21,15 +18,7 @@ class RecordingExtractor(ABC, BaseExtractor):
     def __init__(self):
         BaseExtractor.__init__(self)
         self._key_properties = {'group': None, 'location': None}
-        self._epochs = {}
-        self.id = random.randint(a=0, b=9223372036854775807)
-
-    def __del__(self):
-        if getattr(self, '_tmp_folder', None):
-            try:
-                shutil.rmtree(self._tmp_folder)
-            except Exception as e:
-                print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
+        self.is_filtered = False
 
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
@@ -688,7 +677,8 @@ class RecordingExtractor(ABC, BaseExtractor):
         save_to_probe_file(self, probe_file, grouping_property=grouping_property, radius=radius,
                            graph=graph, geometry=geometry, verbose=verbose)
 
-    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500,
+                                   verbose=False):
         '''Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
@@ -706,12 +696,14 @@ class RecordingExtractor(ABC, BaseExtractor):
             If 'auto' the file is saved in chunks of ~ 500Mb
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
+        verbose: bool
+            If True, output is verbose (when chunks are used)
         '''
         write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size,
-                                   chunk_mb=chunk_mb)
+                                   chunk_mb=chunk_mb, verbose=verbose)
 
     def write_to_h5_dataset_format(self, dataset_path, save_path=None, file_handle=None,
-                                   time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+                                   time_axis=0, dtype=None, chunk_size=None, chunk_mb=500, verbose=False):
         '''Saves the traces of a recording extractor in an h5 dataset.
 
         Parameters
@@ -735,8 +727,11 @@ class RecordingExtractor(ABC, BaseExtractor):
             If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
+        verbose: bool
+            If True, output is verbose (when chunks are used)
         '''
-        write_to_h5_dataset_format(self, dataset_path, save_path, file_handle, time_axis, dtype, chunk_size, chunk_mb)
+        write_to_h5_dataset_format(self, dataset_path, save_path, file_handle, time_axis, dtype, chunk_size, chunk_mb,
+                                   verbose)
 
     def get_sub_extractors_by_property(self, property_name, return_property_list=False):
         '''Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given

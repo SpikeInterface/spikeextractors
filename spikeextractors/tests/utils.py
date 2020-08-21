@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 
-def check_recordings_equal(RX1, RX2):
+def check_recordings_equal(RX1, RX2, force_dtype=None):
     N = RX1.get_num_frames()
     # get_channel_ids
     assert np.allclose(RX1.get_channel_ids(), RX2.get_channel_ids())
@@ -17,12 +17,19 @@ def check_recordings_equal(RX1, RX2):
     # get_sampling_frequency
     assert np.allclose(RX1.get_sampling_frequency(), RX2.get_sampling_frequency())
     # get_traces
-    assert np.allclose(RX1.get_traces(), RX2.get_traces())
+    if force_dtype is None:
+        assert np.allclose(RX1.get_traces(), RX2.get_traces())
+    else:
+        assert np.allclose(RX1.get_traces().astype(force_dtype), RX2.get_traces().astype(force_dtype))
     sf = 0
     ef = N
     ch = [RX1.get_channel_ids()[0], RX1.get_channel_ids()[-1]]
-    assert np.allclose(RX1.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef),
-                       RX2.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef))
+    if force_dtype is None:
+        assert np.allclose(RX1.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef),
+                           RX2.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef))
+    else:
+        assert np.allclose(RX1.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef).astype(force_dtype),
+                           RX2.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef).astype(force_dtype))
     for f in range(0, RX1.get_num_frames(), 10):
         assert np.isclose(RX1.frame_to_time(f), RX2.frame_to_time(f))
         assert np.isclose(RX1.time_to_frame(RX1.frame_to_time(f)), RX2.time_to_frame(RX2.frame_to_time(f)))
@@ -30,13 +37,24 @@ def check_recordings_equal(RX1, RX2):
     frames = [30, 50, 80]
     snippets1 = RX1.get_snippets(reference_frames=frames, snippet_len=20)
     snippets2 = RX2.get_snippets(reference_frames=frames, snippet_len=(10, 10))
-    for ii in range(len(frames)):
-        assert np.allclose(snippets1[ii], snippets2[ii])
+    if force_dtype is None:
+        for ii in range(len(frames)):
+            assert np.allclose(snippets1[ii], snippets2[ii])
+    else:
+        for ii in range(len(frames)):
+            assert np.allclose(snippets1[ii].astype(force_dtype), snippets2[ii].astype(force_dtype))
 
 
 def check_recording_properties(RX1, RX2):
     # check properties
     assert sorted(RX1.get_shared_channel_property_names()) == sorted(RX2.get_shared_channel_property_names())
+    for prop in RX1.get_shared_channel_property_names():
+        for ch in RX1.get_channel_ids():
+            if not isinstance(RX1.get_channel_property(ch, prop), str):
+                assert np.allclose(np.array(RX1.get_channel_property(ch, prop)),
+                                   np.array(RX2.get_channel_property(ch, prop)))
+            else:
+                assert RX1.get_channel_property(ch, prop) == RX2.get_channel_property(ch, prop)
 
 
 def check_recording_return_types(RX):
@@ -44,9 +62,9 @@ def check_recording_return_types(RX):
     assert (type(RX.get_num_channels()) == int) or (type(RX.get_num_channels()) == np.int64)
     assert (type(RX.get_num_frames()) == int) or (type(RX.get_num_frames()) == np.int64)
     assert (type(RX.get_sampling_frequency()) == float) or (type(RX.get_sampling_frequency()) == np.float64)
-    assert type(RX.get_traces(start_frame=0, end_frame=10)) == np.ndarray
+    assert type(RX.get_traces(start_frame=0, end_frame=10)) in (np.ndarray, np.memmap)
     for channel_id in channel_ids:
-        assert (type(channel_id) == int) or (type(channel_id) == np.int64)
+        assert isinstance(channel_id, (int, np.integer))
 
 
 def check_sorting_return_types(SX):
@@ -74,9 +92,21 @@ def check_sorting_properties_features(SX1, SX2):
     print(SX1.__class__)
     print('Properties', sorted(SX1.get_shared_unit_property_names()), sorted(SX2.get_shared_unit_property_names()))
     assert sorted(SX1.get_shared_unit_property_names()) == sorted(SX2.get_shared_unit_property_names())
+    for prop in SX1.get_shared_unit_property_names():
+        for u in SX1.get_unit_ids():
+            if not isinstance(SX1.get_unit_property(u, prop), str):
+                assert np.allclose(np.array(SX1.get_unit_property(u, prop)),
+                                   np.array(SX2.get_unit_property(u, prop)))
+            else:
+                assert SX1.get_unit_property(u, prop) == SX2.get_unit_property(u, prop)
     # check features
     print('Features', sorted(SX1.get_shared_unit_spike_feature_names()), sorted(SX2.get_shared_unit_spike_feature_names()))
     assert sorted(SX1.get_shared_unit_spike_feature_names()) == sorted(SX2.get_shared_unit_spike_feature_names())
+    for feat in SX1.get_shared_unit_spike_feature_names():
+        for u in SX1.get_unit_ids():
+            assert np.allclose(np.array(SX1.get_unit_spike_features(u, feat)),
+                               np.array(SX2.get_unit_spike_features(u, feat)))
+
 
 
 def check_dumping(extractor):

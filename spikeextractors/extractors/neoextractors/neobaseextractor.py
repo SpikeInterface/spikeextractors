@@ -10,10 +10,12 @@ try:
 except ImportError:
     HAVE_NEO = False
 
+
 class _NeoBaseExtractor:
     NeoRawIOClass = None
     installed = True
     is_writable = False
+    installation_mesg = "To use the Neo extractors, install Neo: \n\n pip install neo\n\n"
 
     def __init__(self, block_index=None, seg_index=None, **kargs):
         """
@@ -21,7 +23,7 @@ class _NeoBaseExtractor:
         if seg_index is None then check if only one segment
 
         """
-        assert HAVE_NEO, "To use the Neo extractors, install Neo: \n\n pip install neo\n\n"
+        assert HAVE_NEO, self.installation_mesg
         neoIOclass = eval('neo.rawio.' + self.NeoRawIOClass)
         self.neo_reader = neoIOclass(**kargs)
         self.neo_reader.parse_header()
@@ -29,13 +31,13 @@ class _NeoBaseExtractor:
         if block_index is None:
             # auto select first block
             num_block = self.neo_reader.block_count()
-            assert num_block == 1, 'This file is multi block spikeextractors support only one segment'
+            assert num_block == 1, 'This file is multi block spikeextractors support only one segment, please provide block_index='
             block_index = 0
 
         if seg_index is None:
             # auto select first segment
             num_seg = self.neo_reader.segment_count(block_index)
-            assert num_seg == 1, 'This file is multi segment spikeextractors support only one segment'
+            assert num_seg == 1, 'This file is multi segment spikeextractors support only one segment, please provide seg_index='
             seg_index = 0
 
         self.block_index = block_index

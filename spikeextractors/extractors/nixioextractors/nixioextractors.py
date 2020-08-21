@@ -12,21 +12,17 @@ from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
 
-# error message when not installed
-missing_nixio_msg = ("To use the NIXIORecordingExtractor install nixio:"
-                     "\n\n pip install nixio\n\n")
-
 
 class NIXIORecordingExtractor(RecordingExtractor):
     extractor_name = 'NIXIORecording'
     has_default_locations = False
     installed = HAVE_NIXIO
     is_writable = True
+    installation_mesg = "To use the NIXIORecordingExtractor install nixio: \n\n pip install nixio\n\n"
     mode = 'file'
 
     def __init__(self, file_path):
-        if not HAVE_NIXIO:
-            raise ImportError(missing_nixio_msg)
+        assert HAVE_NIXIO, self.installation_mesg
         RecordingExtractor.__init__(self)
         self._file = nix.File.open(file_path, nix.FileMode.ReadOnly)
         self._load_properties()
@@ -80,8 +76,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
 
     @staticmethod
     def write_recording(recording, save_path, overwrite=False):
-        if not HAVE_NIXIO:
-            raise ImportError(missing_nixio_msg)
+        assert HAVE_NIXIO, NIXIORecordingExtractor.installation_mesg
         if os.path.exists(save_path) and not overwrite:
             raise FileExistsError("File exists: {}".format(save_path))
 
@@ -145,9 +140,11 @@ class NIXIOSortingExtractor(SortingExtractor):
     extractor_name = 'NIXIOSortingExtractor'
     installed = HAVE_NIXIO
     is_writable = True
+    installation_mesg = "To use the NIXIORecordingExtractor install nixio: \n\n pip install nixio\n\n"
     mode = 'file'
 
     def __init__(self, file_path):
+        assert HAVE_NIXIO, self.installation_mesg
         SortingExtractor.__init__(self)
         self._file = nix.File.open(file_path, nix.FileMode.ReadOnly)
         md = self._file.sections
@@ -193,8 +190,8 @@ class NIXIOSortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, save_path, overwrite=False):
-        if not HAVE_NIXIO:
-            raise ImportError(missing_nixio_msg)
+        assert HAVE_NIXIO, NIXIOSortingExtractor.installation_mesg
+
         if os.path.exists(save_path) and not overwrite:
             raise FileExistsError("File exists: {}".format(save_path))
 

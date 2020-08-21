@@ -1,5 +1,5 @@
 import numpy as np
-import os, sys
+import os
 from pathlib import Path
 import unittest
 import tempfile
@@ -200,6 +200,12 @@ class TestExtractors(unittest.TestCase):
         del cache_sort
         assert not Path(tmp_file).is_file()
 
+        # cleanup
+        os.remove('cache_rec.dat')
+        os.remove('cache_rec2.dat')
+        os.remove('cache_sort.npz')
+        os.remove('cache_sort2.npz')
+
     def test_not_dumpable_exception(self):
         try:
             self.RX.dump_to_json()
@@ -210,8 +216,6 @@ class TestExtractors(unittest.TestCase):
             self.RX.dump_to_pickle()
         except Exception as e:
             assert isinstance(e, NotDumpableExtractorError)
-
-
 
     def test_mda_extractor(self):
         path1 = self.test_dir + '/mda'
@@ -227,6 +231,29 @@ class TestExtractors(unittest.TestCase):
         check_dumping(RX_mda)
         check_dumping(SX_mda)
 
+    def test_hdsort_extractor(self):
+        path = self.test_dir + '/results_test_hdsort_extractor.mat'
+        locations = np.ones((10,2))
+        se.HDSortSortingExtractor.write_sorting(self.SX, path, locations=locations, noise_std_by_channel=None)
+        SX_hd = se.HDSortSortingExtractor(path)
+        check_sorting_return_types(SX_hd)
+        check_sortings_equal(self.SX, SX_hd)
+        check_dumping(SX_hd)
+
+    def test_npz_extractor(self):
+        path = self.test_dir + '/sorting.npz'
+        se.NpzSortingExtractor.write_sorting(self.SX, path)
+        SX_npz = se.NpzSortingExtractor(path)
+
+        # empty write
+        sorting_empty = se.NumpySortingExtractor()
+        path_empty = self.test_dir + '/sorting_empty.npz'
+        se.NpzSortingExtractor.write_sorting(sorting_empty, path_empty)
+
+        check_sorting_return_types(SX_npz)
+        check_sortings_equal(self.SX, SX_npz)
+        check_dumping(SX_npz)
+
     def test_biocam_extractor(self):
         path1 = self.test_dir + '/raw.brw'
         se.BiocamRecordingExtractor.write_recording(self.RX, path1)
@@ -234,6 +261,14 @@ class TestExtractors(unittest.TestCase):
         check_recording_return_types(RX_biocam)
         check_recordings_equal(self.RX, RX_biocam)
         check_dumping(RX_biocam)
+
+    def test_mea1k_extractors(self):
+        path1 = self.test_dir + '/raw.h5'
+        se.Mea1kRecordingExtractor.write_recording(self.RX, path1)
+        RX_mea1k = se.Mea1kRecordingExtractor(path1)
+        check_recording_return_types(RX_mea1k)
+        check_recordings_equal(self.RX, RX_mea1k)
+        check_dumping(RX_mea1k)
 
     def test_mearec_extractors(self):
         path1 = self.test_dir + '/raw.h5'
@@ -368,10 +403,27 @@ class TestExtractors(unittest.TestCase):
         se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1)
         # create new
         path2 = self.test_dir + '/firings_true.nwb'
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path2)
         se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2)
-        SX_nwb = se.NwbSortingExtractor(path1)
+        SX_nwb = se.NwbSortingExtractor(path2)
         check_sortings_equal(self.SX, SX_nwb)
         check_dumping(SX_nwb)
+        
+        # Test for handling unit property descriptions argument
+        property_descriptions = {'stability': 'this is a description of stability'}
+        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1, 
+                                             property_descriptions=property_descriptions)
+        # create new
+        path2 = self.test_dir + '/firings_true.nwb'
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path2)
+        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2, 
+                                             property_descriptions=property_descriptions)
+        SX_nwb = se.NwbSortingExtractor(path2)
+        check_sortings_equal(self.SX, SX_nwb)
+        check_dumping(SX_nwb)
+        
+        # TODO
+        # Tests for nwbfile argument passing and modification?
 
     def test_nixio_extractor(self):
         path1 = os.path.join(self.test_dir, 'raw.nix')
@@ -392,6 +444,7 @@ class TestExtractors(unittest.TestCase):
         check_sortings_equal(self.SX, SX_nixio)
         check_dumping(SX_nixio)
 
+    @unittest.skip("shybrid temporarily disabled")
     def test_shybrid_extractors(self):
         # test sorting extractor
         se.SHYBRIDSortingExtractor.write_sorting(self.SX, self.test_dir)
@@ -410,6 +463,74 @@ class TestExtractors(unittest.TestCase):
         check_recording_return_types(RX_shybrid)
         check_recordings_equal(self.RX, RX_shybrid)
         check_dumping(RX_shybrid)
+        
+    def test_neuroscope_extractors(self):
+        # NeuroscopeRecordingExtractor tests
+        nscope_dir = Path(self.test_dir) / 'neuroscope_rec0'
+        dat_file = nscope_dir / 'neuroscope_rec0.dat'
+        se.NeuroscopeRecordingExtractor.write_recording(self.RX, nscope_dir)
+        RX_ns = se.NeuroscopeRecordingExtractor(dat_file)
+        
+        check_recording_return_types(RX_ns)
+        check_recordings_equal(self.RX, RX_ns, force_dtype='int32')
+        check_dumping(RX_ns)
+        
+        check_recording_return_types(RX_ns)
+        check_recordings_equal(self.RX, RX_ns, force_dtype='int32')
+        check_dumping(RX_ns)
+
+        del RX_ns
+        # overwrite
+        nscope_dir = Path(self.test_dir) / 'neuroscope_rec1'
+        dat_file = nscope_dir / 'neuroscope_rec1.dat'
+        se.NeuroscopeRecordingExtractor.write_recording(recording=self.RX, save_path=nscope_dir)
+        RX_ns = se.NeuroscopeRecordingExtractor(dat_file)
+        check_recording_return_types(RX_ns)
+        check_recordings_equal(self.RX, RX_ns)
+        check_dumping(RX_ns)
+        
+        # NeuroscopeSortingExtractor tests
+        nscope_dir = Path(self.test_dir) / 'neuroscope_sort0'
+        sort_name = 'neuroscope_sort0'
+        initial_sorting_resfile = Path(self.test_dir) / sort_name / f'{sort_name}.res'
+        initial_sorting_clufile = Path(self.test_dir) / sort_name / f'{sort_name}.clu'
+        se.NeuroscopeSortingExtractor.write_sorting(self.SX, nscope_dir)
+        SX_neuroscope = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile,
+                                                      clufile_path=initial_sorting_clufile)
+        check_sorting_return_types(SX_neuroscope)
+        check_sortings_equal(self.SX, SX_neuroscope)
+        check_dumping(SX_neuroscope)
+        SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile, 
+                                                             clufile_path=initial_sorting_clufile, 
+                                                             keep_mua_units=False)
+        check_sorting_return_types(SX_neuroscope_no_mua)
+        check_dumping(SX_neuroscope_no_mua)
+        
+        # Test for extra argument 'keep_mua_units' resulted in the right output
+        SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile, 
+                                                             clufile_path=initial_sorting_clufile, 
+                                                             keep_mua_units=False)
+        check_sorting_return_types(SX_neuroscope_no_mua)
+        check_dumping(SX_neuroscope_no_mua)
+        
+        num_original_units = len(SX_neuroscope.get_unit_ids())
+        self.assertEqual(list(SX_neuroscope.get_unit_ids()), list(range(1,num_original_units+1)))
+        self.assertEqual(list(SX_neuroscope_no_mua.get_unit_ids()), list(range(1,num_original_units)))
+        
+        # Tests for the auto-detection of format for NeuroscopeSortingExtractor
+        SX_neuroscope_from_fp = se.NeuroscopeSortingExtractor(folder_path=nscope_dir)
+        check_sorting_return_types(SX_neuroscope_from_fp)
+        check_sortings_equal(self.SX, SX_neuroscope_from_fp)
+        check_dumping(SX_neuroscope_from_fp)
+        
+        # Tests for the NeuroscopeMultiSortingExtractor
+        nscope_dir = Path(self.test_dir) / 'neuroscope_sort1'
+        SX_multisorting = se.MultiSortingExtractor(sortings=[self.SX, self.SX])  # re-using same SX for simplicity
+        se.NeuroscopeMultiSortingExtractor.write_sorting(SX_multisorting, nscope_dir)
+        SX_neuroscope_mse = se.NeuroscopeMultiSortingExtractor(nscope_dir)
+        check_sorting_return_types(SX_neuroscope_mse)
+        check_sortings_equal(SX_multisorting, SX_neuroscope_mse)
+        check_dumping(SX_neuroscope_mse)
 
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@ import unittest
 import tempfile
 import shutil
 import spikeextractors as se
+import os
 from copy import copy
 from pathlib import Path
 
@@ -53,6 +54,10 @@ class TestTools(unittest.TestCase):
 
         assert len(np.unique(RX_loaded_no_groups.get_channel_groups())) == 1
         assert len(np.unique(RX_loaded_groups.get_channel_groups())) == RX.get_num_channels() // n_group
+
+        # cleanup
+        os.remove('spikeextractors/tests/probe_test_no_groups.prb')
+        os.remove('spikeextractors/tests/probe_test_groups.prb')
 
     def test_write_dat_file(self):
         nb_sample = self.RX.get_num_frames()

@@ -3,6 +3,7 @@ from .extractors.mearecextractors.mearecextractors import MEArecRecordingExtract
 from .extractors.biocamrecordingextractor.biocamrecordingextractor import BiocamRecordingExtractor
 from .extractors.exdirextractors.exdirextractors import ExdirRecordingExtractor, ExdirSortingExtractor
 from .extractors.intanrecordingextractor.intanrecordingextractor import IntanRecordingExtractor
+from .extractors.hdsortsortingextractor.hdsortsortingextractor import HDSortSortingExtractor
 from .extractors.hs2sortingextractor.hs2sortingextractor import HS2SortingExtractor
 from .extractors.klustaextractors.klustaextractors import KlustaSortingExtractor, KlustaRecordingExtractor
 from .extractors.kilosortextractors.kilosortextractors import KiloSortSortingExtractor, KiloSortRecordingExtractor
@@ -22,8 +23,8 @@ from .extractors.mcsh5recordingextractor.mcsh5recordingextractor import MCSH5Rec
 from .extractors.shybridextractors import SHYBRIDRecordingExtractor, SHYBRIDSortingExtractor
 from .extractors.nixioextractors.nixioextractors import NIXIORecordingExtractor, NIXIOSortingExtractor
 from .extractors.neoextractors import (PlexonRecordingExtractor, PlexonSortingExtractor,
-                                       NeuralynxRecordingExtractor, NeuralynxSortingExtractor)
-from .extractors.neuroscopesortingextractor import NeuroscopeSortingExtractor
+                                       NeuralynxRecordingExtractor, NeuralynxSortingExtractor, MCSRawRecordingExtractor)
+from .extractors.neuroscopeextractors import NeuroscopeRecordingExtractor,NeuroscopeSortingExtractor,NeuroscopeMultiSortingExtractor
 from .extractors.waveclussortingextractor import WaveClusSortingExtractor
 
 recording_extractor_full_list = [
@@ -42,8 +43,10 @@ recording_extractor_full_list = [
     MaxOneRecordingExtractor,
     Mea1kRecordingExtractor,
     MCSH5RecordingExtractor,
+    MCSRawRecordingExtractor,
     SHYBRIDRecordingExtractor,
     NIXIORecordingExtractor,
+    NeuroscopeRecordingExtractor,
 
     # neo based
     PlexonRecordingExtractor,
@@ -58,6 +61,7 @@ sorting_extractor_full_list = [
     MdaSortingExtractor,
     MEArecSortingExtractor,
     ExdirSortingExtractor,
+    HDSortSortingExtractor,
     HS2SortingExtractor,
     KlustaSortingExtractor,
     KiloSortSortingExtractor,
@@ -69,6 +73,7 @@ sorting_extractor_full_list = [
     SHYBRIDSortingExtractor,
     NIXIOSortingExtractor,
     NeuroscopeSortingExtractor,
+    NeuroscopeMultiSortingExtractor,
     WaveClusSortingExtractor,
     # neo based
     PlexonSortingExtractor,

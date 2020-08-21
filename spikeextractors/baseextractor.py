@@ -7,6 +7,7 @@ import datetime
 from copy import deepcopy
 import tempfile
 import pickle
+import shutil
 
 from .exceptions import NotDumpableExtractorError
 
@@ -24,8 +25,16 @@ class BaseExtractor:
         self._key_properties = {}
         self._properties = {}
         self._features = {}
+        self._epochs = {}
         self.is_dumpable = True
-        self.is_filtered = False
+        self.id = np.random.randint(low=0, high=9223372036854775807, dtype='int64')
+
+    def __del__(self):
+        if self._tmp_folder is not None:
+            try:
+                shutil.rmtree(self._tmp_folder)
+            except Exception as e:
+                print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
 
     def make_serialized_dict(self):
         '''
@@ -210,7 +219,7 @@ class BaseExtractor:
                     tmp_file = tmp_folder / (name + '.raw')
                 else:
                     tmp_file = tmp_folder / name
-            arr = np.memmap(tmp_file, mode='w+', shape=shape, dtype=dtype)
+            arr = np.memmap(str(tmp_file), mode='w+', shape=shape, dtype=dtype)
             if array is not None:
                 arr[:] = array
                 del array

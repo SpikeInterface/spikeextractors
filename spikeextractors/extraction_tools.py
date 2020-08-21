@@ -7,6 +7,7 @@ import json
 import datetime
 from functools import wraps
 from spikeextractors.baseextractor import BaseExtractor
+from tqdm import tqdm
 
 try:
     import h5py
@@ -266,7 +267,8 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
 
 
 def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
-                               time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+                               time_axis=0, dtype=None, chunk_size=None, chunk_mb=500,
+                               verbose=False):
     '''Saves the traces of a recording extractor in binary .dat format.
 
     Parameters
@@ -288,6 +290,8 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
         If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
     chunk_mb: None or int
         Chunk size in Mb (default 500Mb)
+    verbose: bool
+        If True, output is verbose (when chunks are used)
     '''
     assert save_path is not None or file_handle is not None, "Provide 'save_path' or 'file handle'"
 
@@ -328,9 +332,13 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
         n_chunk = n_sample // chunk_size
         if n_sample % chunk_size > 0:
             n_chunk += 1
+        if verbose:
+            chunks = tqdm(range(n_chunk), ascii=True, desc="Writing to binary .dat file")
+        else:
+            chunks = range(n_chunk)
         if save_path is not None:
             with save_path.open('wb') as f:
-                for i in range(n_chunk):
+                for i in chunks:
                     traces = recording.get_traces(start_frame=i * chunk_size,
                                                   end_frame=min((i + 1) * chunk_size, n_sample))
                     if dtype is not None:
@@ -339,7 +347,7 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
                         traces = traces.T
                     f.write(traces.tobytes())
         else:
-            for i in range(n_chunk):
+            for i in chunks:
                 traces = recording.get_traces(start_frame=i * chunk_size,
                                               end_frame=min((i + 1) * chunk_size, n_sample))
                 if dtype is not None:
@@ -351,7 +359,7 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
 
 
 def write_to_h5_dataset_format(recording, dataset_path, save_path=None, file_handle=None,
-                               time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+                               time_axis=0, dtype=None, chunk_size=None, chunk_mb=500, verbose=False):
     '''Saves the traces of a recording extractor in an h5 dataset.
 
     Parameters
@@ -375,6 +383,8 @@ def write_to_h5_dataset_format(recording, dataset_path, save_path=None, file_han
         If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
     chunk_mb: None or int
         Chunk size in Mb (default 500Mb)
+    verbose: bool
+        If True, output is verbose (when chunks are used)
     '''
     assert HAVE_H5, "To write to h5 you need to install h5py: pip install h5py"
     assert save_path is not None or file_handle is not None, "Provide 'save_path' or 'file handle'"
@@ -424,7 +434,11 @@ def write_to_h5_dataset_format(recording, dataset_path, save_path=None, file_han
         n_chunk = num_frames // chunk_size
         if num_frames % chunk_size > 0:
             n_chunk += 1
-        for i in range(n_chunk):
+        if verbose:
+            chunks = tqdm(range(n_chunk), ascii=True, desc="Writing to .h5 file")
+        else:
+            chunks = range(n_chunk)
+        for i in chunks:
             traces = recording.get_traces(start_frame=i * chunk_size,
                                           end_frame=min((i + 1) * chunk_size, num_frames))
             chunk_frames = traces.shape[1]
@@ -744,7 +758,7 @@ def check_get_traces_args(func):
             start_frame = 0
         if end_frame is not None:
             if end_frame > recording.get_num_frames():
-                print("'end_time' set to", recording.get_num_frames())
+                print("'end_frame' set to", recording.get_num_frames())
                 end_frame = recording.get_num_frames()
             elif end_frame < 0:
                 end_frame = recording.get_num_frames() + end_frame
