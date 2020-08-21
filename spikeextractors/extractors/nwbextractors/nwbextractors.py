@@ -183,29 +183,29 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 unique_grp_names = list(np.unique(nwbfile.electrodes['group_name'][:]))
 
             # Fill channel properties dictionary from electrodes table
-            self.channel_ids = es.electrodes.table.id[:]
-            for ind, i in enumerate(self.channel_ids):
-                self.set_channel_property(i, 'gain', gains[ind])
+            self.channel_ids = es.electrodes.table.id[es.electrodes.data]
+            for es_ind, (channel_id, electrode_table_index) in enumerate(zip(self.channel_ids, es.electrodes.data)):
+                self.set_channel_property(channel_id, 'gain', gains[es_ind])
                 this_loc = []
                 if 'rel_x' in nwbfile.electrodes:
-                    this_loc.append(nwbfile.electrodes['rel_x'][ind])
+                    this_loc.append(nwbfile.electrodes['rel_x'][electrode_table_index])
                     if 'rel_y' in nwbfile.electrodes:
-                        this_loc.append(nwbfile.electrodes['rel_y'][ind])
+                        this_loc.append(nwbfile.electrodes['rel_y'][electrode_table_index])
                     else:
                         this_loc.append(0)
-                    self.set_channel_locations(this_loc, i)
+                    self.set_channel_locations(this_loc, channel_id)
 
                 for col in nwbfile.electrodes.colnames:
-                    if isinstance(nwbfile.electrodes[col][ind], ElectrodeGroup):
+                    if isinstance(nwbfile.electrodes[col][electrode_table_index], ElectrodeGroup):
                         continue
                     elif col == 'group_name':
-                        self.set_channel_groups(int(unique_grp_names.index(nwbfile.electrodes[col][ind])), i)
+                        self.set_channel_groups(int(unique_grp_names.index(nwbfile.electrodes[col][electrode_table_index])), channel_id)
                     elif col == 'location':
-                        self.set_channel_property(i, 'brain_area', nwbfile.electrodes[col][ind])
+                        self.set_channel_property(channel_id, 'brain_area', nwbfile.electrodes[col][electrode_table_index])
                     elif col in ['x', 'y', 'z', 'rel_x', 'rel_y']:
                         continue
                     else:
-                        self.set_channel_property(i, col, nwbfile.electrodes[col][ind])
+                        self.set_channel_property(channel_id, col, nwbfile.electrodes[col][electrode_table_index])
 
             # Fill epochs dictionary
             self._epochs = {}
@@ -216,7 +216,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     'end_frame': self.time_to_frame(row['stop_time'])}
                     for _, row in df_epochs.iterrows()}
 
-            self._kwargs = {'file_path': str(Path(file_path).absolute()), 'electrical_series_name': electrical_series_name}
+            self._kwargs = {'file_path': str(Path(file_path).absolute()),
+                            'electrical_series_name': electrical_series_name}
             self.make_nwb_metadata(nwbfile=nwbfile, es=es)
 
     def make_nwb_metadata(self, nwbfile, es):
@@ -256,7 +257,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             es = nwbfile.acquisition[self._electrical_series_name]
-            table_ids = [list(es.electrodes.data[:]).index(id) for id in channel_ids]
+            table_ids = [es.electrodes[:].index.tolist().index(chan) for chan in channel_ids]
             if np.array(channel_ids).size > 1 and np.any(np.diff(channel_ids) < 0):
                 sorted_idx = np.argsort(table_ids)
                 recordings = es.data[start_frame:end_frame, np.sort(table_ids)].T
@@ -515,9 +516,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         '''
         check_nwb_install()
 
-        if distutils.version.LooseVersion(pynwb.__version__) >= '1.3.0':
-            print("'write_recording' not supported for version >= 1.3.0. Use version 1.2")
-            return
+        #if distutils.version.LooseVersion(pynwb.__version__) >= '1.3.0':
+        #    print("'write_recording' not supported for version >= 1.3.0. Use version 1.2")
+        #    return
 
         if os.path.exists(save_path):
             read_mode = 'r+'
