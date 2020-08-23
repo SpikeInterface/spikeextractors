@@ -189,29 +189,29 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 unique_grp_names = list(np.unique(nwbfile.electrodes['group_name'][:]))
 
             # Fill channel properties dictionary from electrodes table
-            self.channel_ids = es.electrodes.table.id[:]
-            for ind, i in enumerate(self.channel_ids):
-                self.set_channel_property(i, 'gain', gains[ind])
+            self.channel_ids = es.electrodes.table.id[es.electrodes.data]
+            for es_ind, (channel_id, electrode_table_index) in enumerate(zip(self.channel_ids, es.electrodes.data)):
+                self.set_channel_property(channel_id, 'gain', gains[es_ind])
                 this_loc = []
                 if 'rel_x' in nwbfile.electrodes:
-                    this_loc.append(nwbfile.electrodes['rel_x'][ind])
+                    this_loc.append(nwbfile.electrodes['rel_x'][electrode_table_index])
                     if 'rel_y' in nwbfile.electrodes:
-                        this_loc.append(nwbfile.electrodes['rel_y'][ind])
+                        this_loc.append(nwbfile.electrodes['rel_y'][electrode_table_index])
                     else:
                         this_loc.append(0)
-                    self.set_channel_locations(this_loc, i)
+                    self.set_channel_locations(this_loc, channel_id)
 
                 for col in nwbfile.electrodes.colnames:
-                    if isinstance(nwbfile.electrodes[col][ind], ElectrodeGroup):
+                    if isinstance(nwbfile.electrodes[col][electrode_table_index], ElectrodeGroup):
                         continue
                     elif col == 'group_name':
-                        self.set_channel_groups(int(unique_grp_names.index(nwbfile.electrodes[col][ind])), i)
+                        self.set_channel_groups(int(unique_grp_names.index(nwbfile.electrodes[col][electrode_table_index])), channel_id)
                     elif col == 'location':
-                        self.set_channel_property(i, 'brain_area', nwbfile.electrodes[col][ind])
+                        self.set_channel_property(channel_id, 'brain_area', nwbfile.electrodes[col][electrode_table_index])
                     elif col in ['x', 'y', 'z', 'rel_x', 'rel_y']:
                         continue
                     else:
-                        self.set_channel_property(i, col, nwbfile.electrodes[col][ind])
+                        self.set_channel_property(channel_id, col, nwbfile.electrodes[col][electrode_table_index])
 
             # Fill epochs dictionary
             self._epochs = {}
@@ -263,13 +263,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             nwbfile = io.read()
             es = nwbfile.acquisition[self._electrical_series_name]
             es_channel_ids = np.array(es.electrodes.table.id[:])[es.electrodes.data[:]].tolist()
-            table_ids = [es_channel_ids.index(id) for id in channel_ids]
+            channel_inds = [es_channel_ids.index(id) for id in channel_ids]
             if np.array(channel_ids).size > 1 and np.any(np.diff(channel_ids) < 0):
-                sorted_idx = np.argsort(table_ids)
-                recordings = es.data[start_frame:end_frame, np.sort(table_ids)].T
+                # get around h5py constraint that it does not allow datasets
+                # to be indexed out of order
+                sorted_idx = np.argsort(channel_inds)
+                recordings = es.data[start_frame:end_frame, np.sort(channel_inds)].T
                 traces = recordings[sorted_idx, :]
             else:
-                traces = es.data[start_frame:end_frame, table_ids].T
+                traces = es.data[start_frame:end_frame, channel_inds].T
             # This DatasetView and lazy operations will only work within context
             # We're keeping the non-lazy version for now
             # es_view = DatasetView(es.data)  # es is an instantiated h5py dataset
@@ -586,7 +588,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         '''
         Auxiliary static method for nwbextractor.
         Adds traces from recording object as ElectricalSeries to nwbfile object.
-        
+
         Parameters
         ----------
         recording: RecordingExtractor
@@ -613,7 +615,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             
         if not nwbfile.electrodes:
             nwbfile = se.NwbRecordingExtractor.add_electrodes(recording, nwbfile, metadata)
-        
+
         channel_ids = recording.get_channel_ids()
         rate = recording.get_sampling_frequency()
         for es_name in set(metadata_names) - set([ac for ac in nwbfile.acquisition]):
@@ -769,11 +771,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         nwbfile: NWBFile
             Required if a save_path is not specified. If passed, this function
             will fill the relevant fields within the nwbfile. E.g., calling
-            
+
             spikeextractors.NwbRecordingExtractor.write_recording(
                 my_recording_extractor, my_nwbfile
             )
-            
+
             will result in the appropriate changes to the my_nwbfile object.
         metadata: dict
             metadata info for constructing the nwb file (optional).
@@ -1065,19 +1067,19 @@ class NwbSortingExtractor(se.SortingExtractor):
         nwbfile: NWBFile
             Required if a save_path is not specified. If passed, this function
             will fill the relevant fields within the nwbfile. E.g., calling
-            
+
             spikeextractors.NwbRecordingExtractor.write_recording(
                 my_recording_extractor, my_nwbfile
             )
-            
+
             will result in the appropriate changes to the my_nwbfile object.
         property_descriptions: dict
             For each key in this dictionary which matches the name of a unit
-            property in sorting, adds the value as a description to that 
+            property in sorting, adds the value as a description to that
             custom unit column.
         nbwbfile_kwargs: dict
             Information for constructing the nwb file (optional).
-            Only used if no nwbfile exists at the save_path, and no nwbfile 
+            Only used if no nwbfile exists at the save_path, and no nwbfile
             was directly passed.
         '''
         assert HAVE_NWB, NwbSortingExtractor.installation_mesg
