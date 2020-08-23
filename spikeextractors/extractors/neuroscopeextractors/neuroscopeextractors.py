@@ -7,12 +7,11 @@ from typing import Union
 import os
 
 try:
-    from bs4 import BeautifulSoup
-    import lxml
+    from lxml import etree as et
 
-    HAVE_BS4_LXML = True
+    HAVE_LXML = True
 except ImportError:
-    HAVE_BS4_LXML = False
+    HAVE_LXML = False
 
 PathType = Union[str, Path, None]
 DtypeType = Union[str, np.dtype, None]
@@ -32,13 +31,13 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         Path to the .dat file to be extracted
     """
     extractor_name = 'NeuroscopeRecordingExtractor'
-    installed = HAVE_BS4_LXML  # check at class level if installed or not
+    installed = HAVE_LXML  # check at class level if installed or not
     is_writable = True
     mode = 'file'
     installation_mesg = 'Please install bs4 and lxml to use this extractor!'  # error message when not installed
 
     def __init__(self, file_path: PathType):
-        assert HAVE_BS4_LXML, self.installation_mesg
+        assert HAVE_LXML, self.installation_mesg
         file_path = Path(file_path)
         assert file_path.is_file() and file_path.suffix == '.dat', 'file_path must lead to a .dat file!'
 
@@ -51,22 +50,15 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         assert any(xml_files), 'No .xml file found in the folder_path.'
         assert len(xml_files) == 1, 'More than one .xml file found in the folder_path.'
         xml_filepath = xml_files[0]
-
-        with xml_filepath.open('r') as xml_file:
-            contents = xml_file.read()
-            soup = BeautifulSoup(contents, 'lxml')
-            # Normally, this would be a .xml, but there were strange issues
-            # in the write_recording method that require it to be a .lxml instead
-            # which also requires all capital letters to be removed from the tag names
-
-        n_bits = int(soup.nbits.string)
+        
+        xml_root = et.parse(str(xml_filepath.absolute())).getroot()
+        n_bits = int(xml_root.find('acquisitionSystem').find('nBits').text)
         dtype = 'int' + str(n_bits)
-        numchan_from_file = int(soup.nchannels.string)
-
-        numchan = numchan_from_file
-        sampling_frequency = float(soup.samplingrate.string)
+        numchan_from_file = int(xml_root.find('acquisitionSystem').find('nChannels').text)
+        sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text)
+        
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
-                                          dtype=dtype, numchan=numchan)
+                                          dtype=dtype, numchan=numchan_from_file)
 
         self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
@@ -107,8 +99,12 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         if save_xml_filepath.is_file():
             raise FileExistsError(f'{save_xml_filepath} already exists!')
 
-        soup = BeautifulSoup("", 'xml')
-        new_tag = soup.new_tag('nbits')
+        xml_root = et.Element('xml')
+        et.SubElement(xml_root,'acquisitionSystem')
+        et.SubElement(xml_root.find('acquisitionSystem'), 'nBits')
+        et.SubElement(xml_root.find('acquisitionSystem'), 'nChannels')
+        et.SubElement(xml_root.find('acquisitionSystem'), 'samplingRate')
+
         recording_dtype = str(recording.get_dtype())
         int_loc = recording_dtype.find('int')
         recording_n_bits = recording_dtype[(int_loc + 3):(int_loc + 5)]
@@ -127,22 +123,11 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
             n_bits = dtype[(int_loc + 3):(int_loc + 5)]
             assert n_bits in ['16', '32'], 'Data type must be int16 or int32!'
 
+        xml_root.find('acquisitionSystem').find('nBits').text = n_bits
+        xml_root.find('acquisitionSystem').find('nChannels').text = str(recording.get_num_channels())
+        xml_root.find('acquisitionSystem').find('samplingRate').text = str(recording.get_sampling_frequency())
 
-        new_tag.string = n_bits
-        soup.append(new_tag)
-
-        new_tag = soup.new_tag('nchannels')
-        new_tag.string = str(recording.get_num_channels())
-        soup.append(new_tag)
-
-        new_tag = soup.new_tag('samplingrate')
-        new_tag.string = str(recording.get_sampling_frequency())
-        soup.append(new_tag)
-
-        # write parameters file
-        # create parameters file if none exists
-        with save_xml_filepath.open("w") as f:
-            f.write(str(soup))
+        et.ElementTree(xml_root).write(str(save_xml_filepath.absolute()), pretty_print=True)
 
         recording.write_to_binary_dat_format(recording_filepath, dtype=dtype, **write_binary_kwargs)
 
@@ -177,14 +162,14 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
     """
     extractor_name = 'NeuroscopeSortingExtractor'
-    installed = HAVE_BS4_LXML  # check at class level if installed or not
+    installed = HAVE_LXML  # check at class level if installed or not
     is_writable = True
     mode = 'custom'
     installation_mesg = 'Please install bs4 and lxml to use this extractor!'  # error message when not installed
 
     def __init__(self, resfile_path: PathType = None, clufile_path: PathType = None, folder_path: PathType = None,
                  keep_mua_units: bool = True):
-        assert HAVE_BS4_LXML, self.installation_mesg
+        assert HAVE_LXML, self.installation_mesg
 
         # None of the location arguments were passed
         assert not (folder_path is None and resfile_path is None and clufile_path is None), \
@@ -235,14 +220,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         assert len(xml_files) == 1, 'More than one .xml file found in the folder.'
         xml_filepath = xml_files[0]
 
-        with xml_filepath.open('r') as xml_file:
-            contents = xml_file.read()
-            soup = BeautifulSoup(contents, 'lxml')
-            # Normally, this would be a .xml, but there were strange issues
-            # in the write_recording method that require it to be a .lxml instead
-            # which also requires all capital letters to be removed from the tag names
-
-        self._sampling_frequency = float(soup.samplingrate.string)  # careful not to confuse it with the lfpsamplingrate
+        xml_root = et.parse(str(xml_filepath.absolute())).getroot()
+        self._sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text) # careful not to confuse it with the lfpsamplingrate
 
         res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
         clu = np.loadtxt(clufile_path, dtype=np.int64, usecols=0, ndmin=1)
@@ -253,8 +232,6 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             clu = np.delete(clu, 0)
             unique_ids = np.unique(clu)
 
-            # this could fail in case unique doesn't return sorted values
-            #TODO fix this
             if not np.sort(unique_ids) == np.arange(n_clu + 1):  # some missing IDs somewhere
                 if 0 not in unique_ids:  # missing unsorted IDs
                     n_clu += 1
@@ -340,15 +317,11 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             if save_xml_filepath.is_file():
                 raise FileExistsError(f'{save_xml_filepath} already exists!')
 
-            soup = BeautifulSoup("", 'xml')
-
-            new_tag = soup.new_tag('samplingrate')
-            new_tag.string = str(sorting.get_sampling_frequency())
-            soup.append(new_tag)
-
-            # write parameters file
-            with save_xml_filepath.open("w") as f:
-                f.write(str(soup))
+            xml_root = et.Element('xml')
+            et.SubElement(xml_root,'acquisitionSystem')
+            et.SubElement(xml_root.find('acquisitionSystem'), 'samplingRate')
+            xml_root.find('acquisitionSystem').find('samplingRate').text = str(sorting.get_sampling_frequency())
+            et.ElementTree(xml_root).write(str(save_xml_filepath.absolute()), pretty_print=True)
 
             # Create and save .res and .clu files from the current sorting object
             save_res = save_path / f'{sorting_name}.res'
@@ -390,13 +363,13 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         final integer of all the .res.%i and .clu.%i pairs.
     """
     extractor_name = 'NeuroscopeMultiSortingExtractor'
-    installed = HAVE_BS4_LXML  # check at class level if installed or not
+    installed = HAVE_LXML  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
     installation_mesg = 'Please install bs4 and lxml to use this extractor!'  # error message when not installed
 
     def __init__(self, folder_path: PathType, keep_mua_units: bool = True, exclude_shanks: Union[list, None] = None):
-        assert HAVE_BS4_LXML, self.installation_mesg
+        assert HAVE_LXML, self.installation_mesg
 
         folder_path = Path(folder_path)
 
@@ -415,14 +388,8 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         assert len(xml_files) == 1, 'More than one .xml file found in the folder.'
         xml_filepath = xml_files[0]
 
-        with xml_filepath.open('r') as xml_file:
-            contents = xml_file.read()
-            soup = BeautifulSoup(contents, 'lxml')
-            # Normally, this would be a .xml, but there were strange issues
-            # in the write_recording method that require it to be a .lxml instead
-            # which also requires all capital letters to be removed from the tag names
-
-        self._sampling_frequency = float(soup.samplingrate.string)  # careful not to confuse it with the lfpsamplingrate
+        xml_root = et.parse(str(xml_filepath.absolute())).getroot()
+        self._sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text) # careful not to confuse it with the lfpsamplingrate
 
         res_files = [f for f in folder_path.iterdir() if f.is_file()
                      and '.res' in f.name and '.temp.' not in f.name]
@@ -485,15 +452,11 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         if save_xml_filepath.is_file():
             raise FileExistsError(f'{save_xml_filepath} already exists!')
 
-        soup = BeautifulSoup("", 'xml')
-
-        new_tag = soup.new_tag('samplingrate')
-        new_tag.string = str(sorting.get_sampling_frequency())
-        soup.append(new_tag)
-
-        # write parameters file
-        with open(save_xml_filepath, "w") as f:
-            f.write(str(soup))
+        xml_root = et.Element('xml')
+        et.SubElement(xml_root,'acquisitionSystem')
+        et.SubElement(xml_root.find('acquisitionSystem'), 'samplingRate')
+        xml_root.find('acquisitionSystem').find('samplingRate').text = str(sorting.get_sampling_frequency())
+        et.ElementTree(xml_root).write(str(save_xml_filepath.absolute()), pretty_print=True)
 
         if isinstance(sorting, MultiSortingExtractor):
             counter = 1

@@ -535,7 +535,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                 else:
                                     metadata_column_name = metadata_column['name']
                                     print(f"Warning: Custom column {metadata_column_name}" +
-                                          " has incomplete data for channel id [{j}] and no" +
+                                          f" has incomplete data for channel id [{j}] and no" +
                                           " set default! Electrode will not be added.")
                 
                 if not any([metadata_column.get('name','') == 'group' for metadata_column in metadata_columns]):
