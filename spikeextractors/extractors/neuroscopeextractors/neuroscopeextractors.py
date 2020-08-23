@@ -34,7 +34,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     installed = HAVE_LXML  # check at class level if installed or not
     is_writable = True
     mode = 'file'
-    installation_mesg = 'Please install bs4 and lxml to use this extractor!'  # error message when not installed
+    installation_mesg = 'Please install lxml to use this extractor!'  # error message when not installed
 
     def __init__(self, file_path: PathType):
         assert HAVE_LXML, self.installation_mesg
@@ -165,7 +165,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     installed = HAVE_LXML  # check at class level if installed or not
     is_writable = True
     mode = 'custom'
-    installation_mesg = 'Please install bs4 and lxml to use this extractor!'  # error message when not installed
+    installation_mesg = 'Please install lxml to use this extractor!'  # error message when not installed
 
     def __init__(self, resfile_path: PathType = None, clufile_path: PathType = None, folder_path: PathType = None,
                  keep_mua_units: bool = True):
@@ -366,7 +366,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
     installed = HAVE_LXML  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
-    installation_mesg = 'Please install bs4 and lxml to use this extractor!'  # error message when not installed
+    installation_mesg = 'Please install lxml to use this extractor!'  # error message when not installed
 
     def __init__(self, folder_path: PathType, keep_mua_units: bool = True, exclude_shanks: Union[list, None] = None):
         assert HAVE_LXML, self.installation_mesg
