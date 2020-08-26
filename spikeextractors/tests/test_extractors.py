@@ -500,15 +500,15 @@ class TestExtractors(unittest.TestCase):
         check_sorting_return_types(SX_neuroscope)
         check_sortings_equal(self.SX, SX_neuroscope)
         check_dumping(SX_neuroscope)
-        SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile, 
-                                                             clufile_path=initial_sorting_clufile, 
+        SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile,
+                                                             clufile_path=initial_sorting_clufile,
                                                              keep_mua_units=False)
         check_sorting_return_types(SX_neuroscope_no_mua)
         check_dumping(SX_neuroscope_no_mua)
         
         # Test for extra argument 'keep_mua_units' resulted in the right output
-        SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile, 
-                                                             clufile_path=initial_sorting_clufile, 
+        SX_neuroscope_no_mua = se.NeuroscopeSortingExtractor(resfile_path=initial_sorting_resfile,
+                                                             clufile_path=initial_sorting_clufile,
                                                              keep_mua_units=False)
         check_sorting_return_types(SX_neuroscope_no_mua)
         check_dumping(SX_neuroscope_no_mua)
