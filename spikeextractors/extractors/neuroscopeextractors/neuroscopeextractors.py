@@ -50,13 +50,13 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         assert any(xml_files), 'No .xml file found in the folder_path.'
         assert len(xml_files) == 1, 'More than one .xml file found in the folder_path.'
         xml_filepath = xml_files[0]
-        
+
         xml_root = et.parse(str(xml_filepath.absolute())).getroot()
         n_bits = int(xml_root.find('acquisitionSystem').find('nBits').text)
         dtype = 'int' + str(n_bits)
         numchan_from_file = int(xml_root.find('acquisitionSystem').find('nChannels').text)
         sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text)
-        
+
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
                                           dtype=dtype, numchan=numchan_from_file)
 
@@ -100,7 +100,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
             raise FileExistsError(f'{save_xml_filepath} already exists!')
 
         xml_root = et.Element('xml')
-        et.SubElement(xml_root,'acquisitionSystem')
+        et.SubElement(xml_root, 'acquisitionSystem')
         et.SubElement(xml_root.find('acquisitionSystem'), 'nBits')
         et.SubElement(xml_root.find('acquisitionSystem'), 'nChannels')
         et.SubElement(xml_root.find('acquisitionSystem'), 'samplingRate')
@@ -193,9 +193,9 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             assert folder_path.is_dir(), 'The folder_path must be a directory!'
 
             res_files = [f for f in folder_path.iterdir() if f.is_file()
-                                and '.res' in f.name and '.temp.' not in f.name]
+                         and '.res' in f.name and '.temp.' not in f.name]
             clu_files = [f for f in folder_path.iterdir() if f.is_file()
-                                and '.clu' in f.name and '.temp.' not in f.name]
+                         and '.clu' in f.name and '.temp.' not in f.name]
 
             assert len(res_files) > 0 or len(clu_files) > 0, \
                 'No .res or .clu files found in the folder_path.'
@@ -221,7 +221,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         xml_filepath = xml_files[0]
 
         xml_root = et.parse(str(xml_filepath.absolute())).getroot()
-        self._sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text) # careful not to confuse it with the lfpsamplingrate
+        self._sampling_frequency = float(xml_root.find('acquisitionSystem').find(
+            'samplingRate').text)  # careful not to confuse it with the lfpsamplingrate
 
         res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
         clu = np.loadtxt(clufile_path, dtype=np.int64, usecols=0, ndmin=1)
@@ -253,7 +254,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                 n_clu -= 2
                 self._unit_ids = [x + 1 for x in range(n_clu)]  # generates list from 1,...,clu[0]-2
                 for s_id in self._unit_ids:
-                    self._spiketrains.append(res[(clu == s_id + 1).nonzero()])  # only reading cluster IDs 2,...,clu[0]-1
+                    self._spiketrains.append(
+                        res[(clu == s_id + 1).nonzero()])  # only reading cluster IDs 2,...,clu[0]-1
 
         if folder_path_passed:
             self._kwargs = {'resfile_path': None,
@@ -318,7 +320,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                 raise FileExistsError(f'{save_xml_filepath} already exists!')
 
             xml_root = et.Element('xml')
-            et.SubElement(xml_root,'acquisitionSystem')
+            et.SubElement(xml_root, 'acquisitionSystem')
             et.SubElement(xml_root.find('acquisitionSystem'), 'samplingRate')
             xml_root.find('acquisitionSystem').find('samplingRate').text = str(sorting.get_sampling_frequency())
             et.ElementTree(xml_root).write(str(save_xml_filepath.absolute()), pretty_print=True)
@@ -389,7 +391,8 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         xml_filepath = xml_files[0]
 
         xml_root = et.parse(str(xml_filepath.absolute())).getroot()
-        self._sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text) # careful not to confuse it with the lfpsamplingrate
+        self._sampling_frequency = float(xml_root.find('acquisitionSystem').find(
+            'samplingRate').text)  # careful not to confuse it with the lfpsamplingrate
 
         res_files = [f for f in folder_path.iterdir() if f.is_file()
                      and '.res' in f.name and '.temp.' not in f.name]
@@ -453,7 +456,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
             raise FileExistsError(f'{save_xml_filepath} already exists!')
 
         xml_root = et.Element('xml')
-        et.SubElement(xml_root,'acquisitionSystem')
+        et.SubElement(xml_root, 'acquisitionSystem')
         et.SubElement(xml_root.find('acquisitionSystem'), 'samplingRate')
         xml_root.find('acquisitionSystem').find('samplingRate').text = str(sorting.get_sampling_frequency())
         et.ElementTree(xml_root).write(str(save_xml_filepath.absolute()), pretty_print=True)
