@@ -762,6 +762,22 @@ class RecordingExtractor(ABC, BaseExtractor):
                                                       return_property_list=return_property_list)
             return sub_list
 
+    def get_ttl(self, channel=0):
+        '''
+        Returns an array with frames of TTL signals. To be implemented in sub-classes
+
+        Parameters
+        ----------
+        channel: int
+            The TTL channel
+
+        Returns
+        -------
+        ttl_frames: array-like
+            Frames of TTL signal for the specified channel
+        '''
+        raise NotImplementedError
+
     @staticmethod
     def write_recording(recording, save_path):
         '''This function writes out the recorded file of a given recording
