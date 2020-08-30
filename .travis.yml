@@ -1,19 +1,34 @@
-language: python
-os:
-- linux
-services:
-- docker
-python:
-- '3.6'
+jobs:
+  include:
+    - name: "Python 3.7.0 on Xenial Linux"
+      os: linux
+      language: python
+      python:
+        - '3.6'
+        - '3.7'
+        - '3.8'
+      deploy:
+        provider: pypi
+        user: colehurwitz
+        on:
+          tags: true
+        password:
+          secure: Z4tufrjCuDqyOQNAC9pQGXnfVb9/QnkOV4kKBTpBdIO/CoJUN31BkfgHxtDiwvukiwYqQrA2Uv97XltpootvNDjzHw/rK55T8p1BT9YDqQ1NvNFBiqDB+tDEAXuu3396YmWmtyWR7MS346aiJ9lAXUbZnaLe7kj4IxaF0v4uF1niWwP0Ub0cjmzAatLrtOlbZfr61dQ7mRNWDKVUuRDkKRpDq8bb4g8/OBA4PaRPlcqXcpN9OtN2rnlf7XjHXhb3BozOB4TI/URh2bTCGf/1iVujjXBPmWpi15nNLeErgRaQEK2cyrkXpkRmLOzKuLa/I2irooia5ZCWG1DNC6fP8DbJ/tTroKZSk0pr+MLEbOnRR8RyLMj3ZHWXiIc2x5JkbVX/FY8CS0LyAv03UyOzszAli3vEBj22RLO0+z0170fN7FwWNTvFXCIfFoHug5lcLhTXBfLJAurlbWn4RT4jxODVgHgr5/7Km1ddz7eQ7sTvq4x8M0EavR6LKFw7V+XglB3WOhg4bOTZYZOZyw7VxOsIffti4xqnMLbq/Ze/pFIYOWoEduVitgKlRk1D+lBBbWFgmDIEnrBuTOYdDqRL3UojPhldqd8Bktjdtx22H6FGipIJwLTq4n7qy04T+ANpOJ71HI/rJCD+FE+VjxPHJBtZcyPKbvlFk1f0Tq8Y/LI=
+    - name: "Python 3.7.4 on macOS"
+      os: osx
+      osx_image: xcode11.2  # Python 3.7.4 running on macOS 10.14.4
+      language: shell       # 'language: python' is an error on Travis CI macOS
+    - name: "Python 3.8.0 on Windows"
+      os: windows           # Windows 10.0.17134 N/A Build 17134
+      language: shell       # 'language: python' is an error on Travis CI Windows
+      before_install:
+        - choco install python --version 3.7.0
+        - python -m pip install --upgrade pip
+      env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+
 install:
 - pip install mountainlab_pytools pynwb==1.3.3 pyopenephys kbucket h5py MEArec shybrid exdir ruamel.yaml nixio neo>=0.8 hdf5storage bs4 lxml
 - pip install .
 - pip install pytest==3.6
 script: pytest
-deploy:
-  provider: pypi
-  user: colehurwitz
-  on:
-    tags: true
-  password:
-    secure: Z4tufrjCuDqyOQNAC9pQGXnfVb9/QnkOV4kKBTpBdIO/CoJUN31BkfgHxtDiwvukiwYqQrA2Uv97XltpootvNDjzHw/rK55T8p1BT9YDqQ1NvNFBiqDB+tDEAXuu3396YmWmtyWR7MS346aiJ9lAXUbZnaLe7kj4IxaF0v4uF1niWwP0Ub0cjmzAatLrtOlbZfr61dQ7mRNWDKVUuRDkKRpDq8bb4g8/OBA4PaRPlcqXcpN9OtN2rnlf7XjHXhb3BozOB4TI/URh2bTCGf/1iVujjXBPmWpi15nNLeErgRaQEK2cyrkXpkRmLOzKuLa/I2irooia5ZCWG1DNC6fP8DbJ/tTroKZSk0pr+MLEbOnRR8RyLMj3ZHWXiIc2x5JkbVX/FY8CS0LyAv03UyOzszAli3vEBj22RLO0+z0170fN7FwWNTvFXCIfFoHug5lcLhTXBfLJAurlbWn4RT4jxODVgHgr5/7Km1ddz7eQ7sTvq4x8M0EavR6LKFw7V+XglB3WOhg4bOTZYZOZyw7VxOsIffti4xqnMLbq/Ze/pFIYOWoEduVitgKlRk1D+lBBbWFgmDIEnrBuTOYdDqRL3UojPhldqd8Bktjdtx22H6FGipIJwLTq4n7qy04T+ANpOJ71HI/rJCD+FE+VjxPHJBtZcyPKbvlFk1f0Tq8Y/LI=
+
