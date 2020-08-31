@@ -18,6 +18,7 @@ class TestExtractors(unittest.TestCase):
 
     def tearDown(self):
         # Remove the directory after the test
+        del self.RX, self.RX2, self.RX3, self.SX, self.SX2, self.SX3
         shutil.rmtree(self.test_dir)
         # pass
 

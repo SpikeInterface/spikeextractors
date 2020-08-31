@@ -59,10 +59,11 @@ def check_recording_properties(RX1, RX2):
 
 def check_recording_return_types(RX):
     channel_ids = RX.get_channel_ids()
-    assert (type(RX.get_num_channels()) == int) or (type(RX.get_num_channels()) == np.int64)
-    assert (type(RX.get_num_frames()) == int) or (type(RX.get_num_frames()) == np.int64)
-    assert (type(RX.get_sampling_frequency()) == float) or (type(RX.get_sampling_frequency()) == np.float64)
-    assert type(RX.get_traces(start_frame=0, end_frame=10)) in (np.ndarray, np.memmap)
+    assert isinstance(RX.get_num_channels(), (int, np.integer))
+    assert isinstance(RX.get_num_frames(), (int, np.integer))
+    assert isinstance(RX.get_sampling_frequency(), (float, np.float))
+    assert isinstance(RX.get_traces(start_frame=0, end_frame=10), (np.ndarray, np.memmap))
+
     for channel_id in channel_ids:
         assert isinstance(channel_id, (int, np.integer))
 
