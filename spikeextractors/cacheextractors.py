@@ -42,12 +42,12 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
 
     def __del__(self):
         if self._is_tmp:
-            # try:
-            # close memmap file (for Windows)
-            del self._timeseries
-            os.remove(self._tmp_file)
-            # except Exception as e:
-            #     print("Unable to remove temporary file", e)
+            try:
+                # close memmap file (for Windows)
+                del self._timeseries
+                os.remove(self._tmp_file)
+            except Exception as e:
+                print("Unable to remove temporary file", e)
 
     @property
     def filename(self):
