@@ -17,7 +17,7 @@ jobs:
       os: osx
       language: python
       python:
-        - '3.7'
+        - '3.7-dev'
 
     - name: "Python 3.7.0 on Windows"
       os: windows
