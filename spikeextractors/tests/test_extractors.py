@@ -18,6 +18,7 @@ class TestExtractors(unittest.TestCase):
 
     def tearDown(self):
         # Remove the directory after the test
+        del self.RX, self.RX2, self.RX3, self.SX, self.SX2, self.SX3
         shutil.rmtree(self.test_dir)
         # pass
 
@@ -444,7 +445,6 @@ class TestExtractors(unittest.TestCase):
         check_sortings_equal(self.SX, SX_nixio)
         check_dumping(SX_nixio)
 
-    @unittest.skip("shybrid temporarily disabled")
     def test_shybrid_extractors(self):
         # test sorting extractor
         se.SHYBRIDSortingExtractor.write_sorting(self.SX, self.test_dir)

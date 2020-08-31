@@ -43,6 +43,8 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
     def __del__(self):
         if self._is_tmp:
             try:
+                # close memmap file (for Windows)
+                del self._timeseries
                 os.remove(self._tmp_file)
             except Exception as e:
                 print("Unable to remove temporary file", e)
@@ -57,6 +59,8 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
             save_path = save_path.with_suffix('.dat')
         if not save_path.parent.is_dir():
             os.makedirs(save_path.parent)
+        # close memmap file (for Windows)
+        del self._timeseries
         shutil.move(self._tmp_file, str(save_path))
         self._tmp_file = str(save_path)
         self._kwargs['file_path'] = str(Path(self._tmp_file).absolute())
