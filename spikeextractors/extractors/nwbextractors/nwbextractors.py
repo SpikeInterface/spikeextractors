@@ -155,80 +155,83 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         assert HAVE_NWB, self.installation_mesg
         se.RecordingExtractor.__init__(self)
         self._path = str(file_path)
-        with NWBHDF5IO(self._path, 'r') as io:
-            nwbfile = io.read()
-            if electrical_series_name is not None:
-                self._electrical_series_name = electrical_series_name
+        self._io = NWBHDF5IO(self._path, 'r', load_namespaces=True)
+        self.nwbfile = self._io.read()
+        if electrical_series_name is not None:
+            self._electrical_series_name = electrical_series_name
+        else:
+            a_names = list(self.nwbfile.acquisition)
+            if len(a_names) > 1:
+                raise ValueError('More than one acquisition found. You must specify electrical_series.')
+            if len(a_names) == 0:
+                raise ValueError('No acquisitions found in the .nwb file.')
+            self._electrical_series_name = a_names[0]
+        es = self.nwbfile.acquisition[self._electrical_series_name]
+        if hasattr(es, 'timestamps') and es.timestamps:
+            self.sampling_frequency = 1. / np.median(np.diff(es.timestamps))
+            self.recording_start_time = es.timestamps[0]
+        else:
+            self.sampling_frequency = es.rate
+            if hasattr(es, 'starting_time'):
+                self.recording_start_time = es.starting_time
             else:
-                a_names = list(nwbfile.acquisition)
-                if len(a_names) > 1:
-                    raise ValueError('More than one acquisition found. You must specify electrical_series.')
-                if len(a_names) == 0:
-                    raise ValueError('No acquisitions found in the .nwb file.')
-                self._electrical_series_name = a_names[0]
-            es = nwbfile.acquisition[self._electrical_series_name]
-            if hasattr(es, 'timestamps') and es.timestamps:
-                self.sampling_frequency = 1. / np.median(np.diff(es.timestamps))
-                self.recording_start_time = es.timestamps[0]
-            else:
-                self.sampling_frequency = es.rate
-                if hasattr(es, 'starting_time'):
-                    self.recording_start_time = es.starting_time
+                self.recording_start_time = 0.
+
+        self.num_frames = int(es.data.shape[0])
+        num_channels = len(es.electrodes.table.id[:])
+
+        # Channels gains - for RecordingExtractor, these are values to cast traces to uV
+        if es.channel_conversion is not None:
+            gains = es.conversion * es.channel_conversion[:] * 1e6
+        else:
+            gains = es.conversion * np.ones(num_channels) * 1e6
+
+        # Extractors channel groups must be integers, but Nwb electrodes group_name can be strings
+        if 'group_name' in self.nwbfile.electrodes.colnames:
+            unique_grp_names = list(np.unique(self.nwbfile.electrodes['group_name'][:]))
+
+        # Fill channel properties dictionary from electrodes table
+        self.channel_ids = es.electrodes.table.id[es.electrodes.data]
+        for es_ind, (channel_id, electrode_table_index) in enumerate(zip(self.channel_ids, es.electrodes.data)):
+            self.set_channel_property(channel_id, 'gain', gains[es_ind])
+            this_loc = []
+            if 'rel_x' in self.nwbfile.electrodes:
+                this_loc.append(self.nwbfile.electrodes['rel_x'][electrode_table_index])
+                if 'rel_y' in self.nwbfile.electrodes:
+                    this_loc.append(self.nwbfile.electrodes['rel_y'][electrode_table_index])
                 else:
-                    self.recording_start_time = 0.
+                    this_loc.append(0)
+                self.set_channel_locations(this_loc, channel_id)
 
-            self.num_frames = int(es.data.shape[0])
-            num_channels = len(es.electrodes.table.id[:])
+            for col in self.nwbfile.electrodes.colnames:
+                if isinstance(self.nwbfile.electrodes[col][electrode_table_index], ElectrodeGroup):
+                    continue
+                elif col == 'group_name':
+                    self.set_channel_groups(
+                        int(unique_grp_names.index(self.nwbfile.electrodes[col][electrode_table_index])), channel_id)
+                elif col == 'location':
+                    self.set_channel_property(channel_id, 'brain_area',
+                                              self.nwbfile.electrodes[col][electrode_table_index])
+                elif col in ['x', 'y', 'z', 'rel_x', 'rel_y']:
+                    continue
+                else:
+                    self.set_channel_property(channel_id, col, self.nwbfile.electrodes[col][electrode_table_index])
 
-            # Channels gains - for RecordingExtractor, these are values to cast traces to uV
-            if es.channel_conversion is not None:
-                gains = es.conversion * es.channel_conversion[:] * 1e6
-            else:
-                gains = es.conversion * np.ones(num_channels) * 1e6
+        # Fill epochs dictionary
+        self._epochs = {}
+        if self.nwbfile.epochs is not None:
+            df_epochs = self.nwbfile.epochs.to_dataframe()
+            self._epochs = {row['tags'][0]: {
+                'start_frame': self.time_to_frame(row['start_time']),
+                'end_frame': self.time_to_frame(row['stop_time'])}
+                for _, row in df_epochs.iterrows()}
 
-            # Extractors channel groups must be integers, but Nwb electrodes group_name can be strings
-            if 'group_name' in nwbfile.electrodes.colnames:
-                unique_grp_names = list(np.unique(nwbfile.electrodes['group_name'][:]))
+        self._kwargs = {'file_path': str(Path(file_path).absolute()),
+                        'electrical_series_name': electrical_series_name}
+        self.make_nwb_metadata(nwbfile=self.nwbfile, es=es)
 
-            # Fill channel properties dictionary from electrodes table
-            self.channel_ids = es.electrodes.table.id[es.electrodes.data]
-            for es_ind, (channel_id, electrode_table_index) in enumerate(zip(self.channel_ids, es.electrodes.data)):
-                self.set_channel_property(channel_id, 'gain', gains[es_ind])
-                this_loc = []
-                if 'rel_x' in nwbfile.electrodes:
-                    this_loc.append(nwbfile.electrodes['rel_x'][electrode_table_index])
-                    if 'rel_y' in nwbfile.electrodes:
-                        this_loc.append(nwbfile.electrodes['rel_y'][electrode_table_index])
-                    else:
-                        this_loc.append(0)
-                    self.set_channel_locations(this_loc, channel_id)
-
-                for col in nwbfile.electrodes.colnames:
-                    if isinstance(nwbfile.electrodes[col][electrode_table_index], ElectrodeGroup):
-                        continue
-                    elif col == 'group_name':
-                        self.set_channel_groups(
-                            int(unique_grp_names.index(nwbfile.electrodes[col][electrode_table_index])), channel_id)
-                    elif col == 'location':
-                        self.set_channel_property(channel_id, 'brain_area',
-                                                  nwbfile.electrodes[col][electrode_table_index])
-                    elif col in ['x', 'y', 'z', 'rel_x', 'rel_y']:
-                        continue
-                    else:
-                        self.set_channel_property(channel_id, col, nwbfile.electrodes[col][electrode_table_index])
-
-            # Fill epochs dictionary
-            self._epochs = {}
-            if nwbfile.epochs is not None:
-                df_epochs = nwbfile.epochs.to_dataframe()
-                self._epochs = {row['tags'][0]: {
-                    'start_frame': self.time_to_frame(row['start_time']),
-                    'end_frame': self.time_to_frame(row['stop_time'])}
-                    for _, row in df_epochs.iterrows()}
-
-            self._kwargs = {'file_path': str(Path(file_path).absolute()),
-                            'electrical_series_name': electrical_series_name}
-            self.make_nwb_metadata(nwbfile=nwbfile, es=es)
+    def __del__(self):
+        self._io.close()
 
     def make_nwb_metadata(self, nwbfile, es):
         # Metadata dictionary - useful for constructing a nwb file
@@ -263,23 +266,21 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        with NWBHDF5IO(self._path, 'r') as io:
-            nwbfile = io.read()
-            es = nwbfile.acquisition[self._electrical_series_name]
-            es_channel_ids = np.array(es.electrodes.table.id[:])[es.electrodes.data[:]].tolist()
-            channel_inds = [es_channel_ids.index(id) for id in channel_ids]
-            if np.array(channel_ids).size > 1 and np.any(np.diff(channel_ids) < 0):
-                # get around h5py constraint that it does not allow datasets
-                # to be indexed out of order
-                sorted_idx = np.argsort(channel_inds)
-                recordings = es.data[start_frame:end_frame, np.sort(channel_inds)].T
-                traces = recordings[sorted_idx, :]
-            else:
-                traces = es.data[start_frame:end_frame, channel_inds].T
-            # This DatasetView and lazy operations will only work within context
-            # We're keeping the non-lazy version for now
-            # es_view = DatasetView(es.data)  # es is an instantiated h5py dataset
-            # traces = es_view.lazy_slice[start_frame:end_frame, channel_ids].lazy_transpose()
+        es = self.nwbfile.acquisition[self._electrical_series_name]
+        es_channel_ids = np.array(es.electrodes.table.id[:])[es.electrodes.data[:]].tolist()
+        channel_inds = [es_channel_ids.index(id) for id in channel_ids]
+        if np.array(channel_ids).size > 1 and np.any(np.diff(channel_ids) < 0):
+            # get around h5py constraint that it does not allow datasets
+            # to be indexed out of order
+            sorted_idx = np.argsort(channel_inds)
+            recordings = es.data[start_frame:end_frame, np.sort(channel_inds)].T
+            traces = recordings[sorted_idx, :]
+        else:
+            traces = es.data[start_frame:end_frame, channel_inds].T
+        # This DatasetView and lazy operations will only work within context
+        # We're keeping the non-lazy version for now
+        # es_view = DatasetView(es.data)  # es is an instantiated h5py dataset
+        # traces = es_view.lazy_slice[start_frame:end_frame, channel_ids].lazy_transpose()
         return traces
 
     def get_sampling_frequency(self):
@@ -890,65 +891,68 @@ class NwbSortingExtractor(se.SortingExtractor):
         assert HAVE_NWB, self.installation_mesg
         se.SortingExtractor.__init__(self)
         self._path = str(file_path)
-        with NWBHDF5IO(self._path, 'r') as io:
-            nwbfile = io.read()
-            if sampling_frequency is None:
-                # defines the electrical series from where the sorting came from
-                # important to know the sampling_frequency
-                if electrical_series is None:
-                    if len(nwbfile.acquisition) > 1:
-                        raise Exception('More than one acquisition found. You must specify electrical_series.')
-                    if len(nwbfile.acquisition) == 0:
-                        raise Exception('No acquisitions found in the .nwb file.')
-                    es = list(nwbfile.acquisition.values())[0]
-                else:
-                    es = electrical_series
-                # get rate
-                if es.rate is not None:
-                    self._sampling_frequency = es.rate
-                else:
-                    self._sampling_frequency = 1 / (es.timestamps[1] - es.timestamps[0])
+        self._io =  NWBHDF5IO(self._path, 'r', load_namespaces=True)
+        self.nwbfile = self._io.read()
+        if sampling_frequency is None:
+            # defines the electrical series from where the sorting came from
+            # important to know the sampling_frequency
+            if electrical_series is None:
+                if len(self.nwbfile.acquisition) > 1:
+                    raise Exception('More than one acquisition found. You must specify electrical_series.')
+                if len(self.nwbfile.acquisition) == 0:
+                    raise Exception('No acquisitions found in the .nwb file.')
+                es = list(self.nwbfile.acquisition.values())[0]
             else:
-                self._sampling_frequency = sampling_frequency
+                es = electrical_series
+            # get rate
+            if es.rate is not None:
+                self._sampling_frequency = es.rate
+            else:
+                self._sampling_frequency = 1 / (es.timestamps[1] - es.timestamps[0])
+        else:
+            self._sampling_frequency = sampling_frequency
 
-            # get all units ids
-            units_ids = nwbfile.units.id[:]
+        # get all units ids
+        self._units_ids = self.nwbfile.units.id[:]
 
-            # store units properties and spike features to dictionaries
-            all_pr_ft = list(nwbfile.units.colnames)
-            all_names = [i.name for i in nwbfile.units.columns]
-            for item in all_pr_ft:
-                if item == 'spike_times':
-                    continue
-                # test if item is a unit_property or a spike_feature
-                if item + '_index' in all_names:  # if it has index, it is a spike_feature
-                    for id in units_ids:
-                        ind = list(units_ids).index(id)
-                        self.set_unit_spike_features(id, item, nwbfile.units[item][ind])
-                else:  # if it is unit_property
-                    for id in units_ids:
-                        ind = list(units_ids).index(id)
-                        if isinstance(nwbfile.units[item][ind], pd.DataFrame):
-                            prop_value = nwbfile.units[item][ind].index[0]
-                        else:
-                            prop_value = nwbfile.units[item][ind]
+        # store units properties and spike features to dictionaries
+        all_pr_ft = list(self.nwbfile.units.colnames)
+        all_names = [i.name for i in self.nwbfile.units.columns]
+        for item in all_pr_ft:
+            if item == 'spike_times':
+                continue
+            # test if item is a unit_property or a spike_feature
+            if item + '_index' in all_names:  # if it has index, it is a spike_feature
+                for id in self._units_ids:
+                    ind = list(self._units_ids).index(id)
+                    self.set_unit_spike_features(id, item, self.nwbfile.units[item][ind])
+            else:  # if it is unit_property
+                for id in self._units_ids:
+                    ind = list(self._units_ids).index(id)
+                    if isinstance(self.nwbfile.units[item][ind], pd.DataFrame):
+                        prop_value = self.nwbfile.units[item][ind].index[0]
+                    else:
+                        prop_value = self.nwbfile.units[item][ind]
 
-                        if isinstance(prop_value, (list, np.ndarray)):
+                    if isinstance(prop_value, (list, np.ndarray)):
+                        self.set_unit_property(id, item, prop_value)
+                    else:
+                        if prop_value == prop_value:  # not nan
                             self.set_unit_property(id, item, prop_value)
-                        else:
-                            if prop_value == prop_value:  # not nan
-                                self.set_unit_property(id, item, prop_value)
 
-            # Fill epochs dictionary
-            self._epochs = {}
-            if nwbfile.epochs is not None:
-                df_epochs = nwbfile.epochs.to_dataframe()
-                self._epochs = {row['tags'][0]: {
-                    'start_frame': self.time_to_frame(row['start_time']),
-                    'end_frame': self.time_to_frame(row['stop_time'])}
-                    for _, row in df_epochs.iterrows()}
+        # Fill epochs dictionary
+        self._epochs = {}
+        if self.nwbfile.epochs is not None:
+            df_epochs = self.nwbfile.epochs.to_dataframe()
+            self._epochs = {row['tags'][0]: {
+                'start_frame': self.time_to_frame(row['start_time']),
+                'end_frame': self.time_to_frame(row['stop_time'])}
+                for _, row in df_epochs.iterrows()}
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'electrical_series': electrical_series,
                         'sampling_frequency': sampling_frequency}
+
+    def __del__(self):
+        self._io.close()
 
     def get_unit_ids(self):
         '''This function returns a list of ids (ints) for each unit in the sorted result.
@@ -958,11 +962,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         unit_ids: array_like
             A list of the unit ids in the sorted result (ints).
         '''
-        check_nwb_install()
-        with NWBHDF5IO(self._path, 'r') as io:
-            nwbfile = io.read()
-            unit_ids = [int(i) for i in nwbfile.units.id[:]]
-        return unit_ids
+        return self._units_ids
 
     @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
@@ -971,13 +971,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             start_frame = 0
         if end_frame is None:
             end_frame = np.Inf
-        check_nwb_install()
-        with NWBHDF5IO(self._path, 'r') as io:
-            nwbfile = io.read()
-            # chosen unit and interval
-            times = nwbfile.units['spike_times'][list(nwbfile.units.id[:]).index(unit_id)][:]
-            # spike times are measured in samples
-            frames = self.time_to_frame(times)
+        times = self.nwbfile.units['spike_times'][list(self.nwbfile.units.id[:]).index(unit_id)][:]
+        # spike times are measured in samples
+        frames = self.time_to_frame(times)
         return frames[(frames > start_frame) & (frames < end_frame)]
 
     def time_to_frame(self, time):
