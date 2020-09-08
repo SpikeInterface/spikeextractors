@@ -20,9 +20,9 @@ DtypeType = Union[str, np.dtype, None]
 class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     """
     Extracts raw neural recordings from large binary .dat files in the neuroscope format.
-    
+
     The recording extractor always returns channel IDs starting from 0.
-    
+
     The recording data will always be returned in the shape of (num_channels,num_frames).
 
     Parameters
@@ -30,6 +30,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     file_path : str
         Path to the .dat file to be extracted
     """
+
     extractor_name = 'NeuroscopeRecordingExtractor'
     installed = HAVE_LXML  # check at class level if installed or not
     is_writable = True
@@ -134,20 +135,21 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
 class NeuroscopeSortingExtractor(SortingExtractor):
     """
-    Extracts spiking information from pair of .res and .clu files. The .res is a text file with
-    a sorted list of all spiketimes from all units displayed in sample (integer '%i') units.
+    Extracts spiking information from pair of .res and .clu files.
+
+    The .res is a text file with a sorted list of spiketimes from all units displayed in sample (integer '%i') units.
     The .clu file is a file with one more row than the .res with the first row corresponding to
     the total number of unique ids in the file (and may exclude 0 & 1 from this count)
     with the rest of the rows indicating which unit id the corresponding entry in the
     .res file refers to.
-    
+
     In the original Neuroscope format:
         Unit ID 0 is the cluster of unsorted spikes (noise).
         Unit ID 1 is a cluster of multi-unit spikes.
-        
+
     The function defaults to returning multi-unit activity as the first index, and ignoring unsorted noise.
     To return only the fully sorted units, set keep_mua_units=False.
-        
+
     The sorting extractor always returns unit IDs from 1, ..., number of chosen clusters.
 
     Parameters
@@ -161,6 +163,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     keep_mua_units : bool
         Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
     """
+
     extractor_name = 'NeuroscopeSortingExtractor'
     installed = HAVE_LXML  # check at class level if installed or not
     is_writable = True
@@ -335,20 +338,20 @@ class NeuroscopeSortingExtractor(SortingExtractor):
 class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
     """
     Extracts spiking information from an arbitrary number of .res.%i and .clu.%i files in the general folder path.
-    
-    The .res is a text file with a sorted list of all spiketimes from all units displayed in sample (integer '%i') units.
+
+    The .res is a text file with a sorted list of spiketimes from all units displayed in sample (integer '%i') units.
     The .clu file is a file with one more row than the .res with the first row corresponding to the total number of
     unique ids in the file (and may exclude 0 & 1 from this count)
     with the rest of the rows indicating which unit id the corresponding entry in the .res file refers to.
     The group id is loaded as unit property 'group'.
-    
+
     In the original Neuroscope format:
         Unit ID 0 is the cluster of unsorted spikes (noise).
         Unit ID 1 is a cluster of multi-unit spikes.
-        
+
     The function defaults to returning multi-unit activity as the first index, and ignoring unsorted noise.
     To return only the fully sorted units, set keep_mua_units=False.
-        
+
     The sorting extractor always returns unit IDs from 1, ..., number of chosen clusters.
 
     Parameters
@@ -361,6 +364,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         Optional. List of indices to ignore. The set of all possible indices is chosen by default, extracted as the
         final integer of all the .res.%i and .clu.%i pairs.
     """
+
     extractor_name = 'NeuroscopeMultiSortingExtractor'
     installed = HAVE_LXML  # check at class level if installed or not
     is_writable = True
