@@ -193,9 +193,9 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             assert folder_path.is_dir(), 'The folder_path must be a directory!'
 
             res_files = [f for f in folder_path.iterdir() if f.is_file()
-                         and '.res' in f.name and '.temp.' not in f.name]
+                         and '.res' in f.suffixes and '.temp' not in f.suffixes and len(f.suffixes) <= 2]
             clu_files = [f for f in folder_path.iterdir() if f.is_file()
-                         and '.clu' in f.name and '.temp.' not in f.name]
+                         and '.clu' in f.suffixes and '.temp' not in f.suffixes and len(f.suffixes) <= 2]
 
             assert len(res_files) > 0 or len(clu_files) > 0, \
                 'No .res or .clu files found in the folder_path.'
@@ -232,13 +232,10 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             n_clu = clu[0]
             clu = np.delete(clu, 0)
             unique_ids = np.unique(clu)
-
-            if not np.sort(unique_ids) == np.arange(n_clu + 1):  # some missing IDs somewhere
-                if 0 not in unique_ids:  # missing unsorted IDs
-                    n_clu += 1
-                if 1 not in unique_ids:  # missing mua IDs
-                    n_clu += 1
-                # If it is any other ID, then it would be very strange if it were missing...
+            if 0 not in unique_ids:  # missing unsorted IDs
+                n_clu += 1
+            if 1 not in unique_ids:  # missing mua IDs
+                n_clu += 1
 
             # Initialize spike trains and extract times from .res and appropriate clusters from .clu based on
             # user input for ignoring multi-unit activity
@@ -395,9 +392,9 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
             'samplingRate').text)  # careful not to confuse it with the lfpsamplingrate
 
         res_files = [f for f in folder_path.iterdir() if f.is_file()
-                     and '.res' in f.name and '.temp.' not in f.name]
+                     and '.res' in f.suffixes and '.temp' not in f.suffixes and len(f.suffixes) <= 2]
         clu_files = [f for f in folder_path.iterdir() if f.is_file()
-                     and '.clu' in f.name and '.temp.' not in f.name]
+                     and '.clu' in f.suffixes and '.temp' not in f.suffixes and len(f.suffixes) <= 2]
 
         assert len(res_files) > 0 or len(clu_files) > 0, \
             'No .res or .clu files found in the folder_path.'
