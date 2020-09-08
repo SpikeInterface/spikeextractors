@@ -102,6 +102,13 @@ class Mea1kRecordingExtractor(RecordingExtractor):
             assert channel_ids in self.get_channel_ids()
             return self._signals[np.array(channel_ids), start_frame:end_frame].astype('float32')
 
+    def get_ttl_frames(self, channel=0):
+        bitvals = self._signals[-2:, 0]
+        first_frame = bitvals[1] << 16 | bitvals[0]
+        bits = self._filehandle['bits']
+        bit_frames = bits['frameno'] - first_frame
+        return bit_frames
+
     @staticmethod
     def write_recording(recording, save_path, chunk_size=None, chunk_mb=500):
         assert HAVE_MEA1k, Mea1kRecordingExtractor.installation_mesg

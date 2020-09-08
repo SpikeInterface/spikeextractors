@@ -1,5 +1,6 @@
 from spikeextractors import RecordingExtractor, SortingExtractor
 from spikeextractors.extraction_tools import check_get_traces_args
+import numpy as np
 from pathlib import Path
 
 try:
@@ -7,6 +8,7 @@ try:
     HAVE_INTAN = True
 except ImportError:
     HAVE_INTAN = False
+
 
 class IntanRecordingExtractor(RecordingExtractor):
     extractor_name = 'IntanRecording'
@@ -37,3 +39,9 @@ class IntanRecordingExtractor(RecordingExtractor):
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
+
+    def get_ttl_frames(self, channel=0):
+        channels = [np.unique(ev.channels)[0] for ev in self._recording.digital_in_events]
+        assert channel in channels, f"Specified 'channel' not found. Available channels are {channels}"
+        ev = self._recording.events[channels.index(channel)]
+        return (ev.times.rescale("s") * self.get_sampling_frequency()).magnitude.astype(int)

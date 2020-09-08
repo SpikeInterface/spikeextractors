@@ -280,7 +280,7 @@ def ExtractDigital(rawData, firstSamp, lastSamp, dwReq, dLineList, meta):
         byteN, bitN = np.divmod(dLineList[i], 8)
         targI = byteN*8 + (7 - bitN)
         digArray[i, :] = bitWiseData[targI, :]
-    return(digArray)
+    return (digArray)
 
 
 # Sample calling program to get a file from the user,

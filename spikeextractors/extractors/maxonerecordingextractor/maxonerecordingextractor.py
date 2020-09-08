@@ -30,6 +30,9 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._initialize()
         self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
+    def __del__(self):
+        self._filehandle.close()
+
     def _initialize(self):
         self._filehandle = h5py.File(self._file_path, 'r')
         self._mapping = self._filehandle['mapping']
@@ -43,6 +46,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._channel_ids = list(channels[np.where(electrodes > 0)])
         self._num_channels = len(self._channel_ids)
         self._fs = float(20000)
+        self._signals = self._filehandle['sig']
         self._num_frames = self._signals.shape[1]
 
         for i_ch, ch in enumerate(self.get_channel_ids()):
@@ -70,3 +74,10 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         else:
             assert channel_ids in self.get_channel_ids()
             return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
+    
+    def get_ttl_frames(self, channel=0):
+        bitvals = self._signals[-2:, 0]
+        first_frame = bitvals[1] << 16 | bitvals[0]
+        bits = self._filehandle['bits']
+        bit_frames = bits['frameno'] - first_frame
+        return bit_frames

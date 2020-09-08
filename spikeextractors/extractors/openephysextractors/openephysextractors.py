@@ -46,6 +46,12 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
             return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame] * \
                    self._recording.analog_signals[0].gain
 
+    def get_ttl_frames(self, channel=0):
+        channels = [np.unique(ev.channels)[0] for ev in self._recording.events]
+        assert channel in channels, f"Specified 'channel' not found. Available channels are {channels}"
+        ev = self._recording.events[channels.index(channel)]
+        return (ev.times.rescale("s") * self.get_sampling_frequency()).magnitude.astype(int)
+
 
 class OpenEphysSortingExtractor(SortingExtractor):
     extractor_name = 'OpenEphysSortingExtractor'

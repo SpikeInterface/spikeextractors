@@ -762,7 +762,7 @@ class RecordingExtractor(ABC, BaseExtractor):
                                                       return_property_list=return_property_list)
             return sub_list
 
-    def get_ttl(self, channel=0):
+    def get_ttl_frames(self, channel=0):
         '''
         Returns an array with frames of TTL signals. To be implemented in sub-classes
 
