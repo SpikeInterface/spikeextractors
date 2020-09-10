@@ -24,12 +24,16 @@ class BaseExtractor:
         self._tmp_folder = None
         self._key_properties = {}
         self._properties = {}
+        self._memmap_files = []
         self._features = {}
         self._epochs = {}
         self.is_dumpable = True
         self.id = np.random.randint(low=0, high=9223372036854775807, dtype='int64')
 
     def __del__(self):
+        # close memmap files (for Windows)
+        for memmap_file in self._memmap_files:
+            del memmap_file
         if self._tmp_folder is not None:
             try:
                 shutil.rmtree(self._tmp_folder)
@@ -49,6 +53,7 @@ class BaseExtractor:
         class_name = str(type(self)).replace("<class '", "").replace("'>", '')
         module = class_name.split('.')[0]
         imported_module = importlib.import_module(module)
+        print(class_name, self.__class__)
 
         if self.is_dumpable:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': self._kwargs,
@@ -225,6 +230,7 @@ class BaseExtractor:
                 del array
             else:
                 arr[:] = 0
+            self._memmap_files.append(arr)
         else:
             if array is not None:
                 arr = array
