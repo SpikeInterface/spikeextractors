@@ -53,7 +53,6 @@ class BaseExtractor:
         class_name = str(type(self)).replace("<class '", "").replace("'>", '')
         module = class_name.split('.')[0]
         imported_module = importlib.import_module(module)
-        print(class_name, self.__class__)
 
         if self.is_dumpable:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': self._kwargs,
