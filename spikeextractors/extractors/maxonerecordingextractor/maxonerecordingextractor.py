@@ -34,7 +34,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._filehandle = h5py.File(self._file_path, 'r')
         self._mapping = self._filehandle['mapping']
         if 'lsb' in self._filehandle['settings'].keys():
-            self._lsb = self._filehandle['settings']['lsb'][()] * 1e6
+            self._lsb = self._filehandle['settings']['lsb'][0] * 1e6
         else:
             print("Couldn't read lsb. Setting lsb to 1")
             self._lsb = 1.
@@ -44,6 +44,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._channel_ids = list(channels[np.where(electrodes > 0)])
         self._num_channels = len(self._channel_ids)
         self._fs = float(20000)
+        self._signals = self._filehandle['sig']
         self._num_frames = self._signals.shape[1]
 
         for i_ch, ch in enumerate(self.get_channel_ids()):

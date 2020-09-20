@@ -41,25 +41,28 @@ class Mea1kRecordingExtractor(RecordingExtractor):
                 self._version = self._filehandle['chipinformation']['software_version'][0].decode()
             except:
                 self._version = '20161003'
+
         print(f"Chip version: {self._version}")
         self._lsb = 1
         if int(self._version) == 20160704:
             self._signals = self._filehandle.get('sig')
-            try:
-                self._gain = self._filehandle.get('settings/gain')
-            except:
+            settings = self._filehandle.get('settings')
+
+            if 'gain' in settings:
+                self._gain = self._filehandle.get('settings/gain')[0]
+            else:
                 print("Couldn't read gain. Setting gain to 512")
                 self._gain = 512
-            try:
-                self._bits = self._filehandle.get('bits')
-            except:
-                self._bits = []
-            try:
-                self._mapping = self._filehandle['mapping']
-            except:
-                raise Exception("Could not load 'mapping' field")
 
-            self._lsb = 3.3 / (1024 * self._gain)
+            self._bits = self._filehandle.get('bits', [])
+
+            if 'lsb' in settings:
+                self._lsb = self._filehandle['settings']['lsb'][0] * 1e6
+            else:
+                self._lsb = 3.3 / (1024 * self._gain) * 1e6
+
+            assert 'mapping' in self._filehandle.keys(), "Could not load 'mapping' field"
+            self._mapping = self._filehandle['mapping']
             self._fs = 20000
         elif int(self._version) >= 20161003:
             self._mapping = self._filehandle['ephys']['mapping']
