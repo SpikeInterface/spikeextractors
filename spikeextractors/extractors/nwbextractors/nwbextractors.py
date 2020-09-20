@@ -1009,29 +1009,60 @@ class NwbSortingExtractor(se.SortingExtractor):
 
         # If no Units present in nwb file
         if nwbfile.units is None:
+            # check that array properties have the same shape across units
+            skip_properties = []
+            property_shapes = {}
+            for pr in all_properties:
+                shapes = []
+                for unit_id in unit_ids:
+                    if pr in sorting.get_unit_property_names(unit_id):
+                        prop_value = sorting.get_unit_property(unit_id, pr)
+                        if isinstance(prop_value, (int, np.integer, float, np.float, str, bool)):
+                            shapes.append(1)
+                        elif isinstance(prop_value, (list, np.ndarray)):
+                            if np.array(prop_value).ndim == 1:
+                                shapes.append(len(prop_value))
+                            else:
+                                shapes.append(np.array(prop_value).shape)
+                        elif isinstance(prop_value, dict):
+                            print(f"Skipping property '{pr}' because dictionaries are not supported.")
+                            skip_properties.append(pr)
+                            break
+                    else:
+                        shapes.append(np.nan)
+                property_shapes[pr] = shapes
+
+            for pr in property_shapes.keys():
+                if not np.all([elem == property_shapes[pr][0] for elem in property_shapes[pr]]):
+                    print(f"Skipping property '{pr}' because it has variable size across units.")
+                    skip_properties.append(pr)
+
             for pr in all_properties:
                 # Special case of setting max_electrodes requires a table to be
                 # passed to become a dynamic table region
-                if pr in ['max_channel', 'max_electrode']:
-                    if nwbfile.electrodes is None:
-                        print('Warning: Attempted to make a custom column for max_channel '
-                              'or max_electrode, but there are no electrodes to reference! '
-                              'Column will not be added.')
+                if pr not in skip_properties:
+                    if pr in ['max_channel', 'max_electrode']:
+                        if nwbfile.electrodes is None:
+                            print('Warning: Attempted to make a custom column for max_channel '
+                                  'or max_electrode, but there are no electrodes to reference! '
+                                  'Column will not be added.')
+                        else:
+                            nwbfile.add_unit_column(pr, property_descriptions.get(pr, 'no description'),
+                                                    table=nwbfile.electrodes)
                     else:
-                        nwbfile.add_unit_column(pr, property_descriptions.get(pr, 'no description'),
-                                                table=nwbfile.electrodes)
-                else:
-                    nwbfile.add_unit_column(pr, property_descriptions.get(pr, 'no description'))
+                        nwbfile.add_unit_column(pr, property_descriptions.get(pr, 'no description'))
 
             for unit_id in unit_ids:
                 unit_kwargs = {}
                 # spike trains withinin the SortingExtractor object are not scaled by sampling frequency
                 spkt = sorting.get_unit_spike_train(unit_id=unit_id) / fs
                 for pr in all_properties:
-                    if pr in sorting.get_unit_property_names(unit_id):
-                        unit_kwargs.update({pr: sorting.get_unit_property(unit_id, pr)})
-                    else:  # Case of missing data for this unit and this property
-                        unit_kwargs.update({pr: np.nan})
+                    if pr not in skip_properties:
+                        if pr in sorting.get_unit_property_names(unit_id):
+                            prop_value = sorting.get_unit_property(unit_id, pr)
+                            unit_kwargs.update({pr: prop_value})
+                        else:  # Case of missing data for this unit and this property
+                            unit_kwargs.update({pr: np.nan})
                 nwbfile.add_unit(id=unit_id, spike_times=spkt, **unit_kwargs)
 
             # TODO
@@ -1052,19 +1083,46 @@ class NwbSortingExtractor(se.SortingExtractor):
             #         waveform_sd=traces_std
             #     )
 
-            nspikes = {k: get_nspikes(nwbfile.units, int(k)) for k in unit_ids}
+            # check that multidimensional features have the same shape across units
+            feature_shapes = {}
+            skip_features = []
             for ft in all_features:
-                if ft not in sorting.get_shared_unit_spike_feature_names():
-                    print(f"Skipping feature '{ft}' because not share accross all units.")
-                    continue
+                shapes = []
+                for unit_id in unit_ids:
+                    if ft in sorting.get_unit_spike_feature_names(unit_id):
+                        feat_value = sorting.get_unit_spike_features(unit_id, ft)
+                        if isinstance(feat_value[0], (int, np.integer, float, np.float, str, bool)):
+                            break
+                        elif isinstance(feat_value[0], (list, np.ndarray)):  # multidimensional features
+                            if np.array(feat_value).ndim > 1:
+                                shapes.append(np.array(feat_value).shape)
+                                feature_shapes[ft] = shapes
+                        elif isinstance(feat_value[0], dict):
+                            print(f"Skipping feature '{ft}' because dictionaries are not supported.")
+                            skip_features.append(ft)
+                            break
+                    else:
+                        print(f"Skipping feature '{ft}' because not share across all units.")
+                        skip_features.append(ft)
+                        break
+
+            nspikes = {k: get_nspikes(nwbfile.units, int(k)) for k in unit_ids}
+
+            for ft in feature_shapes.keys():
+                # skip first dimension (num_spikes) when comparing feature shape
+                if not np.all([elem[1:] == feature_shapes[ft][0][1:] for elem in feature_shapes[ft]]):
+                    print(f"Skipping feature '{ft}' because it has variable size across units.")
+                    skip_features.append(ft)
+
+            for ft in all_features:
                 values = []
-                skip_incomplete_feature = False
                 if not ft.endswith('_idxs'):
                     for unit_id in sorting.get_unit_ids():
                         feat_vals = sorting.get_unit_spike_features(unit_id, ft)
 
                         if len(feat_vals) < nspikes[unit_id]:
-                            skip_incomplete_feature = True
+                            skip_features.append(ft)
+                            print(f"Skipping feature '{ft}' because it is not defined for all spikes.")
                             break
                             # this means features are available for a subset of spikes
                             # all_feat_vals = np.array([np.nan] * nspikes[unit_id])
@@ -1074,21 +1132,18 @@ class NwbSortingExtractor(se.SortingExtractor):
                             all_feat_vals = feat_vals
                         values.append(all_feat_vals)
 
-                    if skip_incomplete_feature:
-                        print(f"Skipping feature '{ft}' because it is not defined for all spikes.")
-                        continue
+                    if ft not in skip_features:
+                        flatten_vals = [item for sublist in values for item in sublist]
+                        nspks_list = [sp for sp in nspikes.values()]
+                        spikes_index = np.cumsum(nspks_list).astype('int64')
 
-                    flatten_vals = [item for sublist in values for item in sublist]
-                    nspks_list = [sp for sp in nspikes.values()]
-                    spikes_index = np.cumsum(nspks_list).astype('int64')
-
-                    set_dynamic_table_property(
-                        dynamic_table=nwbfile.units,
-                        row_ids=unit_ids,
-                        property_name=ft,
-                        values=flatten_vals,
-                        index=spikes_index,
-                    )
+                        set_dynamic_table_property(
+                            dynamic_table=nwbfile.units,
+                            row_ids=unit_ids,
+                            property_name=ft,
+                            values=flatten_vals,
+                            index=spikes_index,
+                        )
 
         else:  # there are already units in the nwbfile
             print("Warning: The nwbfile already contains units. "
