@@ -74,11 +74,12 @@ class Mea1kRecordingExtractor(RecordingExtractor):
         channels = np.array(self._mapping['channel'])
         electrodes = np.array(self._mapping['electrode'])
         # remove unused channels
-        self._channel_ids = list(channels[np.where(electrodes > -1)])
+        routed_idxs = np.where(electrodes > -1)[0]
+        self._channel_ids = list(channels[routed_idxs])
         self._num_channels = len(self._channel_ids)
         self._num_frames = self._signals.shape[1]
 
-        for i_ch, ch in enumerate(self.get_channel_ids()):
+        for i_ch, ch in zip(routed_idxs, self._channel_ids):
             self.set_channel_locations([self._mapping['x'][i_ch], self._mapping['y'][i_ch]], ch)
 
     def get_channel_ids(self):
