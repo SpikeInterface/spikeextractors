@@ -13,7 +13,7 @@ try:
     if StrictVersion(mr.__version__) >= '1.5.0':
         HAVE_MREX = True
     else:
-        print('MEArec is too old, you must do : pip install --upgrade MEArec please')
+        print("MEArec version requires an update (>=1.5). Please upgrade with 'pip install --upgrade MEArec'")
         HAVE_MREX = False
 except ImportError:
     HAVE_MREX = False
