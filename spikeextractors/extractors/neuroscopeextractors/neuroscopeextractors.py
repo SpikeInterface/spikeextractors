@@ -184,7 +184,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             resfile_path = Path(resfile_path)
             clufile_path = Path(clufile_path)
             assert resfile_path.is_file() and clufile_path.is_file(), \
-                'The resfile_path and clufile_path must be .res and .clu files!'
+                'The resfile_path ({}) and clufile_path ({}) must be .res and .clu files!'.format(resfile_path,
+                                                                                                  clufile_path)
 
             assert folder_path is None, 'Pass either a single folder_path location, ' \
                                         'or a pair of resfile_path and clufile_path. All received.'
@@ -407,8 +408,8 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
             'For single .res and .clu files, use the NeuroscopeSortingExtractor instead.'
         assert len(res_files) == len(clu_files)
 
-        res_ids = [int(x.name[-1]) for x in res_files]
-        clu_ids = [int(x.name[-1]) for x in res_files]
+        res_ids = [int(x.suffix[1:]) for x in res_files]
+        clu_ids = [int(x.suffix[1:]) for x in clu_files]
         assert sorted(res_ids) == sorted(clu_ids), 'Unmatched .clu.%i and .res.%i files detected!'
         if any([x not in res_ids for x in exclude_shanks]):
             print('Warning: Detected indices in exclude_shanks that are not in the directory. These will be ignored.')
