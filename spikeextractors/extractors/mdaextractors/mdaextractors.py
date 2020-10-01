@@ -55,7 +55,8 @@ class MdaRecordingExtractor(RecordingExtractor):
         recordings = recordings[channel_ids, :]
         return recordings
 
-    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500,
+                                   verbose=False):
         '''Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
@@ -73,6 +74,8 @@ class MdaRecordingExtractor(RecordingExtractor):
             If 'auto' the file is saved in chunks of ~ 500Mb
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
+        verbose: bool
+            If True, output is verbose
         '''
         X = DiskReadMda(self._timeseries_path)
         header_size = X._header.header_size
@@ -85,14 +88,14 @@ class MdaRecordingExtractor(RecordingExtractor):
                 print('Error occurred while copying:', e)
                 print('Writing to binary')
                 write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
-                                           chunk_size=chunk_size, chunk_mb=chunk_mb)
+                                           chunk_size=chunk_size, chunk_mb=chunk_mb, verbose=verbose)
         else:
             write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
-                                       chunk_size=chunk_size, chunk_mb=chunk_mb)
+                                       chunk_size=chunk_size, chunk_mb=chunk_mb, verbose=verbose)
 
     @staticmethod
     def write_recording(recording, save_path, params=dict(), raw_fname='raw.mda', params_fname='params.json',
-                        geom_fname='geom.csv', dtype=None, chunk_size=None, chunk_mb=500):
+                        geom_fname='geom.csv', dtype=None, chunk_size=None, chunk_mb=500, verbose=False):
         '''
 
         Parameters
@@ -116,6 +119,8 @@ class MdaRecordingExtractor(RecordingExtractor):
             If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
+        verbose: bool
+            If True, output is verbose
         '''
         save_path = Path(save_path)
         if not save_path.exists():
@@ -145,7 +150,7 @@ class MdaRecordingExtractor(RecordingExtractor):
             header.write(f)
             # takes care of the chunking
             write_to_binary_dat_format(recording, file_handle=f, dtype=dtype, chunk_size=chunk_size,
-                                       chunk_mb=chunk_mb)
+                                       chunk_mb=chunk_mb, verbose=verbose)
 
         params["samplerate"] = recording.get_sampling_frequency()
         with (parent_dir / params_fname).open('w') as f:
