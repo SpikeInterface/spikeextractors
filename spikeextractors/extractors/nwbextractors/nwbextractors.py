@@ -496,12 +496,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             if 'Ecephys' in metadata and 'Electrodes' in metadata['Ecephys']:
                 if type(metadata['Ecephys']['Electrodes']) is list and metadata['Ecephys']['Electrodes']:
                     metadata_columns = metadata['Ecephys']['Electrodes']
-                    for j, custom_col in enumerate(metadata_columns):
-                        if type(custom_col) is dict \
-                                and set(custom_col.keys()) == set(['name', 'description', 'data']) \
-                                and type(custom_col['data']) is list:
-                            nwbfile.add_electrode_column(str(custom_col['name']),
-                                                         str(custom_col['description']))
+                    for j, metadata_column in enumerate(metadata_columns):
+                        if type(metadata_column) is dict \
+                                and set(metadata_column.keys()) == set(['name', 'description', 'data']) \
+                                and type(metadata_column['data']) is list:
+                            if metadata_column['name'] != 'group' and metadata_column['name'] != 'group_name':
+                                nwbfile.add_electrode_column(str(metadata_column['name']),
+                                                             str(metadata_column['description']))
                         else:
                             print(f"Warning: Expected metadata['Ecephy']['Electrodes'][{j}] to be"
                                   " a dictionary with keys 'name', 'description', and 'data',"
