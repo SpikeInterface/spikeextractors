@@ -297,9 +297,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         '''
         Auxiliary static method for nwbextractor.
         Adds device information to nwbfile object.
-        Will always ensure nwbfile has at least one device, but multiple 
+        Will always ensure nwbfile has at least one device, but multiple
         devices within the metadata list will also be created.
-        
+
         Parameters
         ----------
         recording: RecordingExtractor
@@ -310,6 +310,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             Should be of the format
                 metadata['Ecephys']['Device'] = [{'name': my_name,
                                                   'description': my_description}, ...]
+
+        Missing keys in an element of metadata['Ecephys']['Device'] will be auto-populated with defaults.
         '''
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
@@ -318,28 +320,20 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         if metadata is None:
             metadata = dict()
+            metadata['Ecephys'] = {}
+            metadata['Ecephys']['Device'] = []
 
-        if len(metadata.keys()) > 0:
-            if 'Ecephys' in metadata \
-                    and 'Device' in metadata['Ecephys'] \
-                    and type(metadata['Ecephys']['Device']) is list \
-                    and metadata['Ecephys']['Device']:
-                for j, dev in enumerate(metadata['Ecephys']['Device']):
-                    if type(dev) is dict:
-                        # Will not overwrite the named device if already in nwbfile
-                        if dev.get('name', defaults['name']) not in nwbfile.devices:
-                            device_kwargs = fill_kwargs_from_defaults(defaults, dev)
-                            nwbfile.create_device(**device_kwargs)
-                    else:
-                        print(f"Warning: Expected metadata['Ecephys']['Device'][{j}] to be"
-                              " a dictionary with keys 'name' and 'description'!"
-                              f" Device [{j}] will not be created.")
-            else:
-                print("Warning: metadata must be a list of dictionaries of the form"
-                      " metadata['Ecephys']['Device'] = [{'name': my_name,"
-                      " 'description': my_description}, ...]!")
+        assert len(metadata.keys()) > 0, "Expected metadata must be a non-empty dictionary!"
+        assert 'Ecephys' in metadata, "Expected metadata to have key 'Ecephys'!"
+        assert 'Device' in metadata['Ecephys'], "Expected metadata['Ecephys'] to have key 'Device'!"
+        assert type(metadata['Ecephys']['Device']) is list, "Expected metadata['Ecephys']['Device'] to be a list!"
 
-        # If no device created above
+        for j, dev in enumerate(metadata['Ecephys']['Device']):
+            assert type(dev) is dict, f"Expected metadata['Ecephys']['Device'][{j}] to be a dictionary!"
+            if dev.get('name', defaults['name']) not in nwbfile.devices:
+                device_kwargs = fill_kwargs_from_defaults(defaults, dev)
+                nwbfile.create_device(**device_kwargs)
+
         if not nwbfile.devices:
             device_kwargs = fill_kwargs_from_defaults(defaults)
             nwbfile.create_device(**device_kwargs)
