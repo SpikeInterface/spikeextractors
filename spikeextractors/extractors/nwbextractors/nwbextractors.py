@@ -319,7 +319,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     'description': 'no description'}
 
         if metadata is None:
-            metadata = dict()
+            metadata = {}
             metadata['Ecephys'] = {}
             metadata['Ecephys']['Device'] = []
 
@@ -331,12 +331,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         for j, dev in enumerate(metadata['Ecephys']['Device']):
             assert type(dev) is dict, f"Expected metadata['Ecephys']['Device'][{j}] to be a dictionary!"
             if dev.get('name', defaults['name']) not in nwbfile.devices:
-                device_kwargs = fill_kwargs_from_defaults(defaults, dev)
-                nwbfile.create_device(**device_kwargs)
+                nwbfile.create_device(**dict(defaults, **dev))
 
         if not nwbfile.devices:
-            device_kwargs = fill_kwargs_from_defaults(defaults)
-            nwbfile.create_device(**device_kwargs)
+            nwbfile.create_device(**defaults)
             print("Warning: No device metadata provided. Generating default device!")
 
     @staticmethod
