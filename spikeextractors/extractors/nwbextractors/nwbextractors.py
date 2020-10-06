@@ -309,9 +309,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     'description': 'no description'}
 
         if metadata is None:
-            metadata = dict()
-            metadata['Ecephys'] = dict()
-            metadata['Ecephys']['Device'] = [dict(defaults)]
+            metadata = dict(
+                Ecephys=dict(
+                    Device=[defaults]
+                )
+            )
 
         assert all([isinstance(x, dict) for x in metadata['Ecephys']['Device']]), \
             "Expected metadata['Ecephys']['Device'] to be a list of dictionaries!"
