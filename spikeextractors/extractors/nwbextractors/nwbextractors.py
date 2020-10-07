@@ -313,7 +313,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     Device=[defaults]
                 )
             )
-        print("\n\n" + metadata + "\n\n")
+        print("\n\n")
+        print(metadata)
+        print("\n\n")
         assert all([isinstance(x, dict) for x in metadata['Ecephys']['Device']]), \
             "Expected metadata['Ecephys']['Device'] to be a list of dictionaries!"
 
