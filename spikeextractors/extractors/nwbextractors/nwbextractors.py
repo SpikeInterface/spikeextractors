@@ -307,7 +307,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
         defaults = {'name': 'Device',
                     'description': 'no description'}
-
         if metadata is None:
             metadata = dict(
                 Ecephys=dict(
@@ -809,9 +808,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         assert save_path is None or nwbfile is None, \
             "Either pass a save_path location, or nwbfile object, but not both!"
 
-        # Update any previous metadata with user passed dictionary
-        if metadata is None:
-            metadata = dict()
         if hasattr(recording, 'nwb_metadata'):
             metadata = update_dict(recording.nwb_metadata, metadata)
 
@@ -829,7 +825,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     nwbfile_kwargs = dict(session_description='no description',
                                           identifier=str(uuid.uuid4()),
                                           session_start_time=datetime.now())
-                    if 'NWBFile' in metadata:
+                    if metadata is not None and 'NWBFile' in metadata:
                         nwbfile_kwargs.update(metadata['NWBFile'])
                     nwbfile = NWBFile(**nwbfile_kwargs)
 
