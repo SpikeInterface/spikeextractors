@@ -313,7 +313,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     Device=[defaults]
                 )
             )
-
+        print("\n\n" + metadata + "\n\n")
         assert all([isinstance(x, dict) for x in metadata['Ecephys']['Device']]), \
             "Expected metadata['Ecephys']['Device'] to be a list of dictionaries!"
 
@@ -349,46 +349,43 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
         defaults = {'name': 'Electrode Group',
                     'description': 'no description',
-                    'location': 'unknown'}
-        default_dev_name = 'Device'
-
+                    'location': 'unknown',
+                    'device_name': 'Device'}
         if metadata is None:
-            metadata = dict()
+            metadata = dict(
+                Ecephys=dict(
+                    ElectrodeGroup=[defaults]
+                )
+            )
 
-        if len(metadata.keys()) > 0:
-            if 'Ecephys' in metadata and 'ElectrodeGroup' in metadata['Ecephys']:
-                if type(metadata['Ecephys']['ElectrodeGroup']) is list and metadata['Ecephys']['ElectrodeGroup']:
-                    for j, grp in enumerate(metadata['Ecephys']['ElectrodeGroup']):
-                        if type(grp) is dict:
-                            if grp.get('name', defaults['name']) not in nwbfile.electrode_groups:
-                                if grp.get('device_name', default_dev_name) not in nwbfile.devices:
-                                    new_device = {'Ecephys': {'Device': {'name':
-                                                                         grp.get('device_name', default_dev_name)}}}
-                                    se.NwbRecordingExtractor.add_devices(recording, nwbfile, metadata=new_device)
-                                    print("Warning: device name not detected in attempted link to electrode group! "
-                                          "Automatically generating.")
+        assert all([isinstance(x, dict) for x in metadata['Ecephys']['ElectrodeGroup']]), \
+            "Expected metadata['Ecephys']['ElectrodeGroup'] to be a list of dictionaries!"
 
-                                electrode_group_kwargs = dict(defaults, **grp)
-                                electrode_group_kwargs.pop('device_name')
-                                electrode_group_kwargs.update(
-                                    {'device': nwbfile.devices[grp.get('device_name', default_dev_name)]})
-                                nwbfile.create_electrode_group(**electrode_group_kwargs)
-                        else:
-                            print(f"Warning: Expected metadata['Ecephys']['ElectrodeGroup'][{j}] to be"
-                                  " a dictionary with keys 'name', 'description', 'location', and 'device'!"
-                                  f"Electrode Group [{j}] will not be created.")
-                else:
-                    print("Warning: metadata must be a list of dictionaries of the form"
-                          " metadata['Ecephys']['ElectrodeGroup'] = [{'name': my_name,"
-                          " 'description': my_description, 'location': electrode_location,"
-                          " 'device_name': my_device_name}, ...]!")
+        for grp in metadata['Ecephys']['ElectrodeGroup']:
+            device_name = grp.get('device_name', defaults['device_name'])
+            if grp.get('name', defaults['name']) not in nwbfile.electrode_groups:
+                if device_name not in nwbfile.devices:
+                    new_device = dict(
+                                    Ecephys=dict(
+                                        Device=dict(
+                                            name=device_name
+                                        )
+                                    )
+                                 )
+                    se.NwbRecordingExtractor.add_devices(recording, nwbfile, metadata=new_device)
+                    print("Warning: device name not detected in attempted link to electrode group! "
+                          "Automatically generating.")
+                electrode_group_kwargs = dict(defaults, **grp)
+                electrode_group_kwargs.pop('device_name')
+                electrode_group_kwargs.update(dict(device=nwbfile.devices[device_name]))
+                nwbfile.create_electrode_group(**electrode_group_kwargs)
 
         if not nwbfile.electrode_groups:
             if len(nwbfile.devices.keys()) == 1:
                 device_names = list(nwbfile.devices.keys())
                 device = nwbfile.devices[device_names[0]]
             elif len(nwbfile.devices.keys()) == 0:
-                new_device = {'Ecephys': {'Device': {'name': default_dev_name}}}
+                new_device = {'Ecephys': {'Device': {'name': defaults['device_name']}}}
                 se.NwbRecordingExtractor.add_devices(recording, nwbfile, metadata=new_device)
                 device = nwbfile.devices['Device']
             elif len(nwbfile.devices.keys()) > 1:
@@ -407,8 +404,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     nwbfile.create_electrode_group(**electrode_group_kwargs)
             else:
                 nwbfile.add_electrode_groups(**electrode_group_kwargs)
-                print("Warning: No electrode group metadata provided, and no"
-                      " internal group properties set. Generating default device!")
+                print("Warning: No electrode group metadata provided, and no internal group properties set! "
+                      "Generating default device.")
 
     @staticmethod
     def add_electrodes(recording: se.RecordingExtractor, nwbfile=None,
