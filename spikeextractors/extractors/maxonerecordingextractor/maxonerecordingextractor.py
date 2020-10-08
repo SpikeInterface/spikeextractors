@@ -65,6 +65,9 @@ class MaxOneRecordingExtractor(RecordingExtractor):
 
                 # load activity as property
                 activity_channels, counts = np.unique(spikes_channels, return_counts=True)
+                # transform to spike rate
+                duration = float(self._num_frames) / self._fs
+                counts = counts.astype(float) / duration
                 activity_channels = list(activity_channels)
                 for ch in self.get_channel_ids():
                     if ch in activity_channels:
