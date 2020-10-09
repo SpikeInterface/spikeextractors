@@ -292,8 +292,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return self.channel_ids.tolist()
 
     @staticmethod
-    def add_devices(recording: se.RecordingExtractor, nwbfile=None,
-                    metadata: dict = None):
+    def add_devices(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None):
         """
         Auxiliary static method for nwbextractor.
 
