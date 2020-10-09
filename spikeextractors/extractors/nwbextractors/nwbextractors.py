@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import distutils.version
 from typing import Union
+import warnings
 
 import spikeextractors as se
 from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
@@ -513,7 +514,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         for j, channel_id in enumerate(recording.get_channel_ids()):
             if channel_id not in nwb_elec_ids:
                 electrode_kwargs = dict(defaults)
-                electrode_kwargs.update(dict(id=channel_id))
+                electrode_kwargs.update(id=channel_id)
 
                 # recording.get_channel_locations defaults to np.nan if there are none
                 location = recording.get_channel_locations(channel_ids=channel_id)[0]
@@ -530,8 +531,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     if metadata_column['name'] == 'group_name':
                         group_name = list_get(metadata_column['data'], j, defaults['group_name'])
                         if group_name not in nwbfile.electrode_groups:
-                            print(f"Warning: Electrode group for electrode {channel_id} was not found in the nwbfile! "
-                                  "Automatically adding.")
+                            warnings.warn(f"Electrode group for electrode {channel_id} was not "
+                                          "found in the nwbfile! Automatically adding.")
                             missing_group_metadata = dict(
                                 Ecephys=dict(
                                     ElectrodeGroup=dict(
@@ -562,9 +563,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                 })
                             else:
                                 metadata_column_name = metadata_column['name']
-                                print(f"Warning: Custom column {metadata_column_name} "
-                                      f"has incomplete data for channel id [{j}] and no "
-                                      "set default! Electrode will not be added.")
+                                warnings.warn(f"Custom column {metadata_column_name} "
+                                              f"has incomplete data for channel id [{j}] and no "
+                                              "set default! Electrode will not be added.")
                                 continue
 
                 if not any([x.get('name', '') == 'group_name' for x in metadata['Ecephys']['Electrodes']]):
@@ -578,10 +579,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                             )
                         )
                     else:
-                        print("Warning: No metadata was passed specifying the electrode group for "
-                              f"electrode {channel_id}, and the internal recording channel group was "
-                              f"assigned a value ({group_id}) outside the indices of the electrode "
-                              "groups in the nwbfile! Electrode will not be added.")
+                        warnings.warn("No metadata was passed specifying the electrode group for "
+                                      f"electrode {channel_id}, and the internal recording channel group was "
+                                      f"assigned a value ({group_id}) outside the indices of the electrode "
+                                      "groups in the nwbfile! Electrode will not be added.")
                         continue
 
                 nwbfile.add_electrode(**electrode_kwargs)
