@@ -402,7 +402,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         )
                      )
                     se.NwbRecordingExtractor.add_devices(recording, nwbfile, metadata=new_device)
-                    warnings.warn(f"Warning: device \'{device_name}\' not detected in "
+                    warnings.warn(f"Device \'{device_name}\' not detected in "
                                   "attempted link to electrode group! Automatically generating.")
                 electrode_group_kwargs = dict(defaults, **grp)
                 electrode_group_kwargs.pop('device_name')
@@ -415,7 +415,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             device_name = list(nwbfile.devices.keys())[0]
             device = nwbfile.devices[device_name]
             if len(nwbfile.devices) > 1:
-                warnings.warn("Warning: more than one device found when adding electrode group "
+                warnings.warn("More than one device found when adding electrode group "
                               f"via channel properties: using device \'{device_name}\'. To use a "
                               "different device, indicate it the metadata argument.")
 
