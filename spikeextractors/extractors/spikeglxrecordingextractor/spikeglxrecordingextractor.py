@@ -1,8 +1,8 @@
 from spikeextractors import RecordingExtractor
-from .readSGLX import readMeta, SampRate, makeMemMapRaw, GainCorrectIM, GainCorrectNI
+from .readSGLX import readMeta, SampRate, makeMemMapRaw, GainCorrectIM, GainCorrectNI, ExtractDigital
 import numpy as np
 from pathlib import Path
-from spikeextractors.extraction_tools import check_get_traces_args
+from spikeextractors.extraction_tools import check_get_traces_args, cast_start_end_frame
 
 
 class SpikeGLXRecordingExtractor(RecordingExtractor):
@@ -33,17 +33,18 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             raise Exception("'meta' file for '"+self._ftype+"' traces should be in the same folder.")
         # Read in metadata, returns a dictionary
         meta = readMeta(self._npxfile)
+        self._meta = meta
 
         # Traces in 16-bit format
-        rawData = makeMemMapRaw(self._npxfile, meta)
-        self._timeseries = rawData  # [chanList, firstSamp:lastSamp+1]
+        self._raw = makeMemMapRaw(self._npxfile, meta)
+        self._timeseries = self._raw  # [chanList, firstSamp:lastSamp+1]
 
         # sampling rate and ap channels
         self._sampling_frequency = SampRate(meta)
         tot_chan, ap_chan, locations = _parse_spikeglx_metafile(self._metafile, x_pitch, y_pitch)
         if ap_chan < tot_chan:
             self._channels = list(range(int(ap_chan)))
-            self._timeseries = self._timeseries[0:ap_chan, :]
+            self._timeseries = self._raw[0:ap_chan, :]
         else:
             self._channels = list(range(int(tot_chan)))  # OriginalChans(meta).tolist()
 
@@ -61,7 +62,6 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         self.set_channel_gains(self._channels, gains*1e6)
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'x_pitch': x_pitch, 'y_pitch': y_pitch}
 
-
     def get_channel_ids(self):
         return self._channels
 
@@ -76,6 +76,32 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         channel_idxs = [self._channels.index(ch) for ch in channel_ids]
         recordings = self._timeseries[channel_idxs, start_frame:end_frame]
         return recordings
+
+    def get_ttl_frames(self, start_frame=None, end_frame=None, channel=0):
+        assert isinstance(channel, (int, np.integer)), "One channel at a time can be returned"
+
+        if start_frame is None:
+            start_frame = 0
+        if end_frame is None:
+            end_frame = self.get_num_frames()
+        start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
+        channel = [channel]
+        dw = 0
+        dig = ExtractDigital(self._raw, firstSamp=start_frame, lastSamp=end_frame, dwReq=dw, dLineList=channel,
+                             meta=self._meta)
+        dig = np.squeeze(dig)
+        diff_dig = np.diff(dig.astype(int))
+
+        rising = np.where(diff_dig > 0)[0] + start_frame
+        falling = np.where(diff_dig < 0)[0] + start_frame
+
+        ttl_frames = np.concatenate((rising, falling))
+        ttl_states = np.array([1] * len(rising) + [-1] * len(falling))
+        sort_idxs = np.argsort(ttl_frames)
+        return ttl_frames[sort_idxs], ttl_states[sort_idxs]
+
+
+
 
     @staticmethod
     def write_recording(recording, save_path, dtype=None, transpose=False):

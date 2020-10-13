@@ -1,7 +1,7 @@
 from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id, cast_start_end_frame
 
 try:
     import pyopenephys
@@ -46,11 +46,22 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
             return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame] * \
                    self._recording.analog_signals[0].gain
 
-    def get_ttl_frames(self, channel=0):
+    def get_ttl_frames(self, start_frame=None, end_frame=None, channel=0):
         channels = [np.unique(ev.channels)[0] for ev in self._recording.events]
         assert channel in channels, f"Specified 'channel' not found. Available channels are {channels}"
+
+        if start_frame is None:
+            start_frame = 0
+        if end_frame is None:
+            end_frame = self.get_num_frames()
+        start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
+
         ev = self._recording.events[channels.index(channel)]
-        return (ev.times.rescale("s") * self.get_sampling_frequency()).magnitude.astype(int)
+
+        ttl_frames = (ev.times.rescale("s") * self.get_sampling_frequency()).magnitude.astype(int)
+        ttl_states = np.sign(ev.channel_states)
+        ttl_valid_idxs = np.where((ttl_frames >= start_frame) & (ttl_frames < end_frame))[0]
+        return ttl_frames[ttl_valid_idxs], ttl_states[ttl_valid_idxs]
 
 
 class OpenEphysSortingExtractor(SortingExtractor):
