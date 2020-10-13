@@ -12,10 +12,12 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         self._first_recording = recordings[0]
         self._num_channels = self._first_recording.get_num_channels()
         self._channel_ids = self._first_recording.get_channel_ids()
+        self._channel_ids_dict = {}
+
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
         if epoch_names is None:
             epoch_names = [str(i) for i in range(len(recordings))]
-            
+
         RecordingExtractor.__init__(self)
 
         # Add all epochs to the epochs data structure
@@ -26,14 +28,26 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
             start_frames += num_frames
 
         # Test if all recording extractors have same num channels and sampling frequency
+        reset_channels = False
         for i, recording in enumerate(recordings[1:]):
             channel_ids = recording.get_channel_ids()
             sampling_frequency = recording.get_sampling_frequency()
 
-            if (self._channel_ids != channel_ids):
-                raise ValueError("Inconsistent channel ids between extractor 0 and extractor " + str(i + 1))
-            if (self._sampling_frequency != sampling_frequency):
-                raise ValueError("Inconsistent sampling frequency between extractor 0 and extractor " + str(i + 1))
+            assert len(self._channel_ids) == len(channel_ids), f"Inconsistent number of channels between " \
+                                                               f"extractor 0 and extractor {i + 1}"
+            assert self._sampling_frequency == sampling_frequency, f"Inconsistent sampling frequency between " \
+                                                                   f"extractor 0 and extractor {i + 1}"
+            assert np.array_equal(self._first_recording.get_channel_locations(), recording.get_channel_locations()), \
+                f"Inconsistent locations between extractor 0 and extractor {i + 1}"
+            if self._channel_ids != channel_ids:
+                reset_channels = True
+
+        if reset_channels:
+            print("The recordings have different channel ids. Resetting channel ids.")
+            self._channel_ids = list(np.arange(len(self._channel_ids)))
+
+            for i, rec in enumerate(recordings):
+                self._channel_ids_dict[i] = rec.get_channel_ids()
 
         self._start_frames = []
         self._start_times = []
@@ -50,7 +64,12 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         self._num_frames = ff
 
         # Set the channel properties based on the first recording extractor
-        self.copy_channel_properties(self._first_recording)
+        if len(self._channel_ids_dict) == 0:
+            self.copy_channel_properties(self._first_recording)
+        else:
+            # only copy key properties
+            self.set_channel_locations(self._first_recording.get_channel_locations())
+            self.set_channel_groups(self._first_recording.get_channel_groups())
         self._kwargs = {'recordings': [rec.make_serialized_dict() for rec in recordings], 'epoch_names': epoch_names}
 
     @property
@@ -72,19 +91,34 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         recording1, i_sec1, i_start_frame = self._find_section_for_frame(start_frame)
         _, i_sec2, i_end_frame = self._find_section_for_frame(end_frame)
         if i_sec1 == i_sec2:
-            return recording1.get_traces(channel_ids=channel_ids, start_frame=i_start_frame, end_frame=i_end_frame)
+            if len(self._channel_ids_dict) == 0:
+                return recording1.get_traces(channel_ids=channel_ids, start_frame=i_start_frame, end_frame=i_end_frame)
+            else:
+                channel_ids_idxs = [self._channel_ids.index(ch) for ch in channel_ids]
+                channel_ids_1 = list(np.array(self._channel_ids_dict[i_sec1])[channel_ids_idxs])
+                return recording1.get_traces(channel_ids=channel_ids_1, start_frame=i_start_frame,
+                                             end_frame=i_end_frame)
+
         traces = []
-        traces.append(
-            self._recordings[i_sec1].get_traces(channel_ids=channel_ids, start_frame=i_start_frame,
-                                         end_frame=self._recordings[i_sec1].get_num_frames())
-        )
-        for i_sec in range(i_sec1 + 1, i_sec2):
-            traces.append(
-                self._recordings[i_sec].get_traces(channel_ids=channel_ids)
-            )
-        traces.append(
-            self._recordings[i_sec2].get_traces(channel_ids=channel_ids, start_frame=0, end_frame=i_end_frame)
-        )
+        if len(self._channel_ids_dict) == 0:
+            traces.append(self._recordings[i_sec1].get_traces(channel_ids=channel_ids, start_frame=i_start_frame,
+                                                              end_frame=self._recordings[i_sec1].get_num_frames()))
+            for i_sec in range(i_sec1 + 1, i_sec2):
+                traces.append(self._recordings[i_sec].get_traces(channel_ids=channel_ids))
+            traces.append(self._recordings[i_sec2].get_traces(channel_ids=channel_ids, start_frame=0,
+                                                              end_frame=i_end_frame))
+        else:
+            channel_ids_idxs = [self._channel_ids.index(ch) for ch in channel_ids]
+            channel_ids_1 = list(np.array(self._channel_ids_dict[i_sec1])[channel_ids_idxs])
+            traces.append(self._recordings[i_sec1].get_traces(channel_ids=channel_ids_1, start_frame=i_start_frame,
+                                                              end_frame=self._recordings[i_sec1].get_num_frames()))
+            for i_sec in range(i_sec1 + 1, i_sec2):
+                channel_ids_i = list(np.array(self._channel_ids_dict[i_sec])[channel_ids_idxs])
+                traces.append(self._recordings[i_sec].get_traces(channel_ids=channel_ids_i))
+            channel_ids_2 = list(np.array(self._channel_ids_dict[i_sec2])[channel_ids_idxs])
+            traces.append(self._recordings[i_sec2].get_traces(channel_ids=channel_ids_2, start_frame=0,
+                                                              end_frame=i_end_frame))
+
         return np.concatenate(traces, axis=1)
 
     def get_channel_ids(self):
@@ -103,6 +137,7 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
     def time_to_frame(self, time):
         recording, i_epoch, rel_time = self._find_section_for_time(time)
         return recording.time_to_frame(rel_time) + self._start_frames[i_epoch]
+
 
 def concatenate_recordings_by_time(recordings, epoch_names=None):
     '''
