@@ -62,7 +62,7 @@ class CombinatoSortingExtractor(SortingExtractor):
                 unit_counter = unit_counter + 1
                 self._spike_trains[unit_counter] = np.rint(times_css[sp_index[np.isin(sp_class, cls)]] * (sr / 1000))
                 metadata[unit_counter] = {'det_sign': sign,
-                                          'group_ytpe':'single-unir' if group_type[gr] else 'multi-unit'}
+                                          'group_type': 'single-unit' if group_type[gr] else 'multi-unit'}
 
         fdet.close()
 
@@ -97,7 +97,6 @@ class CombinatoSortingExtractor(SortingExtractor):
         end_frame = end_frame or np.infty
         u = self._unsorted_train
         return u[(u >= start_frame) & (u < end_frame)]
-
 
 
 
