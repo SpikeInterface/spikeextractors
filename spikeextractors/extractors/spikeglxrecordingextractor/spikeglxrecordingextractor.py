@@ -13,14 +13,19 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     mode = 'file'
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, file_path, lfp=False, x_pitch=21, y_pitch=20):
+    def __init__(self, file_path, x_pitch=21, y_pitch=20):
         RecordingExtractor.__init__(self)
         self._npxfile = Path(file_path)
         self._basepath = self._npxfile.parents[0]
 
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
+        assert 'bin' in self._npxfile.name, "The 'npx_file should be either the 'ap' or the 'lf' bin file."
         if 'ap' in str(self._npxfile):
+            lfp = False
             self.is_filtered = True
+        else:
+            assert 'lf' in self._npxfile.name, "The 'npx_file should be either the 'ap' or the 'lf' file."
+            lfp = True
         aux = self._npxfile.stem.split('.')[-1]
         if aux == 'nidq':
             self._ftype = aux
