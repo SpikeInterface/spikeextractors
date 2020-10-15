@@ -24,7 +24,7 @@ class CombinatoSortingExtractor(SortingExtractor):
     def __init__(self, datapath: PathType, sr=None, user='simple',det_sign = 'both'):
         super().__init__()
         datapath = Path(datapath)
-        assert datapath.exists()
+        assert datapath.is_dir(), 'Folder {} doesn\'t exist'.format(datapath)
         if sr is None:
             h5_path = str(datapath) + '.h5'
             if Path(h5_path).exists():
@@ -53,7 +53,7 @@ class CombinatoSortingExtractor(SortingExtractor):
 
             times_css = fdet[sign]['times'][()]
             for gr, cls in groups.items():
-                if group_type[gr] == -1: #artifacts and
+                if group_type[gr] == -1: #artifacts
                     continue
                 elif group_type[gr] == 0: #unsorted
                     unsorted.append(np.rint(times_css[sp_index[np.isin(sp_class,cls)]] * (sr/1000)))
