@@ -380,14 +380,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         if len(metadata.keys()) > 0:
             if 'Ecephys' in metadata and 'ElectrodeGroup' in metadata['Ecephys']:
-                if type(metadata['Ecephys']['ElectrodeGroup']) is list  and metadata['Ecephys']['ElectrodeGroup']:
+                if type(metadata['Ecephys']['ElectrodeGroup']) is list and metadata['Ecephys']['ElectrodeGroup']:
                     for j, grp in enumerate(metadata['Ecephys']['ElectrodeGroup']):
                         if type(grp) is dict:
                             # Will not overwrite the named electrode_group if already in nwbfile
                             if grp.get('name', defaults['name']) not in nwbfile.electrode_groups:
                                 # If named device link in electrode group does not exist, make it
                                 if grp.get('device_name', default_dev_name) not in nwbfile.devices:
-                                    new_device = {'Ecephys': {'Device': {'name': grp.get('device_name', default_dev_name)}}}
+                                    new_device = {'Ecephys': {'Device': {'name':
+                                                                         grp.get('device_name', default_dev_name)}}}
                                     se.NwbRecordingExtractor.add_devices(recording, nwbfile, metadata=new_device)
                                     print("Warning: device name not detected in attempted link to electrode group! "
                                           "Automatically generating.")
@@ -396,10 +397,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                 electrode_group_kwargs.update(
                                     {'device': nwbfile.devices[grp.get('device_name', default_dev_name)]})
                                 nwbfile.create_electrode_group(**electrode_group_kwargs)
-                    else:
-                        print(f"Warning: Expected metadata['Ecephys']['ElectrodeGroup'][{j}] to be"
-                              " a dictionary with keys 'name', 'description', 'location', and 'device'!"
-                              f"Electrode Group [{j}] will not be created.")
+                        else:
+                            print(f"Warning: Expected metadata['Ecephys']['ElectrodeGroup'][{j}] to be"
+                                  " a dictionary with keys 'name', 'description', 'location', and 'device'!"
+                                  f"Electrode Group [{j}] will not be created.")
                 else:
                     print("Warning: metadata must be a list of dictionaries of the form"
                           " metadata['Ecephys']['ElectrodeGroup'] = [{'name': my_name,"
@@ -495,12 +496,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             if 'Ecephys' in metadata and 'Electrodes' in metadata['Ecephys']:
                 if type(metadata['Ecephys']['Electrodes']) is list and metadata['Ecephys']['Electrodes']:
                     metadata_columns = metadata['Ecephys']['Electrodes']
-                    for j, custom_col in enumerate(metadata_columns):
-                        if type(custom_col) is dict \
-                                and set(custom_col.keys()) == set(['name', 'description', 'data']) \
-                                and type(custom_col['data']) is list:
-                            nwbfile.add_electrode_column(str(custom_col['name']),
-                                                         str(custom_col['description']))
+                    for j, metadata_column in enumerate(metadata_columns):
+                        if type(metadata_column) is dict \
+                                and set(metadata_column.keys()) == set(['name', 'description', 'data']) \
+                                and type(metadata_column['data']) is list:
+                            if metadata_column['name'] != 'group' and metadata_column['name'] != 'group_name':
+                                nwbfile.add_electrode_column(str(metadata_column['name']),
+                                                             str(metadata_column['description']))
                         else:
                             print(f"Warning: Expected metadata['Ecephy']['Electrodes'][{j}] to be"
                                   " a dictionary with keys 'name', 'description', and 'data',"
