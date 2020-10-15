@@ -21,16 +21,16 @@ class CombinatoSortingExtractor(SortingExtractor):
     is_writable = False
     installation_mesg = "To use the CombinatoSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
-    def __init__(self, datapath: PathType, sr=None, user='simple',det_sign = 'both'):
+    def __init__(self, datapath: PathType, sampling_frequency=None, user='simple',det_sign = 'both'):
         super().__init__()
         datapath = Path(datapath)
         assert datapath.is_dir(), 'Folder {} doesn\'t exist'.format(datapath)
-        if sr is None:
+        if sampling_frequency is None:
             h5_path = str(datapath) + '.h5'
             if Path(h5_path).exists():
                 with h5py.File(h5_path, mode='r') as f:
-                    sr = f['sr'][0]
-        self.set_sampling_frequency(sr)
+                    sampling_frequency = f['sr'][0]
+        self.set_sampling_frequency(sampling_frequency)
         det_file = str(datapath / Path('data_' + datapath.stem + '.h5'))
         sort_cat_files = []
         for sign in ['neg', 'pos']:
@@ -56,11 +56,11 @@ class CombinatoSortingExtractor(SortingExtractor):
                 if group_type[gr] == -1: #artifacts
                     continue
                 elif group_type[gr] == 0: #unsorted
-                    unsorted.append(np.rint(times_css[sp_index[np.isin(sp_class,cls)]] * (sr/1000)))
+                    unsorted.append(np.rint(times_css[sp_index[np.isin(sp_class,cls)]] * (sampling_frequency/1000)))
                     continue
 
                 unit_counter = unit_counter + 1
-                self._spike_trains[unit_counter] = np.rint(times_css[sp_index[np.isin(sp_class, cls)]] * (sr / 1000))
+                self._spike_trains[unit_counter] = np.rint(times_css[sp_index[np.isin(sp_class, cls)]] * (sampling_frequency / 1000))
                 metadata[unit_counter] = {'det_sign': sign,
                                           'group_type': 'single-unit' if group_type[gr] else 'multi-unit'}
 
