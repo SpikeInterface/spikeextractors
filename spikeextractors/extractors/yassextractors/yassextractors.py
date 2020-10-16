@@ -6,7 +6,12 @@ from spikeextractors import SortingExtractor
 from spikeextractors.extractors.numpyextractors import NumpyRecordingExtractor
 from spikeextractors.extraction_tools import check_valid_unit_id
 
-
+try:
+    import yaml
+    HAVE_YASS = True
+except:
+    HAVE_YASS = False
+    
 class YassSortingExtractor(SortingExtractor):
 
     extractor_name = 'YassExtractor'
