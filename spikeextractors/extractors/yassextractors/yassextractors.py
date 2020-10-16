@@ -15,7 +15,7 @@ class YassSortingExtractor(SortingExtractor):
 
     extractor_name = 'YassExtractor'
     mode = 'folder'
-    installed = True  # check at class level if installed or not
+    installed = HAVE_YASS  # check at class level if installed or not
 
     has_default_locations = False
     is_writable = False
