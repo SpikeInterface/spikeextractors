@@ -1,23 +1,17 @@
-import numpy as np
 import yaml
-import os
+import numpy as np
+from pathlib import Path
 
 from spikeextractors import SortingExtractor
-#from spikeextractors.extractors.numpyextractors import NumpyRecordingExtractor
-#from spikeextractors.extraction_tools import check_valid_unit_id
+from spikeextractors.extractors.numpyextractors import NumpyRecordingExtractor
+from spikeextractors.extraction_tools import check_valid_unit_id
 
-try:
-    HAVE_SCSX = True
-except ImportError:
-    HAVE_SCSX = False
 
 class YassSortingExtractor(SortingExtractor):
 
     extractor_name = 'YassExtractor'
-    installed = HAVE_YASS  # check at class level if installed or not
-    is_writable = True
     mode = 'folder'
-    installation_mesg = "Welcome to Yass: https://github.com/paninski-lab/yass"
+    #installation_mesg = "To use the Yass install h5py: \n\n pip install h5py\n\n"
     
     
     def __init__(self, root_dir):
@@ -28,49 +22,41 @@ class YassSortingExtractor(SortingExtractor):
         # the base method self.get_sampling_frequency() will return the correct sampling frequency
         
         self.root_dir = root_dir
-        self.fname_spike_train = os.path.join(
-                                    os.path.join(
-                                        os.path.join(root_dir, 
-                                              'tmp'),
-                                              'output'),
-                                              'spike_train.npy')
-        self.fname_templates = os.path.join(
-                                    os.path.join(
-                                        os.path.join(
-                                            os.path.join(root_dir, 
-                                                  'tmp'),
-                                                  'output'),
-                                                  'templates'),
-                                                'templates_0sec.npy')
+        r = Path(self.root_dir)
 
-        self.fname_CONFIG = os.path.join(root_dir, 'config.yaml')
+        self.fname_spike_train = r / 'tmp' / 'output' / 'spike_train.npy'
+        self.fname_templates = r /'tmp' / 'output' / 'templates' / 'templates_0sec.npy'
+        self.fname_config = r / 'config.yaml'
         
         
         # set defaults to None so they are only loaded if user requires them
         
         self.spike_train = None
-        self.templates = None
+        self.temps = None
 
         # Read CONFIG File
-        with open(self.fname_CONFIG, 'r') as stream:
-            self.CONFIG = yaml.safe_load(stream)
+        with open(self.fname_config, 'r') as stream:
+            self.config = yaml.safe_load(stream)
         
+        #self._sampling_frequency = my_sampling_frequency
+
     def get_unit_ids(self):
 
         if self.spike_train is None:
             self.spike_train = np.load(self.fname_spike_train)
-
+        
         unit_ids = np.unique(self.spike_train[:,1])
         
         return unit_ids
     
-    def get_templates(self):
+    def get_temps(self):
 
-        #Fill code to get a unit_ids list containing all the ids (ints) of detected units in the recording
-        if self.templates is None:
-            self.templates = np.load(self.fname_templates)
-                   
-        return self.templates
+        # Electrical images/templates.
+        
+        if self.temps is None:
+            self.temps = np.load(self.fname_templates)
+                    
+        return self.temps
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
 
@@ -88,7 +74,7 @@ class YassSortingExtractor(SortingExtractor):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
-            end_frame = np.inf 
+            end_frame = 1E50 # use large time
             
         idx2 = np.where(np.logical_and(spike_times>=start_frame, spike_times<end_frame))[0]
         spike_times = spike_times[idx2]
@@ -98,5 +84,12 @@ class YassSortingExtractor(SortingExtractor):
     
     def get_sampling_frequency(self):
 
-        return self.CONFIG['recordings']['sampling_rate']
+        return self.config['recordings']['sampling_rate']
     
+    #@staticmethod
+    #def write_sorting(sorting, save_path):
+    #    '''
+    #    This is an example of a function that is not abstract so it is optional if you want to override it. It allows other
+    #    SortingExtractors to use your new SortingExtractor to convert their sorted data into your
+    #    sorting file format.
+    #    '''
