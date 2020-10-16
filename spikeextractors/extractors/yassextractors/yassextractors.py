@@ -44,7 +44,6 @@ class YassSortingExtractor(SortingExtractor):
             end_frame = 1E50 # use large time
             
         idx2 = np.where(np.logical_and(spike_times>=start_frame, spike_times<end_frame))[0]
-        #print (idx2.shape)
         spike_times = spike_times[idx2]
         
         return spike_times
