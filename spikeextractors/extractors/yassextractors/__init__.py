@@ -1,1 +1,1 @@
-from .yassextractors import YassExtractor
+from .yassextractors import YassSortingExtractor
