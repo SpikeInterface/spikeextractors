@@ -26,7 +26,7 @@ from .extractors.neoextractors import (PlexonRecordingExtractor, PlexonSortingEx
                                        NeuralynxRecordingExtractor, NeuralynxSortingExtractor, MCSRawRecordingExtractor)
 from .extractors.neuroscopeextractors import NeuroscopeRecordingExtractor,NeuroscopeSortingExtractor,NeuroscopeMultiSortingExtractor
 from .extractors.waveclussortingextractor import WaveClusSortingExtractor
-from .extractors.yassextractor import YassSortingExtractor
+from .extractors.yassextractors import YassSortingExtractor
 from .extractors.combinatosortingextractor import CombinatoSortingExtractor
 
 recording_extractor_full_list = [
