@@ -15,14 +15,10 @@ class YassSortingExtractor(SortingExtractor):
     installation_mesg = "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
     
     
-    def __init__(self, fname):
-        SortingExtractor.__init__(self)
-
-        ## All file specific initialization code can go here.
-        # If your format stores the sampling frequency, you can overweite the self._sampling_frequency. This way,
-        # the base method self.get_sampling_frequency() will return the correct sampling frequency
+    def __init__(self, file_path):
+        SortingExtractor.__init__(self):
         
-        self.fname_spike_train = fname
+        self.fname_spike_train = file_path
         self.spike_train = np.load(self.fname_spike_train)
         #self._sampling_frequency = my_sampling_frequency
 
