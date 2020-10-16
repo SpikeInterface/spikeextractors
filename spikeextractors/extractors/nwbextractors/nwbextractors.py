@@ -81,14 +81,16 @@ def get_dynamic_table_property(dynamic_table, *, row_ids=None, property_name):
 
 
 def get_nspikes(units_table, unit_id):
-    """Returns the number of spikes for chosen unit."""
+    """Return the number of spikes for chosen unit."""
     check_nwb_install()
-    if unit_id not in units_table.id[:]:
-        raise ValueError(str(unit_id) + " is an invalid unit_id. "
-                                        "Valid ids: " + str(units_table.id[:].tolist()))
-    nSpikes = np.diff([0] + list(units_table['spike_times_index'].data[:])).tolist()
-    ind = np.where(np.array(units_table.id[:]) == unit_id)[0][0]
-    return nSpikes[ind]
+    ids = np.array(units_table.id[:])
+    indexes = np.where(ids == unit_id)[0]
+    assert len(indexes), ValueError(f"{unit_id} is an invalid unit_id. Valid ids: {ids}.")
+    index = indexes[0]
+    if index == 0:
+        return units_table['spike_times_index'].data[index]
+    else:
+        return units_table['spike_times_index'].data[index] - units_table['spike_times_index'].data[index - 1]
 
 
 def most_relevant_ch(traces):
