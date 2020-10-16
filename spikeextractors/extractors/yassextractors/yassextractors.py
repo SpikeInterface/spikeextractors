@@ -18,7 +18,7 @@ class YassSortingExtractor(SortingExtractor):
     installation_mesg = "YASS NOT INSTALLED"  # error message when not installed
     
     
-    def __init__(self, root_dir):
+    def __init__(self, folder_path):
         SortingExtractor.__init__(self)
 
         ## All file specific initialization code can go here.
