@@ -85,7 +85,8 @@ def get_nspikes(units_table, unit_id):
     check_nwb_install()
     ids = np.array(units_table.id[:])
     indexes = np.where(ids == unit_id)[0]
-    assert len(indexes), ValueError(f"{unit_id} is an invalid unit_id. Valid ids: {ids}.")
+    if not len(indexes):
+        raise ValueError(f"{unit_id} is an invalid unit_id. Valid ids: {ids}.")
     index = indexes[0]
     if index == 0:
         return units_table['spike_times_index'].data[index]
