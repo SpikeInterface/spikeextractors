@@ -4,11 +4,7 @@ import numpy as np
 from pathlib import Path
 from spikeextractors.extraction_tools import check_valid_unit_id
 
-try:
-    import h5py
-    HAVE_SCSX = True
-except ImportError:
-    HAVE_SCSX = False
+HAVE_YASS = True
 
 class YassSortingExtractor(SortingExtractor):
 
