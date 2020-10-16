@@ -85,15 +85,3 @@ class YassSortingExtractor(SortingExtractor):
         
         return spike_times
     
-    
-    def get_sampling_frequency(self):
-
-        return self.config['recordings']['sampling_rate']
-    
-    #@staticmethod
-    #def write_sorting(sorting, save_path):
-    #    '''
-    #    This is an example of a function that is not abstract so it is optional if you want to override it. It allows other
-    #    SortingExtractors to use your new SortingExtractor to convert their sorted data into your
-    #    sorting file format.
-    #    '''
