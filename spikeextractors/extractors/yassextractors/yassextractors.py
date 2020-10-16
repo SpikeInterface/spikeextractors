@@ -42,7 +42,7 @@ class YassSortingExtractor(SortingExtractor):
         with open(self.fname_config, 'r') as stream:
             self.config = yaml.safe_load(stream)
         
-        #self._sampling_frequency = my_sampling_frequency
+        self._sampling_frequency = self.config['recordings']['sampling_rate']
 
     def get_unit_ids(self):
 
