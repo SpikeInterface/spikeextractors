@@ -578,11 +578,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 )
 
     @staticmethod
-    def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None,
-                              metadata: dict = None):
-        '''
+    def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None):
+        """
         Auxiliary static method for nwbextractor.
+
         Adds traces from recording object as ElectricalSeries to nwbfile object.
+
         Parameters
         ----------
         recording: RecordingExtractor
@@ -593,41 +594,34 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             Should be of the format
                 metadata['Ecephys']['ElectricalSeries'] = {'name': my_name,
                                                            'description': my_description}
-        '''
+
+        Missing keys in an element of metadata['Ecephys']['ElectrodeGroup'] will be auto-populated with defaults
+        whenever possible.
+        """
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
-        defaults = {'name': 'ElectricalSeries',
-                    'description': 'electrical_series_description'}
-
-        if metadata is None:
-            metadata = dict()
-
-        es_name = defaults['name']
-        es_descr = defaults['description']
-        if len(metadata.keys()) > 0:
-            if 'Ecephys' in metadata and 'ElectricalSeries' in metadata['Ecephys']:
-                if type(metadata['Ecephys']['ElectricalSeries']) is dict:
-                    es_name = metadata['Ecephys']['ElectricalSeries'].get('name',
-                                                                          defaults['name'])
-                    es_descr = metadata['Ecephys']['ElectricalSeries'].get('description',
-                                                                           defaults['description'])
-                else:
-                    es_name = defaults['name']
-                    es_descr = defaults['description']
-                    print("Warning: metadata must be a dictionary of the form"
-                          " metadata['Ecephys']['ElectricalSeries'] = {'name': my_name,"
-                          " 'description': my_description}!")
-
         if not nwbfile.electrodes:
             se.NwbRecordingExtractor.add_electrodes(recording, nwbfile, metadata)
+        defaults = dict(
+            name="ElectricalSeries",
+            description="no description"
+        )
+        if metadata is None:
+            metadata = dict(
+                Ecephys=dict(
+                    ElectricalSeries=dict(defaults)
+                )
+            )
+        assert isinstance(metadata['Ecephys']['ElectricalSeries'], dict), \
+            "Expected metadata['Ecephys']['ElectricalSeries'] to be a dictionary!"
 
+        es_name = metadata['Ecephys']['ElectricalSeries'].get('name', defaults['name'])
         channel_ids = recording.get_channel_ids()
-        rate = recording.get_sampling_frequency()
         if es_name not in nwbfile.acquisition:
             table_ids = [list(nwbfile.electrodes.id[:]).index(id) for id in channel_ids]
             electrode_table_region = nwbfile.create_electrode_table_region(
                 region=table_ids,
-                description='electrode_table_region'
+                description="electrode_table_region"
             )
 
             # channels gains - for RecordingExtractor, these are values to cast traces to uV
@@ -657,11 +651,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 data=ephys_data,
                 electrodes=electrode_table_region,
                 starting_time=recording.frame_to_time(0),
-                rate=rate,
+                rate=recording.get_sampling_frequency(),
                 conversion=scalar_conversion,
                 channel_conversion=channel_conversion,
                 comments='Generated from SpikeInterface::NwbRecordingExtractor',
-                description=es_descr
+                description=metadata['Ecephys']['ElectricalSeries'].get('description', defaults['description'])
             )
             nwbfile.add_acquisition(ephys_ts)
 
