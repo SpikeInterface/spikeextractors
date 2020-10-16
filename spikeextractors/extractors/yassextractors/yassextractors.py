@@ -11,7 +11,11 @@ class YassSortingExtractor(SortingExtractor):
 
     extractor_name = 'YassExtractor'
     mode = 'folder'
-    #installation_mesg = "To use the Yass install h5py: \n\n pip install h5py\n\n"
+    installed = True  # check at class level if installed or not
+
+    has_default_locations = False
+    is_writable = False
+    installation_mesg = "YASS NOT INSTALLED"  # error message when not installed
     
     
     def __init__(self, root_dir):
