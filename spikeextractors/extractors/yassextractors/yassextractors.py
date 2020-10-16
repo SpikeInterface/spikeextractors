@@ -41,7 +41,7 @@ class YassSortingExtractor(SortingExtractor):
         if start_frame is None:
             start_frame = 0
         if end_frame is None:
-            end_frame = 1E50 # use large time
+            end_frame = np.inf 
             
         idx2 = np.where(np.logical_and(spike_times>=start_frame, spike_times<end_frame))[0]
         spike_times = spike_times[idx2]
