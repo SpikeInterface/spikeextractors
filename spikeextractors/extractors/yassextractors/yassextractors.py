@@ -23,9 +23,6 @@ class YassSortingExtractor(SortingExtractor):
         #self._sampling_frequency = my_sampling_frequency
 
     def get_unit_ids(self):
-
-        #Fill code to get a unit_ids list containing all the ids (ints) of detected units in the recording
-
         unit_ids = np.unique(self.spike_train[:,1])
         
         return unit_ids
