@@ -19,7 +19,7 @@ class YassSortingExtractor(SortingExtractor):
 
     has_default_locations = False
     is_writable = False
-    installation_mesg = "YASS NOT INSTALLED"  # error message when not installed
+    installation_mesg = "To use the Yass extractor, install pyyaml: \n\n pip install pyyaml\n\n"  # error message when not installed
     
     
     def __init__(self, folder_path):
