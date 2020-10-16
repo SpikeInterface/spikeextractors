@@ -19,8 +19,13 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         self._basepath = self._npxfile.parents[0]
 
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
+        assert 'bin' in self._npxfile.name, "The 'npx_file should be either the 'ap' or the 'lf' bin file."
         if 'ap' in str(self._npxfile):
+            lfp = False
             self.is_filtered = True
+        else:
+            assert 'lf' in self._npxfile.name, "The 'npx_file should be either the 'ap' or the 'lf' file."
+            lfp = True
         aux = self._npxfile.stem.split('.')[-1]
         if aux == 'nidq':
             self._ftype = aux
@@ -40,12 +45,20 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # sampling rate and ap channels
         self._sampling_frequency = SampRate(meta)
-        tot_chan, ap_chan, locations = _parse_spikeglx_metafile(self._metafile, x_pitch, y_pitch)
-        if ap_chan < tot_chan:
-            self._channels = list(range(int(ap_chan)))
-            self._timeseries = self._timeseries[0:ap_chan, :]
+        tot_chan, ap_chan, lfp_chan, locations = _parse_spikeglx_metafile(self._metafile, x_pitch, y_pitch)
+        if not lfp:
+            if ap_chan < tot_chan:
+                self._channels = list(range(int(ap_chan)))
+                self._timeseries = self._timeseries[0:ap_chan, :]
+            else:
+                self._channels = list(range(int(tot_chan)))  # OriginalChans(meta).tolist()
         else:
-            self._channels = list(range(int(tot_chan)))  # OriginalChans(meta).tolist()
+            if lfp_chan < tot_chan:
+                self._channels = list(range(int(lfp_chan)))
+                self._timeseries = self._timeseries[0:lfp_chan, :]
+            else:
+                self._channels = list(range(int(tot_chan)))
+        
 
         # locations
         if len(locations) > 0:
@@ -104,6 +117,7 @@ def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch):
                 tot_channels = int(line.split('=')[-1])
             if 'snsApLfSy' in line:
                 ap_channels = int(line.split('=')[-1].split(',')[0].strip())
+                lfp_channels = int(line.split(',')[-2].strip())
             if 'imSampRate' in line:
                 fs = float(line.split('=')[-1])
             if 'snsShankMap' in line:
@@ -115,4 +129,4 @@ def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch):
                         x_pos = int(chan.split(':')[1])
                         y_pos = int(chan.split(':')[2])
                         locations.append([x_pos*x_pitch, y_pos*y_pitch])
-    return tot_channels, ap_channels, locations
+    return tot_channels, ap_channels, lfp_channels, locations

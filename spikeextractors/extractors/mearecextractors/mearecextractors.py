@@ -4,12 +4,17 @@ from spikeextractors.extraction_tools import check_get_traces_args, check_valid_
 
 import numpy as np
 from pathlib import Path
+from distutils.version import StrictVersion
 
 try:
     import MEArec as mr
     import neo
     import quantities as pq
-    HAVE_MREX = True
+    if StrictVersion(mr.__version__) >= '1.5.0':
+        HAVE_MREX = True
+    else:
+        print("MEArec version requires an update (>=1.5). Please upgrade with 'pip install --upgrade MEArec'")
+        HAVE_MREX = False
 except ImportError:
     HAVE_MREX = False
 
@@ -44,7 +49,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
                                           load=['recordings', 'channel_positions'])
         self._fs = self._recgen.info['recordings']['fs']
         self._recordings = self._recgen.recordings
-        self._num_channels, self._num_frames = self._recordings.shape
+        self._num_frames, self._num_channels = self._recordings.shape
         if len(np.array(self._recgen.channel_positions)) == self._num_channels:
             self._locations = np.array(self._recgen.channel_positions)
             if self._locs_2d:
@@ -73,12 +78,12 @@ class MEArecRecordingExtractor(RecordingExtractor):
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if np.any(np.diff(channel_ids) < 0):
             sorted_idx = np.argsort(channel_ids)
-            recordings = self._recordings[np.sort(channel_ids), start_frame:end_frame]
-            return recordings[sorted_idx]
+            recordings = self._recordings[start_frame:end_frame, np.sort(channel_ids)]
+            return np.array(recordings[sorted_idx]).transpose()
         else:
             if sorted(channel_ids) == channel_ids and np.all(np.diff(channel_ids) == 1):
                 channel_ids = slice(channel_ids[0], channel_ids[0] + len(channel_ids))
-            return self._recordings[channel_ids, start_frame:end_frame]
+            return np.array(self._recordings[start_frame:end_frame, channel_ids]).transpose()
         
     @staticmethod
     def write_recording(recording, save_path, check_suffix=True):
@@ -98,7 +103,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
             save_path = save_path / 'recording.h5'
         if (save_path.suffix == '.h5' or save_path.suffix == '.hdf5') or (not check_suffix):
             info = {'recordings': {'fs': recording.get_sampling_frequency()}}
-            rec_dict = {'recordings': recording.get_traces()}
+            rec_dict = {'recordings': recording.get_traces().transpose()}
             if 'location' in recording.get_shared_channel_property_names():
                 positions = recording.get_channel_locations()
                 rec_dict['channel_positions'] = positions
