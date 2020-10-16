@@ -35,7 +35,6 @@ class YassSortingExtractor(SortingExtractor):
         # find unit id spike times
         idx = np.where(self.spike_train[:,1]==unit_id)
         spike_times = self.spike_train[idx,0].squeeze()
-        #print (spike_times.shape)
 
         # find spike times
         if start_frame is None:
