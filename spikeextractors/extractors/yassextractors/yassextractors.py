@@ -25,7 +25,7 @@ class YassSortingExtractor(SortingExtractor):
         # If your format stores the sampling frequency, you can overweite the self._sampling_frequency. This way,
         # the base method self.get_sampling_frequency() will return the correct sampling frequency
         
-        self.root_dir = root_dir
+        self.root_dir = folder_path
         r = Path(self.root_dir)
 
         self.fname_spike_train = r / 'tmp' / 'output' / 'spike_train.npy'
