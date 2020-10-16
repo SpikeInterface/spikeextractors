@@ -9,10 +9,10 @@ HAVE_YASS = True
 class YassSortingExtractor(SortingExtractor):
 
     extractor_name = 'YassExtractor'
-    installed = HAVE_SCSX  # check at class level if installed or not
+    installed = HAVE_YASS  # check at class level if installed or not
     is_writable = True
-    mode = 'folder'
-    installation_mesg = "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
+    mode = 'file'
+    installation_mesg = ""
     
     
     def __init__(self, file_path):
