@@ -25,9 +25,7 @@ class YassSortingExtractor(SortingExtractor):
     def __init__(self, folder_path):
         SortingExtractor.__init__(self)
 
-        ## All file specific initialization code can go here.
-        # If your format stores the sampling frequency, you can overweite the self._sampling_frequency. This way,
-        # the base method self.get_sampling_frequency() will return the correct sampling frequency
+        assert HAVE_YASS, self.installation_mesg
         
         self.root_dir = folder_path
         r = Path(self.root_dir)
