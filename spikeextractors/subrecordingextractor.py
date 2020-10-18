@@ -22,6 +22,8 @@ class SubRecordingExtractor(RecordingExtractor):
             self._start_frame = 0
         if self._end_frame is None:
             self._end_frame = self._parent_recording.get_num_frames()
+        if self._end_frame > self._parent_recording.get_num_frames():
+            self._end_frame = self._parent_recording.get_num_frames()
         self._original_channel_id_lookup = {}
         for i in range(len(self._channel_ids)):
             self._original_channel_id_lookup[self._renamed_channel_ids[i]] = self._channel_ids[i]
