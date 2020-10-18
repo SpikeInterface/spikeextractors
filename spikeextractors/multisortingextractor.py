@@ -105,6 +105,7 @@ class MultiSortingExtractor(SortingExtractor):
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
         self._sortings[sorting_id].clear_unit_spike_features(unit_id_sorting, feature_name)
 
+
 def concatenate_sortings(sortings):
     '''
     Concatenates sortings together. The sortings should be non-continuous
