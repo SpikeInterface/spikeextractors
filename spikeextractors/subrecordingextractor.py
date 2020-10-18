@@ -41,13 +41,13 @@ class SubRecordingExtractor(RecordingExtractor):
         return self._parent_recording.get_traces(channel_ids=original_ch_ids, start_frame=sf, end_frame=ef)
 
     @check_get_ttl_args
-    def get_ttl_frames(self, start_frame=None, end_frame=None, channel=0):
+    def get_ttl_frames(self, start_frame=None, end_frame=None, channel_id=0):
         sf = self._start_frame + start_frame
         ef = self._start_frame + end_frame
         sf, ef = cast_start_end_frame(sf, ef)
         try:
             ttl_frames, ttl_states = self._parent_recording.get_ttl_frames(start_frame=sf, end_frame=ef,
-                                                                           channel=channel)
+                                                                           channel_id=channel_id)
             ttl_frames -= self._start_frame
             return ttl_frames, ttl_states
         except NotImplementedError:

@@ -785,22 +785,22 @@ def check_get_ttl_args(func):
             recording = args[0]
             start_frame = kwargs.get('start_frame', None)
             end_frame = kwargs.get('end_frame', None)
-            channel = kwargs.get('channel', 0)
+            channel_id = kwargs.get('channel_id', 0)
         elif len(args) == 2:
             recording = args[0]
             start_frame = args[1]
             end_frame = kwargs.get('end_frame', None)
-            channel = kwargs.get('channel', 0)
+            channel_id = kwargs.get('channel_id', 0)
         elif len(args) == 3:
             recording = args[0]
             start_frame = args[1]
             end_frame = args[2]
-            channel = kwargs.get('channel', 0)
+            channel_id = kwargs.get('channel_id', 0)
         elif len(args) == 4:
             recording = args[0]
             start_frame = args[1]
             end_frame = args[2]
-            channel = args[3]
+            channel_id = args[3]
         else:
             raise Exception("Too many arguments!")
 
@@ -818,12 +818,12 @@ def check_get_ttl_args(func):
         else:
             end_frame = recording.get_num_frames()
         assert end_frame - start_frame > 0, "'start_frame' must be less than 'end_frame'!"
-        assert isinstance(channel, (int, np.integer)), "'channel' must be a single int"
+        assert isinstance(channel_id, (int, np.integer)), "'channel_id' must be a single int"
 
         start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
         kwargs['start_frame'] = start_frame
         kwargs['end_frame'] = end_frame
-        kwargs['channel'] = channel
+        kwargs['channel_id'] = channel_id
 
         # pass recording as arg and rest as kwargs
         get_ttl_correct_arg = func(args[0], **kwargs)
