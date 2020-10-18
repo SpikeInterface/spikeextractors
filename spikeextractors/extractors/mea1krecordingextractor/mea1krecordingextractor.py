@@ -41,26 +41,28 @@ class Mea1kRecordingExtractor(RecordingExtractor):
                 self._version = self._filehandle['chipinformation']['software_version'][0].decode()
             except:
                 self._version = '20161003'
+
         print(f"Chip version: {self._version}")
         self._lsb = 1
         if int(self._version) == 20160704:
             self._signals = self._filehandle.get('sig')
-            try:
-                self._gain = self._filehandle.get('settings/gain')
-            except:
+            settings = self._filehandle.get('settings')
+
+            if 'gain' in settings:
+                self._gain = self._filehandle.get('settings/gain')[0]
+            else:
+                print("Couldn't read gain. Setting gain to 512")
                 self._gain = 512
-            try:
-                self._bits = self._filehandle.get('bits')
-            except:
-                self._bits = []
-            try:
-                self._mapping = self._filehandle['mapping']
-            except:
-                raise Exception("Could not load 'mapping' field")
-            if self._gain == 512:
-                self._lsb = 6.2
-            elif self._gain == 1024:
-                self._lsb = 3.1
+
+            self._bits = self._filehandle.get('bits', [])
+
+            if 'lsb' in settings:
+                self._lsb = self._filehandle['settings']['lsb'][0] * 1e6
+            else:
+                self._lsb = 3.3 / (1024 * self._gain) * 1e6
+
+            assert 'mapping' in self._filehandle.keys(), "Could not load 'mapping' field"
+            self._mapping = self._filehandle['mapping']
             self._fs = 20000
         elif int(self._version) >= 20161003:
             self._mapping = self._filehandle['ephys']['mapping']
@@ -72,15 +74,43 @@ class Mea1kRecordingExtractor(RecordingExtractor):
         channels = np.array(self._mapping['channel'])
         electrodes = np.array(self._mapping['electrode'])
         # remove unused channels
-        self._channel_ids = list(channels[np.where(electrodes > -1)])
+        routed_idxs = np.where(electrodes > -1)[0]
+        self._channel_ids = list(channels[routed_idxs])
+        self._electrode_ids = list(electrodes[routed_idxs])
         self._num_channels = len(self._channel_ids)
         self._num_frames = self._signals.shape[1]
 
-        for i_ch, ch in enumerate(self.get_channel_ids()):
+        for i_ch, ch, el in zip(routed_idxs, self._channel_ids, self._electrode_ids):
             self.set_channel_locations([self._mapping['x'][i_ch], self._mapping['y'][i_ch]], ch)
+            self.set_channel_property(ch, 'electrode', el)
+
+        if 'proc0' in self._filehandle:
+            if 'spikeTimes' in self._filehandle['proc0']:
+                spikes = self._filehandle['proc0']['spikeTimes']
+
+                spike_mask = [True] * len(spikes)
+                for i, ch in enumerate(spikes['channel']):
+                    if ch not in self._channel_ids:
+                        spike_mask[i] = False
+                spikes_channels = np.array(spikes['channel'])[spike_mask]
+
+                # load activity as property
+                activity_channels, counts = np.unique(spikes_channels, return_counts=True)
+                # transform to spike rate
+                duration = float(self._num_frames) / self._fs
+                counts = counts.astype(float) / duration
+                activity_channels = list(activity_channels)
+                for ch in self.get_channel_ids():
+                    if ch in activity_channels:
+                        self.set_channel_property(ch, 'activity', counts[activity_channels.index(ch)])
+                    else:
+                        self.set_channel_property(ch, 'activity', 0)
 
     def get_channel_ids(self):
         return list(self._channel_ids)
+
+    def get_electrode_ids(self):
+        return list(self._electrode_ids)
 
     def get_num_frames(self):
         return self._num_frames
@@ -91,16 +121,14 @@ class Mea1kRecordingExtractor(RecordingExtractor):
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if np.array(channel_ids).size > 1:
-            assert np.all([ch in self.get_channel_ids() for ch in channel_ids])
             if np.any(np.diff(channel_ids) < 0):
                 sorted_idx = np.argsort(channel_ids)
                 recordings = self._signals[np.sort(channel_ids), start_frame:end_frame]
                 return recordings[sorted_idx].astype('float')
             else:
-                return self._signals[np.array(channel_ids), start_frame:end_frame].astype('float32')
+                return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
         else:
-            assert channel_ids in self.get_channel_ids()
-            return self._signals[np.array(channel_ids), start_frame:end_frame].astype('float32')
+            return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
 
     def get_ttl_frames(self, channel=0):
         bitvals = self._signals[-2:, 0]

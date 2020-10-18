@@ -20,9 +20,9 @@ DtypeType = Union[str, np.dtype, None]
 class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     """
     Extracts raw neural recordings from large binary .dat files in the neuroscope format.
-    
+
     The recording extractor always returns channel IDs starting from 0.
-    
+
     The recording data will always be returned in the shape of (num_channels,num_frames).
 
     Parameters
@@ -30,6 +30,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     file_path : str
         Path to the .dat file to be extracted
     """
+
     extractor_name = 'NeuroscopeRecordingExtractor'
     installed = HAVE_LXML  # check at class level if installed or not
     is_writable = True
@@ -134,20 +135,21 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
 class NeuroscopeSortingExtractor(SortingExtractor):
     """
-    Extracts spiking information from pair of .res and .clu files. The .res is a text file with
-    a sorted list of all spiketimes from all units displayed in sample (integer '%i') units.
+    Extracts spiking information from pair of .res and .clu files.
+
+    The .res is a text file with a sorted list of spiketimes from all units displayed in sample (integer '%i') units.
     The .clu file is a file with one more row than the .res with the first row corresponding to
     the total number of unique ids in the file (and may exclude 0 & 1 from this count)
     with the rest of the rows indicating which unit id the corresponding entry in the
     .res file refers to.
-    
+
     In the original Neuroscope format:
         Unit ID 0 is the cluster of unsorted spikes (noise).
         Unit ID 1 is a cluster of multi-unit spikes.
-        
+
     The function defaults to returning multi-unit activity as the first index, and ignoring unsorted noise.
     To return only the fully sorted units, set keep_mua_units=False.
-        
+
     The sorting extractor always returns unit IDs from 1, ..., number of chosen clusters.
 
     Parameters
@@ -161,6 +163,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
     keep_mua_units : bool
         Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
     """
+
     extractor_name = 'NeuroscopeSortingExtractor'
     installed = HAVE_LXML  # check at class level if installed or not
     is_writable = True
@@ -181,7 +184,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             resfile_path = Path(resfile_path)
             clufile_path = Path(clufile_path)
             assert resfile_path.is_file() and clufile_path.is_file(), \
-                'The resfile_path and clufile_path must be .res and .clu files!'
+                'The resfile_path ({}) and clufile_path ({}) must be .res and .clu files!'.format(resfile_path,
+                                                                                                  clufile_path)
 
             assert folder_path is None, 'Pass either a single folder_path location, ' \
                                         'or a pair of resfile_path and clufile_path. All received.'
@@ -193,9 +197,9 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             assert folder_path.is_dir(), 'The folder_path must be a directory!'
 
             res_files = [f for f in folder_path.iterdir() if f.is_file()
-                         and '.res' in f.name and '.temp.' not in f.name]
+                         and '.res' in f.suffixes and '.temp' not in f.suffixes and len(f.suffixes) <= 2]
             clu_files = [f for f in folder_path.iterdir() if f.is_file()
-                         and '.clu' in f.name and '.temp.' not in f.name]
+                         and '.clu' in f.suffixes and '.temp' not in f.suffixes and len(f.suffixes) <= 2]
 
             assert len(res_files) > 0 or len(clu_files) > 0, \
                 'No .res or .clu files found in the folder_path.'
@@ -232,13 +236,10 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             n_clu = clu[0]
             clu = np.delete(clu, 0)
             unique_ids = np.unique(clu)
-
-            if not np.sort(unique_ids) == np.arange(n_clu + 1):  # some missing IDs somewhere
-                if 0 not in unique_ids:  # missing unsorted IDs
-                    n_clu += 1
-                if 1 not in unique_ids:  # missing mua IDs
-                    n_clu += 1
-                # If it is any other ID, then it would be very strange if it were missing...
+            if 0 not in unique_ids:  # missing unsorted IDs
+                n_clu += 1
+            if 1 not in unique_ids:  # missing mua IDs
+                n_clu += 1
 
             # Initialize spike trains and extract times from .res and appropriate clusters from .clu based on
             # user input for ignoring multi-unit activity
@@ -338,20 +339,20 @@ class NeuroscopeSortingExtractor(SortingExtractor):
 class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
     """
     Extracts spiking information from an arbitrary number of .res.%i and .clu.%i files in the general folder path.
-    
-    The .res is a text file with a sorted list of all spiketimes from all units displayed in sample (integer '%i') units.
+
+    The .res is a text file with a sorted list of spiketimes from all units displayed in sample (integer '%i') units.
     The .clu file is a file with one more row than the .res with the first row corresponding to the total number of
     unique ids in the file (and may exclude 0 & 1 from this count)
     with the rest of the rows indicating which unit id the corresponding entry in the .res file refers to.
     The group id is loaded as unit property 'group'.
-    
+
     In the original Neuroscope format:
         Unit ID 0 is the cluster of unsorted spikes (noise).
         Unit ID 1 is a cluster of multi-unit spikes.
-        
+
     The function defaults to returning multi-unit activity as the first index, and ignoring unsorted noise.
     To return only the fully sorted units, set keep_mua_units=False.
-        
+
     The sorting extractor always returns unit IDs from 1, ..., number of chosen clusters.
 
     Parameters
@@ -364,6 +365,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         Optional. List of indices to ignore. The set of all possible indices is chosen by default, extracted as the
         final integer of all the .res.%i and .clu.%i pairs.
     """
+
     extractor_name = 'NeuroscopeMultiSortingExtractor'
     installed = HAVE_LXML  # check at class level if installed or not
     is_writable = True
@@ -395,9 +397,9 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
             'samplingRate').text)  # careful not to confuse it with the lfpsamplingrate
 
         res_files = [f for f in folder_path.iterdir() if f.is_file()
-                     and '.res' in f.name and '.temp.' not in f.name]
+                     and '.res' in f.suffixes and '.temp' not in f.suffixes and len(f.suffixes) <= 2]
         clu_files = [f for f in folder_path.iterdir() if f.is_file()
-                     and '.clu' in f.name and '.temp.' not in f.name]
+                     and '.clu' in f.suffixes and '.temp' not in f.suffixes and len(f.suffixes) <= 2]
 
         assert len(res_files) > 0 or len(clu_files) > 0, \
             'No .res or .clu files found in the folder_path.'
@@ -406,8 +408,8 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
             'For single .res and .clu files, use the NeuroscopeSortingExtractor instead.'
         assert len(res_files) == len(clu_files)
 
-        res_ids = [int(x.name[-1]) for x in res_files]
-        clu_ids = [int(x.name[-1]) for x in res_files]
+        res_ids = [int(x.suffix[1:]) for x in res_files]
+        clu_ids = [int(x.suffix[1:]) for x in clu_files]
         assert sorted(res_ids) == sorted(clu_ids), 'Unmatched .clu.%i and .res.%i files detected!'
         if any([x not in res_ids for x in exclude_shanks]):
             print('Warning: Detected indices in exclude_shanks that are not in the directory. These will be ignored.')

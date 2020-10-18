@@ -24,12 +24,16 @@ class BaseExtractor:
         self._tmp_folder = None
         self._key_properties = {}
         self._properties = {}
+        self._memmap_files = []
         self._features = {}
         self._epochs = {}
         self.is_dumpable = True
         self.id = np.random.randint(low=0, high=9223372036854775807, dtype='int64')
 
     def __del__(self):
+        # close memmap files (for Windows)
+        for memmap_file in self._memmap_files:
+            del memmap_file
         if self._tmp_folder is not None:
             try:
                 shutil.rmtree(self._tmp_folder)
@@ -219,12 +223,14 @@ class BaseExtractor:
                     tmp_file = tmp_folder / (name + '.raw')
                 else:
                     tmp_file = tmp_folder / name
-            arr = np.memmap(str(tmp_file), mode='w+', shape=shape, dtype=dtype)
+            raw_tmp_file = r'{}'.format(str(tmp_file))
+            arr = np.memmap(raw_tmp_file, mode='w+', shape=shape, dtype=dtype)
             if array is not None:
                 arr[:] = array
                 del array
             else:
                 arr[:] = 0
+            self._memmap_files.append(arr)
         else:
             if array is not None:
                 arr = array
