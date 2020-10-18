@@ -2,8 +2,7 @@ from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 from pathlib import Path
 import numpy as np
-from functools import wraps
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id, check_get_ttl_args
 
 '''
 The NumpyExtractors can be constructed and used to encapsulate custom file formats and data structures which
@@ -38,6 +37,16 @@ class NumpyRecordingExtractor(RecordingExtractor):
         if geom is not None:
             self.set_channel_locations(self._geom)
 
+        self._ttl_frames = None
+        self._ttl_states = None
+
+    def set_ttls(self, ttl_frames, ttl_states=None):
+        self._ttl_frames = ttl_frames.astype('int64')
+        if ttl_states is not None:
+            self._ttl_states = ttl_states.astype('int64')
+        else:
+            self._ttl_states = np.ones_like(ttl_frames, dtype='int64')
+
     def get_channel_ids(self):
         return list(range(self._timeseries.shape[0]))
 
@@ -51,6 +60,15 @@ class NumpyRecordingExtractor(RecordingExtractor):
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
         return recordings
+
+    @check_get_ttl_args
+    def get_ttl_frames(self, start_frame=None, end_frame=None, channel=0):
+        if self._ttl_frames is not None and self._ttl_states is not None:
+            ttl_idxs = np.where((self._ttl_frames >= start_frame) & (self._ttl_frames < end_frame))[0]
+            return self._ttl_frames[ttl_idxs], self._ttl_states[ttl_idxs]
+        else:
+            print("TTL frames have not been added to the extractor. You can add them with the `set_ttls()1 function")
+            return None, None
 
     @staticmethod
     def write_recording(recording, save_path):

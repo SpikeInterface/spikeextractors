@@ -1,7 +1,7 @@
 from spikeextractors import RecordingExtractor
 from pathlib import Path
 import numpy as np
-from spikeextractors.extraction_tools import check_get_traces_args
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args
 
 try:
     import h5py
@@ -130,12 +130,18 @@ class Mea1kRecordingExtractor(RecordingExtractor):
         else:
             return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
 
-    def get_ttl_frames(self, channel=0):
+    @check_get_ttl_args
+    def get_ttl_frames(self, start_frame=None, end_frame=None, channel=0):
         bitvals = self._signals[-2:, 0]
         first_frame = bitvals[1] << 16 | bitvals[0]
         bits = self._filehandle['bits']
         bit_frames = bits['frameno'] - first_frame
-        return bit_frames
+        bit_states = bits['bits']
+        bit_idxs = np.where((bit_frames >= start_frame) & (bit_frames < end_frame))[0]
+        ttl_frames = bit_frames[bit_idxs]
+        ttl_states = bit_states['bit_idxs']
+        ttl_states[ttl_states == 0] = -1
+        return ttl_frames, ttl_states
 
     @staticmethod
     def write_recording(recording, save_path, chunk_size=None, chunk_mb=500):

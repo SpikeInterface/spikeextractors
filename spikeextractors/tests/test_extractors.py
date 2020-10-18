@@ -26,13 +26,16 @@ class TestExtractors(unittest.TestCase):
         channel_ids = [0, 1, 2, 3]
         num_channels = 4
         num_frames = 10000
+        num_ttls = 30
         sampling_frequency = 30000
         X = np.random.RandomState(seed=seed).normal(0, 1, (num_channels, num_frames))
         geom = np.random.RandomState(seed=seed).normal(0, 1, (num_channels, 2))
         X = (X * 100).astype(int)
+        ttls = np.sort(np.random.permutation(num_frames)[:num_ttls])
         RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
         RX2 = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
         RX3 = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
+        RX.set_ttls(ttls)
         SX = se.NumpySortingExtractor()
         spike_times = [200, 300, 400]
         train1 = np.sort(np.rint(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times[0])).astype(int))
@@ -77,7 +80,8 @@ class TestExtractors(unittest.TestCase):
             train3=train3,
             features3=features3,
             unit_prop=80,
-            channel_prop=(0, 0)
+            channel_prop=(0, 0),
+            ttls=ttls
         )
 
         return (RX, RX2, RX3, SX, SX2, SX3, example_info)
@@ -90,6 +94,7 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(self.SX.get_unit_ids(), self.example_info['unit_ids'])
         self.assertEqual(self.RX.get_channel_locations(0)[0][0], self.example_info['channel_prop'][0])
         self.assertEqual(self.RX.get_channel_locations(0)[0][1], self.example_info['channel_prop'][1])
+        self.assertTrue(np.array_equal(self.RX.get_ttl_frames()[0], self.example_info['ttls']))
         self.assertEqual(self.SX.get_unit_property(unit_id=1, property_name='stability'),
                          self.example_info['unit_prop'])
         self.assertTrue(np.array_equal(self.SX.get_unit_spike_train(1), self.example_info['train1']))
@@ -234,7 +239,7 @@ class TestExtractors(unittest.TestCase):
 
     def test_hdsort_extractor(self):
         path = self.test_dir + '/results_test_hdsort_extractor.mat'
-        locations = np.ones((10,2))
+        locations = np.ones((10, 2))
         se.HDSortSortingExtractor.write_sorting(self.SX, path, locations=locations, noise_std_by_channel=None)
         SX_hd = se.HDSortSortingExtractor(path)
         check_sorting_return_types(SX_hd)
@@ -344,6 +349,26 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual([2, 2, 2, 2], list(RX_sub.get_channel_groups()))
         self.assertEqual(12, len(RX_multi.get_channel_ids()))
 
+    def test_ttl_frames_in_sub_multi(self):
+        # sub recording
+        start_frame = self.example_info['num_frames'] // 3
+        end_frame = 2 * self.example_info['num_frames'] // 3
+        RX_sub = se.SubRecordingExtractor(self.RX, start_frame=start_frame, end_frame=end_frame)
+        original_ttls = self.RX.get_ttl_frames()[0]
+        ttls_in_sub = original_ttls[np.where((original_ttls >= start_frame) & (original_ttls < end_frame))[0]]
+        self.assertTrue(np.array_equal(RX_sub.get_ttl_frames()[0], ttls_in_sub - start_frame))
+
+        # multirecording
+        RX_multi = se.MultiRecordingTimeExtractor(recordings=[self.RX, self.RX, self.RX])
+        ttls_originals = self.RX.get_ttl_frames()[0]
+        num_ttls = len(ttls_originals)
+        self.assertEqual(len(RX_multi.get_ttl_frames()[0]), 3 * num_ttls)
+        self.assertTrue(np.array_equal(RX_multi.get_ttl_frames()[0][:num_ttls], ttls_originals))
+        self.assertTrue(np.array_equal(RX_multi.get_ttl_frames()[0][num_ttls:2 * num_ttls],
+                                       ttls_originals + self.RX.get_num_frames()))
+        self.assertTrue(np.array_equal(RX_multi.get_ttl_frames()[0][2 * num_ttls:],
+                                       ttls_originals + 2 * self.RX.get_num_frames()))
+
     def test_multi_sub_sorting_extractor(self):
         N = self.RX.get_num_frames()
         SX_multi = se.MultiSortingExtractor(
@@ -374,7 +399,7 @@ class TestExtractors(unittest.TestCase):
 
         RX_multi_chan = se.MultiRecordingChannelExtractor(recordings=[RX_mda, RX_mda, RX_mda])
         check_dumping(RX_multi_chan)
-        RX_multi_time = se.MultiRecordingTimeExtractor(recordings=[RX_mda, RX_mda, RX_mda],)
+        RX_multi_time = se.MultiRecordingTimeExtractor(recordings=[RX_mda, RX_mda, RX_mda], )
         check_dumping(RX_multi_time)
         RX_multi_chan = se.SubRecordingExtractor(RX_mda, channel_ids=[0, 1])
         check_dumping(RX_multi_chan)
@@ -511,7 +536,7 @@ class TestExtractors(unittest.TestCase):
         check_dumping(SX_neuroscope_no_mua)
 
         num_original_units = len(SX_neuroscope.get_unit_ids())
-        self.assertEqual(list(SX_neuroscope.get_unit_ids()), list(range(1, num_original_units+1)))
+        self.assertEqual(list(SX_neuroscope.get_unit_ids()), list(range(1, num_original_units + 1)))
         self.assertEqual(list(SX_neuroscope_no_mua.get_unit_ids()), list(range(1, num_original_units)))
 
         # Tests for the auto-detection of format for NeuroscopeSortingExtractor

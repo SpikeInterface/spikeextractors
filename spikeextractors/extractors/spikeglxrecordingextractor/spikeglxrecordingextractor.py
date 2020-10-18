@@ -2,7 +2,7 @@ from spikeextractors import RecordingExtractor
 from .readSGLX import readMeta, SampRate, makeMemMapRaw, GainCorrectIM, GainCorrectNI, ExtractDigital
 import numpy as np
 from pathlib import Path
-from spikeextractors.extraction_tools import check_get_traces_args, cast_start_end_frame
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args
 
 
 class SpikeGLXRecordingExtractor(RecordingExtractor):
@@ -89,14 +89,8 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         recordings = self._timeseries[channel_idxs, start_frame:end_frame]
         return recordings
 
+    @check_get_ttl_args
     def get_ttl_frames(self, start_frame=None, end_frame=None, channel=0):
-        assert isinstance(channel, (int, np.integer)), "One channel at a time can be returned"
-
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
         channel = [channel]
         dw = 0
         dig = ExtractDigital(self._raw, firstSamp=start_frame, lastSamp=end_frame, dwReq=dw, dLineList=channel,

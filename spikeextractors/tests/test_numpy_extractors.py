@@ -7,7 +7,8 @@ class TestNumpyExtractors(unittest.TestCase):
     def setUp(self):
         M = 4
         N = 10000
-        seed= 0
+        N_ttl = 50
+        seed = 0
         sampling_frequency = 30000
         X = np.random.RandomState(seed=seed).normal(0, 1, (M, N))
         geom = np.random.RandomState(seed=seed).normal(0, 1, (M, 2))
@@ -15,6 +16,8 @@ class TestNumpyExtractors(unittest.TestCase):
         self._geom = geom
         self._sampling_frequency = sampling_frequency
         self.RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
+        self._ttl_frames = np.sort(np.random.permutation(N)[:N_ttl])
+        self.RX.set_ttls(self._ttl_frames)
         self.SX = se.NumpySortingExtractor()
         L = 200
         self._train1 = np.rint(np.random.RandomState(seed=seed).uniform(0, N, L)).astype(int)
@@ -46,6 +49,8 @@ class TestNumpyExtractors(unittest.TestCase):
         # get_snippets
         snippets = self.RX.get_snippets(reference_frames=[0, 30, 50], snippet_len=20)
         self.assertTrue(np.allclose(snippets[1], self._X[:, 20:40]))
+        # get_ttl_frames
+        self.assertTrue(np.array_equal(self.RX.get_ttl_frames()[0], self._ttl_frames))
 
     def test_sorting_extractor(self):
         unit_ids = [1, 2, 3]
