@@ -266,7 +266,7 @@ def ExtractDigital(rawData, firstSamp, lastSamp, dwReq, dLineList, meta):
             digCh = MN + MA + XA + dwReq
 
     selectData = np.ascontiguousarray(rawData[digCh, firstSamp:lastSamp], 'int16')
-    nSamp = lastSamp-firstSamp + 1
+    nSamp = lastSamp-firstSamp
 
     # unpack bits of selectData; unpack bits works with uint8
     # origintal data is int16
