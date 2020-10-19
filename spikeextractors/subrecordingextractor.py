@@ -1,10 +1,9 @@
 from .recordingextractor import RecordingExtractor
-from .extraction_tools import check_get_traces_args, cast_start_end_frame
+from .extraction_tools import check_get_traces_args, cast_start_end_frame, check_get_ttl_args
 import numpy as np
 
 
 # Encapsulates a sub-dataset
-
 class SubRecordingExtractor(RecordingExtractor):
     def __init__(self, parent_recording, *, channel_ids=None, renamed_channel_ids=None, start_frame=None,
                  end_frame=None):
@@ -42,6 +41,19 @@ class SubRecordingExtractor(RecordingExtractor):
         ef = self._start_frame + end_frame
         original_ch_ids = self.get_original_channel_ids(channel_ids)
         return self._parent_recording.get_traces(channel_ids=original_ch_ids, start_frame=sf, end_frame=ef)
+
+    @check_get_ttl_args
+    def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
+        sf = self._start_frame + start_frame
+        ef = self._start_frame + end_frame
+        sf, ef = cast_start_end_frame(sf, ef)
+        try:
+            ttl_frames, ttl_states = self._parent_recording.get_ttl_events(start_frame=sf, end_frame=ef,
+                                                                           channel_id=channel_id)
+            ttl_frames -= self._start_frame
+            return ttl_frames, ttl_states
+        except NotImplementedError:
+            raise NotImplementedError("The parent recording does implement the 'get_ttl_events method'")
 
     def get_channel_ids(self):
         return list(self._renamed_channel_ids)

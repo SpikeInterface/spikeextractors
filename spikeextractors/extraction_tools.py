@@ -777,6 +777,61 @@ def check_get_traces_args(func):
     return corrected_args
 
 
+def check_get_ttl_args(func):
+    @wraps(func)
+    def corrected_args(*args, **kwargs):
+        # parse args and kwargs
+        if len(args) == 1:
+            recording = args[0]
+            start_frame = kwargs.get('start_frame', None)
+            end_frame = kwargs.get('end_frame', None)
+            channel_id = kwargs.get('channel_id', 0)
+        elif len(args) == 2:
+            recording = args[0]
+            start_frame = args[1]
+            end_frame = kwargs.get('end_frame', None)
+            channel_id = kwargs.get('channel_id', 0)
+        elif len(args) == 3:
+            recording = args[0]
+            start_frame = args[1]
+            end_frame = args[2]
+            channel_id = kwargs.get('channel_id', 0)
+        elif len(args) == 4:
+            recording = args[0]
+            start_frame = args[1]
+            end_frame = args[2]
+            channel_id = args[3]
+        else:
+            raise Exception("Too many arguments!")
+
+        if start_frame is not None:
+            if start_frame < 0:
+                start_frame = recording.get_num_frames() + start_frame
+        else:
+            start_frame = 0
+        if end_frame is not None:
+            if end_frame > recording.get_num_frames():
+                print("'end_frame' set to", recording.get_num_frames())
+                end_frame = recording.get_num_frames()
+            elif end_frame < 0:
+                end_frame = recording.get_num_frames() + end_frame
+        else:
+            end_frame = recording.get_num_frames()
+        assert end_frame - start_frame > 0, "'start_frame' must be less than 'end_frame'!"
+        assert isinstance(channel_id, (int, np.integer)), "'channel_id' must be a single int"
+
+        start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
+        kwargs['start_frame'] = start_frame
+        kwargs['end_frame'] = end_frame
+        kwargs['channel_id'] = channel_id
+
+        # pass recording as arg and rest as kwargs
+        get_ttl_correct_arg = func(args[0], **kwargs)
+
+        return get_ttl_correct_arg
+    return corrected_args
+
+
 def cast_start_end_frame(start_frame, end_frame):
     if isinstance(start_frame, (float, np.float)):
         start_frame = int(start_frame)

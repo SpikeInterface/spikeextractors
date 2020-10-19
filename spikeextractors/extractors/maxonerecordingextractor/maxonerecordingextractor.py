@@ -1,7 +1,7 @@
 from spikeextractors import RecordingExtractor
 from pathlib import Path
 import numpy as np
-from spikeextractors.extraction_tools import check_get_traces_args
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args
 
 try:
     import h5py
@@ -29,6 +29,9 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._mapping = None
         self._initialize()
         self._kwargs = {'file_path': str(Path(file_path).absolute())}
+
+    def __del__(self):
+        self._filehandle.close()
 
     def _initialize(self):
         self._filehandle = h5py.File(self._file_path, 'r')
@@ -98,3 +101,16 @@ class MaxOneRecordingExtractor(RecordingExtractor):
                 return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
         else:
             return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
+
+    @check_get_ttl_args
+    def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
+        bitvals = self._signals[-2:, 0]
+        first_frame = bitvals[1] << 16 | bitvals[0]
+        bits = self._filehandle['bits']
+        bit_frames = bits['frameno'] - first_frame
+        bit_states = bits['bits']
+        bit_idxs = np.where((bit_frames >= start_frame) & (bit_frames < end_frame))[0]
+        ttl_frames = bit_frames[bit_idxs]
+        ttl_states = bit_states['bit_idxs']
+        ttl_states[ttl_states == 0] = -1
+        return ttl_frames, ttl_states

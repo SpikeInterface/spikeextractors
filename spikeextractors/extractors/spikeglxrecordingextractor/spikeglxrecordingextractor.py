@@ -1,8 +1,8 @@
 from spikeextractors import RecordingExtractor
-from .readSGLX import readMeta, SampRate, makeMemMapRaw, GainCorrectIM, GainCorrectNI
+from .readSGLX import readMeta, SampRate, makeMemMapRaw, GainCorrectIM, GainCorrectNI, ExtractDigital
 import numpy as np
 from pathlib import Path
-from spikeextractors.extraction_tools import check_get_traces_args
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args
 
 
 class SpikeGLXRecordingExtractor(RecordingExtractor):
@@ -38,10 +38,10 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             raise Exception("'meta' file for '"+self._ftype+"' traces should be in the same folder.")
         # Read in metadata, returns a dictionary
         meta = readMeta(self._npxfile)
+        self._meta = meta
 
         # Traces in 16-bit format
-        rawData = makeMemMapRaw(self._npxfile, meta)
-        self._timeseries = rawData  # [chanList, firstSamp:lastSamp+1]
+        self._raw = makeMemMapRaw(self._npxfile, meta)  # [chanList, firstSamp:lastSamp+1]
 
         # sampling rate and ap channels
         self._sampling_frequency = SampRate(meta)
@@ -49,16 +49,16 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         if not lfp:
             if ap_chan < tot_chan:
                 self._channels = list(range(int(ap_chan)))
-                self._timeseries = self._timeseries[0:ap_chan, :]
+                self._timeseries = self._raw[0:ap_chan, :]
             else:
                 self._channels = list(range(int(tot_chan)))  # OriginalChans(meta).tolist()
         else:
             if lfp_chan < tot_chan:
                 self._channels = list(range(int(lfp_chan)))
-                self._timeseries = self._timeseries[0:lfp_chan, :]
+                self._timeseries = self._raw[0:lfp_chan, :]
             else:
                 self._channels = list(range(int(tot_chan)))
-        
+
 
         # locations
         if len(locations) > 0:
@@ -67,13 +67,12 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         # get gains
         if meta['typeThis'] == 'imec':
             gains = GainCorrectIM(self._timeseries, self._channels, meta)
-        elif meta['typeThis'] =='nidq':
+        elif meta['typeThis'] == 'nidq':
             gains = GainCorrectNI(self._timeseries, self._channels, meta)
 
         # set gains - convert from int16 to uVolt
         self.set_channel_gains(self._channels, gains*1e6)
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'x_pitch': x_pitch, 'y_pitch': y_pitch}
-
 
     def get_channel_ids(self):
         return self._channels
@@ -89,6 +88,23 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         channel_idxs = [self._channels.index(ch) for ch in channel_ids]
         recordings = self._timeseries[channel_idxs, start_frame:end_frame]
         return recordings
+
+    @check_get_ttl_args
+    def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
+        channel = [channel_id]
+        dw = 0
+        dig = ExtractDigital(self._raw, firstSamp=start_frame, lastSamp=end_frame, dwReq=dw, dLineList=channel,
+                             meta=self._meta)
+        dig = np.squeeze(dig)
+        diff_dig = np.diff(dig.astype(int))
+
+        rising = np.where(diff_dig > 0)[0] + start_frame
+        falling = np.where(diff_dig < 0)[0] + start_frame
+
+        ttl_frames = np.concatenate((rising, falling))
+        ttl_states = np.array([1] * len(rising) + [-1] * len(falling))
+        sort_idxs = np.argsort(ttl_frames)
+        return ttl_frames[sort_idxs], ttl_states[sort_idxs]
 
     @staticmethod
     def write_recording(recording, save_path, dtype=None, transpose=False):

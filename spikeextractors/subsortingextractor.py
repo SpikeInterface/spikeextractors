@@ -4,7 +4,6 @@ from .extraction_tools import check_valid_unit_id
 
 
 # Encapsulates a subset of a spike sorted data file
-
 class SubSortingExtractor(SortingExtractor):
     def __init__(self, parent_sorting, *, unit_ids=None, renamed_unit_ids=None, start_frame=None, end_frame=None):
         SortingExtractor.__init__(self)

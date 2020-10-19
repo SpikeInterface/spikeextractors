@@ -1,5 +1,5 @@
 from .recordingextractor import RecordingExtractor
-from .extraction_tools import check_get_traces_args
+from .extraction_tools import check_get_traces_args, check_get_ttl_args
 import numpy as np
 
 
@@ -30,9 +30,9 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
             channel_ids = recording.get_channel_ids()
             sampling_frequency = recording.get_sampling_frequency()
 
-            if (self._channel_ids != channel_ids):
+            if self._channel_ids != channel_ids:
                 raise ValueError("Inconsistent channel ids between extractor 0 and extractor " + str(i + 1))
-            if (self._sampling_frequency != sampling_frequency):
+            if self._sampling_frequency != sampling_frequency:
                 raise ValueError("Inconsistent sampling frequency between extractor 0 and extractor " + str(i + 1))
 
         self._start_frames = []
@@ -87,6 +87,45 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         )
         return np.concatenate(traces, axis=1)
 
+    @check_get_ttl_args
+    def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
+        recording1, i_sec1, i_start_frame = self._find_section_for_frame(start_frame)
+        _, i_sec2, i_end_frame = self._find_section_for_frame(end_frame)
+
+        if i_sec1 == i_sec2:
+            ttl_frames, ttl_states = recording1.get_ttl_events(start_frame=i_start_frame,
+                                                               end_frame=i_end_frame,
+                                                               channel_id=channel_id)
+            ttl_frames += self._start_frames[i_sec1]
+        else:
+            ttl_frames, ttl_states = [], []
+
+            ttl_frames_1, ttl_states_1 = self._recordings[i_sec1].get_ttl_events(
+                start_frame=i_start_frame,
+                end_frame=self._recordings[i_sec1].get_num_frames(),
+                channel_id=channel_id)
+            ttl_frames_1 = (ttl_frames_1 + self._start_frames[i_sec1]).astype('int64')
+            ttl_frames.append(ttl_frames_1)
+            ttl_states.append(ttl_states_1)
+
+            for i_sec in range(i_sec1 + 1, i_sec2):
+                ttl_frames_i, ttl_states_i = self._recordings[i_sec].get_ttl_events(channel_id=channel_id)
+                ttl_frames_i = (ttl_frames_i + self._start_frames[i_sec]).astype('int64')
+                ttl_frames.append(ttl_frames_i)
+                ttl_states.append(ttl_states_i)
+
+            ttl_frames_2, ttl_states_2 = self._recordings[i_sec2].get_ttl_events(start_frame=0,
+                                                                                 end_frame=i_end_frame,
+                                                                                 channel_id=channel_id)
+            ttl_frames_2 = (ttl_frames_2 + self._start_frames[i_sec2]).astype('int64')
+            ttl_frames.append(ttl_frames_2)
+            ttl_states.append(ttl_states_2)
+
+            ttl_frames = np.concatenate(np.array(ttl_frames))
+            ttl_states = np.concatenate(np.array(ttl_states))
+
+        return ttl_frames, ttl_states
+
     def get_channel_ids(self):
         return self._channel_ids
 
@@ -103,6 +142,7 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
     def time_to_frame(self, time):
         recording, i_epoch, rel_time = self._find_section_for_time(time)
         return recording.time_to_frame(rel_time) + self._start_frames[i_epoch]
+
 
 def concatenate_recordings_by_time(recordings, epoch_names=None):
     '''
