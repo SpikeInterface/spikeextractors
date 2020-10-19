@@ -90,7 +90,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         return recordings
 
     @check_get_ttl_args
-    def get_ttl_frames(self, start_frame=None, end_frame=None, channel_id=0):
+    def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
         channel = [channel_id]
         dw = 0
         dig = ExtractDigital(self._raw, firstSamp=start_frame, lastSamp=end_frame, dwReq=dw, dLineList=channel,

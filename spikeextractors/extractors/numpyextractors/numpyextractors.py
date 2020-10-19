@@ -62,7 +62,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
         return recordings
 
     @check_get_ttl_args
-    def get_ttl_frames(self, start_frame=None, end_frame=None, channel_id=0):
+    def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
         if self._ttl_frames is not None and self._ttl_states is not None:
             ttl_idxs = np.where((self._ttl_frames >= start_frame) & (self._ttl_frames < end_frame))[0]
             return self._ttl_frames[ttl_idxs], self._ttl_states[ttl_idxs]

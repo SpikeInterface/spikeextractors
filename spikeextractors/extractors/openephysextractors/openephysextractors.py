@@ -47,7 +47,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
                    self._recording.analog_signals[0].gain
 
     @check_get_ttl_args
-    def get_ttl_frames(self, start_frame=None, end_frame=None, channel_id=0):
+    def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
         channels = [np.unique(ev.channels)[0] for ev in self._recording.events]
         assert channel_id in channels, f"Specified 'channel' not found. Available channels are {channels}"
         ev = self._recording.events[channels.index(channel_id)]

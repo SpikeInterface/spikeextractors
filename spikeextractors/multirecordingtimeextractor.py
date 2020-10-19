@@ -88,19 +88,19 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         return np.concatenate(traces, axis=1)
 
     @check_get_ttl_args
-    def get_ttl_frames(self, start_frame=None, end_frame=None, channel_id=0):
+    def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
         recording1, i_sec1, i_start_frame = self._find_section_for_frame(start_frame)
         _, i_sec2, i_end_frame = self._find_section_for_frame(end_frame)
 
         if i_sec1 == i_sec2:
-            ttl_frames, ttl_states = recording1.get_ttl_frames(start_frame=i_start_frame,
+            ttl_frames, ttl_states = recording1.get_ttl_events(start_frame=i_start_frame,
                                                                end_frame=i_end_frame,
                                                                channel_id=channel_id)
             ttl_frames += self._start_frames[i_sec1]
         else:
             ttl_frames, ttl_states = [], []
 
-            ttl_frames_1, ttl_states_1 = self._recordings[i_sec1].get_ttl_frames(
+            ttl_frames_1, ttl_states_1 = self._recordings[i_sec1].get_ttl_events(
                 start_frame=i_start_frame,
                 end_frame=self._recordings[i_sec1].get_num_frames(),
                 channel_id=channel_id)
@@ -109,12 +109,12 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
             ttl_states.append(ttl_states_1)
 
             for i_sec in range(i_sec1 + 1, i_sec2):
-                ttl_frames_i, ttl_states_i = self._recordings[i_sec].get_ttl_frames(channel_id=channel_id)
+                ttl_frames_i, ttl_states_i = self._recordings[i_sec].get_ttl_events(channel_id=channel_id)
                 ttl_frames_i = (ttl_frames_i + self._start_frames[i_sec]).astype('int64')
                 ttl_frames.append(ttl_frames_i)
                 ttl_states.append(ttl_states_i)
 
-            ttl_frames_2, ttl_states_2 = self._recordings[i_sec2].get_ttl_frames(start_frame=0,
+            ttl_frames_2, ttl_states_2 = self._recordings[i_sec2].get_ttl_events(start_frame=0,
                                                                                  end_frame=i_end_frame,
                                                                                  channel_id=channel_id)
             ttl_frames_2 = (ttl_frames_2 + self._start_frames[i_sec2]).astype('int64')

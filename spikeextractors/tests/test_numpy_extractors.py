@@ -49,8 +49,8 @@ class TestNumpyExtractors(unittest.TestCase):
         # get_snippets
         snippets = self.RX.get_snippets(reference_frames=[0, 30, 50], snippet_len=20)
         self.assertTrue(np.allclose(snippets[1], self._X[:, 20:40]))
-        # get_ttl_frames
-        self.assertTrue(np.array_equal(self.RX.get_ttl_frames()[0], self._ttl_frames))
+        # get_ttl_events
+        self.assertTrue(np.array_equal(self.RX.get_ttl_events()[0], self._ttl_frames))
 
     def test_sorting_extractor(self):
         unit_ids = [1, 2, 3]

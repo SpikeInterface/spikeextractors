@@ -94,7 +94,7 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(self.SX.get_unit_ids(), self.example_info['unit_ids'])
         self.assertEqual(self.RX.get_channel_locations(0)[0][0], self.example_info['channel_prop'][0])
         self.assertEqual(self.RX.get_channel_locations(0)[0][1], self.example_info['channel_prop'][1])
-        self.assertTrue(np.array_equal(self.RX.get_ttl_frames()[0], self.example_info['ttls']))
+        self.assertTrue(np.array_equal(self.RX.get_ttl_events()[0], self.example_info['ttls']))
         self.assertEqual(self.SX.get_unit_property(unit_id=1, property_name='stability'),
                          self.example_info['unit_prop'])
         self.assertTrue(np.array_equal(self.SX.get_unit_spike_train(1), self.example_info['train1']))
@@ -354,19 +354,19 @@ class TestExtractors(unittest.TestCase):
         start_frame = self.example_info['num_frames'] // 3
         end_frame = 2 * self.example_info['num_frames'] // 3
         RX_sub = se.SubRecordingExtractor(self.RX, start_frame=start_frame, end_frame=end_frame)
-        original_ttls = self.RX.get_ttl_frames()[0]
+        original_ttls = self.RX.get_ttl_events()[0]
         ttls_in_sub = original_ttls[np.where((original_ttls >= start_frame) & (original_ttls < end_frame))[0]]
-        self.assertTrue(np.array_equal(RX_sub.get_ttl_frames()[0], ttls_in_sub - start_frame))
+        self.assertTrue(np.array_equal(RX_sub.get_ttl_events()[0], ttls_in_sub - start_frame))
 
         # multirecording
         RX_multi = se.MultiRecordingTimeExtractor(recordings=[self.RX, self.RX, self.RX])
-        ttls_originals = self.RX.get_ttl_frames()[0]
+        ttls_originals = self.RX.get_ttl_events()[0]
         num_ttls = len(ttls_originals)
-        self.assertEqual(len(RX_multi.get_ttl_frames()[0]), 3 * num_ttls)
-        self.assertTrue(np.array_equal(RX_multi.get_ttl_frames()[0][:num_ttls], ttls_originals))
-        self.assertTrue(np.array_equal(RX_multi.get_ttl_frames()[0][num_ttls:2 * num_ttls],
+        self.assertEqual(len(RX_multi.get_ttl_events()[0]), 3 * num_ttls)
+        self.assertTrue(np.array_equal(RX_multi.get_ttl_events()[0][:num_ttls], ttls_originals))
+        self.assertTrue(np.array_equal(RX_multi.get_ttl_events()[0][num_ttls:2 * num_ttls],
                                        ttls_originals + self.RX.get_num_frames()))
-        self.assertTrue(np.array_equal(RX_multi.get_ttl_frames()[0][2 * num_ttls:],
+        self.assertTrue(np.array_equal(RX_multi.get_ttl_events()[0][2 * num_ttls:],
                                        ttls_originals + 2 * self.RX.get_num_frames()))
 
     def test_multi_sub_sorting_extractor(self):

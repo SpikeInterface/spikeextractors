@@ -131,7 +131,7 @@ class Mea1kRecordingExtractor(RecordingExtractor):
             return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
 
     @check_get_ttl_args
-    def get_ttl_frames(self, start_frame=None, end_frame=None, channel_id=0):
+    def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
         bitvals = self._signals[-2:, 0]
         first_frame = bitvals[1] << 16 | bitvals[0]
         bits = self._filehandle['bits']
