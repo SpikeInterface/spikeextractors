@@ -363,6 +363,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         """
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
+        if len(nwbfile.devices) == 0:
+            se.NwbRecordingExtractor.add_devices(recording, nwbfile)
         defaults = dict(
             name="Electrode Group",
             description="no description",
@@ -375,8 +377,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     ElectrodeGroup=[]
                 )
             )
-        if 'group' not in recording.get_shared_channel_property_names():
-            metadata['Ecephys']['ElectrodeGroup'] = [dict(defaults)]
         assert all([isinstance(x, dict) for x in metadata['Ecephys']['ElectrodeGroup']]), \
             "Expected metadata['Ecephys']['ElectrodeGroup'] to be a list of dictionaries!"
 
@@ -399,9 +399,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 electrode_group_kwargs.update(device=nwbfile.devices[device_name])
                 nwbfile.create_electrode_group(**electrode_group_kwargs)
 
-        if 'group' in recording.get_shared_channel_property_names():
-            if len(nwbfile.devices) == 0:
-                se.NwbRecordingExtractor.add_devices(recording, nwbfile)
+        if not nwbfile.electrode_groups:
             device_name = list(nwbfile.devices.keys())[0]
             device = nwbfile.devices[device_name]
             if len(nwbfile.devices) > 1:
