@@ -133,7 +133,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             The corresponding frame index
         '''
         # Default implementation
-        return time * self.get_sampling_frequency()
+        return int(time * self.get_sampling_frequency())
 
     def get_snippets(self, reference_frames, snippet_len, channel_ids=None):
         '''This function returns data snippets from the given channels that
