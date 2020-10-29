@@ -24,6 +24,7 @@ class SubRecordingExtractor(RecordingExtractor):
         if self._end_frame > self._parent_recording.get_num_frames():
             self._end_frame = self._parent_recording.get_num_frames()
         self._original_channel_id_lookup = {}
+
         for i in range(len(self._channel_ids)):
             self._original_channel_id_lookup[self._renamed_channel_ids[i]] = self._channel_ids[i]
         RecordingExtractor.__init__(self)
@@ -67,14 +68,14 @@ class SubRecordingExtractor(RecordingExtractor):
     def frame_to_time(self, frame):
         frame2 = frame + self._start_frame
         time1 = self._parent_recording.frame_to_time(frame2)
-        time2 = time1 - self._parent_recording.frame_to_time(self._start_frame)
-        return time2
+        start_time = self._parent_recording.frame_to_time(self._start_frame)
+        return np.round(time1 - start_time, 6)
 
     def time_to_frame(self, time):
         time2 = time + self._parent_recording.frame_to_time(self._start_frame)
         frame1 = self._parent_recording.time_to_frame(time2)
         frame2 = frame1 - self._start_frame
-        return frame2
+        return frame2.astype('int64')
 
     def get_snippets(self, *, reference_frames, snippet_len, channel_ids=None):
         if channel_ids is None:
