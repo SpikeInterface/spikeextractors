@@ -587,7 +587,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 )
 
     @staticmethod
-    def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None):
+    def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None, buffer_mb=500):
         """
         Auxiliary static method for nwbextractor.
 
@@ -647,10 +647,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 channel_conversion = gains * 1e-6
 
             if isinstance(recording.get_traces(), np.memmap):
+                n_bytes = np.dtype(recording.get_dtype()).itemsize
+                buffer_size = int(buffer_mb * 1e6) // (recording.get_num_channels() * n_bytes)
                 ephys_data = H5DataIO(
                     DataChunkIterator(
                         data=recording.get_traces().T,  # nwb standard is time as zero axis
-                        buffer_size=10**6
+                        buffer_size=buffer_size
                     ),
                     compression='gzip'
                 )
