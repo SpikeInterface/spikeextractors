@@ -612,7 +612,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         whenever possible.
         """
         if nwbfile is not None:
-            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile!"
+        assert buffer_mb > 10, "'buffer_mb' should be at least 10MB to ensure data can be chunked!"
         if not nwbfile.electrodes:
             se.NwbRecordingExtractor.add_electrodes(recording, nwbfile, metadata)
         defaults = dict(
