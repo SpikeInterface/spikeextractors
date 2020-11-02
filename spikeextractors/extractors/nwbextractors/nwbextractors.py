@@ -649,7 +649,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             if isinstance(recording.get_traces(), np.memmap):
                 ephys_data = H5DataIO(
                     DataChunkIterator(
-                        data=np.memmap.transpose(recording.get_traces()),  # nwb standard is time as zero axis
+                        data=recording.get_traces().T,  # nwb standard is time as zero axis
                         buffer_size=10**6
                     ),
                     compression='gzip'
