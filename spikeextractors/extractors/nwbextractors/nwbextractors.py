@@ -587,7 +587,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 )
 
     @staticmethod
-    def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None, buffer_mb=500):
+    def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None,
+                              buffer_mb: int = 500):
         """
         Auxiliary static method for nwbextractor.
 
@@ -603,6 +604,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             Should be of the format
                 metadata['Ecephys']['ElectricalSeries'] = {'name': my_name,
                                                            'description': my_description}
+        buffer_mb: int (optional, defaults to 500MB)
+            maximum amount of memory (in MB) to use per iteration of the
+            DataChunkIterator (requires traces to be memmap objects)
 
         Missing keys in an element of metadata['Ecephys']['ElectrodeGroup'] will be auto-populated with defaults
         whenever possible.
