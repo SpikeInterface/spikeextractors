@@ -68,7 +68,11 @@ class BinDatRecordingExtractor(RecordingExtractor):
             recordings = self._timeseries[:, start_frame:end_frame]
         else:
             channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
-            recordings = self._timeseries[:, start_frame:end_frame][channel_idxs, :]
+            if np.all(np.diff(channel_idxs) == 1):
+                recordings = self._timeseries[channel_idxs[0]:channel_idxs[0]+len(channel_idxs), start_frame:end_frame]
+            else:
+                # This block of the execution will return the data as an array, not a memmap
+                recordings = self._timeseries[:, start_frame:end_frame][channel_idxs, :]
         if self._dtype.startswith('uint'):
             exp_idx = self._dtype.find('int') + 3
             exp = int(self._dtype[exp_idx:])
