@@ -19,7 +19,7 @@ from distutils.version import StrictVersion
 try:
     import h5py
     if StrictVersion(h5py.__version__) > '2.10.0':
-        print("h5py version >= 2.10.0. Some extractors might not work properly. It is recommended to "
+        print("h5py version > 2.10.0. Some extractors might not work properly. It is recommended to "
               "downgrade to version 2.10.0: \n>>> pip install h5py==2.10.0")
 except ImportError:
     pass
