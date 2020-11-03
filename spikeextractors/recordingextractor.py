@@ -5,7 +5,6 @@ from .extraction_tools import load_probe_file, save_to_probe_file, write_to_bina
     write_to_h5_dataset_format, get_sub_extractors_by_property, cast_start_end_frame
 from .baseextractor import BaseExtractor
 
-
 class RecordingExtractor(ABC, BaseExtractor):
     '''A class that contains functions for extracting important information
     from recorded extracellular data. It is an abstract class so all
@@ -117,7 +116,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             The corresponding time in seconds
         '''
         # Default implementation
-        return frame / self.get_sampling_frequency()
+        return np.round(frame / self.get_sampling_frequency(), 6)
 
     def time_to_frame(self, time):
         '''This function converts a user-inputted time (in seconds) to a frame index.
@@ -133,7 +132,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             The corresponding frame index
         '''
         # Default implementation
-        return time * self.get_sampling_frequency()
+        return np.round(time * self.get_sampling_frequency()).astype('int64')
 
     def get_snippets(self, reference_frames, snippet_len, channel_ids=None):
         '''This function returns data snippets from the given channels that
@@ -624,10 +623,11 @@ class RecordingExtractor(ABC, BaseExtractor):
         epoch_extractor: SubRecordingExtractor
             A SubRecordingExtractor which is a view to the given epoch
         '''
+        from .subrecordingextractor import SubRecordingExtractor
+
         epoch_info = self.get_epoch_info(epoch_name)
         start_frame = epoch_info['start_frame']
         end_frame = epoch_info['end_frame']
-        from .subrecordingextractor import SubRecordingExtractor
         return SubRecordingExtractor(parent_recording=self, start_frame=start_frame,
                                      end_frame=end_frame)
 
