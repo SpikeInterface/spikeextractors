@@ -2,10 +2,15 @@ from spikeextractors import RecordingExtractor
 from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args
 import numpy as np
 from pathlib import Path
+from distutils.version import StrictVersion
 
 try:
     import pyintan
-    HAVE_INTAN = True
+    if StrictVersion(pyintan.__version__) >= '0.2.0':
+        HAVE_INTAN = True
+    else:
+        print("pyintan version requires an update (>=0.2.0). Please upgrade with 'pip install --upgrade pyintan'")
+        HAVE_INTAN = False
 except ImportError:
     HAVE_INTAN = False
 
@@ -25,20 +30,30 @@ class IntanRecordingExtractor(RecordingExtractor):
             "Only '.rhd' and '.rhs' files are supported"
         self._recording_file = file_path
         self._recording = pyintan.File(file_path, verbose)
+        self._num_frames = len(self._recording.times)
+        self._analog_channels = np.array([ch for ch in self._recording._anas_chan if all([other_ch not in ch['name']
+                                                                                          for other_ch in
+                                                                                          ['ADC', 'VDD', 'AUX']])])
+        self._num_channels = len(self._analog_channels)
+        self._channel_ids = list(range(self._num_channels))
+        self._fs = float(self._recording.sample_rate.rescale('Hz').magnitude)
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'verbose': verbose}
 
     def get_channel_ids(self):
-        return list(range(self._recording.analog_signals[0].signal.shape[0]))
+        return self._channel_ids
 
     def get_num_frames(self):
-        return self._recording.analog_signals[0].signal.shape[1]
+        return self._num_frames
 
     def get_sampling_frequency(self):
-        return float(self._recording.sample_rate.rescale('Hz').magnitude)
+        return self._fs
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
+        channel_idxs = np.array([self._channel_ids.index(ch) for ch in channel_ids])
+        analog_chans = self._analog_channels[channel_idxs]
+        return self._recording._read_analog(channels=analog_chans,
+                                            i_start=start_frame, i_stop=end_frame)[:, channel_idxs].T
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):

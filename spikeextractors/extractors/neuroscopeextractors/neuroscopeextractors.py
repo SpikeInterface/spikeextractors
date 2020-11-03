@@ -290,7 +290,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         self._spiketrains.append(spike_times)
 
     @check_valid_unit_id
-    def get_unit_spike_train(self, unit_id, shank_id=None, start_frame=None, end_frame=None):
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
             start_frame = 0
