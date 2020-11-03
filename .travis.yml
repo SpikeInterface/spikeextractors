@@ -22,7 +22,7 @@ jobs:
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
 
 install:
-- pip install mountainlab_pytools pynwb==1.3.3 pyopenephys kbucket h5py MEArec>=1.5.0 shybrid exdir ruamel.yaml nixio neo>=0.8 hdf5storage bs4 lxml
+- pip install h5py==2.10.0 mountainlab_pytools pynwb==1.3.3 pyopenephys kbucket MEArec>=1.5.0 shybrid exdir ruamel.yaml nixio neo>=0.8 hdf5storage bs4 lxml
 - pip install .
 - pip install pytest==3.6
 script: pytest
