@@ -54,9 +54,14 @@ class BaseExtractor:
         module = class_name.split('.')[0]
         imported_module = importlib.import_module(module)
 
+        try:
+            version = imported_module.__version__
+        except AttributeError:
+            version = 'unknown'
+
         if self.is_dumpable:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': self._kwargs,
-                         'key_properties': self._key_properties, 'version': imported_module.__version__,
+                         'key_properties': self._key_properties, 'version': version,
                          'dumpable': True}
         else:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': {}, 'key_properties': self._key_properties,
