@@ -19,6 +19,7 @@ try:
     from pynwb.ecephys import ElectricalSeries
     from pynwb.ecephys import ElectrodeGroup
     from hdmf.data_utils import DataChunkIterator
+    from hdmf.backends.hdf5.h5_utils import H5DataIO
 
     HAVE_NWB = True
 except ModuleNotFoundError:
@@ -485,7 +486,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         else:
             nwb_elec_ids = nwbfile.electrodes.id.data[:]
         for metadata_column in metadata['Ecephys']['Electrodes']:
-            if metadata_column['name'] not in nwbfile.electrodes.colnames:
+            if nwbfile.electrodes is None or metadata_column['name'] not in nwbfile.electrodes.colnames:
                 nwbfile.add_electrode_column(str(metadata_column['name']),
                                              str(metadata_column['description']))
 
@@ -586,7 +587,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 )
 
     @staticmethod
-    def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None):
+    def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None,
+                              buffer_mb: int = 500):
         """
         Auxiliary static method for nwbextractor.
 
@@ -602,12 +604,16 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             Should be of the format
                 metadata['Ecephys']['ElectricalSeries'] = {'name': my_name,
                                                            'description': my_description}
+        buffer_mb: int (optional, defaults to 500MB)
+            maximum amount of memory (in MB) to use per iteration of the
+            DataChunkIterator (requires traces to be memmap objects)
 
         Missing keys in an element of metadata['Ecephys']['ElectrodeGroup'] will be auto-populated with defaults
         whenever possible.
         """
         if nwbfile is not None:
-            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile!"
+        assert buffer_mb > 10, "'buffer_mb' should be at least 10MB to ensure data can be chunked!"
         if not nwbfile.electrodes:
             se.NwbRecordingExtractor.add_electrodes(recording, nwbfile, metadata)
         defaults = dict(
@@ -634,6 +640,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
             # channels gains - for RecordingExtractor, these are values to cast traces to uV
             # for nwb, the conversions (gains) cast the data to Volts
+            # To get traces in Volts = data*channel_conversion*conversion
             gains = np.squeeze([recording.get_channel_gains(channel_ids=[ch])
                                 if 'gain' in recording.get_channel_property_names(channel_id=ch) else 1
                                 for ch in channel_ids])
@@ -644,28 +651,45 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 scalar_conversion = 1.
                 channel_conversion = gains * 1e-6
 
-            def data_generator(recording, channels_ids):
-                #  generates data chunks for iterator
-                for id in channels_ids:
-                    data = recording.get_traces(channel_ids=[id]).flatten()
-                    yield data
-
-            data = data_generator(recording=recording, channels_ids=channel_ids)
-            ephys_data = DataChunkIterator(data=data, iter_axis=1)
-
-            # To get traces in Volts = data*channel_conversion*conversion
-            ephys_ts = ElectricalSeries(
-                name=es_name,
-                data=ephys_data,
-                electrodes=electrode_table_region,
-                starting_time=recording.frame_to_time(0),
-                rate=recording.get_sampling_frequency(),
-                conversion=scalar_conversion,
-                channel_conversion=channel_conversion,
-                comments='Generated from SpikeInterface::NwbRecordingExtractor',
-                description=metadata['Ecephys']['ElectricalSeries'].get('description', defaults['description'])
+            if isinstance(recording.get_traces(), np.memmap):
+                n_bytes = np.dtype(recording.get_dtype()).itemsize
+                buffer_size = int(buffer_mb * 1e6) // (recording.get_num_channels() * n_bytes)
+                ephys_data = H5DataIO(
+                    DataChunkIterator(
+                        data=recording.get_traces().T,  # nwb standard is time as zero axis
+                        buffer_size=buffer_size
+                    ),
+                    compression='gzip'
+                )
+            else:
+                def data_generator(recording, channels_ids):
+                    #  generates data chunks for iterator
+                    for id in channels_ids:
+                        data = recording.get_traces(channel_ids=[id]).flatten()
+                        yield data
+                ephys_data = H5DataIO(
+                    DataChunkIterator(
+                        data=data_generator(
+                            recording=recording,
+                            channels_ids=channel_ids
+                        ),
+                        iter_axis=1  # nwb standard is time as zero axis
+                    ),
+                    compression='gzip'
+                )
+            nwbfile.add_acquisition(
+                ElectricalSeries(
+                    name=es_name,
+                    data=ephys_data,
+                    electrodes=electrode_table_region,
+                    starting_time=recording.frame_to_time(0),
+                    rate=recording.get_sampling_frequency(),
+                    conversion=scalar_conversion,
+                    channel_conversion=channel_conversion,
+                    comments='Generated from SpikeInterface::NwbRecordingExtractor',
+                    description=metadata['Ecephys']['ElectricalSeries'].get('description', defaults['description'])
+                )
             )
-            nwbfile.add_acquisition(ephys_ts)
 
     @staticmethod
     def add_epochs(recording: se.RecordingExtractor, nwbfile=None,
