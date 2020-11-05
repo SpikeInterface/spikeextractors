@@ -388,7 +388,11 @@ def _check_same_version(class_string, version):
     module = class_string.split('.')[0]
     imported_module = importlib.import_module(module)
 
-    return imported_module.__version__ == version
+    try:
+        return imported_module.__version__ == version
+    except AttributeError:
+        return 'unknown'
+
 
 
 def _check_if_dumpable(d):
