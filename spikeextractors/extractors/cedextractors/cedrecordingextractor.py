@@ -48,12 +48,13 @@ class CEDRecordingExtractor(RecordingExtractor):
 
         # Open smrx file
         self._recording_file_path = file_path
-        self._recording_file = sp.SonFile(sName=file_path, bReadOnly=True)
+        self._recording_file = sp.SonFile(sName=str(file_path), bReadOnly=True)
         if self._recording_file.GetOpenError() != 0:
             raise ValueError(f'Error opening file:', sp.GetErrorString(self._recording_file.GetOpenError()))
 
         # Map Recording channel_id to smrx index / test for invalid indexes / get info
         self._channelid_to_smrxind = dict()
+        self._channel_smrxinfo = dict()
         for i, ind in enumerate(smrx_ch_inds):
             if self._recording_file.ChannelType(ind) == sp.DataType.Off:
                 raise ValueError(f'Channel {ind} is type Off and cannot be used')
