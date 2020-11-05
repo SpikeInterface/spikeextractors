@@ -35,7 +35,7 @@ class CEDRecordingExtractor(RecordingExtractor):
 
     extractor_name = 'CEDRecordingExtractor'
     installed = HAVE_SONPY  # check at class level if installed or not
-    is_writable = True
+    is_writable = False
     mode = 'file'
     installation_mesg = "To use the CED extractor, install sonpy: \n\n pip install sonpy\n\n"  # error message when not installed
 
