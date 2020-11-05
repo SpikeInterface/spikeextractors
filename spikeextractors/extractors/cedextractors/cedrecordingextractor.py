@@ -1,11 +1,10 @@
 from spikeextractors import RecordingExtractor
 from .utils import get_channel_info, get_channel_data
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args
 
 import numpy as np
 from pathlib import Path
 from typing import Union
-import os
 
 try:
     from sonpy import lib as sp
