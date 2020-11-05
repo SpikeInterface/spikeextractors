@@ -1,1 +1,1 @@
-from .cedextractors import CEDRecordingExtractor
+from .cedrecordingextractor import CEDRecordingExtractor
