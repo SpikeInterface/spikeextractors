@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+from copy import deepcopy
 
 from .extraction_tools import load_probe_file, save_to_probe_file, write_to_binary_dat_format, \
     write_to_h5_dataset_format, get_sub_extractors_by_property, cast_start_end_frame
@@ -490,8 +491,8 @@ class RecordingExtractor(ABC, BaseExtractor):
             The list (or single value) of channel_ids for which the properties will be copied
         '''
         if channel_ids is None:
-            self._key_properties = recording._key_properties
-            self._properties = recording._properties
+            self._key_properties = deepcopy(recording._key_properties)
+            self._properties = deepcopy(recording._properties)
         else:
             if isinstance(channel_ids, (int, np.integer)):
                 channel_ids = [channel_ids]
