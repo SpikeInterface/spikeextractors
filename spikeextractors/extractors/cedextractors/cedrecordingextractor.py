@@ -43,7 +43,7 @@ class CEDRecordingExtractor(RecordingExtractor):
         file_path = Path(file_path)
         assert file_path.is_file() and file_path.suffix == '.smrx', 'file_path must lead to a .smrx file!'
 
-        RecordingExtractor.__init__(self)
+        super().__init__(self)
 
         # Open smrx file
         self._recording_file_path = file_path
