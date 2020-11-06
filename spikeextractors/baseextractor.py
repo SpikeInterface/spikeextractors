@@ -394,7 +394,6 @@ def _check_same_version(class_string, version):
         return 'unknown'
 
 
-
 def _check_if_dumpable(d):
     kwargs = d['kwargs']
     if np.any([isinstance(v, dict) and 'dumpable' in v.keys() for (k, v) in kwargs.items()]):

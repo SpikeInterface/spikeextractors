@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+from copy import deepcopy
 
 from .extraction_tools import get_sub_extractors_by_property
 from .baseextractor import BaseExtractor
@@ -462,7 +463,7 @@ class SortingExtractor(ABC, BaseExtractor):
             The list (or single value) of unit_ids for which the properties will be copied
         '''
         if unit_ids is None:
-            self._properties = sorting._properties
+            self._properties = deepcopy(sorting._properties)
         else:
             if isinstance(unit_ids, int):
                 curr_property_names = sorting.get_unit_property_names(unit_id=unit_ids)
@@ -517,7 +518,7 @@ class SortingExtractor(ABC, BaseExtractor):
             The list (or single value) of unit_ids for which the spike features will be copied
         '''
         if unit_ids is None:
-            self._features = sorting._features
+            self._features = deepcopy(sorting._features)
         else:
             if isinstance(unit_ids, int):
                 unit_ids = [unit_ids]
