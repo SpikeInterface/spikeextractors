@@ -52,8 +52,15 @@ class IntanRecordingExtractor(RecordingExtractor):
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         channel_idxs = np.array([self._channel_ids.index(ch) for ch in channel_ids])
         analog_chans = self._analog_channels[channel_idxs]
-        return self._recording._read_analog(channels=analog_chans,
-                                            i_start=start_frame, i_stop=end_frame)[:, channel_idxs].T
+        tr = self._recording._read_analog(
+            channels=analog_chans,
+            i_start=start_frame,
+            i_stop=end_frame
+        )
+        if len(channel_idxs) == 1:
+            return tr.T
+        else:
+            return tr[:, channel_idxs].T
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
