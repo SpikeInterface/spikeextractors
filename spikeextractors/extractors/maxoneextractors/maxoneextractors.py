@@ -1,7 +1,7 @@
-from spikeextractors import RecordingExtractor
+from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
-from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args, check_valid_unit_id
 
 try:
     import h5py
@@ -114,3 +114,68 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         ttl_states = bit_states['bit_idxs']
         ttl_states[ttl_states == 0] = -1
         return ttl_frames, ttl_states
+
+
+class MaxOneSortingExtractor(SortingExtractor):
+    extractor_name = 'MaxOneSorting'
+    installed = HAVE_MAX  # check at class level if installed or not
+    is_writable = False
+    mode = 'file'
+    installation_mesg = "To use the MaxOneSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
+
+    def __init__(self, file_path):
+        assert HAVE_MAX, self.installation_mesg
+        SortingExtractor.__init__(self)
+        self._file_path = file_path
+        self._filehandle = None
+        self._mapping = None
+        self._version = None
+        self._initialize()
+        self._kwargs = {'file_path': str(Path(file_path).absolute())}
+
+    def _initialize(self):
+        self._filehandle = h5py.File(self._file_path, 'r')
+        self._mapping = self._filehandle['mapping']
+        self._signals = self._filehandle['sig']
+
+        bitvals = self._signals[-2:, 0]
+        self._first_frame = bitvals[1] << 16 | bitvals[0]
+
+        channels = np.array(self._mapping['channel'])
+        electrodes = np.array(self._mapping['electrode'])
+        # remove unused channels
+        routed_idxs = np.where(electrodes > -1)[0]
+        self._channel_ids = list(channels[routed_idxs])
+        self._unit_ids = list(electrodes[routed_idxs])
+        self._sampling_frequency = float(20000)
+
+        self._spiketrains = []
+        self._unit_ids = []
+
+        try:
+            spikes = self._filehandle['proc0']['spikeTimes']
+            for u in self._channel_ids:
+                spiketrain_idx = np.where(spikes['channel'] == u)[0]
+                if len(spiketrain_idx) > 0:
+                    self._unit_ids.append(u)
+                    spiketrain = spikes['frameno'][spiketrain_idx] - self._first_frame
+                    idxs_greater_0 = np.where(spiketrain >= 0)[0]
+                    self._spiketrains.append(spiketrain[idxs_greater_0])
+                    self.set_unit_spike_features(u, 'amplitude', spikes['amplitude'][spiketrain_idx][idxs_greater_0])
+        except:
+            raise AttributeError("Spike times information are missing from the .h5 file")
+
+    def get_unit_ids(self):
+        return self._unit_ids
+
+    @check_valid_unit_id
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
+        if start_frame is None:
+            start_frame = 0
+        if end_frame is None:
+            end_frame = np.Inf
+        unit_idx = self._unit_ids.index(unit_id)
+        spiketrain = self._spiketrains[unit_idx]
+        inds = np.where((start_frame <= spiketrain) & (spiketrain < end_frame))
+        return spiketrain[inds]
