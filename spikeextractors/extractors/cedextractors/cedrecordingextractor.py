@@ -43,7 +43,7 @@ class CEDRecordingExtractor(RecordingExtractor):
         file_path = Path(file_path)
         assert file_path.is_file() and file_path.suffix == '.smrx', 'file_path must lead to a .smrx file!'
 
-        RecordingExtractor.__init__(self)
+        super().__init__()
 
         # Open smrx file
         self._recording_file_path = file_path
@@ -70,6 +70,9 @@ class CEDRecordingExtractor(RecordingExtractor):
                 channel_ids=[i],
                 gains=gains
             )
+
+        self._kwargs = {'file_path': str(Path(file_path).absolute()),
+                        'smrx_ch_inds': smrx_ch_inds}
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):

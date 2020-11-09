@@ -1,21 +1,23 @@
-from sonpy import lib as sp
+try:
+    from sonpy import lib as sp
 
+    # Data storage and function finder
+    DataReadFunctions = {
+        sp.DataType.Adc: sp.SonFile.ReadInts,
+        sp.DataType.EventFall: sp.SonFile.ReadEvents,
+        sp.DataType.EventRise: sp.SonFile.ReadEvents,
+        sp.DataType.EventBoth: sp.SonFile.ReadEvents,
+        sp.DataType.Marker: sp.SonFile.ReadMarkers,
+        sp.DataType.AdcMark: sp.SonFile.ReadWaveMarks,
+        sp.DataType.RealMark: sp.SonFile.ReadRealMarks,
+        sp.DataType.TextMark: sp.SonFile.ReadTextMarks,
+        sp.DataType.RealWave: sp.SonFile.ReadFloats
+    }
+except:
+    pass
 
 # Get the saved time and date
 # f.GetTimeDate()
-
-# Data storage and function finder
-DataReadFunctions = {
-    sp.DataType.Adc: sp.SonFile.ReadInts,
-    sp.DataType.EventFall: sp.SonFile.ReadEvents,
-    sp.DataType.EventRise: sp.SonFile.ReadEvents,
-    sp.DataType.EventBoth: sp.SonFile.ReadEvents,
-    sp.DataType.Marker: sp.SonFile.ReadMarkers,
-    sp.DataType.AdcMark: sp.SonFile.ReadWaveMarks,
-    sp.DataType.RealMark: sp.SonFile.ReadRealMarks,
-    sp.DataType.TextMark: sp.SonFile.ReadTextMarks,
-    sp.DataType.RealWave: sp.SonFile.ReadFloats
-}
 
 
 def get_channel_info(f, smrx_ch_ind):
