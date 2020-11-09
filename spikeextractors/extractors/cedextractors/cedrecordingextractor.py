@@ -51,7 +51,8 @@ class CEDRecordingExtractor(RecordingExtractor):
         if self._recording_file.GetOpenError() != 0:
             raise ValueError(f'Error opening file:', sp.GetErrorString(self._recording_file.GetOpenError()))
 
-        # Map Recording channel_id to smrx index / test for invalid indexes / get info
+        # Map Recording channel_id to smrx index / test for invalid indexes /
+        # get channel info / set channel gains
         self._channelid_to_smrxind = dict()
         self._channel_smrxinfo = dict()
         for i, ind in enumerate(smrx_ch_inds):
@@ -61,6 +62,13 @@ class CEDRecordingExtractor(RecordingExtractor):
             self._channel_smrxinfo[i] = get_channel_info(
                 f=self._recording_file,
                 smrx_ch_ind=ind
+            )
+            # Set channel gains: http://ced.co.uk/img/Spike10.pdf
+            # from 16-bit encoded int / to ADC +-5V input / to measured Volts
+            gains = self._channel_smrxinfo[i]['scale'] / 6553.6
+            self.set_channel_gains(
+                channel_ids=[i],
+                gains=gains
             )
 
     @check_get_traces_args
