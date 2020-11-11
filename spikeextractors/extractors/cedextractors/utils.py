@@ -20,24 +20,6 @@ except:
 # f.GetTimeDate()
 
 
-def get_all_channels_info(f):
-    """
-    Extract info from all channels in the smrx file. Returns a dictionary with
-    valid smrx channel indexes as keys and the respective channel information as
-    value.
-
-    Parameters:
-    -----------
-    f: str
-        SonFile object
-    """
-    n_channels = f.MaxChannels()
-    return {
-        i: get_channel_info(f, i) for i in range(n_channels)
-        if f.ChannelType(i) != sp.DataType.Off
-    }
-
-
 def get_channel_info(f, smrx_ch_ind):
     """
     Extract info from smrx files

@@ -149,3 +149,22 @@ class CEDRecordingExtractor(RecordingExtractor):
 
         '''
         return list(self._channelid_to_smrxind.keys())
+
+    @staticmethod
+    def get_all_channels_info(file_path):
+        """
+        Extract info from all channels in the smrx file. Returns a dictionary with
+        valid smrx channel indexes as keys and the respective channel information as
+        value.
+
+        Parameters:
+        -----------
+        f: str
+            Path to .smrx file
+        """
+        f = sp.SonFile(sName=str(file_path), bReadOnly=True)
+        n_channels = f.MaxChannels()
+        return {
+            i: get_channel_info(f, i) for i in range(n_channels)
+            if f.ChannelType(i) != sp.DataType.Off
+        }
