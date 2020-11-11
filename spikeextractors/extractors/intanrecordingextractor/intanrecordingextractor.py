@@ -40,6 +40,12 @@ class IntanRecordingExtractor(RecordingExtractor):
 
         assert dtype in ['float', 'uint16'], "'dtype' can be either 'float' or 'uint16'"
         self._dtype = dtype
+
+        if self._dtype == 'uint16':
+            for i, ch in enumerate(self._analog_channels):
+                self.set_channel_property(i, 'gain', ch['gain'])
+                self.set_channel_property(i, 'offset', ch['offset'])
+
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'verbose': verbose}
 
     def get_channel_ids(self):
@@ -52,11 +58,16 @@ class IntanRecordingExtractor(RecordingExtractor):
         return self._fs
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, dtype=None):
         channel_idxs = np.array([self._channel_ids.index(ch) for ch in channel_ids])
         analog_chans = self._analog_channels[channel_idxs]
-        return self._recording._read_analog(channels=analog_chans, i_start=start_frame, i_stop=end_frame,
-                                            dtype=self._dtype).T
+        if dtype is None:
+            return self._recording._read_analog(channels=analog_chans, i_start=start_frame, i_stop=end_frame,
+                                                dtype=self._dtype).T
+        else:
+            assert dtype in ['float', 'uint16'], "'dtype' can be either 'float' or 'uint16'"
+            return self._recording._read_analog(channels=analog_chans, i_start=start_frame, i_stop=end_frame,
+                                                dtype=dtype).T
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
