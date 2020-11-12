@@ -197,9 +197,15 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             assert folder_path.is_dir(), 'The folder_path must be a directory!'
 
             res_files = [f for f in folder_path.iterdir() if f.is_file()
-                         and '.res' in f.suffixes and '.temp' not in f.suffixes and len(f.suffixes) <= 2]
+                         and '.res' in f.suffixes 
+                         and '.temp' not in f.suffixes
+                         and not f.name.endswith('~')
+                         and len(f.suffixes) == 1]
             clu_files = [f for f in folder_path.iterdir() if f.is_file()
-                         and '.clu' in f.suffixes and '.temp' not in f.suffixes and len(f.suffixes) <= 2]
+                         and '.clu' in f.suffixes 
+                         and '.temp' not in f.suffixes
+                         and not f.name.endswith('~')
+                         and len(f.suffixes) == 1]
 
             assert len(res_files) > 0 or len(clu_files) > 0, \
                 'No .res or .clu files found in the folder_path.'
@@ -397,15 +403,21 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
             'samplingRate').text)  # careful not to confuse it with the lfpsamplingrate
 
         res_files = [f for f in folder_path.iterdir() if f.is_file()
-                     and '.res' in f.suffixes and '.temp' not in f.suffixes and len(f.suffixes) <= 2]
+                     and '.res' in f.suffixes 
+                     and '.temp' not in f.suffixes
+                     and not f.name.endswith('~')
+                     and len(f.suffixes) == 2]
         clu_files = [f for f in folder_path.iterdir() if f.is_file()
-                     and '.clu' in f.suffixes and '.temp' not in f.suffixes and len(f.suffixes) <= 2]
+                     and '.clu' in f.suffixes 
+                     and '.temp' not in f.suffixes
+                     and not f.name.endswith('~')
+                     and len(f.suffixes) == 2]
 
         assert len(res_files) > 0 or len(clu_files) > 0, \
             'No .res or .clu files found in the folder_path.'
-        assert len(res_files) > 1 and len(clu_files) > 1, \
-            'Single .res and .clu pairs found in the folder_path. ' \
-            'For single .res and .clu files, use the NeuroscopeSortingExtractor instead.'
+        # assert len(res_files) > 1 and len(clu_files) > 1, \
+        #     'Single .res and .clu pairs found in the folder_path. ' \
+        #     'For single .res and .clu files, use the NeuroscopeSortingExtractor instead.'
         assert len(res_files) == len(clu_files)
 
         res_ids = [int(x.suffix[1:]) for x in res_files]
