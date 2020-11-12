@@ -80,6 +80,12 @@ class Mea1kRecordingExtractor(RecordingExtractor):
         self._num_channels = len(self._channel_ids)
         self._num_frames = self._signals.shape[1]
 
+        # This happens when only spikes are recorded
+        if self._num_frames == 0:
+            find_max_frame = True
+        else:
+            find_max_frame = False
+
         for i_ch, ch, el in zip(routed_idxs, self._channel_ids, self._electrode_ids):
             self.set_channel_locations([self._mapping['x'][i_ch], self._mapping['y'][i_ch]], ch)
             self.set_channel_property(ch, 'electrode', el)
@@ -93,6 +99,9 @@ class Mea1kRecordingExtractor(RecordingExtractor):
                     if ch not in self._channel_ids:
                         spike_mask[i] = False
                 spikes_channels = np.array(spikes['channel'])[spike_mask]
+
+                if find_max_frame:
+                    self._num_frames = np.ptp(spikes['frameno'])
 
                 # load activity as property
                 activity_channels, counts = np.unique(spikes_channels, return_counts=True)
