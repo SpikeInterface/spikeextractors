@@ -51,7 +51,6 @@ recording_extractor_full_list = [
     SHYBRIDRecordingExtractor,
     NIXIORecordingExtractor,
     NeuroscopeRecordingExtractor,
-    ALFSortingExtractor,
     
     # neo based
     PlexonRecordingExtractor,
@@ -82,7 +81,7 @@ sorting_extractor_full_list = [
     WaveClusSortingExtractor,
     YassSortingExtractor,
     CombinatoSortingExtractor,
-
+    ALFSortingExtractor,
     # neo based
     PlexonSortingExtractor,
     NeuralynxSortingExtractor,
