@@ -12,18 +12,18 @@ except:
     HAVE_PANDAS = False
 
 
-class ALFSortingExtractor(SortingExtractor, ABC):
+class ALFSortingExtractor(SortingExtractor):
     extractor_name = 'ALFSortingExtractor'
-    has_default_locations = False
     installed = HAVE_PANDAS  # check at class level if installed or not
     is_writable = True
-    mode = 'file'
-    installation_mesg = 'this extractors requires Pandas package install as "pip install pandas" and then re-run'
+    mode = 'folder'
+    installation_mesg = "To use the ALFSortingExtractor run:\n\n pip install pandas\n\n"
 
-    def __init__(self, files_loc):
+    def __init__(self, folder_path, sampling_frequency=30000):
+        assert HAVE_PANDAS, self.installation_mesg
         SortingExtractor.__init__(self)
         # check correct parent folder:
-        self.file_loc = Path(files_loc)
+        self.file_loc = Path(folder_path)
         if 'probe' not in Path(self.file_loc).name:
             raise ValueError('folder name should contain "probe", containing channels, clusters.* .npy datasets')
         # load datasets as mmap into a dict:
@@ -38,9 +38,6 @@ class ALFSortingExtractor(SortingExtractor, ABC):
         # check existence of datasets:
         if not any([i in self._found_alf_datasets for i in self._required_alf_datasets]):
             raise Exception(f'could not find {self._required_alf_datasets} in folder')
-        # pandas installed:
-        if not self.installed:
-            raise Exception(self.installation_mesg)
         # setting units properties:
         self._total_units = 0
         for alf_dataset_name, alf_dataset in self._found_alf_datasets.items():
@@ -59,7 +56,8 @@ class ALFSortingExtractor(SortingExtractor, ABC):
                         self._total_units = alf_dataset.shape[0]
         self._units_map = {i: j for i, j in zip(self.get_unit_ids(), list(range(self._total_units)))}
         self._units_raster = []
-        self._sampling_frequency = 30000
+        self._sampling_frequency = sampling_frequency
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute()), 'sampling_frequency': sampling_frequency}
 
     def _load_npy(self, npy_path):
         return np.load(npy_path, mmap_mode='r',allow_pickle=True)
@@ -80,7 +78,8 @@ class ALFSortingExtractor(SortingExtractor, ABC):
         return self._units_raster[cluster_idx]
 
     def get_unit_ids(self):
-        if 'clusters.metrics' in self._found_alf_datasets and self._found_alf_datasets['clusters.metrics'].get('cluster_id') is not None:
+        if 'clusters.metrics' in self._found_alf_datasets and \
+                self._found_alf_datasets['clusters.metrics'].get('cluster_id') is not None:
             unit_ids = self._found_alf_datasets['clusters.metrics'].get('cluster_id').tolist()
         else:
             unit_ids = list(range(self._total_units))
@@ -106,16 +105,19 @@ class ALFSortingExtractor(SortingExtractor, ABC):
             raise ValueError(f'enter one of unit_id={self.get_unit_ids()}')
         cluster_sp_times = self._get_clusters_spike_times(unit_idx)
         if cluster_sp_times is None:
-            return None
+            return np.array([])
         max_frame = cluster_sp_times[-1]*self.get_sampling_frequency()
         min_frame = cluster_sp_times[0]*self.get_sampling_frequency()
         start_frame = min_frame if start_frame is None or start_frame < min_frame else start_frame
         end_frame = max_frame if end_frame is None or end_frame > max_frame else end_frame
         if start_frame > max_frame or end_frame < min_frame:
-            raise ValueError(f'enter start_frame to end_frame between {min_frame} and {max_frame}')
-        start_frame_id = np.argmin(np.abs(cluster_sp_times - (start_frame/self.get_sampling_frequency())))
-        end_frame_id = np.argmin(np.abs(cluster_sp_times - (end_frame/self.get_sampling_frequency())))
-        return np.array(cluster_sp_times)[start_frame_id:end_frame_id]
+            raise ValueError(f'Use start_frame to end_frame between {min_frame} and {max_frame}')
+        # start_frame_id = np.argmin(np.abs(cluster_sp_times - (start_frame/self.get_sampling_frequency())))
+        # end_frame_id = np.argmin(np.abs(cluster_sp_times - (end_frame/self.get_sampling_frequency())))
+        cluster_sp_frames = (cluster_sp_times * self.get_sampling_frequency()).astype('int64')
+        frame_idx = np.where((cluster_sp_frames >= start_frame) &
+                            (cluster_sp_frames < end_frame))
+        return cluster_sp_frames[frame_idx]
 
     @staticmethod
     def write_sorting(sorting, save_path):
@@ -124,9 +126,7 @@ class ALFSortingExtractor(SortingExtractor, ABC):
         SortingExtractors to use your new SortingExtractor to convert their sorted data into your
         sorting file format.
         '''
-        if not HAVE_PANDAS:
-            raise Exception('this extractors requires Pandas package'
-                            'install as "pip install pandas" and then re-run')
+        assert HAVE_PANDAS, ALFSortingExtractor.installation_mesg
         # write cluster properties as clusters.<property_name>.npy
         save_path = Path(save_path)
         csv_property_names = ['cluster_id', 'cluster_id.1', 'num_spikes', 'firing_rate',
