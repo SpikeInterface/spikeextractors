@@ -9,7 +9,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     extractor_name = 'SpikeGLXRecordingExtractor'
     has_default_locations = True
     installed = True  # check at class level if installed or not
-    is_writable = True
+    is_writable = False
     mode = 'file'
     installation_mesg = ""  # error message when not installed
 
@@ -124,18 +124,6 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         ttl_states = np.array([1] * len(rising) + [-1] * len(falling))
         sort_idxs = np.argsort(ttl_frames)
         return ttl_frames[sort_idxs], ttl_states[sort_idxs]
-
-    @staticmethod
-    def write_recording(recording, save_path, dtype=None, transpose=False):
-        save_path = Path(save_path)
-        if dtype is None:
-            dtype = np.float32
-        if not transpose:
-            with save_path.open('wb') as f:
-                np.transpose(np.array(recording.get_traces(), dtype=dtype)).tofile(f)
-        elif transpose:
-            with save_path.open('wb') as f:
-                np.array(recording.get_traces(), dtype=dtype).tofile(f)
 
 
 def _parse_spikeglx_metafile(metafile):
