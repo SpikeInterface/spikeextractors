@@ -129,17 +129,6 @@ def list_get(l, idx, default):
         return default
 
 
-def fill_kwargs_from_defaults(defaults: dict, values: dict = None):
-    kwargs = {}
-    if values is None:
-        for default_property, default_value in defaults.items():
-            kwargs.update({default_property: default_value})
-    else:
-        for default_property, default_value in defaults.items():
-            kwargs.update({default_property: values.get(default_property, default_value)})
-    return kwargs
-
-
 class NwbRecordingExtractor(se.RecordingExtractor):
     extractor_name = 'NwbRecording'
     has_default_locations = True
@@ -443,8 +432,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         electrodes (id, x, y, z, imp, loccation, filtering, group_name),
         then the metadata will override their default values.
 
-        Setting 'my_name' to 'group' is not supported as the linking to nwbfile.electrode_groups is handled
-        automatically; please specify the string 'group_name' in this case.
+        Setting 'my_name' to metadata field 'group' is not supported as the linking to
+        nwbfile.electrode_groups is handled automatically; please specify the string 'group_name' in this case.
 
         If no group information is passed via metadata, automatic linking to existing electrode groups,
         possibly including the default, will occur.
@@ -480,6 +469,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         assert all([isinstance(x, dict) and set(x.keys()) == set(['name', 'description', 'data'])
                     and isinstance(x['data'], list) for x in metadata['Ecephys']['Electrodes']]), \
             "Expected metadata['Ecephys']['Electrodes'] to be a list of dictionaries!"
+        assert all([x['name'] != 'group' for x in metadata['Ecephys']['Electrodes']]), \
+            "Passing metadata field 'group' is depricated; pass group_name instead!"
 
         if nwbfile.electrodes is None:
             nwb_elec_ids = []
@@ -530,7 +521,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                 group_name=group_name
                             )
                         )
-                    elif metadata_column['name'] != 'group':
+                    else:
                         if metadata_column['name'] in defaults:
                             electrode_kwargs.update({
                                 metadata_column['name']: list_get(metadata_column['data'], j,
