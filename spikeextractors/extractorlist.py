@@ -9,8 +9,8 @@ from .extractors.klustaextractors.klustaextractors import KlustaSortingExtractor
 from .extractors.kilosortextractors.kilosortextractors import KiloSortSortingExtractor, KiloSortRecordingExtractor
 from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor, NumpySortingExtractor
 from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor, NwbSortingExtractor
-from .extractors.maxonerecordingextractor import MaxOneRecordingExtractor
-from .extractors.mea1krecordingextractor import Mea1kRecordingExtractor
+from .extractors.maxoneextractors import MaxOneRecordingExtractor, MaxOneSortingExtractor
+from .extractors.mea1kextractors import Mea1kRecordingExtractor, Mea1kSortingExtractor
 from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
 from .extractors.phyextractors.phyextractors import PhyRecordingExtractor, PhySortingExtractor
 from .extractors.bindatrecordingextractor.bindatrecordingextractor import BinDatRecordingExtractor
@@ -29,7 +29,7 @@ from .extractors.waveclussortingextractor import WaveClusSortingExtractor
 from .extractors.yassextractors import YassSortingExtractor
 from .extractors.combinatosortingextractor import CombinatoSortingExtractor
 from .extractors.alfsortingextractor import ALFSortingExtractor
-
+from .extractors.cedextractors import CEDRecordingExtractor
 
 recording_extractor_full_list = [
     MdaRecordingExtractor,
@@ -51,6 +51,7 @@ recording_extractor_full_list = [
     SHYBRIDRecordingExtractor,
     NIXIORecordingExtractor,
     NeuroscopeRecordingExtractor,
+    CEDRecordingExtractor,
     
     # neo based
     PlexonRecordingExtractor,
@@ -73,6 +74,8 @@ sorting_extractor_full_list = [
     PhySortingExtractor,
     SpykingCircusSortingExtractor,
     TridesclousSortingExtractor,
+    Mea1kSortingExtractor,
+    MaxOneSortingExtractor,
     NpzSortingExtractor,
     SHYBRIDSortingExtractor,
     NIXIOSortingExtractor,

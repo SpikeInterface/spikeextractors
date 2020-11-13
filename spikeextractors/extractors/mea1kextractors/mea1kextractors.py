@@ -1,7 +1,7 @@
-from spikeextractors import RecordingExtractor
+from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
-from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args, check_valid_unit_id
 
 try:
     import h5py
@@ -80,6 +80,12 @@ class Mea1kRecordingExtractor(RecordingExtractor):
         self._num_channels = len(self._channel_ids)
         self._num_frames = self._signals.shape[1]
 
+        # This happens when only spikes are recorded
+        if self._num_frames == 0:
+            find_max_frame = True
+        else:
+            find_max_frame = False
+
         for i_ch, ch, el in zip(routed_idxs, self._channel_ids, self._electrode_ids):
             self.set_channel_locations([self._mapping['x'][i_ch], self._mapping['y'][i_ch]], ch)
             self.set_channel_property(ch, 'electrode', el)
@@ -93,6 +99,9 @@ class Mea1kRecordingExtractor(RecordingExtractor):
                     if ch not in self._channel_ids:
                         spike_mask[i] = False
                 spikes_channels = np.array(spikes['channel'])[spike_mask]
+
+                if find_max_frame:
+                    self._num_frames = np.ptp(spikes['frameno'])
 
                 # load activity as property
                 activity_channels, counts = np.unique(spikes_channels, return_counts=True)
@@ -171,3 +180,89 @@ class Mea1kRecordingExtractor(RecordingExtractor):
             # save traces
             recording.write_to_h5_dataset_format('/ephys/signal', file_handle=f, time_axis=1,
                                                  chunk_size=chunk_size, chunk_mb=chunk_mb)
+
+
+class Mea1kSortingExtractor(SortingExtractor):
+    extractor_name = 'Mea1kSorting'
+    installed = HAVE_MEA1k  # check at class level if installed or not
+    is_writable = False
+    mode = 'file'
+    installation_mesg = "To use the Mea1kSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
+
+    def __init__(self, file_path):
+        assert HAVE_MEA1k, self.installation_mesg
+        SortingExtractor.__init__(self)
+        self._file_path = file_path
+        self._filehandle = None
+        self._mapping = None
+        self._version = None
+        self._initialize()
+        self._kwargs = {'file_path': str(Path(file_path).absolute())}
+
+    def _initialize(self):
+        self._filehandle = h5py.File(self._file_path, mode='r')
+        try:
+            self._version = self._filehandle['version'][0].decode()
+        except:
+            try:
+                self._version = self._filehandle['chipinformation']['software_version'][0].decode()
+            except:
+                self._version = '20161003'
+
+        print(f"Chip version: {self._version}")
+        self._lsb = 1
+        if int(self._version) == 20160704:
+            assert 'mapping' in self._filehandle.keys(), "Could not load 'mapping' field"
+            self._mapping = self._filehandle['mapping']
+            self._signals = self._filehandle.get('sig')
+            self._sampling_frequency = 20000
+        elif int(self._version) >= 20161003:
+            self._mapping = self._filehandle['ephys']['mapping']
+            self._sampling_frequency = float(self._filehandle['ephys']['frame_rate'][()])
+            self._signals = self._filehandle['ephys']['signal']
+        else:
+            raise NotImplementedError(f"Version {self._version} of the Mea1k chip is not supported")
+
+        self._first_frame = 0
+        try:
+            bitvals = self._signals[-2:, 0]
+            self._first_frame = bitvals[1] << 16 | bitvals[0]
+        except:
+            print("Couldn't find first frame information. Setting to 0.")
+        channels = np.array(self._mapping['channel'])
+        electrodes = np.array(self._mapping['electrode'])
+        # remove unused channels
+        routed_idxs = np.where(electrodes > -1)[0]
+        self._channel_ids = list(channels[routed_idxs])
+        self._electrode_ids = list(electrodes[routed_idxs])
+
+        self._spiketrains = []
+        self._unit_ids = []
+
+        try:
+            spikes = self._filehandle['proc0']['spikeTimes']
+            for u in self._channel_ids:
+                spiketrain_idx = np.where(spikes['channel'] == u)[0]
+                if len(spiketrain_idx) > 0:
+                    self._unit_ids.append(u)
+                    spiketrain = spikes['frameno'][spiketrain_idx] - self._first_frame
+                    idxs_greater_0 = np.where(spiketrain >= 0)[0]
+                    self._spiketrains.append(spiketrain[idxs_greater_0])
+                    self.set_unit_spike_features(u, 'amplitude', spikes['amplitude'][spiketrain_idx][idxs_greater_0])
+        except:
+            raise AttributeError("Spike times information are missing from the .h5 file")
+
+    def get_unit_ids(self):
+        return self._unit_ids
+
+    @check_valid_unit_id
+    def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
+        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
+        if start_frame is None:
+            start_frame = 0
+        if end_frame is None:
+            end_frame = np.Inf
+        unit_idx = self._unit_ids.index(unit_id)
+        spiketrain = self._spiketrains[unit_idx]
+        inds = np.where((start_frame <= spiketrain) & (spiketrain < end_frame))
+        return spiketrain[inds]
