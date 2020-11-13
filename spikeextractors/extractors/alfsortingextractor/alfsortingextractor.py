@@ -33,7 +33,7 @@ class ALFSortingExtractor(SortingExtractor):
             if 'spikes' in alf_dataset_name.stem or 'clusters' in alf_dataset_name.stem:
                 if 'npy' in alf_dataset_name.suffix:
                     self._found_alf_datasets.update({alf_dataset_name.stem: self._load_npy(alf_dataset_name)})
-                elif 'csv' in alf_dataset_name.suffix:
+                elif 'metrics' in alf_dataset_name.stem:
                     self._found_alf_datasets.update({alf_dataset_name.stem: pd.read_csv(alf_dataset_name)})
         # check existence of datasets:
         if not any([i in self._found_alf_datasets for i in self._required_alf_datasets]):
@@ -51,7 +51,6 @@ class ALFSortingExtractor(SortingExtractor):
                     self.set_units_property(unit_ids=self.get_unit_ids(),
                                             property_name=alf_dataset_name.split('.')[1],
                                             values=alf_dataset)
-                    print(alf_dataset_name)
                     if self._total_units == 0:
                         self._total_units = alf_dataset.shape[0]
         self._units_map = {i: j for i, j in zip(self.get_unit_ids(), list(range(self._total_units)))}
@@ -106,14 +105,12 @@ class ALFSortingExtractor(SortingExtractor):
         cluster_sp_times = self._get_clusters_spike_times(unit_idx)
         if cluster_sp_times is None:
             return np.array([])
-        max_frame = cluster_sp_times[-1]*self.get_sampling_frequency()
-        min_frame = cluster_sp_times[0]*self.get_sampling_frequency()
+        max_frame = np.ceil(cluster_sp_times[-1]*self.get_sampling_frequency()).astype('int64')
+        min_frame = np.floor(cluster_sp_times[0]*self.get_sampling_frequency()).astype('int64')
         start_frame = min_frame if start_frame is None or start_frame < min_frame else start_frame
         end_frame = max_frame if end_frame is None or end_frame > max_frame else end_frame
         if start_frame > max_frame or end_frame < min_frame:
             raise ValueError(f'Use start_frame to end_frame between {min_frame} and {max_frame}')
-        # start_frame_id = np.argmin(np.abs(cluster_sp_times - (start_frame/self.get_sampling_frequency())))
-        # end_frame_id = np.argmin(np.abs(cluster_sp_times - (end_frame/self.get_sampling_frequency())))
         cluster_sp_frames = (cluster_sp_times * self.get_sampling_frequency()).astype('int64')
         frame_idx = np.where((cluster_sp_frames >= start_frame) &
                             (cluster_sp_frames < end_frame))
