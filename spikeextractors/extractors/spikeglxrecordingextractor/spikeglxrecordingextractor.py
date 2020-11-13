@@ -11,7 +11,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     installed = True  # check at class level if installed or not
     is_writable = False
     mode = 'file'
-    installation_mesg = ""  # error message when not installed
+    installation_mesg = "To use the SpikeGLXRecordingExtractor run:\n\n pip install mtscomp\n\n"  # error message when not installed
 
     def __init__(self, file_path, dtype='int16'):
         RecordingExtractor.__init__(self)
@@ -49,7 +49,15 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         self._meta = meta
 
         # Traces in 16-bit format
-        self._raw = makeMemMapRaw(self._npxfile, meta)  # [chanList, firstSamp:lastSamp+1]
+        if '.cbin' in self._npxfile.name: # compressed binary format used by IBL
+            try:
+                import mtscomp
+            except:
+                raise Exception(self.installation_mesg)
+            self._raw = mtscomp.Reader()
+            self._raw.open(self._npxfile, self._npxfile.with_suffix('.ch'))
+        else:
+            self._raw = makeMemMapRaw(self._npxfile, meta)  # [chanList, firstSamp:lastSamp+1]
 
         # sampling rate and ap channels
         self._sampling_frequency = SampRate(meta)
