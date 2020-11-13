@@ -13,19 +13,27 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     mode = 'file'
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, file_path, x_pitch=21, y_pitch=20):
+    def __init__(self, file_path, dtype='int16'):
         RecordingExtractor.__init__(self)
         self._npxfile = Path(file_path)
         self._basepath = self._npxfile.parents[0]
 
+        assert dtype in ['int16', 'float'], "'dtype' can be either 'int16' or 'float'"
+        self._dtype = dtype
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
+        assert 'imec0.ap' in self._npxfile.name or  'imec0.lf' in self._npxfile.name or 'nidq' in self._npxfile.name, \
+            "'file_path' can be an imec0.ap, imec.lf, or nidq file"
         assert 'bin' in self._npxfile.name, "The 'npx_file should be either the 'ap' or the 'lf' bin file."
-        if 'ap' in str(self._npxfile):
+        if 'imec0.ap' in str(self._npxfile):
             lfp = False
+            ap = True
             self.is_filtered = True
-        else:
-            assert 'lf' in self._npxfile.name, "The 'npx_file should be either the 'ap' or the 'lf' file."
+        elif 'imec0.lf' in str(self._npxfile):
             lfp = True
+            ap = False
+        else:
+            lfp = False
+            ap = False
         aux = self._npxfile.stem.split('.')[-1]
         if aux == 'nidq':
             self._ftype = aux
@@ -45,20 +53,23 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # sampling rate and ap channels
         self._sampling_frequency = SampRate(meta)
-        tot_chan, ap_chan, lfp_chan, locations = _parse_spikeglx_metafile(self._metafile, x_pitch, y_pitch)
-        if not lfp:
+        tot_chan, ap_chan, lfp_chan, locations = _parse_spikeglx_metafile(self._metafile)
+        if ap:
             if ap_chan < tot_chan:
                 self._channels = list(range(int(ap_chan)))
                 self._timeseries = self._raw[0:ap_chan, :]
             else:
                 self._channels = list(range(int(tot_chan)))  # OriginalChans(meta).tolist()
-        else:
+        elif lfp:
             if lfp_chan < tot_chan:
                 self._channels = list(range(int(lfp_chan)))
                 self._timeseries = self._raw[0:lfp_chan, :]
             else:
                 self._channels = list(range(int(tot_chan)))
-
+        else:
+            # nidq
+            self._channels = list(range(int(tot_chan)))
+            self._timeseries = self._raw
 
         # locations
         if len(locations) > 0:
@@ -72,7 +83,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # set gains - convert from int16 to uVolt
         self.set_channel_gains(self._channels, gains*1e6)
-        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'x_pitch': x_pitch, 'y_pitch': y_pitch}
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'dtype': dtype}
 
     def get_channel_ids(self):
         return self._channels
@@ -84,10 +95,18 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, dtype=None):
         channel_idxs = [self._channels.index(ch) for ch in channel_ids]
         recordings = self._timeseries[channel_idxs, start_frame:end_frame]
-        return recordings
+        if dtype is not None:
+            assert dtype in ['int16', 'float'], "'dtype' can be either 'int16' or 'float'"
+        else:
+            dtype = self._dtype
+        if dtype == 'int16':
+            return recordings
+        else:
+            gains = np.array(self.get_channel_gains())[channel_idxs]
+            return recordings * gains[:, None]
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
@@ -119,13 +138,13 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
                 np.array(recording.get_traces(), dtype=dtype).tofile(f)
 
 
-def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch):
+def _parse_spikeglx_metafile(metafile):
     tot_channels = None
     ap_channels = None
-    if x_pitch is None:
-        x_pitch = 21
-    if y_pitch is None:
-        y_pitch = 20
+    lfp_channels = None
+    x_pitch = 21
+    y_pitch = 20
+
     locations = []
     with Path(metafile).open() as f:
         for line in f.readlines():
