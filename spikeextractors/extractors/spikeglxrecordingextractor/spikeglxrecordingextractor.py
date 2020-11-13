@@ -41,7 +41,12 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         self._meta = meta
 
         # Traces in 16-bit format
-        self._raw = makeMemMapRaw(self._npxfile, meta)  # [chanList, firstSamp:lastSamp+1]
+        if '.cbin' in self._npxfile.name: # compressed binary format used by IBL
+            import mtscomp
+            self._raw = mtscomp.Reader()
+            self._raw.open(self._npxfile, self._npxfile.with_suffix('.ch'))
+        else:
+            self._raw = makeMemMapRaw(self._npxfile, meta)  # [chanList, firstSamp:lastSamp+1]
 
         # sampling rate and ap channels
         self._sampling_frequency = SampRate(meta)
