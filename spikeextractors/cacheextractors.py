@@ -10,7 +10,8 @@ import shutil
 
 
 class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
-    def __init__(self, recording, chunk_size=None, chunk_mb=500, save_path=None, verbose=False):
+    def __init__(self, recording, chunk_size=None, chunk_mb=500, save_path=None, n_jobs=1, joblib_backend='loky',
+                 verbose=False):
         RecordingExtractor.__init__(self)  # init tmp folder before constructing BinDatRecordingExtractor
         tmp_folder = self.get_tmp_folder()
         self._recording = recording
@@ -27,7 +28,8 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
             self._tmp_file = save_path
         self._dtype = recording.get_dtype()
         recording.write_to_binary_dat_format(save_path=self._tmp_file, dtype=self._dtype, chunk_size=chunk_size,
-                                             chunk_mb=chunk_mb, verbose=verbose)
+                                             chunk_mb=chunk_mb, n_jobs=n_jobs, joblib_backend=joblib_backend,
+                                             verbose=verbose)
         # keep track of filter status when dumping
         self.is_filtered = self._recording.is_filtered
         BinDatRecordingExtractor.__init__(self, self._tmp_file, numchan=recording.get_num_channels(),
