@@ -28,6 +28,7 @@ from .extractors.neuroscopeextractors import NeuroscopeRecordingExtractor,Neuros
 from .extractors.waveclussortingextractor import WaveClusSortingExtractor
 from .extractors.yassextractors import YassSortingExtractor
 from .extractors.combinatosortingextractor import CombinatoSortingExtractor
+from .extractors.alfsortingextractor import ALFSortingExtractor
 from .extractors.cedextractors import CEDRecordingExtractor
 
 recording_extractor_full_list = [
@@ -83,7 +84,7 @@ sorting_extractor_full_list = [
     WaveClusSortingExtractor,
     YassSortingExtractor,
     CombinatoSortingExtractor,
-
+    ALFSortingExtractor,
     # neo based
     PlexonSortingExtractor,
     NeuralynxSortingExtractor,

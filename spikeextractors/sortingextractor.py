@@ -641,6 +641,19 @@ class SortingExtractor(ABC, BaseExtractor):
         return SubSortingExtractor(parent_sorting=self, start_frame=start_frame,
                                    end_frame=end_frame)
 
+    def copy_epochs(self, sorting):
+        '''Copy epochs from another sorting extractor to the current
+        sorting extractor.
+
+        Parameters
+        ----------
+        sorting: SortingExtractor
+            The sorting extractor from which the epochs will be copied
+        '''
+        for epoch_name in sorting.get_epoch_names():
+            epoch_info = sorting.get_epoch_info(epoch_name)
+            self.add_epoch(epoch_name, epoch_info["start_frame"], epoch_info["end_frame"])
+
     def get_sub_extractors_by_property(self, property_name, return_property_list=False):
         '''Returns a list of SubSortingExtractors from this SortingExtractor based on the given
         property_name (e.g. group)

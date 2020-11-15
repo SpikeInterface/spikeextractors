@@ -634,6 +634,19 @@ class RecordingExtractor(ABC, BaseExtractor):
         return SubRecordingExtractor(parent_recording=self, start_frame=start_frame,
                                      end_frame=end_frame)
 
+    def copy_epochs(self, recording):
+        '''Copy epochs from another recording extractor to the current
+        recording extractor.
+
+        Parameters
+        ----------
+        recording: RecordingExtractor
+            The recording extractor from which the epochs will be copied
+        '''
+        for epoch_name in recording.get_epoch_names():
+            epoch_info = recording.get_epoch_info(epoch_name)
+            self.add_epoch(epoch_name, epoch_info["start_frame"], epoch_info["end_frame"])
+
     def load_probe_file(self, probe_file, channel_map=None, channel_groups=None, verbose=False):
         '''This function returns a SubRecordingExtractor that contains information from the given
         probe file (channel locations, groups, etc.) If a .prb file is given, then 'location' and 'group'

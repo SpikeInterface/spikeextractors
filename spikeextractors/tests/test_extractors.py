@@ -53,6 +53,12 @@ class TestExtractors(unittest.TestCase):
         SX2.set_unit_property(unit_id=4, property_name='stability', value=80)
         SX2.set_unit_spike_features(unit_id=3, feature_name='widths', value=np.asarray([3] * spike_times2[0]))
         RX.set_channel_locations([0, 0], channel_ids=0)
+        RX.add_epoch("epoch1", 0, 10)
+        RX.add_epoch("epoch2", 10, 20)
+        SX.add_epoch("epoch1", 0, 10)
+        SX.add_epoch("epoch2", 10, 20)
+        RX2.copy_epochs(RX)
+        SX2.copy_epochs(SX)
         for i, unit_id in enumerate(SX2.get_unit_ids()):
             SX2.set_unit_property(unit_id=unit_id, property_name='shared_unit_prop', value=i)
             SX2.set_unit_spike_features(unit_id=unit_id, feature_name='shared_unit_feature',
@@ -81,7 +87,8 @@ class TestExtractors(unittest.TestCase):
             features3=features3,
             unit_prop=80,
             channel_prop=(0, 0),
-            ttls=ttls
+            ttls=ttls,
+            epochs_info=((0, 10), (10, 20))
         )
 
         return (RX, RX2, RX3, SX, SX2, SX3, example_info)
@@ -106,7 +113,6 @@ class TestExtractors(unittest.TestCase):
         self.assertTrue(self.SX2.get_shared_unit_spike_feature_names(), ['shared_unit_feature'])
         self.assertTrue(self.SX2.get_unit_spike_feature_names(3), ['shared_channel_prop', 'widths'])
 
-        print(self.SX3.get_unit_spike_features(0, 'dummy'))
         self.assertTrue(np.array_equal(self.SX3.get_unit_spike_features(0, 'dummy'), self.example_info['features3']))
         self.assertTrue(np.array_equal(self.SX3.get_unit_spike_features(0, 'dummy', start_frame=4),
                                        self.example_info['features3'][1:]))
@@ -124,6 +130,16 @@ class TestExtractors(unittest.TestCase):
                                        self.SX3.get_unit_spike_features(0, 'dummy')))
         self.assertTrue(np.array_equal(sub_extractor_partial.get_unit_spike_features(0, 'dummy'),
                                        self.SX3.get_unit_spike_features(0, 'dummy', start_frame=20, end_frame=46)))
+
+        self.assertEqual(tuple(self.RX.get_epoch_info("epoch1").values()), self.example_info['epochs_info'][0])
+        self.assertEqual(tuple(self.RX.get_epoch_info("epoch2").values()), self.example_info['epochs_info'][1])
+        self.assertEqual(tuple(self.SX.get_epoch_info("epoch1").values()), self.example_info['epochs_info'][0])
+        self.assertEqual(tuple(self.SX.get_epoch_info("epoch2").values()), self.example_info['epochs_info'][1])
+
+        self.assertEqual(tuple(self.RX.get_epoch_info("epoch1").values()), tuple(self.RX2.get_epoch_info("epoch1").values()))
+        self.assertEqual(tuple(self.RX.get_epoch_info("epoch2").values()), tuple(self.RX2.get_epoch_info("epoch2").values()))
+        self.assertEqual(tuple(self.SX.get_epoch_info("epoch1").values()), tuple(self.SX2.get_epoch_info("epoch1").values()))
+        self.assertEqual(tuple(self.SX.get_epoch_info("epoch2").values()), tuple(self.SX2.get_epoch_info("epoch2").values()))
 
         check_recording_return_types(self.RX)
 
