@@ -413,9 +413,6 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
 
         assert len(res_files) > 0 or len(clu_files) > 0, \
             'No .res or .clu files found in the folder_path.'
-        # assert len(res_files) > 1 and len(clu_files) > 1, \
-        #     'Single .res and .clu pairs found in the folder_path. ' \
-        #     'For single .res and .clu files, use the NeuroscopeSortingExtractor instead.'
         assert len(res_files) == len(clu_files)
 
         res_ids = [int(x.suffix[1:]) for x in res_files]
