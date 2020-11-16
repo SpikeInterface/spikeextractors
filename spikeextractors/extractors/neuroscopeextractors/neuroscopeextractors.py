@@ -5,6 +5,7 @@ from pathlib import Path
 from spikeextractors.extraction_tools import check_valid_unit_id, get_sub_extractors_by_property
 from typing import Union
 import os
+import re
 
 try:
     from lxml import etree as et
@@ -403,11 +404,11 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
 
         res_files = [f for f in folder_path.iterdir() if f.is_file()
                      and '.res' in f.suffixes 
-                     re.search(r'\d+$', f.name) is not None
+                     and re.search(r'\d+$', f.name) is not None
                      and len(f.suffixes) == 2]
         clu_files = [f for f in folder_path.iterdir() if f.is_file()
                      and '.clu' in f.suffixes 
-                     re.search(r'\d+$', f.name) is not None
+                     and re.search(r'\d+$', f.name) is not None
                      and len(f.suffixes) == 2]
 
         assert len(res_files) > 0 or len(clu_files) > 0, \
