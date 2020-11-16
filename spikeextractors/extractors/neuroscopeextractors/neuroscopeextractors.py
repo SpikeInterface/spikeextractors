@@ -203,7 +203,6 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                          and len(f.suffixes) == 1]
             clu_files = [f for f in folder_path.iterdir() if f.is_file()
                          and '.clu' in f.suffixes 
-                         and '.temp' not in f.suffixes
                          and not f.name.endswith('~')
                          and len(f.suffixes) == 1]
 
