@@ -403,8 +403,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
 
         res_files = [f for f in folder_path.iterdir() if f.is_file()
                      and '.res' in f.suffixes 
-                     and '.temp' not in f.suffixes
-                     and not f.name.endswith('~')
+                     re.search(r'\d+$', f.name) is not None
                      and len(f.suffixes) == 2]
         clu_files = [f for f in folder_path.iterdir() if f.is_file()
                      and '.clu' in f.suffixes 
