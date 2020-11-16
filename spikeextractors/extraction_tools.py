@@ -367,16 +367,13 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
             chunks_loop = range(n_chunk)
         if save_path is not None:
             if n_jobs == 1:
-                with save_path.open('wb') as f:
-                    for i in chunks_loop:
-                        start_frame = chunks[i]['istart']
-                        end_frame = chunks[i]['iend']
-                        traces = recording.get_traces(start_frame=start_frame, end_frame=end_frame)
-                        if dtype is not None:
-                            traces = traces.astype(dtype)
-                        if time_axis == 0:
-                            traces = traces.T
-                        f.write(traces.tobytes())
+                if time_axis == 0:
+                    shape = (num_frames, num_channels)
+                else:
+                    shape = (num_channels, num_frames)
+                rec_memmap = np.memmap(str(save_path), dtype=dtype, mode='w+', shape=shape)
+                for i in chunks_loop:
+                    _write_dat_one_chunk(i, rec_arg, chunks, rec_memmap, dtype, time_axis, verbose=False)
             else:
                 if time_axis == 0:
                     shape = (num_frames, num_channels)
@@ -387,8 +384,6 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
                 Parallel(n_jobs=n_jobs, backend=joblib_backend)(
                     delayed(_write_dat_one_chunk)(i, rec_arg, chunks, rec_memmap, dtype, time_axis, verbose,)
                     for i in chunks_loop)
-
-
         else:
             for i in chunks_loop:
                 start_frame = chunks[i]['istart']
