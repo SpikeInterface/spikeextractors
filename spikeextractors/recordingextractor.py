@@ -694,7 +694,7 @@ class RecordingExtractor(ABC, BaseExtractor):
                            graph=graph, geometry=geometry, verbose=verbose)
 
     def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500,
-                                   verbose=False):
+                                   n_jobs=1, joblib_backend='loky', verbose=False):
         '''Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
@@ -712,11 +712,15 @@ class RecordingExtractor(ABC, BaseExtractor):
             If 'auto' the file is saved in chunks of ~ 500Mb
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
+        n_jobs: int
+            Number of jobs to use (Default 1)
+        joblib_backend: str
+            Joblib backend for parallel processing ('loky', 'threading', 'multiprocessing')
         verbose: bool
             If True, output is verbose (when chunks are used)
         '''
         write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size,
-                                   chunk_mb=chunk_mb, verbose=verbose)
+                                   chunk_mb=chunk_mb, n_jobs=n_jobs, joblib_backend=joblib_backend, verbose=verbose)
 
     def write_to_h5_dataset_format(self, dataset_path, save_path=None, file_handle=None,
                                    time_axis=0, dtype=None, chunk_size=None, chunk_mb=500, verbose=False):

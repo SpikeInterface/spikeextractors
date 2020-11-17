@@ -56,7 +56,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         return recordings
 
     def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500,
-                                   verbose=False):
+                                   n_jobs=1, joblib_backend='loky', verbose=False):
         '''Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
@@ -74,6 +74,10 @@ class MdaRecordingExtractor(RecordingExtractor):
             If 'auto' the file is saved in chunks of ~ 500Mb
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
+        n_jobs: int
+            Number of jobs to use (Default 1)
+        joblib_backend: str
+            Joblib backend for parallel processing ('loky', 'threading', 'multiprocessing')
         verbose: bool
             If True, output is verbose
         '''
@@ -88,10 +92,12 @@ class MdaRecordingExtractor(RecordingExtractor):
                 print('Error occurred while copying:', e)
                 print('Writing to binary')
                 write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
-                                           chunk_size=chunk_size, chunk_mb=chunk_mb, verbose=verbose)
+                                           chunk_size=chunk_size, chunk_mb=chunk_mb, n_jobs=n_jobs,
+                                           joblib_backend=joblib_backend, verbose=verbose)
         else:
             write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
-                                       chunk_size=chunk_size, chunk_mb=chunk_mb, verbose=verbose)
+                                       chunk_size=chunk_size, chunk_mb=chunk_mb, n_jobs=n_jobs,
+                                       joblib_backend=joblib_backend,  verbose=verbose)
 
     @staticmethod
     def write_recording(recording, save_path, params=dict(), raw_fname='raw.mda', params_fname='params.json',
