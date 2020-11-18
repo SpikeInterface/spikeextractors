@@ -18,7 +18,7 @@ class Mea1kRecordingExtractor(RecordingExtractor):
     mode = 'file'
     installation_mesg = "To use the Mea1kRecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
-    def __init__(self, file_path):
+    def __init__(self, file_path, load_spikes=True):
         assert HAVE_MEA1k, self.installation_mesg
         RecordingExtractor.__init__(self)
         self._file_path = file_path
@@ -29,8 +29,10 @@ class Mea1kRecordingExtractor(RecordingExtractor):
         self._mapping = None
         self._signals = None
         self._version = None
+        self._load_spikes = load_spikes
         self._initialize()
-        self._kwargs = {'file_path': str(Path(file_path).absolute())}
+        self._kwargs = {'file_path': str(Path(file_path).absolute()),
+                        'load_spikes': load_spikes}
 
     def _initialize(self):
         self._filehandle = h5py.File(self._file_path, mode='r')
@@ -42,7 +44,6 @@ class Mea1kRecordingExtractor(RecordingExtractor):
             except:
                 self._version = '20161003'
 
-        print(f"Chip version: {self._version}")
         self._lsb = 1
         if int(self._version) == 20160704:
             self._signals = self._filehandle.get('sig')
@@ -90,30 +91,34 @@ class Mea1kRecordingExtractor(RecordingExtractor):
             self.set_channel_locations([self._mapping['x'][i_ch], self._mapping['y'][i_ch]], ch)
             self.set_channel_property(ch, 'electrode', el)
 
-        if 'proc0' in self._filehandle:
-            if 'spikeTimes' in self._filehandle['proc0']:
-                spikes = self._filehandle['proc0']['spikeTimes']
+        if self._load_spikes:
+            if 'proc0' in self._filehandle:
+                if 'spikeTimes' in self._filehandle['proc0']:
+                    spikes = self._filehandle['proc0']['spikeTimes']
 
-                spike_mask = [True] * len(spikes)
-                for i, ch in enumerate(spikes['channel']):
-                    if ch not in self._channel_ids:
-                        spike_mask[i] = False
-                spikes_channels = np.array(spikes['channel'])[spike_mask]
+                    spike_mask = [True] * len(spikes)
+                    for i, ch in enumerate(spikes['channel']):
+                        if ch not in self._channel_ids:
+                            spike_mask[i] = False
+                    spikes_channels = np.array(spikes['channel'])[spike_mask]
 
-                if find_max_frame:
-                    self._num_frames = np.ptp(spikes['frameno'])
+                    if find_max_frame:
+                        self._num_frames = np.ptp(spikes['frameno'])
 
-                # load activity as property
-                activity_channels, counts = np.unique(spikes_channels, return_counts=True)
-                # transform to spike rate
-                duration = float(self._num_frames) / self._fs
-                counts = counts.astype(float) / duration
-                activity_channels = list(activity_channels)
-                for ch in self.get_channel_ids():
-                    if ch in activity_channels:
-                        self.set_channel_property(ch, 'activity', counts[activity_channels.index(ch)])
-                    else:
-                        self.set_channel_property(ch, 'activity', 0)
+                    # load activity as property
+                    activity_channels, counts = np.unique(spikes_channels, return_counts=True)
+                    # transform to spike rate
+                    duration = float(self._num_frames) / self._fs
+                    counts = counts.astype(float) / duration
+                    activity_channels = list(activity_channels)
+                    for ch in self.get_channel_ids():
+                        if ch in activity_channels:
+                            self.set_channel_property(ch, 'spike_rate', counts[activity_channels.index(ch)])
+                            spike_amplitudes = spikes[np.where(spikes['channel'] == ch)]['amplitude']
+                            self.set_channel_property(ch, 'spike_amplitude', np.median(spike_amplitudes))
+                        else:
+                            self.set_channel_property(ch, 'spike_rate', 0)
+                            self.set_channel_property(ch, 'spike_amplitude', 0)
 
     def get_channel_ids(self):
         return list(self._channel_ids)
