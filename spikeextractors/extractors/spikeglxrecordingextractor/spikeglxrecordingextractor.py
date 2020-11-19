@@ -13,7 +13,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     mode = 'file'
     installation_mesg = "To use the SpikeGLXRecordingExtractor run:\n\n pip install mtscomp\n\n"  # error message when not installed
 
-    def __init__(self, file_path, dtype='int16'):
+    def __init__(self, file_path: str, dtype: str = 'int16'):
         RecordingExtractor.__init__(self)
         self._npxfile = Path(file_path)
         self._basepath = self._npxfile.parents[0]
