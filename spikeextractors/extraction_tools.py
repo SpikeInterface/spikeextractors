@@ -886,7 +886,7 @@ def cast_start_end_frame(start_frame, end_frame):
         end_frame = end_frame
     else:
         raise ValueError("end_frame must be an int, float (not infinity), or None")
-    return start_frame, end_frame
+    return start_frame.astype('int64'), end_frame.astype('int64')
 
 
 def divide_recording_into_time_chunks(num_frames, chunk_size, padding_size):
