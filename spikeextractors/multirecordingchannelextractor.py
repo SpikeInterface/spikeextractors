@@ -18,7 +18,7 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         # Test if all recording extractors have same sampling frequency
         for i, recording in enumerate(recordings[1:]):
             sampling_frequency = recording.get_sampling_frequency()
-            if (self._sampling_frequency != sampling_frequency):
+            if self._sampling_frequency != sampling_frequency:
                 raise ValueError("Inconsistent sampling frequency between extractor 0 and extractor " + str(i + 1))
 
         # set channel map for new channel ids to old channel ids
@@ -35,21 +35,21 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         # set group information for channels if available
         if groups is not None:
             if len(groups) == len(recordings):
+                group_values = []
                 for i, group in enumerate(groups):
                     recording = recordings[i]
                     channel_ids = recording.get_channel_ids()
-                    recording.set_channel_groups(groups=np.repeat(group, len(channel_ids)), channel_ids=channel_ids)
+                    group_values += [group] * len(channel_ids)
+                self.set_channel_groups(groups=group_values)
             else:
                 raise ValueError("recordings and groups must have same length")
 
         # set channel locations
-        self._key_properties['locations'] = np.array([])
+        locations = np.empty([0, 2])
         for i, recording in enumerate(recordings):
-            if i == 0:
-                self._key_properties['location'] = recording._key_properties['location']
-            else:
-                self._key_properties['location'] = np.vstack((self._key_properties['location'],
-                                                              recording._key_properties['location']))
+            locations = np.vstack((locations, recording.get_channel_locations()))
+        self.set_channel_locations(locations)
+
         self._kwargs = {'recordings': [rec.make_serialized_dict() for rec in recordings], 'groups': groups}
 
     @property
