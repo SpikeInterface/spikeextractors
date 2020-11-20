@@ -6,6 +6,7 @@ from .extraction_tools import load_probe_file, save_to_probe_file, write_to_bina
     write_to_h5_dataset_format, get_sub_extractors_by_property, cast_start_end_frame
 from .baseextractor import BaseExtractor
 
+
 class RecordingExtractor(ABC, BaseExtractor):
     '''A class that contains functions for extracting important information
     from recorded extracellular data. It is an abstract class so all
@@ -19,6 +20,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         BaseExtractor.__init__(self)
         self._key_properties = {'group': None, 'location': None}
         self.is_filtered = False
+        self._timestamps = None
 
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
@@ -116,8 +118,11 @@ class RecordingExtractor(ABC, BaseExtractor):
         time: float
             The corresponding time in seconds
         '''
-        # Default implementation
-        return np.round(frame / self.get_sampling_frequency(), 6)
+        if self._timestamps is not None:
+            return self._timestamps[frame]
+        else:
+            # Default implementation
+            return np.round(frame / self.get_sampling_frequency(), 6)
 
     def time_to_frame(self, time):
         '''This function converts a user-inputted time (in seconds) to a frame index.
@@ -132,8 +137,23 @@ class RecordingExtractor(ABC, BaseExtractor):
         frame: float
             The corresponding frame index
         '''
-        # Default implementation
-        return np.round(time * self.get_sampling_frequency()).astype('int64')
+        if self._timestamps is not None:
+            np.searchsorted(self._timestamps, time).astype('int64')
+        else:
+            # Default implementation
+            return np.round(time * self.get_sampling_frequency()).astype('int64')
+
+    def set_timestamps(self, timestamps):
+        ''' This function sets timestamps for the recording frames. This allow irregular sampling.
+
+        Parameters
+        ----------
+        timestamps: array-like
+            Array with time stamps for each frame
+        '''
+        assert len(timestamps) == self.get_num_frames(), "The length of 'timestamps' should be the same as " \
+                                                         "the number of frames'"
+        self._timestamps = timestamps
 
     def get_snippets(self, reference_frames, snippet_len, channel_ids=None):
         '''This function returns data snippets from the given channels that
