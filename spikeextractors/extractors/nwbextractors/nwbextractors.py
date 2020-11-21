@@ -583,7 +583,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None,
-                              buffer_mb: int = 500, timestamps: ArrayType = None):
+                              buffer_mb: int = 500, use_timestamps: bool = False):
         """
         Auxiliary static method for nwbextractor.
 
@@ -602,8 +602,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         buffer_mb: int (optional, defaults to 500MB)
             maximum amount of memory (in MB) to use per iteration of the
             DataChunkIterator (requires traces to be memmap objects)
-        timestamps: array-like
-            If provided, the timestamps are saved as the ElectricalSeries timestamps. (default=None)
+        use_timestamps: bool
+            If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
+            the sampling rate is used.
 
         Missing keys in an element of metadata['Ecephys']['ElectrodeGroup'] will be auto-populated with defaults
         whenever possible.
@@ -613,9 +614,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         assert buffer_mb > 10, "'buffer_mb' should be at least 10MB to ensure data can be chunked!"
         if not nwbfile.electrodes:
             se.NwbRecordingExtractor.add_electrodes(recording, nwbfile, metadata)
-        if timestamps is not None:
-            assert len(timestamps) == recording.get_num_frames(), "Number of 'timestamps' differs from number of " \
-                                                                  "'frames'"
 
         defaults = dict(
             name="ElectricalSeries",
@@ -680,14 +678,14 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     ),
                     compression='gzip'
                 )
-            if timestamps is not None:
+            if use_timestamps:
                 nwbfile.add_acquisition(
                     ElectricalSeries(
                         name=es_name,
                         data=ephys_data,
                         electrodes=electrode_table_region,
                         starting_time=recording.frame_to_time(0),
-                        timestamps=timestamps,
+                        timestamps=recording.frame_to_time(np.arange(recording.get_num_frames())),
                         conversion=scalar_conversion,
                         channel_conversion=channel_conversion,
                         comments='Generated from SpikeInterface::NwbRecordingExtractor',
@@ -750,7 +748,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def add_all_to_nwbfile(recording: se.RecordingExtractor, nwbfile=None,
-                           metadata: dict = None):
+                           use_timestamps: bool = False, metadata: dict = None):
         '''
         Auxiliary static method for nwbextractor.
         Adds all recording related information from recording object and metadata
@@ -761,6 +759,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         recording: RecordingExtractor
         nwbfile: NWBFile
             nwb file to which the recording information is to be added
+        use_timestamps: bool
+            If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
+            the sampling rate is used.
         metadata: dict
             metadata info for constructing the nwb file (optional).
             Check the auxiliary function docstrings for more information
@@ -792,6 +793,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         se.NwbRecordingExtractor.add_electrical_series(
             recording=recording,
             nwbfile=nwbfile,
+            use_timestamps=use_timestamps,
             metadata=metadata
         )
 
@@ -804,7 +806,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def write_recording(recording: se.RecordingExtractor, save_path: PathType = None,
-                        nwbfile=None, timestamps: ArrayType = None, metadata: dict = None):
+                        nwbfile=None, use_timestamps: bool = False, metadata: dict = None):
         '''
         Writes all recording related information from recording object and metadata
         to either a saved nwbfile (with save_path specified) or directly to an
@@ -823,8 +825,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 my_recording_extractor, my_nwbfile
             )
             will result in the appropriate changes to the my_nwbfile object.
-        timestamps: array-like
-            If provided, the timestamps in seconds to be saved as the ElectricalSeries timestamps. (default=None)
+        use_timestamps: bool
+            If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
+            the sampling rate is used.
         metadata: dict
             metadata info for constructing the nwb file (optional). Should be
             of the format
@@ -887,6 +890,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             se.NwbRecordingExtractor.add_all_to_nwbfile(
                 recording=recording,
                 nwbfile=nwbfile,
+                use_timestamps=use_timestamps,
                 metadata=metadata
             )
 
