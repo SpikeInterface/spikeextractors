@@ -103,37 +103,37 @@ class RecordingExtractor(ABC, BaseExtractor):
     def get_dtype(self):
         return self.get_traces(channel_ids=[self.get_channel_ids()[0]], start_frame=0, end_frame=1).dtype
 
-    def frame_to_time(self, frame):
-        '''This function converts a user-inputted frame index to a time with units of seconds.
+    def frame_to_time(self, frames):
+        '''This function converts user-inputted frame indexes to times with units of seconds.
 
         Parameters
         ----------
-        frame: float
-            The frame to be converted to a time
+        frames: float or array-like
+            The frame or frames to be converted to times
 
         Returns
         -------
-        time: float
-            The corresponding time in seconds
+        times: float or array-like
+            The corresponding times in seconds
         '''
         # Default implementation
-        return np.round(frame / self.get_sampling_frequency(), 6)
+        return np.round(frames / self.get_sampling_frequency(), 6)
 
-    def time_to_frame(self, time):
-        '''This function converts a user-inputted time (in seconds) to a frame index.
+    def time_to_frame(self, times):
+        '''This function converts a user-inputted times (in seconds) to a frame indexes.
 
         Parameters
         -------
-        time: float
-            The time (in seconds) to be converted to frame index
+        times: float or array-like
+            The times (in seconds) to be converted to frame indexes
 
         Returns
         -------
-        frame: float
-            The corresponding frame index
+        frames: float or array-like
+            The corresponding frame indexes
         '''
         # Default implementation
-        return np.round(time * self.get_sampling_frequency()).astype('int64')
+        return np.round(times * self.get_sampling_frequency()).astype('int64')
 
     def get_snippets(self, reference_frames, snippet_len, channel_ids=None):
         '''This function returns data snippets from the given channels that
