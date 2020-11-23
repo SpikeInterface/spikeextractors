@@ -41,7 +41,8 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     def __init__(self, file_path: PathType):
         assert HAVE_LXML, self.installation_mesg
         file_path = Path(file_path)
-        assert file_path.is_file() and file_path.suffix == '.dat', 'file_path must lead to a .dat file!'
+        assert file_path.is_file() and file_path.suffix in [".dat", ".eeg"], \
+            "file_path must lead to a .dat or .eeg file!"
 
         RecordingExtractor.__init__(self)
         self._recording_file = file_path
@@ -55,9 +56,13 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
         xml_root = et.parse(str(xml_filepath.absolute())).getroot()
         n_bits = int(xml_root.find('acquisitionSystem').find('nBits').text)
-        dtype = 'int' + str(n_bits)
+        dtype = f"int{n_bits}"
         numchan_from_file = int(xml_root.find('acquisitionSystem').find('nChannels').text)
-        sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text)
+
+        if file_path.suffix == ".dat":
+            sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text)
+        else:
+            sampling_frequency = float(xml_root.find('fieldPotentials').find('lfpSamplingRate').text)
 
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
                                           dtype=dtype, numchan=numchan_from_file)
