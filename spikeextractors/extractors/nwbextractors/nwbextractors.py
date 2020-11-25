@@ -657,7 +657,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 )
             else:
                 def data_generator(recording, channels_ids):
-                    #  generates data chunks for iterator
+                    # generates data chunks for iterator
                     for id in channels_ids:
                         data = recording.get_traces(channel_ids=[id]).flatten()
                         yield data
