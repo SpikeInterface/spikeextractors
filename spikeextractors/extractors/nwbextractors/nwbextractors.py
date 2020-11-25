@@ -648,12 +648,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             if isinstance(recording.get_traces(), np.memmap):
                 n_bytes = np.dtype(recording.get_dtype()).itemsize
                 buffer_size = int(buffer_mb * 1e6) // (recording.get_num_channels() * n_bytes)
-                ephys_data = H5DataIO(
-                    DataChunkIterator(
-                        data=recording.get_traces().T,  # nwb standard is time as zero axis
-                        buffer_size=buffer_size
-                    ),
-                    compression='gzip'
+                ephys_data = DataChunkIterator(
+                    data=recording.get_traces().T,  # nwb standard is time as zero axis
+                    buffer_size=buffer_size
                 )
             else:
                 def data_generator(recording, channels_ids):
@@ -661,21 +658,18 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     for id in channels_ids:
                         data = recording.get_traces(channel_ids=[id]).flatten()
                         yield data
-                ephys_data = H5DataIO(
-                    DataChunkIterator(
-                        data=data_generator(
-                            recording=recording,
-                            channels_ids=channel_ids
-                        ),
-                        iter_axis=1,  # nwb standard is time as zero axis
-                        maxshape=(recording.get_num_frames(), recording.get_num_channels())
+                ephys_data = DataChunkIterator(
+                    data=data_generator(
+                        recording=recording,
+                        channels_ids=channel_ids
                     ),
-                    compression='gzip'
+                    iter_axis=1,  # nwb standard is time as zero axis
+                    maxshape=(recording.get_num_frames(), recording.get_num_channels())
                 )
             nwbfile.add_acquisition(
                 ElectricalSeries(
                     name=es_name,
-                    data=ephys_data,
+                    data=H5DataIO(ephys_data, compression="gzip"),
                     electrodes=electrode_table_region,
                     starting_time=recording.frame_to_time(0),
                     rate=recording.get_sampling_frequency(),
