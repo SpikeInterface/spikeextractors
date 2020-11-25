@@ -667,7 +667,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                             recording=recording,
                             channels_ids=channel_ids
                         ),
-                        iter_axis=1,  # nwb standard is time as zero axis,
+                        iter_axis=1,  # nwb standard is time as zero axis
                         maxshape=(recording.get_num_frames(), recording.get_num_channels())
                     ),
                     compression='gzip'
