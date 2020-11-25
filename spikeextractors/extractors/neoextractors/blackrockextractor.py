@@ -7,41 +7,41 @@ except ImportError:
     HAVE_NEO = False
 
 
-class NeuralynxRecordingExtractor(NeoBaseRecordingExtractor):
+class BlackrockRecordingExtractor(NeoBaseRecordingExtractor):
     """
-    The neruralynx extractor is wrapped from neo.rawio.NeuralynxRawIO.
+    The Blackrock extractor is wrapped from neo.rawio.BlackrockRawIO.
     
     Parameters
     ----------
-    dirname: str
-        The neuralynx folder that contain all neuralynx files ('nse', 'ncs', 'nev', 'ntt')
+    filename: str
+        The Blackrock file (.ns1, .ns2, .ns3, .ns4m .ns4, or .ns6)
     block_index: None or int
         If the underlying dataset have several blocks the index must be specified.
     seg_index_index: None or int
         If the underlying dataset have several segments the index must be specified.
     
     """
-    extractor_name = 'NeuralynxRecording'
-    mode = 'folder'
+    extractor_name = 'BlackrockRecording'
+    mode = 'file'
     installed = HAVE_NEO
-    NeoRawIOClass = 'NeuralynxRawIO'
+    NeoRawIOClass = 'BlackrockRawIO'
 
 
-class NeuralynxSortingExtractor(NeoBaseSortingExtractor):
+class BlackrockSortingExtractor(NeoBaseSortingExtractor):
     """
-    The neruralynx extractor is wrapped from neo.rawio.NeuralynxRawIO.
+    The Blackrock extractor is wrapped from neo.rawio.BlackrockRawIO.
 
     Parameters
     ----------
-    dirname: str
-        The neuralynx folder that contain all neuralynx files ('nse', 'ncs', 'nev', 'ntt')
+    filename: str
+        The Blackrock file (.nev)
     block_index: None or int
         If the underlying dataset have several blocks the index must be specified.
     seg_index_index: None or int
         If the underlying dataset have several segments the index must be specified.
 
     """
-    extractor_name = 'NeuralynxSorting'
-    mode = 'folder'
+    extractor_name = 'BlackrockSorting'
+    mode = 'file'
     installed = HAVE_NEO
-    NeoRawIOClass = 'NeuralynxRawIO'
+    NeoRawIOClass = 'BlackrockRawIO'
