@@ -4,7 +4,6 @@ import numpy as np
 from pathlib import Path
 from spikeextractors.extraction_tools import check_valid_unit_id, get_sub_extractors_by_property
 from typing import Union
-import os
 import re
 
 try:
@@ -84,9 +83,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
             - chunk_mb
         """
         save_path = Path(save_path)
-
-        if not save_path.is_dir():
-            os.makedirs(save_path)
+        save_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == '':
             recording_name = save_path.name
@@ -312,8 +309,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         if 'group' in sorting.get_shared_unit_property_names():
             NeuroscopeMultiSortingExtractor.write_sorting(sorting, save_path)
         else:
-            if not save_path.is_dir():
-                os.makedirs(save_path)
+            save_path.mkdir(parents=True, exist_ok=True)
 
             if save_path.suffix == '':
                 sorting_name = save_path.name
@@ -382,9 +378,6 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         assert HAVE_LXML, self.installation_mesg
 
         folder_path = Path(folder_path)
-
-        if not folder_path.is_dir():
-            os.makedirs(folder_path)
 
         if exclude_shanks is not None:  # dumping checks do not like having an empty list as default
             assert all([isinstance(x, (int, np.integer)) and x >= 0 for x in
@@ -458,8 +451,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         save_xml_filepath = save_path / (str(xml_name) + '.xml')
 
         assert not save_path.is_file(), "'save_path' should be a folder"
-        if not save_path.is_dir():
-            os.makedirs(save_path)
+        save_path.mkdir(parents=True, exist_ok=True)
 
         if save_xml_filepath.is_file():
             raise FileExistsError(f'{save_xml_filepath} already exists!')

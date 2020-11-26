@@ -861,7 +861,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             metadata = update_dict(recording.nwb_metadata, metadata)
 
         if nwbfile is None:
-            if os.path.exists(save_path):
+            if Path(save_path).is_file():
                 read_mode = 'r+'
             else:
                 read_mode = 'w'
@@ -1215,7 +1215,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             "Either pass a save_path location, or nwbfile object, but not both!"
 
         if nwbfile is None:
-            if os.path.exists(save_path):
+            if Path(save_path).is_file():
                 read_mode = 'r+'
             else:
                 read_mode = 'w'
