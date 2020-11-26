@@ -6,7 +6,6 @@ import json
 import numpy as np
 from pathlib import Path
 from .mdaio import DiskReadMda, readmda, writemda64, MdaHeader
-import os
 import shutil
 
 
@@ -24,7 +23,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         timeseries0 = dataset_directory / raw_fname
         self._dataset_params = read_dataset_params(dataset_directory, params_fname)
         self._sampling_frequency = self._dataset_params['samplerate'] * 1.0
-        self._timeseries_path = os.path.abspath(timeseries0)
+        self._timeseries_path = str(timeseries0.absolute())
         geom0 = dataset_directory / geom_fname
         self._geom_fname = geom0
         self._geom = np.loadtxt(self._geom_fname, delimiter=',',ndmin=2)
@@ -129,9 +128,7 @@ class MdaRecordingExtractor(RecordingExtractor):
             If True, output is verbose
         '''
         save_path = Path(save_path)
-        if not save_path.exists():
-            if not save_path.is_dir():
-                os.makedirs(str(save_path))
+        save_path.mkdir(parents=True, exist_ok=True)
         save_file_path = save_path / raw_fname
         parent_dir = save_path
         channel_ids = recording.get_channel_ids()
@@ -139,9 +136,6 @@ class MdaRecordingExtractor(RecordingExtractor):
         num_frames = recording.get_num_frames()
 
         geom = recording.get_channel_locations()
-
-        if not save_path.is_dir():
-            os.mkdir(save_path)
 
         if dtype is None:
             dtype = recording.get_dtype()
@@ -243,7 +237,7 @@ def _concatenate(list):
 
 def read_dataset_params(dsdir, params_fname):
     fname1 = dsdir / params_fname
-    if not os.path.exists(fname1):
+    if not fname1.is_file():
         raise Exception('Dataset parameter file does not exist: ' + fname1)
     with open(fname1) as f:
         return json.load(f)
