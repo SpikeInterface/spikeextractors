@@ -232,7 +232,7 @@ def GainCorrectIM(dataArray, chanList, meta):
 def makeMemMapRaw(binFullPath, meta):
     nChan = int(meta['nSavedChans'])
     nFileSamp = int(int(meta['fileSizeBytes'])/(2*nChan))
-    print("nChan: %d, nFileSamp: %d" % (nChan, nFileSamp))
+    # print("nChan: %d, nFileSamp: %d" % (nChan, nFileSamp))
     rawData = np.memmap(binFullPath, dtype='int16', mode='r',
                         shape=(nChan, nFileSamp), offset=0, order='F')
     return(rawData)

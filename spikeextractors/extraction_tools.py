@@ -886,6 +886,10 @@ def cast_start_end_frame(start_frame, end_frame):
         end_frame = end_frame
     else:
         raise ValueError("end_frame must be an int, float (not infinity), or None")
+    if start_frame is not None:
+        start_frame = int(start_frame)
+    if end_frame is not None:
+        end_frame = int(end_frame)
     return start_frame, end_frame
 
 

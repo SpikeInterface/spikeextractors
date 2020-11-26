@@ -26,6 +26,7 @@ except ModuleNotFoundError:
     HAVE_NWB = False
 
 PathType = Union[str, Path, None]
+ArrayType = Union[list, np.ndarray]
 
 
 def check_nwb_install():
@@ -380,7 +381,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                 name=device_name
                             )
                         )
-                     )
+                    )
                     se.NwbRecordingExtractor.add_devices(recording, nwbfile, metadata=new_device)
                     warnings.warn(f"Device \'{device_name}\' not detected in "
                                   "attempted link to electrode group! Automatically generating.")
@@ -582,7 +583,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None,
-                              buffer_mb: int = 500):
+                              buffer_mb: int = 500, use_timestamps: bool = False):
         """
         Auxiliary static method for nwbextractor.
 
@@ -601,6 +602,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         buffer_mb: int (optional, defaults to 500MB)
             maximum amount of memory (in MB) to use per iteration of the
             DataChunkIterator (requires traces to be memmap objects)
+        use_timestamps: bool
+            If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
+            the sampling rate is used.
 
         Missing keys in an element of metadata['Ecephys']['ElectrodeGroup'] will be auto-populated with defaults
         whenever possible.
@@ -610,6 +614,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         assert buffer_mb > 10, "'buffer_mb' should be at least 10MB to ensure data can be chunked!"
         if not nwbfile.electrodes:
             se.NwbRecordingExtractor.add_electrodes(recording, nwbfile, metadata)
+
         defaults = dict(
             name="ElectricalSeries",
             description="no description"
@@ -666,19 +671,35 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     iter_axis=1,  # nwb standard is time as zero axis
                     maxshape=(recording.get_num_frames(), recording.get_num_channels())
                 )
-            nwbfile.add_acquisition(
-                ElectricalSeries(
-                    name=es_name,
-                    data=H5DataIO(ephys_data, compression="gzip"),
-                    electrodes=electrode_table_region,
-                    starting_time=recording.frame_to_time(0),
-                    rate=recording.get_sampling_frequency(),
-                    conversion=scalar_conversion,
-                    channel_conversion=channel_conversion,
-                    comments='Generated from SpikeInterface::NwbRecordingExtractor',
-                    description=metadata['Ecephys']['ElectricalSeries'].get('description', defaults['description'])
+
+            if use_timestamps:
+                nwbfile.add_acquisition(
+                    ElectricalSeries(
+                        name=es_name,
+                        data=H5DataIO(ephys_data, compression="gzip"),
+                        electrodes=electrode_table_region,
+                        starting_time=recording.frame_to_time(0),
+                        timestamps=recording.frame_to_time(np.arange(recording.get_num_frames())),
+                        conversion=scalar_conversion,
+                        channel_conversion=channel_conversion,
+                        comments='Generated from SpikeInterface::NwbRecordingExtractor',
+                        description=metadata['Ecephys']['ElectricalSeries'].get('description', defaults['description'])
+                    )
                 )
-            )
+            else:
+                nwbfile.add_acquisition(
+                    ElectricalSeries(
+                        name=es_name,
+                        data=H5DataIO(ephys_data, compression="gzip"),
+                        electrodes=electrode_table_region,
+                        starting_time=recording.frame_to_time(0),
+                        rate=recording.get_sampling_frequency(),
+                        conversion=scalar_conversion,
+                        channel_conversion=channel_conversion,
+                        comments='Generated from SpikeInterface::NwbRecordingExtractor',
+                        description=metadata['Ecephys']['ElectricalSeries'].get('description', defaults['description'])
+                    )
+                )
 
     @staticmethod
     def add_epochs(recording: se.RecordingExtractor, nwbfile=None,
@@ -686,7 +707,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         '''
         Auxiliary static method for nwbextractor.
         Adds epochs from recording object to nwbfile object.
-        
+
         Parameters
         ----------
         recording: RecordingExtractor
@@ -721,17 +742,20 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def add_all_to_nwbfile(recording: se.RecordingExtractor, nwbfile=None,
-                           metadata: dict = None):
+                           use_timestamps: bool = False, metadata: dict = None):
         '''
         Auxiliary static method for nwbextractor.
         Adds all recording related information from recording object and metadata
         to the nwbfile object.
-        
+
         Parameters
         ----------
         recording: RecordingExtractor
         nwbfile: NWBFile
             nwb file to which the recording information is to be added
+        use_timestamps: bool
+            If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
+            the sampling rate is used.
         metadata: dict
             metadata info for constructing the nwb file (optional).
             Check the auxiliary function docstrings for more information
@@ -763,6 +787,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         se.NwbRecordingExtractor.add_electrical_series(
             recording=recording,
             nwbfile=nwbfile,
+            use_timestamps=use_timestamps,
             metadata=metadata
         )
 
@@ -775,12 +800,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def write_recording(recording: se.RecordingExtractor, save_path: PathType = None,
-                        nwbfile=None, metadata: dict = None):
+                        nwbfile=None, use_timestamps: bool = False, metadata: dict = None):
         '''
         Writes all recording related information from recording object and metadata
         to either a saved nwbfile (with save_path specified) or directly to an
         nwbfile object (if nwbfile specified).
-        
+
         Parameters
         ----------
         recording: RecordingExtractor
@@ -794,6 +819,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 my_recording_extractor, my_nwbfile
             )
             will result in the appropriate changes to the my_nwbfile object.
+        use_timestamps: bool
+            If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
+            the sampling rate is used.
         metadata: dict
             metadata info for constructing the nwb file (optional). Should be
             of the format
@@ -856,6 +884,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             se.NwbRecordingExtractor.add_all_to_nwbfile(
                 recording=recording,
                 nwbfile=nwbfile,
+                use_timestamps=use_timestamps,
                 metadata=metadata
             )
 
@@ -974,7 +1003,7 @@ class NwbSortingExtractor(se.SortingExtractor):
 
     @staticmethod
     def write_units(sorting: se.SortingExtractor, nwbfile,
-                    property_descriptions: dict):
+                    property_descriptions: dict, timestamps: ArrayType = None):
         '''
         Helper function for write_sorting.
         '''
@@ -1046,7 +1075,13 @@ class NwbSortingExtractor(se.SortingExtractor):
             for unit_id in unit_ids:
                 unit_kwargs = {}
                 # spike trains withinin the SortingExtractor object are not scaled by sampling frequency
-                spkt = sorting.get_unit_spike_train(unit_id=unit_id) / fs
+                if timestamps is not None:
+                    spike_train_frames = sorting.get_unit_spike_train(unit_id=unit_id)
+                    assert spike_train_frames[-1] < len(timestamps), "Number of 'timestamps' differs from number of " \
+                                                                     "'frames'"
+                    spkt = np.array(timestamps)[spike_train_frames]
+                else:
+                    spkt = sorting.get_unit_spike_train(unit_id=unit_id) / fs
                 for pr in all_properties:
                     if pr not in skip_properties:
                         if pr in sorting.get_unit_property_names(unit_id):
@@ -1142,7 +1177,7 @@ class NwbSortingExtractor(se.SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting: se.SortingExtractor, save_path: PathType = None, nwbfile=None,
-                      property_descriptions: dict = None, **nwbfile_kwargs):
+                      property_descriptions: dict = None, timestamps: ArrayType = None, **nwbfile_kwargs):
         '''
         Parameters
         ----------
@@ -1161,6 +1196,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             For each key in this dictionary which matches the name of a unit
             property in sorting, adds the value as a description to that
             custom unit column.
+        timestamps: array-like
+            If provided, the timestamps in seconds or the assiciated RecordingExtractor to be saved as the unit
+            timestamps. (default=None)
         nwbfile_kwargs: dict
             Information for constructing the nwb file (optional).
             Only used if no nwbfile exists at the save_path, and no nwbfile
@@ -1191,4 +1229,4 @@ class NwbSortingExtractor(se.SortingExtractor):
                 io.write(nwbfile)
         else:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
-            se.NwbSortingExtractor.write_units(sorting, nwbfile, property_descriptions)
+            se.NwbSortingExtractor.write_units(sorting, nwbfile, property_descriptions, timestamps)

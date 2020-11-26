@@ -23,8 +23,11 @@ from .extractors.mcsh5recordingextractor.mcsh5recordingextractor import MCSH5Rec
 from .extractors.shybridextractors import SHYBRIDRecordingExtractor, SHYBRIDSortingExtractor
 from .extractors.nixioextractors.nixioextractors import NIXIORecordingExtractor, NIXIOSortingExtractor
 from .extractors.neoextractors import (PlexonRecordingExtractor, PlexonSortingExtractor,
-                                       NeuralynxRecordingExtractor, NeuralynxSortingExtractor, MCSRawRecordingExtractor)
-from .extractors.neuroscopeextractors import NeuroscopeRecordingExtractor,NeuroscopeSortingExtractor,NeuroscopeMultiSortingExtractor
+                                       NeuralynxRecordingExtractor, NeuralynxSortingExtractor,
+                                       BlackrockRecordingExtractor, BlackrockSortingExtractor,
+                                       MCSRawRecordingExtractor)
+from .extractors.neuroscopeextractors import NeuroscopeRecordingExtractor, NeuroscopeSortingExtractor,\
+    NeuroscopeMultiSortingExtractor
 from .extractors.waveclussortingextractor import WaveClusSortingExtractor
 from .extractors.yassextractors import YassSortingExtractor
 from .extractors.combinatosortingextractor import CombinatoSortingExtractor
@@ -47,7 +50,6 @@ recording_extractor_full_list = [
     MaxOneRecordingExtractor,
     Mea1kRecordingExtractor,
     MCSH5RecordingExtractor,
-    MCSRawRecordingExtractor,
     SHYBRIDRecordingExtractor,
     NIXIORecordingExtractor,
     NeuroscopeRecordingExtractor,
@@ -55,8 +57,9 @@ recording_extractor_full_list = [
     
     # neo based
     PlexonRecordingExtractor,
-    NeuralynxRecordingExtractor
-    
+    NeuralynxRecordingExtractor,
+    BlackrockRecordingExtractor,
+    MCSRawRecordingExtractor,
 ]
 
 recording_extractor_dict = {recording_class.extractor_name: recording_class for recording_class in recording_extractor_full_list}
@@ -88,6 +91,7 @@ sorting_extractor_full_list = [
     # neo based
     PlexonSortingExtractor,
     NeuralynxSortingExtractor,
+    BlackrockSortingExtractor
     
 ]
 

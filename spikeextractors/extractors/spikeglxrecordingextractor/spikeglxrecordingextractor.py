@@ -104,8 +104,15 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, dtype=None):
-        channel_idxs = [self._channels.index(ch) for ch in channel_ids]
-        recordings = self._timeseries[channel_idxs, start_frame:end_frame]
+        if np.all(channel_ids == self.get_channel_ids()):
+            recordings = self._timeseries[:, start_frame:end_frame]
+        else:
+            channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
+            if np.all(np.diff(channel_idxs) == 1):
+                recordings = self._timeseries[channel_idxs[0]:channel_idxs[0]+len(channel_idxs), start_frame:end_frame]
+            else:
+                # This block of the execution will return the data as an array, not a memmap
+                recordings = self._timeseries[channel_idxs, start_frame:end_frame]
         if dtype is not None:
             assert dtype in ['int16', 'float'], "'dtype' can be either 'int16' or 'float'"
         else:
