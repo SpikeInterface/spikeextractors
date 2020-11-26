@@ -18,8 +18,6 @@ class CellExplorerSortingExtractor(SortingExtractor):
     ----------
     matfile_path : str
         Optional. Path to the .mat file.
-    keep_mua_units : bool
-        Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
     """
 
     extractor_name = 'CellExplorerSortingExtractor'
@@ -28,8 +26,7 @@ class CellExplorerSortingExtractor(SortingExtractor):
     mode = 'custom'
     installation_mesg = ""
 
-    def __init__(self, matfile_path: PathType, clufile_path: PathType = None, folder_path: PathType = None,
-                 keep_mua_units: bool = True):
+    def __init__(self, matfile_path: PathType):
 
         # At least one file_path passed
         if resfile_path is not None:

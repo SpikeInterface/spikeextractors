@@ -33,6 +33,7 @@ from .extractors.yassextractors import YassSortingExtractor
 from .extractors.combinatosortingextractor import CombinatoSortingExtractor
 from .extractors.alfsortingextractor import ALFSortingExtractor
 from .extractors.cedextractors import CEDRecordingExtractor
+from .extractors.cellexplorersortingextractor import CellExplorerSortingExtractor
 
 recording_extractor_full_list = [
     MdaRecordingExtractor,
@@ -54,7 +55,7 @@ recording_extractor_full_list = [
     NIXIORecordingExtractor,
     NeuroscopeRecordingExtractor,
     CEDRecordingExtractor,
-    
+
     # neo based
     PlexonRecordingExtractor,
     NeuralynxRecordingExtractor,
@@ -62,7 +63,8 @@ recording_extractor_full_list = [
     MCSRawRecordingExtractor,
 ]
 
-recording_extractor_dict = {recording_class.extractor_name: recording_class for recording_class in recording_extractor_full_list}
+recording_extractor_dict = {recording_class.extractor_name: recording_class
+                            for recording_class in recording_extractor_full_list}
 installed_recording_extractor_list = [rx for rx in recording_extractor_full_list if rx.installed]
 
 sorting_extractor_full_list = [
@@ -91,12 +93,13 @@ sorting_extractor_full_list = [
     # neo based
     PlexonSortingExtractor,
     NeuralynxSortingExtractor,
-    BlackrockSortingExtractor
-    
+    BlackrockSortingExtractor,
+    CellExplorerSortingExtractor
 ]
 
 installed_sorting_extractor_list = [sx for sx in sorting_extractor_full_list if sx.installed]
 sorting_extractor_dict = {sorting_class.extractor_name: sorting_class for sorting_class in sorting_extractor_full_list}
 
 writable_sorting_extractor_list = [sx for sx in installed_sorting_extractor_list if sx.is_writable]
-writable_sorting_extractor_dict = {sorting_class.extractor_name: sorting_class for sorting_class in writable_sorting_extractor_list}
+writable_sorting_extractor_dict = {sorting_class.extractor_name: sorting_class
+                                   for sorting_class in writable_sorting_extractor_list}
