@@ -48,21 +48,21 @@ class BaseExtractor:
         memmap_file: str or Path
             The memmap file to delete
         """
-        if isinstance(memmap_file, (np.memmap)):
+        if isinstance(memmap_file, np.memmap):
             memmap_file = memmap_file.filename
         else:
             memmap_file = Path(memmap_file)
 
         existing_memmap_files = [Path(memmap.filename) for memmap in self._memmap_files]
         if memmap_file in existing_memmap_files:
-            memmap_idx = existing_memmap_files.index(memmap_file)
             try:
+                memmap_idx = existing_memmap_files.index(memmap_file)
                 memmap_obj = self._memmap_files[memmap_idx]
                 if not memmap_obj._mmap.closed:
                     memmap_obj._mmap.close()
-                    self._memmap_files.remove(memmap_obj)
                     del memmap_obj
                 memmap_file.unlink()
+                del self._memmap_files[memmap_idx]
             except Exception as e:
                 raise Exception(f"Error in deleting {memmap_file.name}: Error {e}")
 
