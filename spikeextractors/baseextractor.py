@@ -31,9 +31,9 @@ class BaseExtractor:
 
     def __del__(self):
         # close memmap files (for Windows)
-        for memmap_file in self._memmap_files:
-            del memmap_file
-        if self._tmp_folder is not None:
+        for memmap_obj in self._memmap_files:
+            self.del_memmap_file(memmap_obj)
+        if self._tmp_folder is not None and len(self._memmap_files) > 0:
             try:
                 shutil.rmtree(self._tmp_folder)
             except Exception as e:
@@ -48,13 +48,23 @@ class BaseExtractor:
         memmap_file: str or Path
             The memmap file to delete
         """
-        memmap_file = Path(memmap_file)
+        if isinstance(memmap_file, (np.memmap)):
+            memmap_file = memmap_file.filename
+        else:
+            memmap_file = Path(memmap_file)
 
         existing_memmap_files = [Path(memmap.filename) for memmap in self._memmap_files]
         if memmap_file in existing_memmap_files:
             memmap_idx = existing_memmap_files.index(memmap_file)
-            del self._memmap_files[memmap_idx]
-            memmap_file.unlink()
+            try:
+                memmap_obj = self._memmap_files[memmap_idx]
+                if not memmap_obj._mmap.closed:
+                    memmap_obj._mmap.close()
+                    self._memmap_files.remove(memmap_obj)
+                    del memmap_obj
+                memmap_file.unlink()
+            except Exception as e:
+                raise Exception(f"Error in deleting {memmap_file.name}: Error {e}")
 
     def make_serialized_dict(self):
         '''
