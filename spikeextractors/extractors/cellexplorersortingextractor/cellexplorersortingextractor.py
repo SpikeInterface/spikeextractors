@@ -26,7 +26,7 @@ class CellExplorerSortingExtractor(SortingExtractor):
     mode = "file"
     installation_mesg = ""
 
-    def __init__(self, spikes_matfile_path: PathType):
+    def __init__(self, spikes_matfile_path: str):
         SortingExtractor.__init__(self)
 
         spikes_matfile_path = Path(spikes_matfile_path)
@@ -47,7 +47,7 @@ class CellExplorerSortingExtractor(SortingExtractor):
         assert len(set(['UID', 'times']) - set(spikes_mat['spikes'].dtype.names)) == 0, \
             "The spikes.cellinfo.mat file must contain a 'spikes' struct with fields 'UID' and 'times'!"
 
-        self._unit_ids = list(spikes_mat['spikes']['UID'][0][0][0])
+        self._unit_ids = list(map(int, spikes_mat['spikes']['UID'][0][0][0]))
         # CellExplorer reports spike times in units seconds; SpikeExtractors uses time units of sampling frames
         self._spiketrains = [
             (np.array([y[0] for y in x]) * sampling_frequency).round().astype(int)
