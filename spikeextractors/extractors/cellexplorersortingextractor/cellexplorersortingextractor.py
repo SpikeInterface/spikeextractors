@@ -5,13 +5,6 @@ from spikeextractors.extraction_tools import check_valid_unit_id
 from typing import Union
 from scipy.io import loadmat, savemat
 
-try:
-    from lxml import etree as et
-
-    HAVE_LXML = True
-except ImportError:
-    HAVE_LXML = False
-
 PathType = Union[str, Path, None]
 
 
@@ -19,59 +12,52 @@ class CellExplorerSortingExtractor(SortingExtractor):
     """
     Extracts spiking information from .mat files stored in the CellExplorer format.
 
+    Spike times are stored in units of seconds.
+
     Parameters
     ----------
-    matfile_path : str
-        Optional. Path to the .mat file.
+    spikes_matfile_path : PathType
+        Path to the sorting_id.spikes.cellinfo.mat file.
     """
 
-    extractor_name = 'CellExplorerSortingExtractor'
-    installed = HAVE_LXML
+    extractor_name = "CellExplorerSortingExtractor"
+    installed = True
     is_writable = True
-    mode = 'custom'
-    installation_mesg = "Please install lxml to use this extractor!"
+    mode = "file"
+    installation_mesg = ""
 
-    def __init__(self, matfile_path: PathType):
-        assert HAVE_LXML, self.installation_mesg
-        assert matfile_path.is_file(), f"The matfile_path ({matfile_path}) must exist!"
-
+    def __init__(self, spikes_matfile_path: PathType):
         SortingExtractor.__init__(self)
 
-        matfile_path = Path(matfile_path)
-        folder_path = matfile_path.parent
-        xml_files = [f for f in folder_path.iterdir() if f.is_file() if f.suffix == '.xml']
-        assert len(xml_files) > 0, 'No .xml file found in the folder.'
-        assert len(xml_files) == 1, 'More than one .xml file found in the folder.'
-        xml_filepath = xml_files[0]
+        spikes_matfile_path = Path(spikes_matfile_path)
+        assert spikes_matfile_path.is_file(), f"The spikes_matfile_path ({spikes_matfile_path}) must exist!"
+        folder_path = spikes_matfile_path.parent
+        sorting_id = spikes_matfile_path.name.split(".")[0]
+        session_info_matfile_path = folder_path / f"{sorting_id}.sessionInfo.mat"
+        assert session_info_matfile_path.is_file(), "No sessionInfo.mat file found in the folder!"
+        session_info_mat = loadmat(file_name=str(session_info_matfile_path.absolute()))
+        assert session_info_mat['sessionInfo']['rates'][0][0]['wideband'], "The sesssionInfo.mat file must contain " \
+            "a 'sessionInfo' struct with field 'rates' containing field 'wideband'!"
+        sampling_frequency = float(
+            session_info_mat['sessionInfo']['rates'][0][0]['wideband'][0][0][0][0]
+        )  # careful not to confuse it with the lfpsamplingrate; reported in units Hz
+        self._sampling_frequency = sampling_frequency
 
-        xml_root = et.parse(str(xml_filepath.absolute())).getroot()
-        self._sampling_frequency = float(xml_root.find('acquisitionSystem').find(
-            'samplingRate').text)  # careful not to confuse it with the lfpsamplingrate
+        spikes_mat = loadmat(file_name=str(spikes_matfile_path.absolute()))
+        assert len(set(['UID', 'times']) - set(spikes_mat['spikes'].dtype.names)) == 0, \
+            "The spikes.cellinfo.mat file must contain a 'spikes' struct with fields 'UID' and 'times'!"
 
-        spikes_mat = loadmat(str(matfile_path.absolute()))['spikes']
+        self._unit_ids = list(spikes_mat['spikes']['UID'][0][0][0])
+        # CellExplorer reports spike times in units seconds; SpikeExtractors uses time units of sampling frames
+        self._spiketrains = [
+            (np.array([y[0] for y in x]) * sampling_frequency).round().astype(int)
+            for x in spikes_mat['spikes']['times'][0][0][0]
+         ]
 
-        self._unit_ids = list(spikes_mat['UID'][0][0][0])
-        self._spiketrains = [[y[0] for y in x] for x in spikes_mat['times'][0][0][0]]
-
-        self._kwargs = {'matfile_path': str(matfile_path.absolute())}
+        self._kwargs = {'spikes_matfile_path': str(spikes_matfile_path.absolute())}
 
     def get_unit_ids(self):
         return list(self._unit_ids)
-
-    def get_sampling_frequency(self):
-        return self._sampling_frequency
-
-    def add_unit(self, unit_id, spike_times):
-        """
-        Add a new unit with the given spike times.
-
-        Parameters
-        ----------
-        unit_id: int
-            The unit_id of the unit to be added.
-        """
-        self._unit_ids.append(unit_id)
-        self._spiketrains.append(spike_times)
 
     @check_valid_unit_id
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
@@ -86,26 +72,31 @@ class CellExplorerSortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting: SortingExtractor, save_path: PathType):
-        save_path.mkdir(parents=True, exist_ok=True)
+        assert save_path.suffixes == ['.spikes', '.cellinfo', '.mat'], \
+            "The save_path must correspond to the CellExplorer format of sorting_id.spikes.cellinfo.mat!"
 
-        if save_path.suffix == '':
-            sorting_name = save_path.name
-        else:
-            sorting_name = save_path.stem
-        save_xml_filepath = save_path / f"{str(sorting_name)}.xml"
-        if save_xml_filepath.is_file():
-            raise FileExistsError(f"{save_xml_filepath} already exists!")
+        base_path = save_path.parent
+        sorting_id = save_path.name.split(".")[0]
+        session_info_save_path = base_path / f"{sorting_id}.sessionInfo.mat"
+        spikes_save_path = save_path
+        base_path.mkdir(parents=True, exist_ok=True)
 
-        xml_root = et.Element('xml')
-        et.SubElement(xml_root, 'acquisitionSystem')
-        et.SubElement(xml_root.find('acquisitionSystem'), 'samplingRate')
-        xml_root.find('acquisitionSystem').find('samplingRate').text = str(sorting.get_sampling_frequency())
-        et.ElementTree(xml_root).write(str(save_xml_filepath.absolute()), pretty_print=True)
-
-        mat_dict = dict(
-            spikes=dict(
-                UID=sorting.get_unit_ids(),
-                times=[[[y] for y in x] for x in sorting.get_units_spike_train()]
+        sampling_frequency = sorting.get_sampling_frequency()
+        session_info_mat_dict = dict(
+            sessionInfo=dict(
+                rates=dict(
+                    wideband=sampling_frequency
+                )
             )
         )
-        savemat(save_path, mat_dict)
+        savemat(file_name=session_info_save_path, mdict=session_info_mat_dict)
+
+        spikes_mat_dict = dict(
+            spikes=dict(
+                UID=sorting.get_unit_ids(),
+                times=[[[y / sampling_frequency] for y in x] for x in sorting.get_units_spike_train()]
+            )
+        )
+        # If, in the future, it is ever desired to allow this to write unit properties, they must conform
+        # to the format here: https://cellexplorer.org/datastructure/data-structure-and-format/
+        savemat(file_name=spikes_save_path, mdict=spikes_mat_dict)
