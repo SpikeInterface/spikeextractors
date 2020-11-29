@@ -160,7 +160,6 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
         assert any(recording_files), "The folder_path must lead to at least one .dat file!"
 
         recordings = [NeuroscopeRecordingExtractor(file_path=x) for x in recording_files]
-
         MultiRecordingTimeExtractor.__init__(self, recordings=recordings)
 
         self._kwargs = {'folder_path': str(folder_path.absolute())}
