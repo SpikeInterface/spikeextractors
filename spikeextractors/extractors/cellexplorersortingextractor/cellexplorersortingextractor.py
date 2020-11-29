@@ -5,7 +5,7 @@ from spikeextractors.extraction_tools import check_valid_unit_id
 from typing import Union
 from scipy.io import loadmat, savemat
 
-PathType = Union[str, Path, None]
+PathType = Union[str, Path]
 
 
 class CellExplorerSortingExtractor(SortingExtractor):
@@ -38,23 +38,23 @@ class CellExplorerSortingExtractor(SortingExtractor):
         session_info_mat = loadmat(file_name=str(session_info_matfile_path.absolute()))
         assert session_info_mat['sessionInfo']['rates'][0][0]['wideband'], "The sesssionInfo.mat file must contain " \
             "a 'sessionInfo' struct with field 'rates' containing field 'wideband'!"
-        sampling_frequency = float(
+        self._sampling_frequency = float(
             session_info_mat['sessionInfo']['rates'][0][0]['wideband'][0][0][0][0]
         )  # careful not to confuse it with the lfpsamplingrate; reported in units Hz
-        self._sampling_frequency = sampling_frequency
 
         spikes_mat = loadmat(file_name=str(spikes_matfile_path.absolute()))
-        assert len(set(['UID', 'times']) - set(spikes_mat['spikes'].dtype.names)) == 0, \
+        assert np.all(np.isin(['UID', 'times'], spikes_mat['spikes'].dtype.names)), \
             "The spikes.cellinfo.mat file must contain a 'spikes' struct with fields 'UID' and 'times'!"
 
-        self._unit_ids = list(map(int, spikes_mat['spikes']['UID'][0][0][0]))
+        self._unit_ids = np.asarray(spikes_mat['spikes']['UID'][0][0][0], dtype=int)
         # CellExplorer reports spike times in units seconds; SpikeExtractors uses time units of sampling frames
+        # Rounding is necessary to prevent clipping error caused by the int casting
         self._spiketrains = [
-            (np.array([y[0] for y in x]) * sampling_frequency).round().astype(int)
+            (np.array([y[0] for y in x]) * self._sampling_frequency).round().astype(int)
             for x in spikes_mat['spikes']['times'][0][0][0]
          ]
 
-        self._kwargs = {'spikes_matfile_path': str(spikes_matfile_path.absolute())}
+        self._kwargs = dict(spikes_matfile_path=str(spikes_matfile_path.absolute()))
 
     def get_unit_ids(self):
         return list(self._unit_ids)
