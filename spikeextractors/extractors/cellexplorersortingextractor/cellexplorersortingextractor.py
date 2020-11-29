@@ -33,6 +33,7 @@ class CellExplorerSortingExtractor(SortingExtractor):
         assert spikes_matfile_path.is_file(), f"The spikes_matfile_path ({spikes_matfile_path}) must exist!"
         folder_path = spikes_matfile_path.parent
         sorting_id = spikes_matfile_path.name.split(".")[0]
+
         session_info_matfile_path = folder_path / f"{sorting_id}.sessionInfo.mat"
         assert session_info_matfile_path.is_file(), "No sessionInfo.mat file found in the folder!"
         session_info_mat = loadmat(file_name=str(session_info_matfile_path.absolute()))
@@ -48,7 +49,7 @@ class CellExplorerSortingExtractor(SortingExtractor):
 
         self._unit_ids = np.asarray(spikes_mat['spikes']['UID'][0][0][0], dtype=int)
         # CellExplorer reports spike times in units seconds; SpikeExtractors uses time units of sampling frames
-        # Rounding is necessary to prevent clipping error caused by the int casting
+        # Rounding is necessary to prevent data loss from int-casting floating point errors
         self._spiketrains = [
             (np.array([y[0] for y in x]) * self._sampling_frequency).round().astype(int)
             for x in spikes_mat['spikes']['times'][0][0][0]
