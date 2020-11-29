@@ -26,7 +26,7 @@ class CellExplorerSortingExtractor(SortingExtractor):
     mode = "file"
     installation_mesg = ""
 
-    def __init__(self, spikes_matfile_path: str):
+    def __init__(self, spikes_matfile_path: PathType):
         SortingExtractor.__init__(self)
 
         spikes_matfile_path = Path(spikes_matfile_path)
