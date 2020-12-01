@@ -32,7 +32,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     """
 
     extractor_name = 'NeuroscopeRecordingExtractor'
-    installed = HAVE_LXML  # check at class level if installed or not
+    installed = HAVE_LXML
     is_writable = True
     mode = 'file'
     installation_mesg = 'Please install lxml to use this extractor!'  # error message when not installed

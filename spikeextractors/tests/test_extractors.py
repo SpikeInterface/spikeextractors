@@ -570,6 +570,16 @@ class TestExtractors(unittest.TestCase):
         check_sortings_equal(SX_multisorting, SX_neuroscope_mse)
         check_dumping(SX_neuroscope_mse)
 
+    def test_cell_explorer_extractor(self):
+        sorter_id = "cell_explorer_sorter"
+        cell_explorer_dir = Path(self.test_dir) / sorter_id
+        spikes_matfile_path = cell_explorer_dir / f"{sorter_id}.spikes.cellinfo.mat"
+        se.CellExplorerSortingExtractor.write_sorting(sorting=self.SX, save_path=spikes_matfile_path)
+        SX_cell_explorer = se.CellExplorerSortingExtractor(spikes_matfile_path=spikes_matfile_path)
+        check_sorting_return_types(SX_cell_explorer)
+        check_sortings_equal(self.SX, SX_cell_explorer)
+        check_dumping(SX_cell_explorer)
+
 
 if __name__ == '__main__':
     unittest.main()
