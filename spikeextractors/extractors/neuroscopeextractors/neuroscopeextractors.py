@@ -1,10 +1,11 @@
-from spikeextractors import RecordingExtractor, SortingExtractor, MultiSortingExtractor
+from spikeextractors import RecordingExtractor, MultiRecordingTimeExtractor, SortingExtractor, MultiSortingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 import numpy as np
 from pathlib import Path
 from spikeextractors.extraction_tools import check_valid_unit_id, get_sub_extractors_by_property
 from typing import Union
 import re
+import warnings
 
 try:
     from lxml import etree as et
@@ -129,6 +130,127 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         et.ElementTree(xml_root).write(str(save_xml_filepath.absolute()), pretty_print=True)
 
         recording.write_to_binary_dat_format(recording_filepath, dtype=dtype, **write_binary_kwargs)
+
+
+class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
+    """
+    Extracts raw neural recordings from several binary .dat files in the neuroscope format.
+
+    The recording extractor always returns channel IDs starting from 0.
+
+    The recording data will always be returned in the shape of (num_channels,num_frames).
+
+    Parameters
+    ----------
+    folder_path : PathType
+        Path to the .dat files to be extracted.
+    """
+
+    extractor_name = "NeuroscopeMultiRecordingTimeExtractor"
+    installed = HAVE_LXML
+    is_writable = True
+    mode = "folder"
+    installation_mesg = "Please install lxml to use this extractor!"
+
+    def __init__(self, folder_path: PathType):
+        assert HAVE_LXML, self.installation_mesg
+
+        folder_path = Path(folder_path)
+        recording_files = [x for x in folder_path.iterdir() if x.is_file() and x.suffix == ".dat"]
+        assert any(recording_files), "The folder_path must lead to at least one .dat file!"
+
+        recordings = [NeuroscopeRecordingExtractor(file_path=x) for x in recording_files]
+        MultiRecordingTimeExtractor.__init__(self, recordings=recordings)
+
+        self._kwargs = {'folder_path': str(folder_path.absolute())}
+
+    @staticmethod
+    def write_recording(recording: Union[MultiRecordingTimeExtractor, RecordingExtractor],
+                        save_path: PathType, dtype: DtypeType = None, **write_binary_kwargs):
+        """
+        Convert and save the recording extractor to Neuroscope format.
+
+        Parameters
+        ----------
+        recording: MultiRecordingTimeExtractor or RecordingExtractor
+            The recording extractor to be converted and saved.
+        save_path: str
+            Path to desired target folder. The name of the files will be the same as the final directory.
+        dtype: dtype
+            Optional. Data type to be used in writing; must be int16 or int32 (default).
+                      Will throw a warning if stored recording type from get_traces() does not match.
+        **write_binary_kwargs: keyword arguments for write_to_binary_dat_format function
+            - chunk_size
+            - chunk_mb
+        """
+        save_path = Path(save_path)
+        save_path.mkdir(parents=True, exist_ok=True)
+
+        if save_path.suffix == "":
+            recording_name = save_path.name
+        else:
+            recording_name = save_path.stem
+
+        xml_name = recording_name
+        save_xml_filepath = save_path / f"{xml_name}.xml"
+        if save_xml_filepath.is_file():
+            raise FileExistsError(f"{save_xml_filepath} already exists!")
+
+        recording_dtype = str(recording.get_dtype())
+        int_loc = recording_dtype.find("int")
+        recording_n_bits = recording_dtype[(int_loc + 3):(int_loc + 5)]
+
+        valid_int_types = ["16", "32"]
+        if dtype is None:
+            if int_loc != -1 and recording_n_bits in valid_int_types:
+                n_bits = recording_n_bits
+            else:
+                warnings.warn("Recording data type must be int16 or int32! Defaulting to int32.")
+                n_bits = "32"
+            dtype = f"int{n_bits}"
+        else:
+            dtype = str(dtype)
+            int_loc = dtype.find('int')
+            assert int_loc != -1, "Data type must be int16 or int32! Non-integer received."
+            n_bits = dtype[(int_loc + 3):(int_loc + 5)]
+            assert n_bits in valid_int_types, "Data type must be int16 or int32!"
+
+        xml_root = et.Element('xml')
+        et.SubElement(xml_root, 'acquisitionSystem')
+        et.SubElement(xml_root.find('acquisitionSystem'), 'nBits')
+        et.SubElement(xml_root.find('acquisitionSystem'), 'nChannels')
+        et.SubElement(xml_root.find('acquisitionSystem'), 'samplingRate')
+        xml_root.find('acquisitionSystem').find('nBits').text = n_bits
+        xml_root.find('acquisitionSystem').find('nChannels').text = str(recording.get_num_channels())
+        xml_root.find('acquisitionSystem').find('samplingRate').text = str(recording.get_sampling_frequency())
+        et.ElementTree(xml_root).write(str(save_xml_filepath.absolute()), pretty_print=True)
+
+        if isinstance(recording, MultiRecordingTimeExtractor):
+            for n, record in enumerate(recording.recordings):
+                epoch_id = str(n).zfill(2)  # Neuroscope seems to zero-pad length 2
+                record.write_to_binary_dat_format(
+                    save_path=save_path / f"{recording_name}-{epoch_id}.dat",
+                    dtype=dtype,
+                    **write_binary_kwargs
+                )
+
+        elif isinstance(recording, RecordingExtractor):
+            recordings = [recording.get_epoch(epoch_name=epoch_name) for epoch_name in recording.get_epoch_names()]
+
+            if len(recordings) == 0:
+                recording.write_to_binary_dat_format(
+                    save_path=save_path / f"{recording_name}.dat",
+                    dtype=dtype,
+                    **write_binary_kwargs
+                )
+            else:
+                for n, subrecording in enumerate(recordings):
+                    epoch_id = str(n).zfill(2)  # Neuroscope seems to zero-pad length 2
+                    subrecording.write_to_binary_dat_format(
+                        save_path=save_path / f"{recording_name}-{epoch_id}.dat",
+                        dtype=dtype,
+                        **write_binary_kwargs
+                    )
 
 
 class NeuroscopeSortingExtractor(SortingExtractor):

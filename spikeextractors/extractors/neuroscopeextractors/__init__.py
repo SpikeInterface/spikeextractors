@@ -1,1 +1,2 @@
-from .neuroscopeextractors import NeuroscopeRecordingExtractor,NeuroscopeSortingExtractor,NeuroscopeMultiSortingExtractor
+from .neuroscopeextractors import NeuroscopeRecordingExtractor, NeuroscopeMultiRecordingTimeExtractor
+from .neuroscopeextractors import NeuroscopeSortingExtractor, NeuroscopeMultiSortingExtractor

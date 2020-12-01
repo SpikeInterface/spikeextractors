@@ -527,6 +527,16 @@ class TestExtractors(unittest.TestCase):
         check_recordings_equal(self.RX, RX_ns)
         check_dumping(RX_ns)
 
+        # NeuroscopeMultiRecordingTimeExtractor tests
+        nscope_dir = Path(self.test_dir) / "neuroscope_rec2"
+        dat_file = nscope_dir / "neuroscope_rec2.dat"
+        RX_multirecording = se.MultiRecordingTimeExtractor(recordings=[self.RX, self.RX])
+        se.NeuroscopeMultiRecordingTimeExtractor.write_recording(recording=RX_multirecording, save_path=nscope_dir)
+        RX_mre = se.NeuroscopeMultiRecordingTimeExtractor(folder_path=nscope_dir)
+        check_recording_return_types(RX_mre)
+        check_recordings_equal(RX_multirecording, RX_mre)
+        check_dumping(RX_mre)
+
         # NeuroscopeSortingExtractor tests
         nscope_dir = Path(self.test_dir) / 'neuroscope_sort0'
         sort_name = 'neuroscope_sort0'
@@ -563,7 +573,7 @@ class TestExtractors(unittest.TestCase):
 
         # Tests for the NeuroscopeMultiSortingExtractor
         nscope_dir = Path(self.test_dir) / 'neuroscope_sort1'
-        SX_multisorting = se.MultiSortingExtractor(sortings=[self.SX, self.SX])  # re-using same SX for simplicity
+        SX_multisorting = se.MultiSortingExtractor(sortings=[self.SX, self.SX])
         se.NeuroscopeMultiSortingExtractor.write_sorting(SX_multisorting, nscope_dir)
         SX_neuroscope_mse = se.NeuroscopeMultiSortingExtractor(nscope_dir)
         check_sorting_return_types(SX_neuroscope_mse)
