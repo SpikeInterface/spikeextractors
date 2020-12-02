@@ -930,6 +930,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         recording=recording,
                         nwbfile=nwbfile,
                         metadata=metadata,
+                        use_timestamps=use_timestamps,
                         write_as_lfp=write_as_lfp
                     )
 
@@ -1279,10 +1280,19 @@ class NwbSortingExtractor(se.SortingExtractor):
                               'session_start_time': datetime.now()}
                     kwargs.update(**nwbfile_kwargs)
                     nwbfile = NWBFile(**kwargs)
-
-                se.NwbSortingExtractor.write_units(sorting, nwbfile, property_descriptions)
+                se.NwbSortingExtractor.write_units(
+                    sorting=sorting,
+                    nwbfile=nwbfile,
+                    property_descriptions=property_descriptions,
+                    timestamps=timestamps
+                )
 
                 io.write(nwbfile)
         else:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
-            se.NwbSortingExtractor.write_units(sorting, nwbfile, property_descriptions, timestamps)
+            se.NwbSortingExtractor.write_units(
+                    sorting=sorting,
+                    nwbfile=nwbfile,
+                    property_descriptions=property_descriptions,
+                    timestamps=timestamps
+            )
