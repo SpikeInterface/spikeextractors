@@ -657,8 +657,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 metadata['Ecephys'].update(
                     LFPElectricalSeries=dict(lfp_defaults)
                 )
-        assert isinstance(metadata['Ecephys']['ElectricalSeries'], dict) \
-            or isinstance(metadata['Ecephys']['LFPElectricalSeries'], dict), \
+        assert ('ElectricalSeries' in metadata['Ecephys']
+                and isinstance(metadata['Ecephys']['ElectricalSeries'], dict)) \
+            or ('LFPElectricalSeries' in metadata['Ecephys']
+                and isinstance(metadata['Ecephys']['LFPElectricalSeries'], dict)), \
             "Expected either metadata['Ecephys']['ElectricalSeries'] or metadata['Ecephys']['LFPElectricalSeries'] " \
             "to be a dictionary!"
 
