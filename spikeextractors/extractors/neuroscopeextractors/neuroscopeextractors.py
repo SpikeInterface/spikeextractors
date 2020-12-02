@@ -41,6 +41,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     def __init__(self, file_path: PathType):
         assert HAVE_LXML, self.installation_mesg
         file_path = Path(file_path)
+        print(file_path)
         assert file_path.is_file() and file_path.suffix in [".dat", ".eeg"], \
             "file_path must lead to a .dat or .eeg file!"
 
