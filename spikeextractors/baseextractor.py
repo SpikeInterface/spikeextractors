@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 import importlib
 import numpy as np
@@ -32,13 +31,40 @@ class BaseExtractor:
 
     def __del__(self):
         # close memmap files (for Windows)
-        for memmap_file in self._memmap_files:
-            del memmap_file
-        if self._tmp_folder is not None:
+        for memmap_obj in self._memmap_files:
+            self.del_memmap_file(memmap_obj)
+        if self._tmp_folder is not None and len(self._memmap_files) > 0:
             try:
                 shutil.rmtree(self._tmp_folder)
             except Exception as e:
                 print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
+
+    def del_memmap_file(self, memmap_file):
+        """
+        Safely deletes instantiated memmap file.
+
+        Parameters
+        ----------
+        memmap_file: str or Path
+            The memmap file to delete
+        """
+        if isinstance(memmap_file, np.memmap):
+            memmap_file = memmap_file.filename
+        else:
+            memmap_file = Path(memmap_file)
+
+        existing_memmap_files = [Path(memmap.filename) for memmap in self._memmap_files]
+        if memmap_file in existing_memmap_files:
+            try:
+                memmap_idx = existing_memmap_files.index(memmap_file)
+                memmap_obj = self._memmap_files[memmap_idx]
+                if not memmap_obj._mmap.closed:
+                    memmap_obj._mmap.close()
+                    del memmap_obj
+                memmap_file.unlink()
+                del self._memmap_files[memmap_idx]
+            except Exception as e:
+                raise Exception(f"Error in deleting {memmap_file.name}: Error {e}")
 
     def make_serialized_dict(self):
         '''
@@ -110,8 +136,7 @@ class BaseExtractor:
             if file_path is None:
                 file_path = self._default_filename + ext
             file_path = Path(file_path)
-            if not file_path.parent.is_dir():
-                os.makedirs(str(file_path.parent))
+            file_path.parent.mkdir(parents=True, exist_ok=True)
             folder_path = file_path.parent
             if Path(file_path).suffix == '':
                 file_path = folder_path / (str(file_path) + ext)
@@ -229,6 +254,9 @@ class BaseExtractor:
                 else:
                     tmp_file = tmp_folder / name
             raw_tmp_file = r'{}'.format(str(tmp_file))
+
+            # make sure any open memmap files with same path are deleted
+            self.del_memmap_file(raw_tmp_file)
             arr = np.memmap(raw_tmp_file, mode='w+', shape=shape, dtype=dtype)
             if array is not None:
                 arr[:] = array

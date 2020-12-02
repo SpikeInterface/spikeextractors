@@ -3,6 +3,7 @@ import struct
 import os
 import tempfile
 import traceback
+from pathlib import Path
 
 
 class MdaHeader:
@@ -131,7 +132,6 @@ class DiskReadMda:
                 ret = self._read_chunk_1d_helper(tmp_fname, N, offset=0)
             except:
                 ret = None
-            # os.remove(tmp_fname)
             return ret
         return self._read_chunk_1d_helper(self._path, N, offset=offset)
 
@@ -176,7 +176,7 @@ def _read_header(path):
             ret = _read_header(tmp_fname)
         except:
             ret = None
-        os.remove(tmp_fname)
+        Path(tmp_fname).unlink()
         return ret
 
     f = open(path, "rb")
