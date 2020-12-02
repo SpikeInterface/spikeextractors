@@ -747,7 +747,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             nwbfile.add_acquisition(ElectricalSeries(**eseries_kwargs))
         else:
             eseries_kwargs.update(
-                description=metadata['Ecephys']['ElectricalSeries'].get('description', lfp_defaults['description'])
+                description=metadata['Ecephys']['LFPElectricalSeries'].get('description', lfp_defaults['description'])
             )
             ecephys_mod.data_interfaces['LFP'].add_electrical_series(ElectricalSeries(**eseries_kwargs))
 
