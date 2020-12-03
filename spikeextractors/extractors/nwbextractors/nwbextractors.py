@@ -144,7 +144,7 @@ def check_module(nwbfile, name: str, description: str = None):
     -------
     pynwb.module
     """
-    assert isinstance(nwbfile, pynwb.NWBFile), "'nwbfile should be an instance of pynwb.NWBFile'"
+    assert isinstance(nwbfile, pynwb.NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
     if name in nwbfile.modules:
         return nwbfile.modules[name]
     else:
