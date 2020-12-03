@@ -130,7 +130,7 @@ def list_get(l, idx, default):
         return default
 
 
-def check_module(nwbfile: pynwb.NWBFile, name: str, description: str = None):
+def check_module(nwbfile, name: str, description: str = None):
     """
     Check if processing module exists. If not, create it. Then return module.
 
@@ -144,6 +144,7 @@ def check_module(nwbfile: pynwb.NWBFile, name: str, description: str = None):
     -------
     pynwb.module
     """
+    assert isinstance(nwbfile, pynwb.NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
     if name in nwbfile.modules:
         return nwbfile.modules[name]
     else:
