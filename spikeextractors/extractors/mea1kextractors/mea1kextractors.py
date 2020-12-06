@@ -1,8 +1,6 @@
 from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
-from tqdm import tqdm
-import time
 from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args, check_valid_unit_id
 
 try:
