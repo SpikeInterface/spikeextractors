@@ -29,6 +29,7 @@ class Mea1kRecordingExtractor(RecordingExtractor):
         self._mapping = None
         self._signals = None
         self._version = None
+        self._timestamps = None
         self._load_spikes = load_spikes
         self._initialize()
         self._kwargs = {'file_path': str(Path(file_path).absolute()),
@@ -120,6 +121,53 @@ class Mea1kRecordingExtractor(RecordingExtractor):
                             self.set_channel_property(ch, 'spike_rate', 0)
                             self.set_channel_property(ch, 'spike_amplitude', 0)
 
+    def correct_for_missing_frames(self, verbose=False):
+        """
+        Corrects for missing frames. The correct times can be retrieved with the frame_to_time and time_to_frame
+        functions.
+
+        Parameters
+        ----------
+        verbose: bool
+            If True, output is verbose
+        """
+        frame_idxs_span = self._get_frame_number(self.get_num_frames() - 1) - self._get_frame_number(0)
+        if frame_idxs_span > self.get_num_frames():
+            if verbose:
+                print(f"Found missing frames! Correcting for it (this might take a while)")
+
+            framenos = self._get_frame_numbers()
+            # find missing frames
+            diff_frames = np.diff(framenos)
+            missing_frames_idxs = np.where(diff_frames > 1)[0]
+
+            delays_in_frames = []
+            for mf_idx in missing_frames_idxs:
+                delays_in_frames.append(diff_frames[mf_idx])
+
+            if verbose:
+                print(f"Found {len(delays_in_frames)} missing intervals")
+
+            self._timestamps = np.round(np.arange(self.get_num_frames()) / self.get_sampling_frequency(), 6)
+
+            for mf_idx, duration in zip(missing_frames_idxs, delays_in_frames):
+                self._timestamps[mf_idx:] += np.round(duration / self.get_sampling_frequency(), 6)
+        else:
+            if verbose:
+                print("No missing frames found")
+
+    def frame_to_time(self, frames):
+        if self._timestamps is None:
+            return super().frame_to_time(frames)
+        else:
+            return self._timestamps[frames]
+
+    def time_to_frame(self, times):
+        if self._timestamps is None:
+            return super().time_to_frame(times)
+        else:
+            return np.searchsorted(self._timestamps, times).astype('int64')
+
     def get_channel_ids(self):
         return list(self._channel_ids)
 
@@ -156,6 +204,16 @@ class Mea1kRecordingExtractor(RecordingExtractor):
         ttl_states = bit_states['bit_idxs']
         ttl_states[ttl_states == 0] = -1
         return ttl_frames, ttl_states
+
+    def _get_frame_numbers(self):
+        bitvals = self._signals[-2:, :]
+        frame_nos = np.bitwise_or(np.left_shift(bitvals[-1].astype('int64'), 16), bitvals[0])
+        return frame_nos
+
+    def _get_frame_number(self, index):
+        bitvals = self._signals[-2:, index]
+        frameno = bitvals[1] << 16 | bitvals[0]
+        return frameno
 
     @staticmethod
     def write_recording(recording, save_path, chunk_size=None, chunk_mb=500):
