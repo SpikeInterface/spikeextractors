@@ -72,6 +72,11 @@ class CEDRecordingExtractor(RecordingExtractor):
                 gains=gains
             )
 
+        rate0 = self._channel_smrxinfo[0]['rate']
+        for chan, info in self._channel_smrxinfo.items():
+            assert info['rate'] == rate0, "Inconsistency between 'sampling_frequency' of different channels. The " \
+                                          "extractor only supports channels with the same 'rate'"
+
         self._kwargs = {'file_path': str(Path(file_path).absolute()),
                         'smrx_channel_ids': smrx_channel_ids}
 
