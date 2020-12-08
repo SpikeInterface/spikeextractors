@@ -289,7 +289,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 # to be indexed out of order
                 sorted_channel_ids = np.sort(channel_ids)
                 sorted_idx = np.array([list(sorted_channel_ids).index(ch) for ch in channel_ids])
-                print(sorted_idx)
                 recordings = es.data[start_frame:end_frame, sorted_channel_ids].T
                 traces = recordings[sorted_idx, :]
             else:
