@@ -287,8 +287,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             if np.array(channel_ids).size > 1 and np.any(np.diff(channel_ids) < 0):
                 # get around h5py constraint that it does not allow datasets
                 # to be indexed out of order
-                sorted_idx = np.argsort(channel_inds)
-                recordings = es.data[start_frame:end_frame, np.sort(channel_inds)].T
+                sorted_channel_ids = np.sort(channel_ids)
+                sorted_idx = np.array([list(sorted_channel_ids).index(ch) for ch in channel_ids])
+                recordings = es.data[start_frame:end_frame, sorted_channel_ids].T
                 traces = recordings[sorted_idx, :]
             else:
                 traces = es.data[start_frame:end_frame, channel_inds].T
