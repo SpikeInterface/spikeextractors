@@ -27,7 +27,7 @@ class CEDRecordingExtractor(RecordingExtractor):
     ----------
     file_path: str
         Path to the .smrx file to be extracted
-    smrx_ch_inds: list of int
+    smrx_channel_ids: list of int
         List with indexes of valid smrx channels. Does not match necessarily
         with extractor id.
     """
@@ -38,10 +38,11 @@ class CEDRecordingExtractor(RecordingExtractor):
     mode = 'file'
     installation_mesg = "To use the CED extractor, install sonpy: \n\n pip install sonpy\n\n"  # error message when not installed
 
-    def __init__(self, file_path: PathType, smrx_ch_inds: list):
+    def __init__(self, file_path: PathType, smrx_channel_ids: list):
         assert HAVE_SONPY, self.installation_mesg
         file_path = Path(file_path)
         assert file_path.is_file() and file_path.suffix == '.smrx', 'file_path must lead to a .smrx file!'
+        assert len(smrx_channel_ids) > 0, "'smrx_channel_ids' cannot be an empty list!"
 
         super().__init__()
 
@@ -55,7 +56,7 @@ class CEDRecordingExtractor(RecordingExtractor):
         # get channel info / set channel gains
         self._channelid_to_smrxind = dict()
         self._channel_smrxinfo = dict()
-        for i, ind in enumerate(smrx_ch_inds):
+        for i, ind in enumerate(smrx_channel_ids):
             if self._recording_file.ChannelType(ind) == sp.DataType.Off:
                 raise ValueError(f'Channel {ind} is type Off and cannot be used')
             self._channelid_to_smrxind[i] = ind
@@ -72,7 +73,7 @@ class CEDRecordingExtractor(RecordingExtractor):
             )
 
         self._kwargs = {'file_path': str(Path(file_path).absolute()),
-                        'smrx_ch_inds': smrx_ch_inds}
+                        'smrx_channel_ids': smrx_channel_ids}
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
