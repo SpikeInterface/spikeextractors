@@ -5,6 +5,7 @@ from spikeextractors.extraction_tools import check_get_traces_args
 import numpy as np
 from pathlib import Path
 from typing import Union
+from copy import deepcopy
 
 try:
     from sonpy import lib as sp
@@ -56,6 +57,7 @@ class CEDRecordingExtractor(RecordingExtractor):
         # get channel info / set channel gains
         self._channelid_to_smrxind = dict()
         self._channel_smrxinfo = dict()
+        self._channel_names = []
         for i, ind in enumerate(smrx_channel_ids):
             if self._recording_file.ChannelType(ind) == sp.DataType.Off:
                 raise ValueError(f'Channel {ind} is type Off and cannot be used')
@@ -71,6 +73,7 @@ class CEDRecordingExtractor(RecordingExtractor):
                 channel_ids=[i],
                 gains=gains
             )
+            self._channel_names.append(self._channel_smrxinfo[i]['title'])
 
         rate0 = self._channel_smrxinfo[0]['rate']
         for chan, info in self._channel_smrxinfo.items():
@@ -79,6 +82,10 @@ class CEDRecordingExtractor(RecordingExtractor):
 
         self._kwargs = {'file_path': str(Path(file_path).absolute()),
                         'smrx_channel_ids': smrx_channel_ids}
+
+    @property
+    def channel_names(self):
+        return deepcopy(self._channel_names)
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
