@@ -83,8 +83,9 @@ class MCSH5RecordingExtractor(RecordingExtractor):
 
         if np.array(channel_idxs).size > 1:
             if np.any(np.diff(channel_idxs) < 0):
-                sorted_idx = np.argsort(channel_idxs)
-                recordings = stream.get('ChannelData')[np.sort(channel_idxs), start_frame:end_frame]
+                sorted_channel_ids = np.sort(channel_idxs)
+                sorted_idx = np.array([list(sorted_channel_ids).index(ch) for ch in channel_idxs])
+                recordings = stream.get('ChannelData')[sorted_channel_ids, start_frame:end_frame]
                 return recordings[sorted_idx] * conv
             else:
                 return stream.get('ChannelData')[np.sort(channel_idxs), start_frame:end_frame] * conv

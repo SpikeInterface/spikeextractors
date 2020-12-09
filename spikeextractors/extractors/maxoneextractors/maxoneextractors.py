@@ -103,9 +103,10 @@ class MaxOneRecordingExtractor(RecordingExtractor):
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
         if np.array(channel_ids).size > 1:
             if np.any(np.diff(channel_ids) < 0):
-                sorted_idx = np.argsort(channel_ids)
-                recordings = self._signals[np.sort(channel_ids), start_frame:end_frame]
-                return (recordings[sorted_idx] * self._lsb).astype('float')
+                sorted_channel_ids = np.sort(channel_ids)
+                sorted_idx = np.array([list(sorted_channel_ids).index(ch) for ch in channel_ids])
+                recordings = (self._signals[sorted_channel_ids, start_frame:end_frame] * self._lsb).astype('float32')
+                return recordings[sorted_idx]
             else:
                 return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
         else:
