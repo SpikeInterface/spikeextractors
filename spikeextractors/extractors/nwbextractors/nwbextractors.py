@@ -859,7 +859,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def write_recording(recording: se.RecordingExtractor, save_path: PathType = None,
-                        nwbfile=None, use_timestamps: bool = False, metadata: dict = None, write_as_lfp: bool = False):
+                        nwbfile=None, use_timestamps: bool = False, metadata: dict = None, write_as_lfp: bool = False,
+                        overwrite: bool = False):
         '''
         Writes all recording related information from recording object and metadata
         to either a saved nwbfile (with save_path specified) or directly to an
@@ -916,7 +917,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             metadata = update_dict(recording.nwb_metadata, metadata)
 
         if nwbfile is None:
-            if Path(save_path).is_file():
+            if Path(save_path).is_file() and not overwrite:
                 read_mode = 'r+'
             else:
                 read_mode = 'w'
@@ -935,13 +936,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         nwbfile_kwargs.update(metadata['NWBFile'])
                     nwbfile = NWBFile(**nwbfile_kwargs)
 
-                    se.NwbRecordingExtractor.add_all_to_nwbfile(
-                        recording=recording,
-                        nwbfile=nwbfile,
-                        metadata=metadata,
-                        use_timestamps=use_timestamps,
-                        write_as_lfp=write_as_lfp
-                    )
+                se.NwbRecordingExtractor.add_all_to_nwbfile(
+                    recording=recording,
+                    nwbfile=nwbfile,
+                    metadata=metadata,
+                    use_timestamps=use_timestamps,
+                    write_as_lfp=write_as_lfp
+                )
 
                 # Write to file
                 io.write(nwbfile)
@@ -1089,7 +1090,10 @@ class NwbSortingExtractor(se.SortingExtractor):
             peak_to_valley="The duration between the negative and the positive peaks computed on the maximum channel.",
             snr="The signal-to-noise ratio of the unit."
         )
-        property_descriptions = dict(default_descriptions, **property_descriptions)
+        if property_descriptions is None:
+            property_descriptions = dict(default_descriptions)
+        else:
+            property_descriptions = dict(default_descriptions, **property_descriptions)
         for pr in all_properties:
             if pr not in property_descriptions:
                 warnings.warn(f"Description for property {pr} not found in property_descriptions. "
@@ -1246,7 +1250,8 @@ class NwbSortingExtractor(se.SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting: se.SortingExtractor, save_path: PathType = None, nwbfile=None,
-                      property_descriptions: dict = None, timestamps: ArrayType = None, **nwbfile_kwargs):
+                      property_descriptions: dict = None, timestamps: ArrayType = None, overwrite: bool = False,
+                      **nwbfile_kwargs):
         '''
         Parameters
         ----------
@@ -1278,7 +1283,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             "Either pass a save_path location, or nwbfile object, but not both!"
 
         if nwbfile is None:
-            if Path(save_path).is_file():
+            if Path(save_path).is_file() and not overwrite:
                 read_mode = 'r+'
             else:
                 read_mode = 'w'
