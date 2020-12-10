@@ -23,6 +23,7 @@ class BaseExtractor:
         self._tmp_folder = None
         self._key_properties = {}
         self._properties = {}
+        self._object_properties = {}
         self._memmap_files = []
         self._features = {}
         self._epochs = {}
@@ -87,11 +88,12 @@ class BaseExtractor:
 
         if self.is_dumpable:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': self._kwargs,
-                         'key_properties': self._key_properties, 'version': version,
-                         'dumpable': True}
+                         'key_properties': self._key_properties, 'object_properties': self._object_properties,
+                         'version': version, 'dumpable': True}
         else:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': {}, 'key_properties': self._key_properties,
-                         'version': imported_module.__version__, 'dumpable': False}
+                         'object_properties': self._object_properties, 'version': imported_module.__version__,
+                         'dumpable': False}
         return dump_dict
 
     def dump_to_dict(self):
@@ -271,10 +273,70 @@ class BaseExtractor:
                 arr = np.zeros(shape, dtype=dtype)
         return arr
 
+    def set_object_property(self, property_name, value, overwrite=False):
+        '''This function adds an entry to the object property dictionary.
+
+        Parameters
+        ----------
+        property_name: str
+            A property stored by the Extractor (location, etc.)
+        value:
+            The data associated with the given property name. Could be many
+            formats as specified by the user
+        overwrite: bool
+            If True and the object property already exists, it is overwritten
+        '''
+        if property_name not in self._object_properties.keys():
+            self._object_properties[property_name] = value
+        else:
+            if overwrite:
+                self._object_properties[property_name] = value
+            else:
+                print(f"{property_name} is already an object property. Use 'overwrite=True' to overwrite it")
+
+    def get_object_property(self, property_name):
+        '''This function returns the data stored under the object property name .
+
+        Parameters
+        ----------
+        property_name: str
+            A property stored by the Extractor
+
+        Returns
+        ----------
+        property_data
+            The data associated with the given property name. Could be many
+            formats as specified by the user
+        '''
+        if property_name not in self._object_properties.keys():
+            print(f"{property_name} is not an object property")
+            return None
+        else:
+            return deepcopy(self._object_properties[property_name])
+
+    def get_object_property_names(self):
+        '''This function returns a list of stored object property names
+
+        Returns
+        ----------
+        property_names: list
+            List of stored object property names
+        '''
+        return list(self._object_properties.keys())
+
+    def copy_object_properties(self, extractor):
+        '''Copy object properties from another extractor to the current extractor.
+
+        Parameters
+        ----------
+        extractor: Extractor
+            The extractor from which the object properties will be copied
+        '''
+        self._object_properties = deepcopy(extractor._object_properties)
+
     def _cast_start_end_frame(self, start_frame, end_frame):
         from .extraction_tools import cast_start_end_frame
         return cast_start_end_frame(start_frame, end_frame)
-
 
     @staticmethod
     def load_extractor_from_json(json_file):
@@ -395,6 +457,9 @@ def _load_extractor_from_dict(dic):
     # load properties and features
     if 'key_properties' in dic.keys():
         extractor._key_properties = dic['key_properties']
+
+    if 'object_properties' in dic.keys():
+        extractor._object_properties = dic['object_properties']
 
     return extractor
 
