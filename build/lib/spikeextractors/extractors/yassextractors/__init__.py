@@ -1,1 +1,0 @@
-from .yassextractors import YassSortingExtractor

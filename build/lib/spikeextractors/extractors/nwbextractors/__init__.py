@@ -1,1 +1,0 @@
-from .nwbextractors import NwbRecordingExtractor, NwbSortingExtractor

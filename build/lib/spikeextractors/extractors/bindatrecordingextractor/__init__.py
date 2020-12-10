@@ -1,1 +1,0 @@
-from .bindatrecordingextractor import BinDatRecordingExtractor

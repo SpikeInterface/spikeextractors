@@ -1,1 +1,0 @@
-from .npzsortingextractor import NpzSortingExtractor

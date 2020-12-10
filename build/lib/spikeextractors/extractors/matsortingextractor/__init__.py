@@ -1,1 +1,0 @@
-from .matsortingextractor import MATSortingExtractor
