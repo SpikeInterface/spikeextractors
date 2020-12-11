@@ -61,18 +61,18 @@ class PhySortingExtractor(SortingExtractor):
         spike_times = np.load(phy_folder / 'spike_times.npy')
         spike_templates = np.load(phy_folder / 'spike_templates.npy')
 
-        if (phy_folder /'spike_clusters.npy').is_file():
+        if (phy_folder / 'spike_clusters.npy').is_file():
             spike_clusters = np.load(phy_folder / 'spike_clusters.npy')
         else:
             spike_clusters = spike_templates
 
         if (phy_folder / 'amplitudes.npy').is_file():
-            amplitudes = np.load(phy_folder / 'amplitudes.npy')
+            amplitudes = np.squeeze(np.load(phy_folder / 'amplitudes.npy'))
         else:
             amplitudes = np.ones(len(spike_times))
 
-        if (phy_folder /'pc_features.npy').is_file():
-            pc_features = np.load(phy_folder / 'pc_features.npy')
+        if (phy_folder / 'pc_features.npy').is_file():
+            pc_features = np.squeeze(np.load(phy_folder / 'pc_features.npy'))
         else:
             pc_features = None
 
