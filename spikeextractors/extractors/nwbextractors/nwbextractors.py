@@ -921,7 +921,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             else:
                 read_mode = 'w'
 
-            with NWBHDF5IO(str(Path(save_path)), mode=read_mode) as io:
+            with NWBHDF5IO(str(save_path), mode=read_mode) as io:
                 if read_mode == 'r+':
                     nwbfile = io.read()
                 else:
@@ -1290,7 +1290,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             else:
                 read_mode = 'w'
 
-            with NWBHDF5IO(str(Path(save_path)), mode=read_mode) as io:
+            with NWBHDF5IO(str(save_path), mode=read_mode) as io:
                 if read_mode == 'r+':
                     nwbfile = io.read()
                 else:
