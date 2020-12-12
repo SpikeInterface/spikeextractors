@@ -858,13 +858,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         )
 
     @staticmethod
-    def write_recording(recording: se.RecordingExtractor, save_path: PathType = None,
-                        nwbfile=None, use_timestamps: bool = False, metadata: dict = None, write_as_lfp: bool = False,
-                        overwrite: bool = False):
-        '''
-        Writes all recording related information from recording object and metadata
-        to either a saved nwbfile (with save_path specified) or directly to an
-        nwbfile object (if nwbfile specified).
+    def write_recording(recording: se.RecordingExtractor, save_path: PathType = None, overwrite: bool = False,
+                        nwbfile=None, use_timestamps: bool = False, metadata: dict = None, write_as_lfp: bool = False):
+        """
+        Primary method for writing a RecordingExtractor object to an NWBFile.
 
         Parameters
         ----------
@@ -872,6 +869,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         save_path: PathType
             Required if an nwbfile is not passed. Must be the path to the nwbfile
             being appended, otherwise one is created and written.
+        overwrite: bool
+            If using save_path, whether or not to overwrite the NWBFile if it already exists.
         nwbfile: NWBFile
             Required if a save_path is not specified. If passed, this function
             will fill the relevant fields within the nwbfile. E.g., calling
@@ -900,7 +899,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                                            'description': my_description}
         write_as_lfp: bool (optional, defaults to False)
             If True, writes the traces under a processing LFP module in the NWBFile instead of acquisition.
-        '''
+        """
         assert HAVE_NWB, NwbRecordingExtractor.installation_mesg
 
         if nwbfile is not None:
@@ -922,7 +921,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             else:
                 read_mode = 'w'
 
-            with NWBHDF5IO(str(Path(save_path).absolute()), mode=read_mode) as io:
+            with NWBHDF5IO(str(Path(save_path)), mode=read_mode) as io:
                 if read_mode == 'r+':
                     nwbfile = io.read()
                 else:
@@ -1249,16 +1248,19 @@ class NwbSortingExtractor(se.SortingExtractor):
             warnings.warn("The nwbfile already contains units. These units will not be over-written.")
 
     @staticmethod
-    def write_sorting(sorting: se.SortingExtractor, save_path: PathType = None, nwbfile=None,
-                      property_descriptions: dict = None, timestamps: ArrayType = None, overwrite: bool = False,
+    def write_sorting(sorting: se.SortingExtractor, save_path: PathType = None, overwrite: bool = False, nwbfile=None,
+                      property_descriptions: dict = None, timestamps: ArrayType = None,
                       **nwbfile_kwargs):
-        '''
+        """
+        Primary method for writing a SortingExtractor object to an NWBFile.
+
         Parameters
         ----------
         sorting: SortingExtractor
         save_path: PathType
-            Required if an nwbfile is not passed. Must be the path to the nwbfile
-            being appended, otherwise one is created and written.
+            Required if an nwbfile is not passed. The location where the NWBFile either exists, or will be written.
+        overwrite: bool
+            If using save_path, whether or not to overwrite the NWBFile if it already exists.
         nwbfile: NWBFile
             Required if a save_path is not specified. If passed, this function
             will fill the relevant fields within the nwbfile. E.g., calling
@@ -1277,7 +1279,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             Information for constructing the nwb file (optional).
             Only used if no nwbfile exists at the save_path, and no nwbfile
             was directly passed.
-        '''
+        """
         assert HAVE_NWB, NwbSortingExtractor.installation_mesg
         assert save_path is None or nwbfile is None, \
             "Either pass a save_path location, or nwbfile object, but not both!"
@@ -1288,7 +1290,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             else:
                 read_mode = 'w'
 
-            with NWBHDF5IO(str(Path(save_path).absolute()), mode=read_mode) as io:
+            with NWBHDF5IO(str(Path(save_path)), mode=read_mode) as io:
                 if read_mode == 'r+':
                     nwbfile = io.read()
                 else:
