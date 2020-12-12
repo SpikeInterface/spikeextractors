@@ -1,11 +1,13 @@
-import numpy as np
-import unittest
-import tempfile
-import shutil
-import spikeextractors as se
 import os
+import shutil
+import tempfile
+import unittest
 from copy import copy
 from pathlib import Path
+
+import numpy as np
+
+import spikeextractors as se
 
 
 class TestTools(unittest.TestCase):
@@ -67,19 +69,19 @@ class TestTools(unittest.TestCase):
         self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=0, dtype='float32', chunk_size=None)
         data = np.memmap(open(self.test_dir + 'rec.dat'), dtype='float32', mode='r', shape=(nb_sample, nb_chan)).T
         assert np.allclose(data, self.RX.get_traces())
-        del(data) # this close the file
+        del (data)  # this close the file
 
         # time_axis=1 chunk_size=None
         self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=1, dtype='float32', chunk_size=None)
         data = np.memmap(open(self.test_dir + 'rec.dat'), dtype='float32', mode='r', shape=(nb_chan, nb_sample))
         assert np.allclose(data, self.RX.get_traces())
-        del(data) # this close the file
+        del (data)  # this close the file
 
         # time_axis=0 chunk_size=99
         self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=0, dtype='float32', chunk_size=99)
         data = np.memmap(open(self.test_dir + 'rec.dat'), dtype='float32', mode='r', shape=(nb_sample, nb_chan)).T
         assert np.allclose(data, self.RX.get_traces())
-        del(data) # this close the file
+        del (data)  # this close the file
 
         # time_axis=0 chunk_mb=2
         self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=0, dtype='float32', chunk_mb=2)
