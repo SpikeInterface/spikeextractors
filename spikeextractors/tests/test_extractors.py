@@ -435,7 +435,7 @@ class TestExtractors(unittest.TestCase):
 
         del RX_nwb
         # overwrite
-        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1)
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1, overwrite=True)
         RX_nwb = se.NwbRecordingExtractor(path1)
         check_recording_return_types(RX_nwb)
         check_recordings_equal(self.RX, RX_nwb)
@@ -456,8 +456,7 @@ class TestExtractors(unittest.TestCase):
         se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1,
                                              property_descriptions=property_descriptions)
         # create new
-        path2 = self.test_dir + '/firings_true.nwb'
-        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path2)
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path2, overwrite=True)
         se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2,
                                              property_descriptions=property_descriptions)
         SX_nwb = se.NwbSortingExtractor(path2)
