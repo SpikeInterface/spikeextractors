@@ -30,15 +30,17 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     ----------
     file_path : str
         Path to the .dat file to be extracted
+    gain : float
+        Numerical value that converts the native int dtype to microvolts.
     """
 
-    extractor_name = 'NeuroscopeRecordingExtractor'
+    extractor_name = "NeuroscopeRecordingExtractor"
     installed = HAVE_LXML
     is_writable = True
-    mode = 'file'
-    installation_mesg = 'Please install lxml to use this extractor!'  # error message when not installed
+    mode = "file"
+    installation_mesg = "Please install lxml to use this extractor!"
 
-    def __init__(self, file_path: PathType):
+    def __init__(self, file_path: PathType, gain: float):
         assert HAVE_LXML, self.installation_mesg
         file_path = Path(file_path)
         assert file_path.is_file() and file_path.suffix in [".dat", ".eeg"], \
@@ -49,9 +51,9 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         file_path = Path(file_path)
         folder_path = file_path.parent
 
-        xml_files = [f for f in folder_path.iterdir() if f.is_file() if f.suffix == '.xml']
-        assert any(xml_files), 'No .xml file found in the folder_path.'
-        assert len(xml_files) == 1, 'More than one .xml file found in the folder_path.'
+        xml_files = [f for f in folder_path.iterdir() if f.is_file() if f.suffix == ".xml"]
+        assert any(xml_files), "No .xml file found in the folder_path."
+        assert len(xml_files) == 1, "More than one .xml file found in the folder_path."
         xml_filepath = xml_files[0]
 
         xml_root = et.parse(str(xml_filepath.absolute())).getroot()
@@ -66,6 +68,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
                                           dtype=dtype, numchan=numchan_from_file)
+        self.set_channel_gains(channel_ids=list(range(numchan_from_file)), gains=gain)
 
         self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
