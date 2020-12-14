@@ -30,8 +30,8 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     ----------
     file_path : str
         Path to the .dat file to be extracted.
-    gain : float
-        Numerical value that converts the native int dtype to microvolts.
+    gain : float, optional
+        Numerical value that converts the native int dtype to microvolts. Defaults to 1.
     """
 
     extractor_name = "NeuroscopeRecordingExtractor"
@@ -40,7 +40,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     mode = "file"
     installation_mesg = "Please install lxml to use this extractor!"
 
-    def __init__(self, file_path: PathType, gain: float):
+    def __init__(self, file_path: PathType, gain: float = 1.0):
         assert HAVE_LXML, self.installation_mesg
         file_path = Path(file_path)
         assert file_path.is_file() and file_path.suffix in [".dat", ".eeg"], \
@@ -70,7 +70,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
                                           dtype=dtype, numchan=numchan_from_file)
         self.set_channel_gains(channel_ids=list(range(numchan_from_file)), gains=gain)
 
-        self._kwargs = dict(file_path=str(Path(file_path).absolute()), gain=1)
+        self._kwargs = dict(file_path=str(Path(file_path).absolute()), gain=gain)
 
     @staticmethod
     def write_recording(recording: RecordingExtractor, save_path: PathType, dtype: DtypeType = None,
@@ -152,8 +152,8 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
     ----------
     folder_path : PathType
         Path to the .dat files to be extracted.
-    gain : float
-        Numerical value that converts the native int dtype to microvolts.
+    gain : float, optional
+        Numerical value that converts the native int dtype to microvolts. Defaults to 1.
     """
 
     extractor_name = "NeuroscopeMultiRecordingTimeExtractor"
@@ -162,7 +162,7 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
     mode = "folder"
     installation_mesg = "Please install lxml to use this extractor!"
 
-    def __init__(self, folder_path: PathType, gain: float):
+    def __init__(self, folder_path: PathType, gain: float = 1.0):
         assert HAVE_LXML, self.installation_mesg
 
         folder_path = Path(folder_path)

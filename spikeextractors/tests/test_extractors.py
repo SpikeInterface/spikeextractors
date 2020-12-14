@@ -506,7 +506,7 @@ class TestExtractors(unittest.TestCase):
         nscope_dir = Path(self.test_dir) / 'neuroscope_rec0'
         dat_file = nscope_dir / 'neuroscope_rec0.dat'
         se.NeuroscopeRecordingExtractor.write_recording(self.RX, nscope_dir)
-        RX_ns = se.NeuroscopeRecordingExtractor(dat_file, gain=1)
+        RX_ns = se.NeuroscopeRecordingExtractor(dat_file)
 
         check_recording_return_types(RX_ns)
         check_recordings_equal(self.RX, RX_ns, force_dtype='int32')
@@ -521,7 +521,7 @@ class TestExtractors(unittest.TestCase):
         nscope_dir = Path(self.test_dir) / 'neuroscope_rec1'
         dat_file = nscope_dir / 'neuroscope_rec1.dat'
         se.NeuroscopeRecordingExtractor.write_recording(recording=self.RX, save_path=nscope_dir)
-        RX_ns = se.NeuroscopeRecordingExtractor(dat_file, gain=1)
+        RX_ns = se.NeuroscopeRecordingExtractor(dat_file)
         check_recording_return_types(RX_ns)
         check_recordings_equal(self.RX, RX_ns)
         check_dumping(RX_ns)
@@ -531,7 +531,7 @@ class TestExtractors(unittest.TestCase):
         dat_file = nscope_dir / "neuroscope_rec2.dat"
         RX_multirecording = se.MultiRecordingTimeExtractor(recordings=[self.RX, self.RX])
         se.NeuroscopeMultiRecordingTimeExtractor.write_recording(recording=RX_multirecording, save_path=nscope_dir)
-        RX_mre = se.NeuroscopeMultiRecordingTimeExtractor(folder_path=nscope_dir, gain=1)
+        RX_mre = se.NeuroscopeMultiRecordingTimeExtractor(folder_path=nscope_dir)
         check_recording_return_types(RX_mre)
         check_recordings_equal(RX_multirecording, RX_mre)
         check_dumping(RX_mre)
