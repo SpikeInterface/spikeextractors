@@ -70,7 +70,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
                                           dtype=dtype, numchan=numchan_from_file)
         self.set_channel_gains(channel_ids=list(range(numchan_from_file)), gains=gain)
 
-        self._kwargs = {'file_path': str(Path(file_path).absolute())}
+        self._kwargs = dict(file_path=str(Path(file_path).absolute()), gain=1)
 
     @staticmethod
     def write_recording(recording: RecordingExtractor, save_path: PathType, dtype: DtypeType = None,
@@ -152,6 +152,8 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
     ----------
     folder_path : PathType
         Path to the .dat files to be extracted.
+    gain : float
+        Numerical value that converts the native int dtype to microvolts.
     """
 
     extractor_name = "NeuroscopeMultiRecordingTimeExtractor"
@@ -160,17 +162,17 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
     mode = "folder"
     installation_mesg = "Please install lxml to use this extractor!"
 
-    def __init__(self, folder_path: PathType):
+    def __init__(self, folder_path: PathType, gain: float):
         assert HAVE_LXML, self.installation_mesg
 
         folder_path = Path(folder_path)
         recording_files = [x for x in folder_path.iterdir() if x.is_file() and x.suffix == ".dat"]
         assert any(recording_files), "The folder_path must lead to at least one .dat file!"
 
-        recordings = [NeuroscopeRecordingExtractor(file_path=x) for x in recording_files]
+        recordings = [NeuroscopeRecordingExtractor(file_path=x, gain=gain) for x in recording_files]
         MultiRecordingTimeExtractor.__init__(self, recordings=recordings)
 
-        self._kwargs = {'folder_path': str(folder_path.absolute())}
+        self._kwargs = dict(folder_path=str(folder_path.absolute()), gain=gain)
 
     @staticmethod
     def write_recording(recording: Union[MultiRecordingTimeExtractor, RecordingExtractor],
