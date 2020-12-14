@@ -29,7 +29,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     Parameters
     ----------
     file_path : str
-        Path to the .dat file to be extracted
+        Path to the .dat file to be extracted.
     gain : float
         Numerical value that converts the native int dtype to microvolts.
     """
