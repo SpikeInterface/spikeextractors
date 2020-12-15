@@ -6,6 +6,7 @@ from spikeextractors.extraction_tools import check_valid_unit_id, get_sub_extrac
 from typing import Union
 import re
 import warnings
+from typing import Optional
 
 try:
     from lxml import etree as et
@@ -40,7 +41,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     mode = "file"
     installation_mesg = "Please install lxml to use this extractor!"
 
-    def __init__(self, file_path: PathType, gain: float = 1.0):
+    def __init__(self, file_path: PathType, gain: Optional[float] = None):
         assert HAVE_LXML, self.installation_mesg
         file_path = Path(file_path)
         assert file_path.is_file() and file_path.suffix in [".dat", ".eeg"], \
@@ -68,7 +69,9 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
                                           dtype=dtype, numchan=numchan_from_file)
-        self.set_channel_gains(channel_ids=list(range(numchan_from_file)), gains=gain)
+
+        if gain is not None:
+            self.set_channel_gains(channel_ids=list(range(numchan_from_file)), gains=gain)
 
         self._kwargs = dict(file_path=str(Path(file_path).absolute()), gain=gain)
 
@@ -162,7 +165,7 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
     mode = "folder"
     installation_mesg = "Please install lxml to use this extractor!"
 
-    def __init__(self, folder_path: PathType, gain: float = 1.0):
+    def __init__(self, folder_path: PathType, gain: Optional[float] = None):
         assert HAVE_LXML, self.installation_mesg
 
         folder_path = Path(folder_path)
