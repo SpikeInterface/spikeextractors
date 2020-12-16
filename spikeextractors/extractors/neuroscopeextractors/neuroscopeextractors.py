@@ -71,7 +71,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
                                           dtype=dtype, numchan=numchan_from_file)
 
         if gain is not None:
-            self.set_channel_gains(channel_ids=list(range(numchan_from_file)), gains=gain)
+            self.set_channel_gains(channel_ids=self.get_channel_ids(), gains=gain)
 
         self._kwargs = dict(file_path=str(Path(file_path).absolute()), gain=gain)
 
