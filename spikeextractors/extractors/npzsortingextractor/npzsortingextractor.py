@@ -6,7 +6,7 @@ import numpy as np
 
 class NpzSortingExtractor(SortingExtractor):
     """
-    Dead simple format super light base on the NPZ numpy format.
+    Dead simple and super light format based on the NPZ numpy format.
     https://docs.scipy.org/doc/numpy/reference/generated/numpy.savez.html#numpy.savez
 
     It is in fact an arichive of several .npy format.

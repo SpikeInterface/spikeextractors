@@ -19,7 +19,8 @@ setuptools.setup(
     package_data={},
     install_requires=[
         'numpy',
-        'tqdm'
+        'tqdm',
+        'joblib'
     ],
     classifiers=(
         "Programming Language :: Python :: 3",

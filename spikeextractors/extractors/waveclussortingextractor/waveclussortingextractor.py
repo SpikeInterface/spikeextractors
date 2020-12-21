@@ -1,12 +1,9 @@
 from pathlib import Path
-import re
 from typing import Union
-
-from scipy.spatial.distance import cdist
 
 import numpy as np
 
-from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor, HAVE_MAT
+from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor
 from spikeextractors.extraction_tools import check_valid_unit_id
 
 PathType = Union[str, Path]
