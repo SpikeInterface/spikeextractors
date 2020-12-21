@@ -3,7 +3,12 @@ import numpy as np
 from pathlib import Path
 from spikeextractors.extraction_tools import check_valid_unit_id
 from typing import Union
-from scipy.io import loadmat, savemat
+
+try:
+    from scipy.io import loadmat, savemat
+    HAVE_SCIPY = True
+except ImportError:
+    HAVE_SCIPY = False
 
 PathType = Union[str, Path]
 
@@ -24,9 +29,10 @@ class CellExplorerSortingExtractor(SortingExtractor):
     installed = True
     is_writable = True
     mode = "file"
-    installation_mesg = ""
+    installation_mesg = "To use the CellExplorerSortingExtractor install scipy: \n\n pip install scipy\n\n"
 
     def __init__(self, spikes_matfile_path: PathType):
+        assert HAVE_SCIPY, self.installation_mesg
         SortingExtractor.__init__(self)
 
         spikes_matfile_path = Path(spikes_matfile_path)

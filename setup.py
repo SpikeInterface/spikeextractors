@@ -20,7 +20,6 @@ setuptools.setup(
     install_requires=[
         'numpy',
         'tqdm',
-        'scipy',
         'joblib'
     ],
     classifiers=(
