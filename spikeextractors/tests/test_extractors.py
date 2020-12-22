@@ -88,7 +88,8 @@ class TestExtractors(unittest.TestCase):
             unit_prop=80,
             channel_prop=(0, 0),
             ttls=ttls,
-            epochs_info=((0, 10), (10, 20))
+            epochs_info=((0, 10), (10, 20)),
+            geom=geom
         )
 
         return (RX, RX2, RX3, SX, SX2, SX3, example_info)
@@ -141,6 +142,21 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(tuple(self.SX.get_epoch_info("epoch1").values()), tuple(self.SX2.get_epoch_info("epoch1").values()))
         self.assertEqual(tuple(self.SX.get_epoch_info("epoch2").values()), tuple(self.SX2.get_epoch_info("epoch2").values()))
 
+        self.RX3.clear_channel_locations()
+        self.assertTrue('location' not in self.RX3.get_shared_channel_property_names())
+        self.RX3.set_channel_locations(self.example_info['geom'])
+        print(self.RX3.get_channel_locations())
+        print(self.RX.get_channel_locations())
+        self.assertTrue(np.array_equal(self.RX3.get_channel_locations(),
+                                       self.RX2.get_channel_locations()))
+        self.RX3.set_channel_groups(groups=[1],channel_ids=[1])
+        self.assertEqual(self.RX3.get_channel_groups(channel_ids=[1]),1)
+        self.RX3.clear_channel_groups()
+        self.assertEqual(self.RX3.get_channel_groups(channel_ids=[1]),0)
+        self.RX3.set_channel_locations(locations=[[np.nan, np.nan, np.nan]], channel_ids=[1])
+        self.assertTrue('location' not in self.RX3.get_shared_channel_property_names())
+        self.RX3.set_channel_locations(locations=[[0, 0, 0]], channel_ids=[1])
+        self.assertTrue('location' in self.RX3.get_shared_channel_property_names())
         check_recording_return_types(self.RX)
 
     def test_allocate_arrays(self):
