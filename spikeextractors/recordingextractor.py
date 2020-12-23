@@ -283,7 +283,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         if isinstance(channel_ids, (int, np.integer)):
             channel_ids = [channel_ids]
         #Reset to default locations (NaN)
-        default_locations =  [[np.nan, np.nan, np.nan] for i in range(len(channel_ids))]
+        default_locations =  np.array([[np.nan, np.nan, np.nan] for i in range(len(channel_ids))])
         self.set_channel_locations(default_locations, channel_ids)
 
     def set_channel_groups(self, groups, channel_ids=None):
