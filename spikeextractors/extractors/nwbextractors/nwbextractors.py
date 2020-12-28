@@ -733,7 +733,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if not use_timestamps:
             eseries_kwargs.update(
                 starting_time=recording.frame_to_time(0),
-                rate=recording.get_sampling_frequency()
+                rate=float(recording.get_sampling_frequency())
             )
         else:
             eseries_kwargs.update(
@@ -1125,14 +1125,16 @@ class NwbSortingExtractor(se.SortingExtractor):
                     skip_properties.append(pr)
 
             for pr in all_properties:
-                # Special case of setting max_electrodes requires a table to be
-                # passed to become a dynamic table region
+                # Special case of setting max_electrodes requires a table to be passed to become a dynamic table region
                 if pr not in skip_properties:
                     if pr in ['max_channel', 'max_electrode']:
                         if nwbfile.electrodes is None:
-                            warnings.warn("Attempted to make a custom column for max_channel "
-                                          "or max_electrode, but there are no electrodes to reference! "
-                                          "Column will not be added.")
+                            warnings.warn("Attempted to make a custom column for max_channelor max_electrode, but "
+                                          "there are no electrodes to reference! Reference table will not be added.")
+                            nwbfile.add_unit_column(
+                                name=pr,
+                                description=property_descriptions.get(pr, "No description.")
+                            )
                         else:
                             nwbfile.add_unit_column(
                                 name=pr,
