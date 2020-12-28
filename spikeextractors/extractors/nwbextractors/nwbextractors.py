@@ -1095,9 +1095,9 @@ class NwbSortingExtractor(se.SortingExtractor):
                 warnings.warn(f"Description for property {pr} not found in property_descriptions. "
                               f"Setting description to 'no description'")
 
+        skip_properties = ["mda_max_channel"]
         if nwbfile.units is None:
             # Check that array properties have the same shape across units
-            skip_properties = []
             property_shapes = dict()
             for pr in all_properties:
                 shapes = []
