@@ -6,7 +6,6 @@ import ctypes
 
 try:
     import h5py
-
     HAVE_BIOCAM = True
 except ImportError:
     HAVE_BIOCAM = False

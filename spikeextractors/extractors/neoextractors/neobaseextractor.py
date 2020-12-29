@@ -54,7 +54,13 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
         # TODO propose a meachanisim to select the appropriate channel groups
         # in neo one channel group have the same dtype/sampling_rate/group_id
-        num_chan_group = len(self.neo_reader.get_group_channel_indexes())
+        try:
+            # Neo >= 0.9.0
+            channel_indexes_list = neorawio.get_group_signal_channel_indexes()
+        except AttributeError:
+            # Neo < 0.9.0
+            channel_indexes_list = neorawio.get_group_channel_indexes()        
+        num_chan_group = len(channel_indexes_list)
         assert num_chan_group == 1, 'This file have several channel groups spikeextractors support only one groups'
 
         # spikeextractor for units to be uV implicitly

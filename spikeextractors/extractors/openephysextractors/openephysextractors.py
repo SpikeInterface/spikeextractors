@@ -1,7 +1,7 @@
 from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id, check_get_ttl_args
 
 try:
     import pyopenephys
@@ -45,6 +45,17 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         elif self._dtype == 'float':
             return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame] * \
                    self._recording.analog_signals[0].gain
+
+    @check_get_ttl_args
+    def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
+        channels = [np.unique(ev.channels)[0] for ev in self._recording.events]
+        assert channel_id in channels, f"Specified 'channel' not found. Available channels are {channels}"
+        ev = self._recording.events[channels.index(channel_id)]
+
+        ttl_frames = (ev.times.rescale("s") * self.get_sampling_frequency()).magnitude.astype(int)
+        ttl_states = np.sign(ev.channel_states)
+        ttl_valid_idxs = np.where((ttl_frames >= start_frame) & (ttl_frames < end_frame))[0]
+        return ttl_frames[ttl_valid_idxs], ttl_states[ttl_valid_idxs]
 
 
 class OpenEphysSortingExtractor(SortingExtractor):

@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 import importlib
 import numpy as np
@@ -24,17 +23,48 @@ class BaseExtractor:
         self._tmp_folder = None
         self._key_properties = {}
         self._properties = {}
+        self._memmap_files = []
         self._features = {}
         self._epochs = {}
         self.is_dumpable = True
         self.id = np.random.randint(low=0, high=9223372036854775807, dtype='int64')
 
     def __del__(self):
-        if self._tmp_folder is not None:
+        # close memmap files (for Windows)
+        for memmap_obj in self._memmap_files:
+            self.del_memmap_file(memmap_obj)
+        if self._tmp_folder is not None and len(self._memmap_files) > 0:
             try:
                 shutil.rmtree(self._tmp_folder)
             except Exception as e:
                 print('Impossible to delete temp file:', self._tmp_folder, 'Error', e)
+
+    def del_memmap_file(self, memmap_file):
+        """
+        Safely deletes instantiated memmap file.
+
+        Parameters
+        ----------
+        memmap_file: str or Path
+            The memmap file to delete
+        """
+        if isinstance(memmap_file, np.memmap):
+            memmap_file = memmap_file.filename
+        else:
+            memmap_file = Path(memmap_file)
+
+        existing_memmap_files = [Path(memmap.filename) for memmap in self._memmap_files]
+        if memmap_file in existing_memmap_files:
+            try:
+                memmap_idx = existing_memmap_files.index(memmap_file)
+                memmap_obj = self._memmap_files[memmap_idx]
+                if not memmap_obj._mmap.closed:
+                    memmap_obj._mmap.close()
+                    del memmap_obj
+                memmap_file.unlink()
+                del self._memmap_files[memmap_idx]
+            except Exception as e:
+                raise Exception(f"Error in deleting {memmap_file.name}: Error {e}")
 
     def make_serialized_dict(self):
         '''
@@ -50,9 +80,14 @@ class BaseExtractor:
         module = class_name.split('.')[0]
         imported_module = importlib.import_module(module)
 
+        try:
+            version = imported_module.__version__
+        except AttributeError:
+            version = 'unknown'
+
         if self.is_dumpable:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': self._kwargs,
-                         'key_properties': self._key_properties, 'version': imported_module.__version__,
+                         'key_properties': self._key_properties, 'version': version,
                          'dumpable': True}
         else:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': {}, 'key_properties': self._key_properties,
@@ -101,8 +136,7 @@ class BaseExtractor:
             if file_path is None:
                 file_path = self._default_filename + ext
             file_path = Path(file_path)
-            if not file_path.parent.is_dir():
-                os.makedirs(str(file_path.parent))
+            file_path.parent.mkdir(parents=True, exist_ok=True)
             folder_path = file_path.parent
             if Path(file_path).suffix == '':
                 file_path = folder_path / (str(file_path) + ext)
@@ -219,12 +253,17 @@ class BaseExtractor:
                     tmp_file = tmp_folder / (name + '.raw')
                 else:
                     tmp_file = tmp_folder / name
-            arr = np.memmap(str(tmp_file), mode='w+', shape=shape, dtype=dtype)
+            raw_tmp_file = r'{}'.format(str(tmp_file))
+
+            # make sure any open memmap files with same path are deleted
+            self.del_memmap_file(raw_tmp_file)
+            arr = np.memmap(raw_tmp_file, mode='w+', shape=shape, dtype=dtype)
             if array is not None:
                 arr[:] = array
                 del array
             else:
                 arr[:] = 0
+            self._memmap_files.append(arr)
         else:
             if array is not None:
                 arr = array
@@ -377,7 +416,10 @@ def _check_same_version(class_string, version):
     module = class_string.split('.')[0]
     imported_module = importlib.import_module(module)
 
-    return imported_module.__version__ == version
+    try:
+        return imported_module.__version__ == version
+    except AttributeError:
+        return 'unknown'
 
 
 def _check_if_dumpable(d):

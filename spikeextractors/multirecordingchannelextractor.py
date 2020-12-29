@@ -13,17 +13,16 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         # Sampling frequency based off the initial extractor
         self._first_recording = recordings[0]
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
-        self._num_frames =  self._first_recording.get_num_frames()
-
+        self._num_frames = self._first_recording.get_num_frames()
 
         # Test if all recording extractors have same sampling frequency
         for i, recording in enumerate(recordings[1:]):
             sampling_frequency = recording.get_sampling_frequency()
-            if (self._sampling_frequency != sampling_frequency):
+            if self._sampling_frequency != sampling_frequency:
                 raise ValueError("Inconsistent sampling frequency between extractor 0 and extractor " + str(i + 1))
 
-        #set channel map for new channel ids to old channel ids
-        new_channel_id  = 0
+        # set channel map for new channel ids to old channel ids
+        new_channel_id = 0
         for r_i, recording in enumerate(self._recordings):
             channel_ids = recording.get_channel_ids()
             for channel_id in channel_ids:
@@ -32,16 +31,25 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
                 new_channel_id += 1
 
         RecordingExtractor.__init__(self)
-        
-        #set group information for channels if available
+
+        # set group information for channels if available
         if groups is not None:
             if len(groups) == len(recordings):
+                group_values = []
                 for i, group in enumerate(groups):
-                    recording = recordings[i]                    
+                    recording = recordings[i]
                     channel_ids = recording.get_channel_ids()
-                    recording.set_channel_groups(groups=np.repeat(group, len(channel_ids)), channel_ids=channel_ids)
+                    group_values += [group] * len(channel_ids)
+                self.set_channel_groups(groups=group_values)
             else:
                 raise ValueError("recordings and groups must have same length")
+
+        # set channel locations
+        locations = np.empty([0, 2])
+        for i, recording in enumerate(recordings):
+            locations = np.vstack((locations, recording.get_channel_locations()))
+        self.set_channel_locations(locations)
+
         self._kwargs = {'recordings': [rec.make_serialized_dict() for rec in recordings], 'groups': groups}
 
     @property
@@ -55,11 +63,13 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
             for channel_id in channel_ids:
                 recording = self._recordings[self._channel_map[channel_id]['recording']]
                 channel_id_recording = self._channel_map[channel_id]['channel_id']
-                traces_recording = recording.get_traces(channel_ids=[channel_id_recording], start_frame=start_frame, end_frame=end_frame)
+                traces_recording = recording.get_traces(channel_ids=[channel_id_recording], start_frame=start_frame,
+                                                        end_frame=end_frame)
                 traces.append(traces_recording)
         else:
             for recording in self._recordings:
-                traces_all_recording = recording.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame)
+                traces_all_recording = recording.get_traces(channel_ids=channel_ids, start_frame=start_frame,
+                                                            end_frame=end_frame)
                 traces.append(traces_all_recording)
         return np.concatenate(traces, axis=0)
 
@@ -87,7 +97,8 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         channel_id_recording = self._channel_map[channel_id]['channel_id']
         property_names = recording.get_channel_property_names(channel_id_recording)
         return property_names
-    
+
+
 def concatenate_recordings_by_channel(recordings, groups=None):
     '''
     Concatenates recordings together by channel. The order of the recordings

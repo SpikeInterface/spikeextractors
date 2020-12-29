@@ -68,7 +68,11 @@ class BinDatRecordingExtractor(RecordingExtractor):
             recordings = self._timeseries[:, start_frame:end_frame]
         else:
             channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
-            recordings = self._timeseries[:, start_frame:end_frame][channel_idxs, :]
+            if np.all(np.diff(channel_idxs) == 1):
+                recordings = self._timeseries[channel_idxs[0]:channel_idxs[0]+len(channel_idxs), start_frame:end_frame]
+            else:
+                # This block of the execution will return the data as an array, not a memmap
+                recordings = self._timeseries[channel_idxs, start_frame:end_frame]
         if self._dtype.startswith('uint'):
             exp_idx = self._dtype.find('int') + 3
             exp = int(self._dtype[exp_idx:])
@@ -77,7 +81,8 @@ class BinDatRecordingExtractor(RecordingExtractor):
             recordings = recordings * self._gain
         return recordings
 
-    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500,
+                                   n_jobs=1, joblib_backend='loky', verbose=False):
         '''Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
@@ -95,6 +100,10 @@ class BinDatRecordingExtractor(RecordingExtractor):
             If 'auto' the file is saved in chunks of ~ 500Mb
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
+        n_jobs: int
+            Number of jobs to use (Default 1)
+        joblib_backend: str
+            Joblib backend for parallel processing ('loky', 'threading', 'multiprocessing')
         '''
         if dtype is None or dtype == self.get_dtype():
             try:
@@ -103,10 +112,12 @@ class BinDatRecordingExtractor(RecordingExtractor):
                 print('Error occurred while copying:', e)
                 print('Writing to binary')
                 write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
-                                           chunk_size=chunk_size, chunk_mb=chunk_mb)
+                                           chunk_size=chunk_size, chunk_mb=chunk_mb, n_jobs=n_jobs,
+                                           joblib_backend=joblib_backend)
         else:
             write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
-                                       chunk_size=chunk_size, chunk_mb=chunk_mb)
+                                       chunk_size=chunk_size, chunk_mb=chunk_mb, n_jobs=n_jobs,
+                                       joblib_backend=joblib_backend)
 
 
     @staticmethod

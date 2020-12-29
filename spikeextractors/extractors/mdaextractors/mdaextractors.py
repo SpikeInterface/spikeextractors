@@ -6,7 +6,6 @@ import json
 import numpy as np
 from pathlib import Path
 from .mdaio import DiskReadMda, readmda, writemda64, MdaHeader
-import os
 import shutil
 
 
@@ -24,7 +23,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         timeseries0 = dataset_directory / raw_fname
         self._dataset_params = read_dataset_params(dataset_directory, params_fname)
         self._sampling_frequency = self._dataset_params['samplerate'] * 1.0
-        self._timeseries_path = os.path.abspath(timeseries0)
+        self._timeseries_path = str(timeseries0.absolute())
         geom0 = dataset_directory / geom_fname
         self._geom_fname = geom0
         self._geom = np.loadtxt(self._geom_fname, delimiter=',',ndmin=2)
@@ -55,7 +54,8 @@ class MdaRecordingExtractor(RecordingExtractor):
         recordings = recordings[channel_ids, :]
         return recordings
 
-    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500):
+    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500,
+                                   n_jobs=1, joblib_backend='loky', verbose=False):
         '''Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
@@ -73,6 +73,12 @@ class MdaRecordingExtractor(RecordingExtractor):
             If 'auto' the file is saved in chunks of ~ 500Mb
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
+        n_jobs: int
+            Number of jobs to use (Default 1)
+        joblib_backend: str
+            Joblib backend for parallel processing ('loky', 'threading', 'multiprocessing')
+        verbose: bool
+            If True, output is verbose
         '''
         X = DiskReadMda(self._timeseries_path)
         header_size = X._header.header_size
@@ -85,14 +91,16 @@ class MdaRecordingExtractor(RecordingExtractor):
                 print('Error occurred while copying:', e)
                 print('Writing to binary')
                 write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
-                                           chunk_size=chunk_size, chunk_mb=chunk_mb)
+                                           chunk_size=chunk_size, chunk_mb=chunk_mb, n_jobs=n_jobs,
+                                           joblib_backend=joblib_backend, verbose=verbose)
         else:
             write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
-                                       chunk_size=chunk_size, chunk_mb=chunk_mb)
+                                       chunk_size=chunk_size, chunk_mb=chunk_mb, n_jobs=n_jobs,
+                                       joblib_backend=joblib_backend,  verbose=verbose)
 
     @staticmethod
     def write_recording(recording, save_path, params=dict(), raw_fname='raw.mda', params_fname='params.json',
-                        geom_fname='geom.csv', dtype=None, chunk_size=None, chunk_mb=500):
+                        geom_fname='geom.csv', dtype=None, chunk_size=None, chunk_mb=500, verbose=False):
         '''
 
         Parameters
@@ -116,11 +124,11 @@ class MdaRecordingExtractor(RecordingExtractor):
             If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
+        verbose: bool
+            If True, output is verbose
         '''
         save_path = Path(save_path)
-        if not save_path.exists():
-            if not save_path.is_dir():
-                os.makedirs(str(save_path))
+        save_path.mkdir(parents=True, exist_ok=True)
         save_file_path = save_path / raw_fname
         parent_dir = save_path
         channel_ids = recording.get_channel_ids()
@@ -128,9 +136,6 @@ class MdaRecordingExtractor(RecordingExtractor):
         num_frames = recording.get_num_frames()
 
         geom = recording.get_channel_locations()
-
-        if not save_path.is_dir():
-            os.mkdir(save_path)
 
         if dtype is None:
             dtype = recording.get_dtype()
@@ -145,7 +150,7 @@ class MdaRecordingExtractor(RecordingExtractor):
             header.write(f)
             # takes care of the chunking
             write_to_binary_dat_format(recording, file_handle=f, dtype=dtype, chunk_size=chunk_size,
-                                       chunk_mb=chunk_mb)
+                                       chunk_mb=chunk_mb, verbose=verbose)
 
         params["samplerate"] = recording.get_sampling_frequency()
         with (parent_dir / params_fname).open('w') as f:
@@ -232,7 +237,7 @@ def _concatenate(list):
 
 def read_dataset_params(dsdir, params_fname):
     fname1 = dsdir / params_fname
-    if not os.path.exists(fname1):
+    if not fname1.is_file():
         raise Exception('Dataset parameter file does not exist: ' + fname1)
     with open(fname1) as f:
         return json.load(f)

@@ -232,7 +232,7 @@ def GainCorrectIM(dataArray, chanList, meta):
 def makeMemMapRaw(binFullPath, meta):
     nChan = int(meta['nSavedChans'])
     nFileSamp = int(int(meta['fileSizeBytes'])/(2*nChan))
-    print("nChan: %d, nFileSamp: %d" % (nChan, nFileSamp))
+    # print("nChan: %d, nFileSamp: %d" % (nChan, nFileSamp))
     rawData = np.memmap(binFullPath, dtype='int16', mode='r',
                         shape=(nChan, nFileSamp), offset=0, order='F')
     return(rawData)
@@ -265,8 +265,8 @@ def ExtractDigital(rawData, firstSamp, lastSamp, dwReq, dLineList, meta):
         else:
             digCh = MN + MA + XA + dwReq
 
-    selectData = np.ascontiguousarray(rawData[digCh, firstSamp:lastSamp+1], 'int16')
-    nSamp = lastSamp-firstSamp + 1
+    selectData = np.ascontiguousarray(rawData[digCh, firstSamp:lastSamp], 'int16')
+    nSamp = lastSamp-firstSamp
 
     # unpack bits of selectData; unpack bits works with uint8
     # origintal data is int16
@@ -280,7 +280,7 @@ def ExtractDigital(rawData, firstSamp, lastSamp, dwReq, dLineList, meta):
         byteN, bitN = np.divmod(dLineList[i], 8)
         targI = byteN*8 + (7 - bitN)
         digArray[i, :] = bitWiseData[targI, :]
-    return(digArray)
+    return (digArray)
 
 
 # Sample calling program to get a file from the user,

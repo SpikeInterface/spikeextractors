@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+from copy import deepcopy
 
 from .extraction_tools import get_sub_extractors_by_property
 from .baseextractor import BaseExtractor
@@ -462,18 +463,19 @@ class SortingExtractor(ABC, BaseExtractor):
             The list (or single value) of unit_ids for which the properties will be copied
         '''
         if unit_ids is None:
-            unit_ids = sorting.get_unit_ids()
-        if isinstance(unit_ids, int):
-            curr_property_names = sorting.get_unit_property_names(unit_id=unit_ids)
-            for curr_property_name in curr_property_names:
-                value = sorting.get_unit_property(unit_id=unit_ids, property_name=curr_property_name)
-                self.set_unit_property(unit_id=unit_ids, property_name=curr_property_name, value=value)
+            self._properties = deepcopy(sorting._properties)
         else:
-            for unit_id in unit_ids:
-                curr_property_names = sorting.get_unit_property_names(unit_id=unit_id)
+            if isinstance(unit_ids, int):
+                curr_property_names = sorting.get_unit_property_names(unit_id=unit_ids)
                 for curr_property_name in curr_property_names:
-                    value = sorting.get_unit_property(unit_id=unit_id, property_name=curr_property_name)
-                    self.set_unit_property(unit_id=unit_id, property_name=curr_property_name, value=value)
+                    value = sorting.get_unit_property(unit_id=unit_ids, property_name=curr_property_name)
+                    self.set_unit_property(unit_id=unit_ids, property_name=curr_property_name, value=value)
+            else:
+                for unit_id in unit_ids:
+                    curr_property_names = sorting.get_unit_property_names(unit_id=unit_id)
+                    for curr_property_name in curr_property_names:
+                        value = sorting.get_unit_property(unit_id=unit_id, property_name=curr_property_name)
+                        self.set_unit_property(unit_id=unit_id, property_name=curr_property_name, value=value)
 
     def clear_unit_property(self, unit_id, property_name):
         '''This function clears the unit property for the given property.
@@ -516,25 +518,26 @@ class SortingExtractor(ABC, BaseExtractor):
             The list (or single value) of unit_ids for which the spike features will be copied
         '''
         if unit_ids is None:
-            unit_ids = sorting.get_unit_ids()
-        if isinstance(unit_ids, int):
-            unit_ids = [unit_ids]
-        for unit_id in unit_ids:
-            curr_feature_names = sorting.get_unit_spike_feature_names(unit_id=unit_id)
-            for curr_feature_name in curr_feature_names:
-                value = sorting.get_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name)
-                if len(value) < len(sorting.get_unit_spike_train(unit_id)):
-                    if not curr_feature_name.endswith('idxs'):
-                        assert curr_feature_name + '_idxs' in \
-                               sorting.get_unit_spike_feature_names(unit_id=unit_id)
-                        curr_feature_name_idxs = curr_feature_name + '_idxs'
-                        value_idxs = np.array(sorting.get_unit_spike_features(unit_id=unit_id,
-                                                                              feature_name=curr_feature_name_idxs))
-                        # find index of first spike
-                        self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name,
-                                                     value=value, indexes=value_idxs)
-                else:
-                    self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name, value=value)
+            self._features = deepcopy(sorting._features)
+        else:
+            if isinstance(unit_ids, int):
+                unit_ids = [unit_ids]
+            for unit_id in unit_ids:
+                curr_feature_names = sorting.get_unit_spike_feature_names(unit_id=unit_id)
+                for curr_feature_name in curr_feature_names:
+                    value = sorting.get_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name)
+                    if len(value) < len(sorting.get_unit_spike_train(unit_id)):
+                        if not curr_feature_name.endswith('idxs'):
+                            assert curr_feature_name + '_idxs' in \
+                                   sorting.get_unit_spike_feature_names(unit_id=unit_id)
+                            curr_feature_name_idxs = curr_feature_name + '_idxs'
+                            value_idxs = np.array(sorting.get_unit_spike_features(unit_id=unit_id,
+                                                                                  feature_name=curr_feature_name_idxs))
+                            # find index of first spike
+                            self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name,
+                                                         value=value, indexes=value_idxs)
+                    else:
+                        self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name, value=value)
 
     def add_epoch(self, epoch_name, start_frame, end_frame):
         '''This function adds an epoch to your sorting extractor that tracks
@@ -637,6 +640,19 @@ class SortingExtractor(ABC, BaseExtractor):
         from .subsortingextractor import SubSortingExtractor
         return SubSortingExtractor(parent_sorting=self, start_frame=start_frame,
                                    end_frame=end_frame)
+
+    def copy_epochs(self, sorting):
+        '''Copy epochs from another sorting extractor to the current
+        sorting extractor.
+
+        Parameters
+        ----------
+        sorting: SortingExtractor
+            The sorting extractor from which the epochs will be copied
+        '''
+        for epoch_name in sorting.get_epoch_names():
+            epoch_info = sorting.get_epoch_info(epoch_name)
+            self.add_epoch(epoch_name, epoch_info["start_frame"], epoch_info["end_frame"])
 
     def get_sub_extractors_by_property(self, property_name, return_property_list=False):
         '''Returns a list of SubSortingExtractors from this SortingExtractor based on the given

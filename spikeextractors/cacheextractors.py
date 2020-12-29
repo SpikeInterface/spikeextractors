@@ -5,12 +5,12 @@ import tempfile
 from pathlib import Path
 from copy import deepcopy
 import importlib
-import os
 import shutil
 
 
 class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
-    def __init__(self, recording, chunk_size=None, chunk_mb=500, save_path=None, verbose=False):
+    def __init__(self, recording, chunk_size=None, chunk_mb=500, save_path=None, n_jobs=1, joblib_backend='loky',
+                 verbose=False):
         RecordingExtractor.__init__(self)  # init tmp folder before constructing BinDatRecordingExtractor
         tmp_folder = self.get_tmp_folder()
         self._recording = recording
@@ -21,13 +21,13 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
             save_path = Path(save_path)
             if save_path.suffix != '.dat' and save_path.suffix != '.bin':
                 save_path = save_path.with_suffix('.dat')
-            if not save_path.parent.is_dir():
-                os.makedirs(save_path.parent)
+            save_path.parent.mkdir(parents=True, exist_ok=True)
             self._is_tmp = False
             self._tmp_file = save_path
         self._dtype = recording.get_dtype()
         recording.write_to_binary_dat_format(save_path=self._tmp_file, dtype=self._dtype, chunk_size=chunk_size,
-                                             chunk_mb=chunk_mb, verbose=verbose)
+                                             chunk_mb=chunk_mb, n_jobs=n_jobs, joblib_backend=joblib_backend,
+                                             verbose=verbose)
         # keep track of filter status when dumping
         self.is_filtered = self._recording.is_filtered
         BinDatRecordingExtractor.__init__(self, self._tmp_file, numchan=recording.get_num_channels(),
@@ -43,7 +43,9 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
     def __del__(self):
         if self._is_tmp:
             try:
-                os.remove(self._tmp_file)
+                # close memmap file (for Windows)
+                del self._timeseries
+                Path(self._tmp_file).unlink()
             except Exception as e:
                 print("Unable to remove temporary file", e)
 
@@ -55,8 +57,9 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
         save_path = Path(save_path)
         if save_path.suffix != '.dat' and save_path.suffix != '.bin':
             save_path = save_path.with_suffix('.dat')
-        if not save_path.parent.is_dir():
-            os.makedirs(save_path.parent)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        # close memmap file (for Windows)
+        del self._timeseries
         shutil.move(self._tmp_file, str(save_path))
         self._tmp_file = str(save_path)
         self._kwargs['file_path'] = str(Path(self._tmp_file).absolute())
@@ -112,8 +115,7 @@ class CacheSortingExtractor(NpzSortingExtractor, SortingExtractor):
             save_path = Path(save_path)
             if save_path.suffix != '.npz':
                 save_path = save_path.with_suffix('.npz')
-            if not save_path.parent.is_dir():
-                os.makedirs(save_path.parent)
+            save_path.parent.mkdir(parents=True, exist_ok=True)
             self._is_tmp = False
             self._tmp_file = save_path
         NpzSortingExtractor.write_sorting(self._sorting, self._tmp_file)
@@ -128,7 +130,7 @@ class CacheSortingExtractor(NpzSortingExtractor, SortingExtractor):
     def __del__(self):
         if self._is_tmp:
             try:
-                os.remove(self._tmp_file)
+                Path(self._tmp_file).unlink()
             except Exception as e:
                 print("Unable to remove temporary file", e)
 
@@ -140,8 +142,7 @@ class CacheSortingExtractor(NpzSortingExtractor, SortingExtractor):
         save_path = Path(save_path)
         if save_path.suffix != '.npz':
             save_path = save_path.with_suffix('.npz')
-        if not save_path.parent.is_dir():
-            os.makedirs(save_path.parent)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(self._tmp_file, str(save_path))
         self._tmp_file = str(save_path)
         self._kwargs['file_path'] = str(Path(self._tmp_file).absolute())
