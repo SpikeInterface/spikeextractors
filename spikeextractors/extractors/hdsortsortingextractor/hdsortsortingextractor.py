@@ -4,10 +4,20 @@ import numpy as np
 import sys
 import os
 
-from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor, HAVE_MAT
+from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor
 from spikeextractors.extraction_tools import check_valid_unit_id
 
 PathType = Union[str, Path]
+
+convert_cell_array_to_struct_code = """
+hdsortOutput = load(fileName);
+hdsortOutput.Units = [hdsortOutput.Units{:}];
+Units = hdsortOutput.Units;
+MultiElectrode = hdsortOutput.MultiElectrode;
+noiseStd = hdsortOutput.noiseStd;
+samplingRate = hdsortOutput.samplingRate;
+save(fileName, 'Units', 'MultiElectrode', 'noiseStd', 'samplingRate');
+"""
 
 
 class HDSortSortingExtractor(MATSortingExtractor):
@@ -113,7 +123,6 @@ class HDSortSortingExtractor(MATSortingExtractor):
     @staticmethod
     def write_sorting(sorting, save_path, locations=None, noise_std_by_channel=None, start_frame=0,
                       convert_cell_to_struct=True):
-        source_dir = Path(__file__).parent
 
         # First, find out how many channels there are
         if locations is not None:
@@ -193,10 +202,8 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
         if convert_cell_to_struct:
             # read the template txt files
-            with (source_dir / 'convert_cellarray_to_structarray.m').open('r') as f:
-                convert_cellarray_to_structarray = f.read()
             convert_cellarray_to_structarray = f"fileName='{str(Path(save_path).absolute())}';\n" \
-                                               f"{convert_cellarray_to_structarray}"
+                                               f"{convert_cell_array_to_struct_code}"
             convert_script = Path(save_path).parent / "convert_cellarray_to_structarray.m"
 
             with convert_script.open('w') as f:
