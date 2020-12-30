@@ -273,12 +273,12 @@ class BaseExtractor:
                 arr = np.zeros(shape, dtype=dtype)
         return arr
 
-    def set_annotation(self, annotation_name, value, overwrite=False):
+    def annotate(self, annotation_key, value, overwrite=False):
         '''This function adds an entry to the annotations dictionary.
 
         Parameters
         ----------
-        annotation_name: str
+        annotation_key: str
             An annotation stored by the Extractor
         value:
             The data associated with the given property name. Could be many
@@ -286,13 +286,13 @@ class BaseExtractor:
         overwrite: bool
             If True and the annotation already exists, it is overwritten
         '''
-        if annotation_name not in self._annotations.keys():
-            self._annotations[annotation_name] = value
+        if annotation_key not in self._annotations.keys():
+            self._annotations[annotation_key] = value
         else:
             if overwrite:
-                self._annotations[annotation_name] = value
+                self._annotations[annotation_key] = value
             else:
-                print(f"{annotation_name} is already an annotation. Use 'overwrite=True' to overwrite it")
+                print(f"{annotation_key} is already an annotation key. Use 'overwrite=True' to overwrite it")
 
     def get_annotation(self, annotation_name):
         '''This function returns the data stored under the annotation name .
@@ -314,13 +314,13 @@ class BaseExtractor:
         else:
             return deepcopy(self._annotations[annotation_name])
 
-    def get_annotation_names(self):
-        '''This function returns a list of stored annotation names
+    def get_annotation_keys(self):
+        '''This function returns a list of stored annotation keys
 
         Returns
         ----------
         property_names: list
-            List of stored annotation names
+            List of stored annotation keys
         '''
         return list(self._annotations.keys())
 
