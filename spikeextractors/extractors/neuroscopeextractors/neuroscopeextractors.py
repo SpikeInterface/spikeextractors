@@ -6,6 +6,7 @@ from spikeextractors.extraction_tools import check_valid_unit_id, get_sub_extrac
 from typing import Union
 import re
 import warnings
+from typing import Optional
 
 try:
     from lxml import etree as et
@@ -29,16 +30,18 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     Parameters
     ----------
     file_path : str
-        Path to the .dat file to be extracted
+        Path to the .dat file to be extracted.
+    gain : float, optional
+        Numerical value that converts the native int dtype to microvolts. Defaults to 1.
     """
 
-    extractor_name = 'NeuroscopeRecordingExtractor'
+    extractor_name = "NeuroscopeRecordingExtractor"
     installed = HAVE_LXML
     is_writable = True
-    mode = 'file'
-    installation_mesg = 'Please install lxml to use this extractor!'  # error message when not installed
+    mode = "file"
+    installation_mesg = "Please install lxml to use this extractor!"
 
-    def __init__(self, file_path: PathType):
+    def __init__(self, file_path: PathType, gain: Optional[float] = None):
         assert HAVE_LXML, self.installation_mesg
         file_path = Path(file_path)
         assert file_path.is_file() and file_path.suffix in [".dat", ".eeg"], \
@@ -49,9 +52,9 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         file_path = Path(file_path)
         folder_path = file_path.parent
 
-        xml_files = [f for f in folder_path.iterdir() if f.is_file() if f.suffix == '.xml']
-        assert any(xml_files), 'No .xml file found in the folder_path.'
-        assert len(xml_files) == 1, 'More than one .xml file found in the folder_path.'
+        xml_files = [f for f in folder_path.iterdir() if f.is_file() if f.suffix == ".xml"]
+        assert any(xml_files), "No .xml file found in the folder_path."
+        assert len(xml_files) == 1, "More than one .xml file found in the folder_path."
         xml_filepath = xml_files[0]
 
         xml_root = et.parse(str(xml_filepath.absolute())).getroot()
@@ -67,7 +70,10 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
                                           dtype=dtype, numchan=numchan_from_file)
 
-        self._kwargs = {'file_path': str(Path(file_path).absolute())}
+        if gain is not None:
+            self.set_channel_gains(channel_ids=self.get_channel_ids(), gains=gain)
+
+        self._kwargs = dict(file_path=str(Path(file_path).absolute()), gain=gain)
 
     @staticmethod
     def write_recording(recording: RecordingExtractor, save_path: PathType, dtype: DtypeType = None,
@@ -149,6 +155,8 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
     ----------
     folder_path : PathType
         Path to the .dat files to be extracted.
+    gain : float, optional
+        Numerical value that converts the native int dtype to microvolts. Defaults to 1.
     """
 
     extractor_name = "NeuroscopeMultiRecordingTimeExtractor"
@@ -157,17 +165,17 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
     mode = "folder"
     installation_mesg = "Please install lxml to use this extractor!"
 
-    def __init__(self, folder_path: PathType):
+    def __init__(self, folder_path: PathType, gain: Optional[float] = None):
         assert HAVE_LXML, self.installation_mesg
 
         folder_path = Path(folder_path)
         recording_files = [x for x in folder_path.iterdir() if x.is_file() and x.suffix == ".dat"]
         assert any(recording_files), "The folder_path must lead to at least one .dat file!"
 
-        recordings = [NeuroscopeRecordingExtractor(file_path=x) for x in recording_files]
+        recordings = [NeuroscopeRecordingExtractor(file_path=x, gain=gain) for x in recording_files]
         MultiRecordingTimeExtractor.__init__(self, recordings=recordings)
 
-        self._kwargs = {'folder_path': str(folder_path.absolute())}
+        self._kwargs = dict(folder_path=str(folder_path.absolute()), gain=gain)
 
     @staticmethod
     def write_recording(recording: Union[MultiRecordingTimeExtractor, RecordingExtractor],
