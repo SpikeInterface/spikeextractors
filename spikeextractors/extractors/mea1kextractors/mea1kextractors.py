@@ -202,7 +202,7 @@ class Mea1kRecordingExtractor(RecordingExtractor):
         bit_states = bits['bits']
         bit_idxs = np.where((bit_frames >= start_frame) & (bit_frames < end_frame))[0]
         ttl_frames = bit_frames[bit_idxs]
-        ttl_states = bit_states['bit_idxs']
+        ttl_states = bit_states[bit_idxs]
         ttl_states[ttl_states == 0] = -1
         return ttl_frames, ttl_states
 
