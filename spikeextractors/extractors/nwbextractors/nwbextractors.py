@@ -1076,6 +1076,8 @@ class NwbSortingExtractor(se.SortingExtractor):
         """Auxilliary function for write_sorting."""
         unit_ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
+        if fs is None:
+            raise ValueError("Writing a SortingExtractor to an NWBFile requires a known sampling frequency!")
 
         all_properties = set()
         all_features = set()
