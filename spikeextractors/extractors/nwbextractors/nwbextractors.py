@@ -5,7 +5,7 @@ from collections import abc
 from pathlib import Path
 import numpy as np
 import distutils.version
-from typing import Union
+from typing import Union, List, Optional
 import warnings
 
 import spikeextractors as se
@@ -1065,8 +1065,13 @@ class NwbSortingExtractor(se.SortingExtractor):
         return np.round(frame / self.get_sampling_frequency(), 6)
 
     @staticmethod
-    def write_units(sorting: se.SortingExtractor, nwbfile,
-                    property_descriptions: dict = None, timestamps: ArrayType = None):
+    def write_units(
+            sorting: se.SortingExtractor,
+            nwbfile,
+            property_descriptions: Optional[dict] = None,
+            timestamps: Optional[ArrayType] = None,
+            skip_properties: Optional[List[str]] = None
+        ):
         """Auxilliary function for write_sorting."""
         unit_ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
@@ -1092,10 +1097,13 @@ class NwbSortingExtractor(se.SortingExtractor):
             property_descriptions = dict(default_descriptions, **property_descriptions)
         for pr in all_properties:
             if pr not in property_descriptions:
-                warnings.warn(f"Description for property {pr} not found in property_descriptions. "
-                              f"Setting description to 'no description'")
+                warnings.warn(
+                    f"Description for property {pr} not found in property_descriptions. "
+                    "Setting description to 'no description'"
+                )
+        if skip_properties is None:
+            skip_properties = []
 
-        skip_properties = ["mda_max_channel"]
         if nwbfile.units is None:
             # Check that array properties have the same shape across units
             property_shapes = dict()
@@ -1124,25 +1132,12 @@ class NwbSortingExtractor(se.SortingExtractor):
                     print(f"Skipping property '{pr}' because it has variable size across units.")
                     skip_properties.append(pr)
 
-            for pr in all_properties:
-                # Special case of setting max_electrodes requires a table to be passed to become a dynamic table region
-                if pr not in skip_properties:
-                    if pr in ['max_channel', 'max_electrode']:
-                        if nwbfile.electrodes is None:
-                            warnings.warn("Attempted to make a custom column for max_channelor max_electrode, but "
-                                          "there are no electrodes to reference! Reference table will not be added.")
-                            nwbfile.add_unit_column(
-                                name=pr,
-                                description=property_descriptions.get(pr, "No description.")
-                            )
-                        else:
-                            nwbfile.add_unit_column(
-                                name=pr,
-                                description=property_descriptions.get(pr, "No description."),
-                                table=nwbfile.electrodes
-                            )
-                    else:
-                        nwbfile.add_unit_column(pr, property_descriptions.get(pr, "No description."))
+            write_properties = set(all_properties) - set(skip_properties)
+            for pr in write_properties:
+                unit_col_args = dict(name=pr, description=property_descriptions.get(pr, "No description."))
+                if pr in ['max_channel', 'max_electrode'] and nwbfile.electrodes is not None:
+                    unit_col_args.update(table=nwbfile.electrodes)
+                nwbfile.add_unit_column(**unit_col_args)
 
             for unit_id in unit_ids:
                 unit_kwargs = dict()
@@ -1150,17 +1145,16 @@ class NwbSortingExtractor(se.SortingExtractor):
                 if timestamps is not None:
                     spike_train_frames = sorting.get_unit_spike_train(unit_id=unit_id)
                     assert spike_train_frames[-1] < len(timestamps), "Number of 'timestamps' differs from number of " \
-                                                                     "'frames'"
+                                                                     "'frames'!"
                     spkt = np.array(timestamps)[spike_train_frames]
                 else:
                     spkt = sorting.get_unit_spike_train(unit_id=unit_id) / fs
-                for pr in all_properties:
-                    if pr not in skip_properties:
-                        if pr in sorting.get_unit_property_names(unit_id):
-                            prop_value = sorting.get_unit_property(unit_id, pr)
-                            unit_kwargs.update({pr: prop_value})
-                        else:  # Case of missing data for this unit and this property
-                            unit_kwargs.update({pr: np.nan})
+                for pr in write_properties:
+                    if pr in sorting.get_unit_property_names(unit_id):
+                        prop_value = sorting.get_unit_property(unit_id, pr)
+                        unit_kwargs.update({pr: prop_value})
+                    else:  # Case of missing data for this unit and this property
+                        unit_kwargs.update({pr: np.nan})
                 nwbfile.add_unit(id=unit_id, spike_times=spkt, **unit_kwargs)
 
             # TODO
@@ -1247,9 +1241,16 @@ class NwbSortingExtractor(se.SortingExtractor):
             warnings.warn("The nwbfile already contains units. These units will not be over-written.")
 
     @staticmethod
-    def write_sorting(sorting: se.SortingExtractor, save_path: PathType = None, overwrite: bool = False, nwbfile=None,
-                      property_descriptions: dict = None, timestamps: ArrayType = None,
-                      **nwbfile_kwargs):
+    def write_sorting(
+            sorting: se.SortingExtractor,
+            save_path: PathType = None, 
+            overwrite: bool = False, 
+            nwbfile=None,
+            property_descriptions: Optional[dict] = None,
+            skip_properties: Optional[List[str]] = None,
+            timestamps: ArrayType = None,
+            **nwbfile_kwargs
+        ):
         """
         Primary method for writing a SortingExtractor object to an NWBFile.
 
@@ -1271,6 +1272,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             For each key in this dictionary which matches the name of a unit
             property in sorting, adds the value as a description to that
             custom unit column.
+        skip_properties: list of str
+            Each string in this list that matches a unit property will not be written to the NWBFile.
         timestamps: array-like
             If provided, the timestamps in seconds or the assiciated RecordingExtractor to be saved as the unit
             timestamps. (default=None)
@@ -1282,6 +1285,8 @@ class NwbSortingExtractor(se.SortingExtractor):
         assert HAVE_NWB, NwbSortingExtractor.installation_mesg
         assert save_path is None or nwbfile is None, \
             "Either pass a save_path location, or nwbfile object, but not both!"
+        if nwbfile is not None:
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be a pynwb.NWBFile object!"
 
         if nwbfile is None:
             if Path(save_path).is_file() and not overwrite:
@@ -1304,15 +1309,15 @@ class NwbSortingExtractor(se.SortingExtractor):
                     sorting=sorting,
                     nwbfile=nwbfile,
                     property_descriptions=property_descriptions,
+                    skip_properties=skip_properties,
                     timestamps=timestamps
                 )
-
                 io.write(nwbfile)
         else:
-            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
             se.NwbSortingExtractor.write_units(
                     sorting=sorting,
                     nwbfile=nwbfile,
                     property_descriptions=property_descriptions,
+                    skip_properties=skip_properties,
                     timestamps=timestamps
             )

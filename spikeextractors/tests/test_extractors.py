@@ -149,10 +149,10 @@ class TestExtractors(unittest.TestCase):
         print(self.RX.get_channel_locations())
         self.assertTrue(np.array_equal(self.RX3.get_channel_locations(),
                                        self.RX2.get_channel_locations()))
-        self.RX3.set_channel_groups(groups=[1],channel_ids=[1])
-        self.assertEqual(self.RX3.get_channel_groups(channel_ids=[1]),1)
+        self.RX3.set_channel_groups(groups=[1], channel_ids=[1])
+        self.assertEqual(self.RX3.get_channel_groups(channel_ids=[1]), 1)
         self.RX3.clear_channel_groups()
-        self.assertEqual(self.RX3.get_channel_groups(channel_ids=[1]),0)
+        self.assertEqual(self.RX3.get_channel_groups(channel_ids=[1]), 0)
         self.RX3.set_channel_locations(locations=[[np.nan, np.nan, np.nan]], channel_ids=[1])
         self.assertTrue('location' not in self.RX3.get_shared_channel_property_names())
         self.RX3.set_channel_locations(locations=[[0, 0, 0]], channel_ids=[1])
@@ -450,17 +450,16 @@ class TestExtractors(unittest.TestCase):
         check_dumping(RX_nwb)
 
         del RX_nwb
-        # overwrite
         se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1, overwrite=True)
         RX_nwb = se.NwbRecordingExtractor(path1)
         check_recording_return_types(RX_nwb)
         check_recordings_equal(self.RX, RX_nwb)
         check_dumping(RX_nwb)
 
-        # add sorting to existing
-        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1)
-        # create new
-        path2 = self.test_dir + '/firings_true.nwb'
+        # append sorting to existing file
+        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1, overwrite=False)
+
+        path2 = self.test_dir + "/firings_true.nwb"
         se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path2)
         se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2)
         SX_nwb = se.NwbSortingExtractor(path2)
@@ -468,14 +467,25 @@ class TestExtractors(unittest.TestCase):
         check_dumping(SX_nwb)
 
         # Test for handling unit property descriptions argument
-        property_descriptions = {'stability': 'this is a description of stability'}
-        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1,
-                                             property_descriptions=property_descriptions)
-        # create new
-        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path2, overwrite=True)
-        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2,
-                                             property_descriptions=property_descriptions)
-        SX_nwb = se.NwbSortingExtractor(path2)
+        property_descriptions = dict(stability="This is a description of stability.")
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1, overwrite=True)
+        se.NwbSortingExtractor.write_sorting(
+            sorting=self.SX,
+            save_path=path1,
+            property_descriptions=property_descriptions
+        )
+        SX_nwb = se.NwbSortingExtractor(path1)
+        check_sortings_equal(self.SX, SX_nwb)
+        check_dumping(SX_nwb)
+
+        # Test for handling unit skip_properties argument
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1, overwrite=True)
+        se.NwbSortingExtractor.write_sorting(
+            sorting=self.SX,
+            save_path=path1,
+            skip_properties=['stability']
+        )
+        SX_nwb = se.NwbSortingExtractor(path1)
         check_sortings_equal(self.SX, SX_nwb)
         check_dumping(SX_nwb)
 
