@@ -1069,8 +1069,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             sorting: se.SortingExtractor,
             nwbfile,
             property_descriptions: Optional[dict] = None,
-            timestamps: Optional[ArrayType] = None,
-            skip_properties: Optional[List[str]] = None
+            skip_properties: Optional[List[str]] = None,
+            skip_features: Optional[List[str]] = None,
+            timestamps: Optional[ArrayType] = None
         ):
         """Auxilliary function for write_sorting."""
         unit_ids = sorting.get_unit_ids()
@@ -1103,6 +1104,8 @@ class NwbSortingExtractor(se.SortingExtractor):
                 )
         if skip_properties is None:
             skip_properties = []
+        if skip_features is None:
+            skip_features = []
 
         if nwbfile.units is None:
             # Check that array properties have the same shape across units
@@ -1177,7 +1180,6 @@ class NwbSortingExtractor(se.SortingExtractor):
 
             # Check that multidimensional features have the same shape across units
             feature_shapes = dict()
-            skip_features = []
             for ft in all_features:
                 shapes = []
                 for unit_id in unit_ids:
@@ -1206,7 +1208,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     print(f"Skipping feature '{ft}' because it has variable size across units.")
                     skip_features.append(ft)
 
-            for ft in all_features:
+            for ft in set(all_features) - set(skip_features):
                 values = []
                 if not ft.endswith('_idxs'):
                     for unit_id in sorting.get_unit_ids():
@@ -1224,19 +1226,16 @@ class NwbSortingExtractor(se.SortingExtractor):
                             all_feat_vals = feat_vals
                         values.append(all_feat_vals)
 
-                    if ft not in skip_features:
-                        flatten_vals = [item for sublist in values for item in sublist]
-                        nspks_list = [sp for sp in nspikes.values()]
-                        spikes_index = np.cumsum(nspks_list).astype('int64')
-
-                        set_dynamic_table_property(
-                            dynamic_table=nwbfile.units,
-                            row_ids=unit_ids,
-                            property_name=ft,
-                            values=flatten_vals,
-                            index=spikes_index,
-                        )
-
+                    flatten_vals = [item for sublist in values for item in sublist]
+                    nspks_list = [sp for sp in nspikes.values()]
+                    spikes_index = np.cumsum(nspks_list).astype('int64')
+                    set_dynamic_table_property(
+                        dynamic_table=nwbfile.units,
+                        row_ids=unit_ids,
+                        property_name=ft,
+                        values=flatten_vals,
+                        index=spikes_index,
+                    )
         else:
             warnings.warn("The nwbfile already contains units. These units will not be over-written.")
 
@@ -1248,6 +1247,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             nwbfile=None,
             property_descriptions: Optional[dict] = None,
             skip_properties: Optional[List[str]] = None,
+            skip_features: Optional[List[str]] = None,
             timestamps: ArrayType = None,
             **nwbfile_kwargs
         ):
@@ -1274,6 +1274,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             custom unit column.
         skip_properties: list of str
             Each string in this list that matches a unit property will not be written to the NWBFile.
+        skip_features: list of str
+            Each string in this list that matches a spike feature will not be written to the NWBFile.
         timestamps: array-like
             If provided, the timestamps in seconds or the assiciated RecordingExtractor to be saved as the unit
             timestamps. (default=None)
@@ -1310,6 +1312,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     nwbfile=nwbfile,
                     property_descriptions=property_descriptions,
                     skip_properties=skip_properties,
+                    skip_features=skip_features,
                     timestamps=timestamps
                 )
                 io.write(nwbfile)
@@ -1319,5 +1322,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                     nwbfile=nwbfile,
                     property_descriptions=property_descriptions,
                     skip_properties=skip_properties,
+                    skip_features=skip_features,
                     timestamps=timestamps
             )
