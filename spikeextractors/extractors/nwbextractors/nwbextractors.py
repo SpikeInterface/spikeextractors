@@ -1166,14 +1166,11 @@ class NwbSortingExtractor(se.SortingExtractor):
 
                 if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=unit_id):
                     skip_features.append('waveforms')
-                    if waveforms_as_event_series:
-                        wf = sorting.get_unit_spike_features(unit_id=id, feature_name='waveforms')
-                        raise NotImplementedError("TODO")
-                    else:
+                    if not waveforms_as_event_series:
                         raise NotImplementedError("pynwb does not yet support writing waveforms to unit table!")
 
                     if write_waveform_stats:
-                        wf = sorting.get_unit_spike_features(unit_id=id, feature_name='waveforms')
+                        wf = sorting.get_unit_spike_features(unit_id=unit_id, feature_name='waveforms')
                         relevant_ch = most_relevant_ch(wf)
                         traces = wf[:, relevant_ch, :]
                         traces_avg = np.mean(traces, axis=0)
@@ -1181,6 +1178,43 @@ class NwbSortingExtractor(se.SortingExtractor):
                         unit_kwargs.update(waveform_mean=traces_avg, waveform_sd=traces_std)
 
                 nwbfile.add_unit(id=unit_id, spike_times=spkt, **unit_kwargs)
+                
+            if 'waveforms' in sorting.get_shared_unit_spike_feature_names() and waveforms_as_event_series:
+                def data_generator(sorting, unit_ids):
+                    for unit_id in unit_ids:
+                        wf_data = sorting.get_unit_spike_features(unit_id=unit_id, feature_name='waveforms')
+                        times = sorting.get_unit_spike_train(unit_id=unit_id)
+                        yield (wf_data, times)
+                (wf_data, times) = DataChunkIterator(
+                    data=data_generator(sorting=sorting, unit_ids=unit_ids),
+                    iter_axis=1
+                )
+
+                # channels gains - for a RecordingExtractor, these are values to cast traces to uV
+                # for nwb, the conversions (gains) cast the data to Volts
+                # To get traces in Volts = data*channel_conversion*conversion
+                gains = np.squeeze([
+                    sorting.get_unit_property(unit_id=[unit_id], property_name='gain')
+                    if 'gain' in sorting.get_unit_property_names(unit_id=unit_id) else 1
+                    for unit_id in unit_ids
+                ])
+                if len(np.unique(gains)) == 1:  # if all gains are equal
+                    scalar_conversion = np.unique(gains)[0] * 1e-6
+                else:
+                    scalar_conversion = 1.
+
+                series_args = dict(
+                    name="SpikeWaveforms",
+                    data=H5DataIO(wf_data, compression="gzip"),
+                    timestamps=H5DataIO(times, compression="gzip"),
+                    conversion=scalar_conversion
+                )
+                if nwbfile.ec_electrodes is not None:
+                    elec_idx = list(np.where(np.array(nwbfile.ec_electrodes['group']) == group)[0])
+                    series_args.update(
+                        electrodes=nwbfile.create_electrode_table_region(elec_idx, group.name + ' region')
+                    )
+                check_module(nwbfile, 'ecephys').add(SpikeEventSeries(**series_args))
 
             # Check that multidimensional features have the same shape across units
             write_features = set(all_features) - set(skip_features)
