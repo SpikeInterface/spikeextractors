@@ -1071,7 +1071,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             property_descriptions: Optional[dict] = None,
             skip_properties: Optional[List[str]] = None,
             skip_features: Optional[List[str]] = None,
-            timestamps: Optional[ArrayType] = None
+            timestamps: Optional[ArrayType] = None,
+            waveforms_as_event_series: Optional[bool] = None,
+            write_waveform_stats: bool = False
         ):
         """Auxilliary function for write_sorting."""
         unit_ids = sorting.get_unit_ids()
@@ -1154,35 +1156,36 @@ class NwbSortingExtractor(se.SortingExtractor):
                     spkt = np.array(timestamps)[spike_train_frames]
                 else:
                     spkt = sorting.get_unit_spike_train(unit_id=unit_id) / fs
+
                 for pr in write_properties:
                     if pr in sorting.get_unit_property_names(unit_id):
                         prop_value = sorting.get_unit_property(unit_id, pr)
                         unit_kwargs.update({pr: prop_value})
                     else:  # Case of missing data for this unit and this property
                         unit_kwargs.update({pr: np.nan})
+
+                if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=unit_id):
+                    skip_features.append('waveforms')
+                    if waveforms_as_event_series:
+                        wf = sorting.get_unit_spike_features(unit_id=id, feature_name='waveforms')
+                        raise NotImplementedError("TODO")
+                    else:
+                        raise NotImplementedError("pynwb does not yet support writing waveforms to unit table!")
+
+                    if write_waveform_stats:
+                        wf = sorting.get_unit_spike_features(unit_id=id, feature_name='waveforms')
+                        relevant_ch = most_relevant_ch(wf)
+                        traces = wf[:, relevant_ch, :]
+                        traces_avg = np.mean(traces, axis=0)
+                        traces_std = np.std(traces, axis=0)
+                        unit_kwargs.update(waveform_mean=traces_avg, waveform_sd=traces_std)
+
                 nwbfile.add_unit(id=unit_id, spike_times=spkt, **unit_kwargs)
 
-            # TODO
-            # # Stores average and std of spike traces
-            # This will soon be updated to the current NWB standard
-            # if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
-            #     wf = sorting.get_unit_spike_features(unit_id=id,
-            #                                          feature_name='waveforms')
-            #     relevant_ch = most_relevant_ch(wf)
-            #     # Spike traces on the most relevant channel
-            #     traces = wf[:, relevant_ch, :]
-            #     traces_avg = np.mean(traces, axis=0)
-            #     traces_std = np.std(traces, axis=0)
-            #     nwbfile.add_unit(
-            #         id=id,
-            #         spike_times=spkt,
-            #         waveform_mean=traces_avg,
-            #         waveform_sd=traces_std
-            #     )
-
             # Check that multidimensional features have the same shape across units
+            write_features = set(all_features) - set(skip_features)
             feature_shapes = dict()
-            for ft in all_features:
+            for ft in write_features:
                 shapes = []
                 for unit_id in unit_ids:
                     if ft in sorting.get_unit_spike_feature_names(unit_id):
@@ -1199,7 +1202,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                             break
                     else:
                         print(f"Skipping feature '{ft}' because not share across all units.")
-                        skip_features.append(ft)
+                        write_features -= set(ft)
                         break
 
             nspikes = {k: get_nspikes(nwbfile.units, int(k)) for k in unit_ids}
@@ -1208,9 +1211,9 @@ class NwbSortingExtractor(se.SortingExtractor):
                 # skip first dimension (num_spikes) when comparing feature shape
                 if not np.all([elem[1:] == feature_shapes[ft][0][1:] for elem in feature_shapes[ft]]):
                     print(f"Skipping feature '{ft}' because it has variable size across units.")
-                    skip_features.append(ft)
+                    write_features -= set(ft)
 
-            for ft in set(all_features) - set(skip_features):
+            for ft in write_features:
                 values = []
                 if not ft.endswith('_idxs'):
                     for unit_id in sorting.get_unit_ids():
@@ -1251,6 +1254,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             skip_properties: Optional[List[str]] = None,
             skip_features: Optional[List[str]] = None,
             timestamps: ArrayType = None,
+            waveforms_as_event_series: Optional[bool] = None,
+            write_waveform_stats: bool = False,
             **nwbfile_kwargs
         ):
         """
@@ -1270,21 +1275,31 @@ class NwbSortingExtractor(se.SortingExtractor):
                 my_recording_extractor, my_nwbfile
             )
             will result in the appropriate changes to the my_nwbfile object.
-        property_descriptions: dict
+        property_descriptions: dict (optional)
             For each key in this dictionary which matches the name of a unit
-            property in sorting, adds the value as a description to that
+                property in sorting, adds the value as a description to that
             custom unit column.
-        skip_properties: list of str
+        skip_properties: list of str (optional)
             Each string in this list that matches a unit property will not be written to the NWBFile.
-        skip_features: list of str
+        skip_features: list of str (optional)
             Each string in this list that matches a spike feature will not be written to the NWBFile.
-        timestamps: array-like
+        timestamps: array-like (optional)
             If provided, the timestamps in seconds or the assiciated RecordingExtractor to be saved as the unit
-            timestamps. (default=None)
-        nwbfile_kwargs: dict
+                timestamps.
+            Defaults to None.
+        waveforms_as_event_series: bool or None (optional)
+            Decides how to write waveform data saved as spike features to the NWBFile.
+            If True, writes as SpikeEventSeries under Ecephys module.
+            If False, writes as jagged column of units table (not yet implemented).
+            If None, does not write the waveform feature to the NWBFile.
+            Defaults to None.
+        write_waveform_stats: bool (optional)
+            If True, calculates the mean and standard deviation of the waveform spike feature for the
+                most relevant channel and writes to the units table in the NWBFile.
+            Defaults to False.
+        nwbfile_kwargs: dict (optional)
             Information for constructing the nwb file (optional).
-            Only used if no nwbfile exists at the save_path, and no nwbfile
-            was directly passed.
+            Only used if no nwbfile exists at the save_path, and no nwbfile was directly passed.
         """
         assert HAVE_NWB, NwbSortingExtractor.installation_mesg
         assert save_path is None or nwbfile is None, \
@@ -1315,7 +1330,9 @@ class NwbSortingExtractor(se.SortingExtractor):
                     property_descriptions=property_descriptions,
                     skip_properties=skip_properties,
                     skip_features=skip_features,
-                    timestamps=timestamps
+                    timestamps=timestamps,
+                    waveforms_as_event_series=waveforms_as_event_series,
+                    write_waveform_stats=write_waveform_stats
                 )
                 io.write(nwbfile)
         else:
@@ -1325,5 +1342,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     property_descriptions=property_descriptions,
                     skip_properties=skip_properties,
                     skip_features=skip_features,
-                    timestamps=timestamps
+                    timestamps=timestamps,
+                    waveforms_as_event_series=waveforms_as_event_series,
+                    write_waveform_stats=write_waveform_stats
             )
