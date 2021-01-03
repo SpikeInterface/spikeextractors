@@ -373,7 +373,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
         clu = np.loadtxt(clufile_path, dtype=np.int64, usecols=0, ndmin=1)
 
-        if len(res) > 0:
+        n_spikes = len(res)
+        if n_spikes > 0:
             # Extract the number of unique IDs from the first line of the clufile then remove it from the list
             n_clu = clu[0]
             clu = np.delete(clu, 0)
@@ -398,10 +399,10 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         if spkfile_path is not None and Path(spkfile_path).is_file():
             n_bits = int(xml_root.find('acquisitionSystem').find('nBits').text)
             dtype = f"int{n_bits}"
-            nspikes = 1
-            nsamples = int(xml_root.find('neuroscope').find('spikes').find('nSamples').text)
-            nchannels = 1
-            wf = np.memmap(spkfile_path, dtype=dtype, shape=(nspikes, nsamples, nchannels))
+            n_samples = int(xml_root.find('neuroscope').find('spikes').find('nSamples').text)
+            wf = np.memmap(spkfile_path, dtype=dtype)
+            n_channels = int(wf.size / (n_spikes * n_samples))
+            wf = wf.reshape(n_spikes, n_samples, n_channels)
 
             for unit_id in self.get_unit_ids():
                 self.set_unit_spike_features(
