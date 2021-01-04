@@ -324,8 +324,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         resfile_path: OptionalPathType = None,
         clufile_path: OptionalPathType = None,
         folder_path: OptionalPathType = None,
-        keep_mua_units: bool = True,
-        spkfile_path: OptionalPathType = None
+        keep_mua_units: bool = True
     ):
         assert HAVE_LXML, self.installation_mesg
         assert not (folder_path is None and resfile_path is None and clufile_path is None), \
