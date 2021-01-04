@@ -297,8 +297,6 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         Optional. Path to the collection of .res and .clu text files. Will auto-detect format.
     keep_mua_units : bool
         Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
-    spkfile_path : PathType
-        Optional. Path to a particular .spk binary file containing waveform snippets added to the extractor as features.
     """
 
     extractor_name = "NeuroscopeSortingExtractor"
@@ -395,21 +393,6 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                 self._unit_ids = [x + 1 for x in range(n_clu)]  # from 1,...,clu[0]-2
                 for s_id in self._unit_ids:
                     self._spiketrains.append(res[(clu == s_id + 1).nonzero()])  # from 2,...,clu[0]-1
-
-        if spkfile_path is not None and Path(spkfile_path).is_file():
-            n_bits = int(xml_root.find('acquisitionSystem').find('nBits').text)
-            dtype = f"int{n_bits}"
-            n_samples = int(xml_root.find('neuroscope').find('spikes').find('nSamples').text)
-            wf = np.memmap(spkfile_path, dtype=dtype)
-            n_channels = int(wf.size / (n_spikes * n_samples))
-            wf = wf.reshape(n_spikes, n_samples, n_channels)
-
-            for unit_id in self.get_unit_ids():
-                self.set_unit_spike_features(
-                    unit_id=unit_id,
-                    feature_name='waveforms',
-                    value=wf[clu == unit_id + 1 - int(keep_mua_units), :, :]
-                )
 
         if folder_path_passed:
             self._kwargs = dict(
