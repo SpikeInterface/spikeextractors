@@ -407,16 +407,14 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                 resfile_path=None,
                 clufile_path=None,
                 folder_path=str(folder_path.absolute()),
-                keep_mua_units=keep_mua_units,
-                spkfile_path=None
+                keep_mua_units=keep_mua_units
             )
         else:
             self._kwargs = dict(
                 resfile_path=str(resfile_path.absolute()),
                 clufile_path=str(clufile_path.absolute()),
                 folder_path=None,
-                keep_mua_units=keep_mua_units,
-                spkfile_path=str(spkfile_path.absolute())
+                keep_mua_units=keep_mua_units
             )
 
     def get_unit_ids(self):
