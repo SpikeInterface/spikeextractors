@@ -375,8 +375,10 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         xml_root = et.parse(str(xml_filepath.absolute())).getroot()
         self._sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text)
 
-        res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
-        clu = np.loadtxt(clufile_path, dtype=np.int64, usecols=0, ndmin=1)
+        with open(resfile_path) as f:
+            res = np.array([int(line) for line in f], np.int64)
+        with open(clufile_path) as f:
+            clu = np.array([int(line) for line in f], np.int64)
 
         n_spikes = len(res)
         if n_spikes > 0:
