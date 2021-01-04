@@ -311,6 +311,10 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         Optional. Path to the collection of .res and .clu text files. Will auto-detect format.
     keep_mua_units : bool
         Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
+    spkfile_path : PathType
+        Optional. Path to a particular .spk binary file containing waveform snippets added to the extractor as features.
+    gain : float
+        Optional. If passing a spkfile_path, this value converts the data type of the waveforms to units of microvolts.
     """
 
     extractor_name = "NeuroscopeSortingExtractor"
@@ -325,7 +329,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         clufile_path: OptionalPathType = None,
         folder_path: OptionalPathType = None,
         keep_mua_units: bool = True,
-        spkfile_path: OptionalPathType = None
+        spkfile_path: OptionalPathType = None,
+        gain: Optional[float] = None
     ):
         assert HAVE_LXML, self.installation_mesg
         assert not (folder_path is None and resfile_path is None and clufile_path is None), \
@@ -416,6 +421,11 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                 folder_path=None,
                 keep_mua_units=keep_mua_units
             )
+            
+        if spkfile_path is not None:
+            self._kwargs.update(spkfile_path=str(spkfile_path.absolute()))
+        else:
+            self._kwargs.update(spkfile_path=spkfile_path)
 
     def get_unit_ids(self):
         return list(self._unit_ids)
