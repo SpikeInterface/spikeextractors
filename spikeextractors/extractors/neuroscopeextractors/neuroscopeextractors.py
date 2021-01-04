@@ -19,6 +19,20 @@ OptionalPathType = Optional[PathType]
 DtypeType = Union[str, np.dtype, None]
 
 
+def get_single_files(folder_path: Path, suffix: str):
+    return [
+        f for f in folder_path.iterdir() if f.is_file() and suffix in f.suffixes and not f.name.endswith("~")
+        and len(f.suffixes) == 1
+    ]
+
+
+def get_shank_files(folder_path: Path, suffix: str):
+    return [
+        f for f in folder_path.iterdir() if f.is_file() and suffix in f.suffixes
+        and re.search(r"\d+$", f.name) is not None and len(f.suffixes) == 2
+    ]
+
+
 class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     """
     Extracts raw neural recordings from large binary .dat files in the neuroscope format.
@@ -333,14 +347,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             folder_path = Path(folder_path)
             assert folder_path.is_dir(), "The folder_path must be a directory!"
 
-            res_files = [
-                f for f in folder_path.iterdir() if f.is_file() and ".res" in f.suffixes and ".temp" not in f.suffixes
-                and not f.name.endswith("~") and len(f.suffixes) == 1
-            ]
-            clu_files = [
-                f for f in folder_path.iterdir() if f.is_file() and ".clu" in f.suffixes and not f.name.endswith("~")
-                and len(f.suffixes) == 1
-            ]
+            res_files = get_single_files(folder_path=folder_path, suffix=".res")
+            clu_files = get_single_files(folder_path=folder_path, suffix=".clu")
 
             assert len(res_files) > 0 or len(clu_files) > 0, \
                 "No .res or .clu files found in the folder_path!"
@@ -535,17 +543,11 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         assert len(xml_files) == 1, "More than one .xml file found in the folder!"
         xml_filepath = xml_files[0]
 
-        xml_root = et.parse(str(xml_filepath.absolute())).getroot()
+        xml_root = et.parse(str(xml_filepath).getroot())
         self._sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text)
 
-        res_files = [f for f in folder_path.iterdir() if f.is_file()
-                     and ".res" in f.suffixes
-                     and re.search(r"\d+$", f.name) is not None
-                     and len(f.suffixes) == 2]
-        clu_files = [f for f in folder_path.iterdir() if f.is_file()
-                     and ".clu" in f.suffixes
-                     and re.search(r"\d+$", f.name) is not None
-                     and len(f.suffixes) == 2]
+        res_files = get_shank_files(folder_path=folder_path, suffix=".res")
+        clu_files = get_shank_files(folder_path=folder_path, suffix=".clu")
 
         assert len(res_files) > 0 or len(clu_files) > 0, "No .res or .clu files found in the folder_path!"
         assert len(res_files) == len(clu_files)
@@ -567,9 +569,13 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
             resfile_path = folder_path / f"{sorting_name}.res.{shank_id}"
             clufile_path = folder_path / f"{sorting_name}.clu.{shank_id}"
 
-            all_shanks_list_se.append(NeuroscopeSortingExtractor(resfile_path=resfile_path,
-                                                                 clufile_path=clufile_path,
-                                                                 keep_mua_units=keep_mua_units))
+            all_shanks_list_se.append(
+                NeuroscopeSortingExtractor(
+                    resfile_path=resfile_path,
+                    clufile_path=clufile_path,
+                    keep_mua_units=keep_mua_units
+                )
+            )
 
         MultiSortingExtractor.__init__(self, sortings=all_shanks_list_se)
 
