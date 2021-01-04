@@ -5,7 +5,7 @@ from collections import abc
 from pathlib import Path
 import numpy as np
 import distutils.version
-from typing import Union
+from typing import Union, List, Optional
 import warnings
 
 import spikeextractors as se
@@ -733,7 +733,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if not use_timestamps:
             eseries_kwargs.update(
                 starting_time=recording.frame_to_time(0),
-                rate=recording.get_sampling_frequency()
+                rate=float(recording.get_sampling_frequency())
             )
         else:
             eseries_kwargs.update(
@@ -1065,11 +1065,19 @@ class NwbSortingExtractor(se.SortingExtractor):
         return np.round(frame / self.get_sampling_frequency(), 6)
 
     @staticmethod
-    def write_units(sorting: se.SortingExtractor, nwbfile,
-                    property_descriptions: dict = None, timestamps: ArrayType = None):
+    def write_units(
+            sorting: se.SortingExtractor,
+            nwbfile,
+            property_descriptions: Optional[dict] = None,
+            skip_properties: Optional[List[str]] = None,
+            skip_features: Optional[List[str]] = None,
+            timestamps: Optional[ArrayType] = None
+        ):
         """Auxilliary function for write_sorting."""
         unit_ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
+        if fs is None:
+            raise ValueError("Writing a SortingExtractor to an NWBFile requires a known sampling frequency!")
 
         all_properties = set()
         all_features = set()
@@ -1092,12 +1100,17 @@ class NwbSortingExtractor(se.SortingExtractor):
             property_descriptions = dict(default_descriptions, **property_descriptions)
         for pr in all_properties:
             if pr not in property_descriptions:
-                warnings.warn(f"Description for property {pr} not found in property_descriptions. "
-                              f"Setting description to 'no description'")
+                warnings.warn(
+                    f"Description for property {pr} not found in property_descriptions. "
+                    "Setting description to 'no description'"
+                )
+        if skip_properties is None:
+            skip_properties = []
+        if skip_features is None:
+            skip_features = []
 
         if nwbfile.units is None:
             # Check that array properties have the same shape across units
-            skip_properties = []
             property_shapes = dict()
             for pr in all_properties:
                 shapes = []
@@ -1124,23 +1137,12 @@ class NwbSortingExtractor(se.SortingExtractor):
                     print(f"Skipping property '{pr}' because it has variable size across units.")
                     skip_properties.append(pr)
 
-            for pr in all_properties:
-                # Special case of setting max_electrodes requires a table to be
-                # passed to become a dynamic table region
-                if pr not in skip_properties:
-                    if pr in ['max_channel', 'max_electrode']:
-                        if nwbfile.electrodes is None:
-                            warnings.warn("Attempted to make a custom column for max_channel "
-                                          "or max_electrode, but there are no electrodes to reference! "
-                                          "Column will not be added.")
-                        else:
-                            nwbfile.add_unit_column(
-                                name=pr,
-                                description=property_descriptions.get(pr, "No description."),
-                                table=nwbfile.electrodes
-                            )
-                    else:
-                        nwbfile.add_unit_column(pr, property_descriptions.get(pr, "No description."))
+            write_properties = set(all_properties) - set(skip_properties)
+            for pr in write_properties:
+                unit_col_args = dict(name=pr, description=property_descriptions.get(pr, "No description."))
+                if pr in ['max_channel', 'max_electrode'] and nwbfile.electrodes is not None:
+                    unit_col_args.update(table=nwbfile.electrodes)
+                nwbfile.add_unit_column(**unit_col_args)
 
             for unit_id in unit_ids:
                 unit_kwargs = dict()
@@ -1148,17 +1150,16 @@ class NwbSortingExtractor(se.SortingExtractor):
                 if timestamps is not None:
                     spike_train_frames = sorting.get_unit_spike_train(unit_id=unit_id)
                     assert spike_train_frames[-1] < len(timestamps), "Number of 'timestamps' differs from number of " \
-                                                                     "'frames'"
+                                                                     "'frames'!"
                     spkt = np.array(timestamps)[spike_train_frames]
                 else:
                     spkt = sorting.get_unit_spike_train(unit_id=unit_id) / fs
-                for pr in all_properties:
-                    if pr not in skip_properties:
-                        if pr in sorting.get_unit_property_names(unit_id):
-                            prop_value = sorting.get_unit_property(unit_id, pr)
-                            unit_kwargs.update({pr: prop_value})
-                        else:  # Case of missing data for this unit and this property
-                            unit_kwargs.update({pr: np.nan})
+                for pr in write_properties:
+                    if pr in sorting.get_unit_property_names(unit_id):
+                        prop_value = sorting.get_unit_property(unit_id, pr)
+                        unit_kwargs.update({pr: prop_value})
+                    else:  # Case of missing data for this unit and this property
+                        unit_kwargs.update({pr: np.nan})
                 nwbfile.add_unit(id=unit_id, spike_times=spkt, **unit_kwargs)
 
             # TODO
@@ -1181,7 +1182,6 @@ class NwbSortingExtractor(se.SortingExtractor):
 
             # Check that multidimensional features have the same shape across units
             feature_shapes = dict()
-            skip_features = []
             for ft in all_features:
                 shapes = []
                 for unit_id in unit_ids:
@@ -1210,7 +1210,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     print(f"Skipping feature '{ft}' because it has variable size across units.")
                     skip_features.append(ft)
 
-            for ft in all_features:
+            for ft in set(all_features) - set(skip_features):
                 values = []
                 if not ft.endswith('_idxs'):
                     for unit_id in sorting.get_unit_ids():
@@ -1228,26 +1228,31 @@ class NwbSortingExtractor(se.SortingExtractor):
                             all_feat_vals = feat_vals
                         values.append(all_feat_vals)
 
-                    if ft not in skip_features:
-                        flatten_vals = [item for sublist in values for item in sublist]
-                        nspks_list = [sp for sp in nspikes.values()]
-                        spikes_index = np.cumsum(nspks_list).astype('int64')
-
-                        set_dynamic_table_property(
-                            dynamic_table=nwbfile.units,
-                            row_ids=unit_ids,
-                            property_name=ft,
-                            values=flatten_vals,
-                            index=spikes_index,
-                        )
-
+                    flatten_vals = [item for sublist in values for item in sublist]
+                    nspks_list = [sp for sp in nspikes.values()]
+                    spikes_index = np.cumsum(nspks_list).astype('int64')
+                    set_dynamic_table_property(
+                        dynamic_table=nwbfile.units,
+                        row_ids=unit_ids,
+                        property_name=ft,
+                        values=flatten_vals,
+                        index=spikes_index,
+                    )
         else:
             warnings.warn("The nwbfile already contains units. These units will not be over-written.")
 
     @staticmethod
-    def write_sorting(sorting: se.SortingExtractor, save_path: PathType = None, overwrite: bool = False, nwbfile=None,
-                      property_descriptions: dict = None, timestamps: ArrayType = None,
-                      **nwbfile_kwargs):
+    def write_sorting(
+            sorting: se.SortingExtractor,
+            save_path: PathType = None, 
+            overwrite: bool = False, 
+            nwbfile=None,
+            property_descriptions: Optional[dict] = None,
+            skip_properties: Optional[List[str]] = None,
+            skip_features: Optional[List[str]] = None,
+            timestamps: ArrayType = None,
+            **nwbfile_kwargs
+        ):
         """
         Primary method for writing a SortingExtractor object to an NWBFile.
 
@@ -1269,6 +1274,10 @@ class NwbSortingExtractor(se.SortingExtractor):
             For each key in this dictionary which matches the name of a unit
             property in sorting, adds the value as a description to that
             custom unit column.
+        skip_properties: list of str
+            Each string in this list that matches a unit property will not be written to the NWBFile.
+        skip_features: list of str
+            Each string in this list that matches a spike feature will not be written to the NWBFile.
         timestamps: array-like
             If provided, the timestamps in seconds or the assiciated RecordingExtractor to be saved as the unit
             timestamps. (default=None)
@@ -1280,6 +1289,8 @@ class NwbSortingExtractor(se.SortingExtractor):
         assert HAVE_NWB, NwbSortingExtractor.installation_mesg
         assert save_path is None or nwbfile is None, \
             "Either pass a save_path location, or nwbfile object, but not both!"
+        if nwbfile is not None:
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be a pynwb.NWBFile object!"
 
         if nwbfile is None:
             if Path(save_path).is_file() and not overwrite:
@@ -1302,15 +1313,17 @@ class NwbSortingExtractor(se.SortingExtractor):
                     sorting=sorting,
                     nwbfile=nwbfile,
                     property_descriptions=property_descriptions,
+                    skip_properties=skip_properties,
+                    skip_features=skip_features,
                     timestamps=timestamps
                 )
-
                 io.write(nwbfile)
         else:
-            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
             se.NwbSortingExtractor.write_units(
                     sorting=sorting,
                     nwbfile=nwbfile,
                     property_descriptions=property_descriptions,
+                    skip_properties=skip_properties,
+                    skip_features=skip_features,
                     timestamps=timestamps
             )
