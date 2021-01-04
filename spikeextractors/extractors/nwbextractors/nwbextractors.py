@@ -5,7 +5,7 @@ from collections import abc
 from pathlib import Path
 import numpy as np
 import distutils.version
-from typing import Union, List, Optional
+from typing import Union
 import warnings
 
 import spikeextractors as se
@@ -733,7 +733,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if not use_timestamps:
             eseries_kwargs.update(
                 starting_time=recording.frame_to_time(0),
-                rate=float(recording.get_sampling_frequency())
+                rate=recording.get_sampling_frequency()
             )
         else:
             eseries_kwargs.update(
@@ -1065,21 +1065,11 @@ class NwbSortingExtractor(se.SortingExtractor):
         return np.round(frame / self.get_sampling_frequency(), 6)
 
     @staticmethod
-    def write_units(
-            sorting: se.SortingExtractor,
-            nwbfile,
-            property_descriptions: Optional[dict] = None,
-            skip_properties: Optional[List[str]] = None,
-            skip_features: Optional[List[str]] = None,
-            timestamps: Optional[ArrayType] = None,
-            waveforms_as_event_series: Optional[bool] = None,
-            write_waveform_stats: bool = False
-        ):
+    def write_units(sorting: se.SortingExtractor, nwbfile,
+                    property_descriptions: dict = None, timestamps: ArrayType = None):
         """Auxilliary function for write_sorting."""
         unit_ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
-        if fs is None:
-            raise ValueError("Writing a SortingExtractor to an NWBFile requires a known sampling frequency!")
 
         all_properties = set()
         all_features = set()
@@ -1102,17 +1092,12 @@ class NwbSortingExtractor(se.SortingExtractor):
             property_descriptions = dict(default_descriptions, **property_descriptions)
         for pr in all_properties:
             if pr not in property_descriptions:
-                warnings.warn(
-                    f"Description for property {pr} not found in property_descriptions. "
-                    "Setting description to 'no description'"
-                )
-        if skip_properties is None:
-            skip_properties = []
-        if skip_features is None:
-            skip_features = []
+                warnings.warn(f"Description for property {pr} not found in property_descriptions. "
+                              f"Setting description to 'no description'")
 
         if nwbfile.units is None:
             # Check that array properties have the same shape across units
+            skip_properties = []
             property_shapes = dict()
             for pr in all_properties:
                 shapes = []
@@ -1139,12 +1124,23 @@ class NwbSortingExtractor(se.SortingExtractor):
                     print(f"Skipping property '{pr}' because it has variable size across units.")
                     skip_properties.append(pr)
 
-            write_properties = set(all_properties) - set(skip_properties)
-            for pr in write_properties:
-                unit_col_args = dict(name=pr, description=property_descriptions.get(pr, "No description."))
-                if pr in ['max_channel', 'max_electrode'] and nwbfile.electrodes is not None:
-                    unit_col_args.update(table=nwbfile.electrodes)
-                nwbfile.add_unit_column(**unit_col_args)
+            for pr in all_properties:
+                # Special case of setting max_electrodes requires a table to be
+                # passed to become a dynamic table region
+                if pr not in skip_properties:
+                    if pr in ['max_channel', 'max_electrode']:
+                        if nwbfile.electrodes is None:
+                            warnings.warn("Attempted to make a custom column for max_channel "
+                                          "or max_electrode, but there are no electrodes to reference! "
+                                          "Column will not be added.")
+                        else:
+                            nwbfile.add_unit_column(
+                                name=pr,
+                                description=property_descriptions.get(pr, "No description."),
+                                table=nwbfile.electrodes
+                            )
+                    else:
+                        nwbfile.add_unit_column(pr, property_descriptions.get(pr, "No description."))
 
             for unit_id in unit_ids:
                 unit_kwargs = dict()
@@ -1152,74 +1148,41 @@ class NwbSortingExtractor(se.SortingExtractor):
                 if timestamps is not None:
                     spike_train_frames = sorting.get_unit_spike_train(unit_id=unit_id)
                     assert spike_train_frames[-1] < len(timestamps), "Number of 'timestamps' differs from number of " \
-                                                                     "'frames'!"
+                                                                     "'frames'"
                     spkt = np.array(timestamps)[spike_train_frames]
                 else:
                     spkt = sorting.get_unit_spike_train(unit_id=unit_id) / fs
-
-                for pr in write_properties:
-                    if pr in sorting.get_unit_property_names(unit_id):
-                        prop_value = sorting.get_unit_property(unit_id, pr)
-                        unit_kwargs.update({pr: prop_value})
-                    else:  # Case of missing data for this unit and this property
-                        unit_kwargs.update({pr: np.nan})
-
-                if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=unit_id):
-                    skip_features.append('waveforms')
-                    if not waveforms_as_event_series:
-                        raise NotImplementedError("pynwb does not yet support writing waveforms to unit table!")
-
-                    if write_waveform_stats:
-                        wf = sorting.get_unit_spike_features(unit_id=unit_id, feature_name='waveforms')
-                        relevant_ch = most_relevant_ch(wf)
-                        traces = wf[:, relevant_ch, :]
-                        traces_avg = np.mean(traces, axis=0)
-                        traces_std = np.std(traces, axis=0)
-                        unit_kwargs.update(waveform_mean=traces_avg, waveform_sd=traces_std)
-
+                for pr in all_properties:
+                    if pr not in skip_properties:
+                        if pr in sorting.get_unit_property_names(unit_id):
+                            prop_value = sorting.get_unit_property(unit_id, pr)
+                            unit_kwargs.update({pr: prop_value})
+                        else:  # Case of missing data for this unit and this property
+                            unit_kwargs.update({pr: np.nan})
                 nwbfile.add_unit(id=unit_id, spike_times=spkt, **unit_kwargs)
-                
-            if 'waveforms' in sorting.get_shared_unit_spike_feature_names() and waveforms_as_event_series:
-                def data_generator(sorting, unit_ids):
-                    for unit_id in unit_ids:
-                        wf_data = sorting.get_unit_spike_features(unit_id=unit_id, feature_name='waveforms')
-                        times = sorting.get_unit_spike_train(unit_id=unit_id)
-                        yield (wf_data, times)
-                (wf_data, times) = DataChunkIterator(
-                    data=data_generator(sorting=sorting, unit_ids=unit_ids),
-                    iter_axis=1
-                )
 
-                # channels gains - for a RecordingExtractor, these are values to cast traces to uV
-                # for nwb, the conversions (gains) cast the data to Volts
-                # To get traces in Volts = data*channel_conversion*conversion
-                gains = np.squeeze([
-                    sorting.get_unit_property(unit_id=[unit_id], property_name='gain')
-                    if 'gain' in sorting.get_unit_property_names(unit_id=unit_id) else 1
-                    for unit_id in unit_ids
-                ])
-                if len(np.unique(gains)) == 1:  # if all gains are equal
-                    scalar_conversion = np.unique(gains)[0] * 1e-6
-                else:
-                    scalar_conversion = 1.
-
-                series_args = dict(
-                    name="SpikeWaveforms",
-                    data=H5DataIO(wf_data, compression="gzip"),
-                    timestamps=H5DataIO(times, compression="gzip"),
-                    conversion=scalar_conversion
-                )
-                if nwbfile.ec_electrodes is not None:
-                    elec_idx = list(np.where(np.array(nwbfile.ec_electrodes['group']) == group)[0])
-                    series_args.update(
-                        electrodes=nwbfile.create_electrode_table_region(elec_idx, group.name + ' region')
-                    )
-                check_module(nwbfile, 'ecephys').add(SpikeEventSeries(**series_args))
+            # TODO
+            # # Stores average and std of spike traces
+            # This will soon be updated to the current NWB standard
+            # if 'waveforms' in sorting.get_unit_spike_feature_names(unit_id=id):
+            #     wf = sorting.get_unit_spike_features(unit_id=id,
+            #                                          feature_name='waveforms')
+            #     relevant_ch = most_relevant_ch(wf)
+            #     # Spike traces on the most relevant channel
+            #     traces = wf[:, relevant_ch, :]
+            #     traces_avg = np.mean(traces, axis=0)
+            #     traces_std = np.std(traces, axis=0)
+            #     nwbfile.add_unit(
+            #         id=id,
+            #         spike_times=spkt,
+            #         waveform_mean=traces_avg,
+            #         waveform_sd=traces_std
+            #     )
 
             # Check that multidimensional features have the same shape across units
-            write_features = set(all_features) - set(skip_features)
             feature_shapes = dict()
-            for ft in write_features:
+            skip_features = []
+            for ft in all_features:
                 shapes = []
                 for unit_id in unit_ids:
                     if ft in sorting.get_unit_spike_feature_names(unit_id):
@@ -1236,7 +1199,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                             break
                     else:
                         print(f"Skipping feature '{ft}' because not share across all units.")
-                        write_features -= set(ft)
+                        skip_features.append(ft)
                         break
 
             nspikes = {k: get_nspikes(nwbfile.units, int(k)) for k in unit_ids}
@@ -1245,9 +1208,9 @@ class NwbSortingExtractor(se.SortingExtractor):
                 # skip first dimension (num_spikes) when comparing feature shape
                 if not np.all([elem[1:] == feature_shapes[ft][0][1:] for elem in feature_shapes[ft]]):
                     print(f"Skipping feature '{ft}' because it has variable size across units.")
-                    write_features -= set(ft)
+                    skip_features.append(ft)
 
-            for ft in write_features:
+            for ft in all_features:
                 values = []
                 if not ft.endswith('_idxs'):
                     for unit_id in sorting.get_unit_ids():
@@ -1265,33 +1228,26 @@ class NwbSortingExtractor(se.SortingExtractor):
                             all_feat_vals = feat_vals
                         values.append(all_feat_vals)
 
-                    flatten_vals = [item for sublist in values for item in sublist]
-                    nspks_list = [sp for sp in nspikes.values()]
-                    spikes_index = np.cumsum(nspks_list).astype('int64')
-                    set_dynamic_table_property(
-                        dynamic_table=nwbfile.units,
-                        row_ids=unit_ids,
-                        property_name=ft,
-                        values=flatten_vals,
-                        index=spikes_index,
-                    )
+                    if ft not in skip_features:
+                        flatten_vals = [item for sublist in values for item in sublist]
+                        nspks_list = [sp for sp in nspikes.values()]
+                        spikes_index = np.cumsum(nspks_list).astype('int64')
+
+                        set_dynamic_table_property(
+                            dynamic_table=nwbfile.units,
+                            row_ids=unit_ids,
+                            property_name=ft,
+                            values=flatten_vals,
+                            index=spikes_index,
+                        )
+
         else:
             warnings.warn("The nwbfile already contains units. These units will not be over-written.")
 
     @staticmethod
-    def write_sorting(
-            sorting: se.SortingExtractor,
-            save_path: PathType = None, 
-            overwrite: bool = False, 
-            nwbfile=None,
-            property_descriptions: Optional[dict] = None,
-            skip_properties: Optional[List[str]] = None,
-            skip_features: Optional[List[str]] = None,
-            timestamps: ArrayType = None,
-            waveforms_as_event_series: Optional[bool] = None,
-            write_waveform_stats: bool = False,
-            **nwbfile_kwargs
-        ):
+    def write_sorting(sorting: se.SortingExtractor, save_path: PathType = None, overwrite: bool = False, nwbfile=None,
+                      property_descriptions: dict = None, timestamps: ArrayType = None,
+                      **nwbfile_kwargs):
         """
         Primary method for writing a SortingExtractor object to an NWBFile.
 
@@ -1309,37 +1265,21 @@ class NwbSortingExtractor(se.SortingExtractor):
                 my_recording_extractor, my_nwbfile
             )
             will result in the appropriate changes to the my_nwbfile object.
-        property_descriptions: dict (optional)
+        property_descriptions: dict
             For each key in this dictionary which matches the name of a unit
-                property in sorting, adds the value as a description to that
+            property in sorting, adds the value as a description to that
             custom unit column.
-        skip_properties: list of str (optional)
-            Each string in this list that matches a unit property will not be written to the NWBFile.
-        skip_features: list of str (optional)
-            Each string in this list that matches a spike feature will not be written to the NWBFile.
-        timestamps: array-like (optional)
+        timestamps: array-like
             If provided, the timestamps in seconds or the assiciated RecordingExtractor to be saved as the unit
-                timestamps.
-            Defaults to None.
-        waveforms_as_event_series: bool or None (optional)
-            Decides how to write waveform data saved as spike features to the NWBFile.
-            If True, writes as SpikeEventSeries under Ecephys module.
-            If False, writes as jagged column of units table (not yet implemented).
-            If None, does not write the waveform feature to the NWBFile.
-            Defaults to None.
-        write_waveform_stats: bool (optional)
-            If True, calculates the mean and standard deviation of the waveform spike feature for the
-                most relevant channel and writes to the units table in the NWBFile.
-            Defaults to False.
-        nwbfile_kwargs: dict (optional)
+            timestamps. (default=None)
+        nwbfile_kwargs: dict
             Information for constructing the nwb file (optional).
-            Only used if no nwbfile exists at the save_path, and no nwbfile was directly passed.
+            Only used if no nwbfile exists at the save_path, and no nwbfile
+            was directly passed.
         """
         assert HAVE_NWB, NwbSortingExtractor.installation_mesg
         assert save_path is None or nwbfile is None, \
             "Either pass a save_path location, or nwbfile object, but not both!"
-        if nwbfile is not None:
-            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be a pynwb.NWBFile object!"
 
         if nwbfile is None:
             if Path(save_path).is_file() and not overwrite:
@@ -1362,21 +1302,15 @@ class NwbSortingExtractor(se.SortingExtractor):
                     sorting=sorting,
                     nwbfile=nwbfile,
                     property_descriptions=property_descriptions,
-                    skip_properties=skip_properties,
-                    skip_features=skip_features,
-                    timestamps=timestamps,
-                    waveforms_as_event_series=waveforms_as_event_series,
-                    write_waveform_stats=write_waveform_stats
+                    timestamps=timestamps
                 )
+
                 io.write(nwbfile)
         else:
+            assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
             se.NwbSortingExtractor.write_units(
                     sorting=sorting,
                     nwbfile=nwbfile,
                     property_descriptions=property_descriptions,
-                    skip_properties=skip_properties,
-                    skip_features=skip_features,
-                    timestamps=timestamps,
-                    waveforms_as_event_series=waveforms_as_event_series,
-                    write_waveform_stats=write_waveform_stats
+                    timestamps=timestamps
             )
