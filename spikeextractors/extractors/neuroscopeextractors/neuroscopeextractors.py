@@ -431,14 +431,16 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                 resfile_path=None,
                 clufile_path=None,
                 folder_path=str(folder_path.absolute()),
-                keep_mua_units=keep_mua_units
+                keep_mua_units=keep_mua_units,
+                gain=gain
             )
         else:
             self._kwargs = dict(
                 resfile_path=str(resfile_path.absolute()),
                 clufile_path=str(clufile_path.absolute()),
                 folder_path=None,
-                keep_mua_units=keep_mua_units
+                keep_mua_units=keep_mua_units,
+                gain=gain
             )
         if spkfile_path is not None:
             self._kwargs.update(spkfile_path=str(spkfile_path.absolute()))
