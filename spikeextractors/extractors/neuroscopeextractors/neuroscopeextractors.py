@@ -409,6 +409,23 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                 for s_id in self._unit_ids:
                     self._spiketrains.append(res[(clu == s_id + 1).nonzero()])  # from 2,...,clu[0]-1
 
+        if spkfile_path is not None and Path(spkfile_path).is_file():
+            n_bits = int(xml_root.find('acquisitionSystem').find('nBits').text)
+            dtype = f"int{n_bits}"
+            n_samples = int(xml_root.find('neuroscope').find('spikes').find('nSamples').text)
+            wf = np.memmap(spkfile_path, dtype=dtype)
+            n_channels = int(wf.size / (n_spikes * n_samples))
+            wf = wf.reshape(n_spikes, n_samples, n_channels)
+
+            for unit_id in self.get_unit_ids():
+                if gain is not None:
+                    self.set_unit_property(unit_id=unit_id, property_name='gain', value=gain)
+                self.set_unit_spike_features(
+                    unit_id=unit_id,
+                    feature_name='waveforms',
+                    value=wf[clu == unit_id + 1 - int(keep_mua_units), :, :]
+                )
+
         if folder_path_passed:
             self._kwargs = dict(
                 resfile_path=None,
@@ -423,7 +440,6 @@ class NeuroscopeSortingExtractor(SortingExtractor):
                 folder_path=None,
                 keep_mua_units=keep_mua_units
             )
-            
         if spkfile_path is not None:
             self._kwargs.update(spkfile_path=str(spkfile_path.absolute()))
         else:
@@ -523,6 +539,11 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
     exclude_shanks : list
         Optional. List of indices to ignore. The set of all possible indices is chosen by default, extracted as the
         final integer of all the .res.%i and .clu.%i pairs.
+    write_waveforms : bool
+        Optional. If True, extracts waveform data from .spk.%i files in the path corresponding to
+        the .res.%i and .clue.%i files and sets these as unit spike features. Defaults to False.
+    gain : float
+        Optional. If passing a spkfile_path, this value converts the data type of the waveforms to units of microvolts.
     """
 
     extractor_name = "NeuroscopeMultiSortingExtractor"
@@ -535,7 +556,9 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         self,
         folder_path: PathType,
         keep_mua_units: bool = True,
-        exclude_shanks: Optional[list] = None
+        exclude_shanks: Optional[list] = None,
+        write_waveforms: bool = False,
+        gain: Optional[float] = None
     ):
         assert HAVE_LXML, self.installation_mesg
 
@@ -576,16 +599,27 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
 
         all_shanks_list_se = []
         for shank_id in list(set(res_ids) - set(exclude_shanks)):
-            resfile_path = folder_path / f"{sorting_name}.res.{shank_id}"
-            clufile_path = folder_path / f"{sorting_name}.clu.{shank_id}"
-
-            all_shanks_list_se.append(
-                NeuroscopeSortingExtractor(
-                    resfile_path=resfile_path,
-                    clufile_path=clufile_path,
-                    keep_mua_units=keep_mua_units
-                )
+            nse_args = dict(
+                resfile_path=folder_path / f"{sorting_name}.res.{shank_id}",
+                clufile_path=folder_path / f"{sorting_name}.clu.{shank_id}",
+                keep_mua_units=keep_mua_units
             )
+
+            if write_waveforms:
+                spk_files = get_shank_files(folder_path=folder_path, suffix=".spk")
+                assert len(spk_files) > 0, "No .spk files found in the folder_path, but 'write_waveforms' is True!"
+                assert len(spk_files) == len(res_files), "Mismatched number of .spk and .res files!"
+
+                spk_ids = [int(x.suffix[1:]) for x in spk_files]
+                assert sorted(spk_ids) == sorted(res_ids), "Unmatched .spk.%i and .res.%i files detected!"
+
+                spkfile_names = [x.name[:x.name.find('.spk')] for x in spk_files]
+                assert np.all(s == r for (s, r) in zip(spkfile_names, resfile_names)), \
+                    "Some of the .spk.%i and .res.%i files do not share the same name!"
+
+                nse_args.update(spkfile_path=folder_path / f"{sorting_name}.spk.{shank_id}", gain=gain)
+
+            all_shanks_list_se.append(NeuroscopeSortingExtractor(**nse_args))
 
         MultiSortingExtractor.__init__(self, sortings=all_shanks_list_se)
 
@@ -593,13 +627,17 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
             self._kwargs = dict(
                 folder_path=str(folder_path.absolute()),
                 keep_mua_units=keep_mua_units,
-                exclude_shanks=exclude_shanks
+                exclude_shanks=exclude_shanks,
+                write_waveforms=write_waveforms,
+                gain=gain
             )
         else:
             self._kwargs = dict(
                 folder_path=str(folder_path.absolute()),
                 keep_mua_units=keep_mua_units,
-                exclude_shanks=None
+                exclude_shanks=None,
+                write_waveforms=write_waveforms,
+                gain=gain
             )
 
     @staticmethod
