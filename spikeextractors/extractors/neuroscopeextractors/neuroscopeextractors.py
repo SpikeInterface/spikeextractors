@@ -69,7 +69,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         assert len(xml_files) == 1, "More than one .xml file found in the folder_path."
         xml_filepath = xml_files[0]
 
-        xml_root = et.parse(str(xml_filepath).getroot())
+        xml_root = et.parse(str(xml_filepath)).getroot()
         n_bits = int(xml_root.find('acquisitionSystem').find('nBits').text)
         dtype = f"int{n_bits}"
         numchan_from_file = int(xml_root.find('acquisitionSystem').find('nChannels').text)
@@ -378,7 +378,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         assert len(xml_files) == 1, "More than one .xml file found in the folder!"
         xml_filepath = xml_files[0]
 
-        xml_root = et.parse(str(xml_filepath).getroot())
+        xml_root = et.parse(str(xml_filepath)).getroot()
         self._sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text)
 
         with open(resfile_path) as f:
@@ -576,7 +576,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         assert len(xml_files) == 1, "More than one .xml file found in the folder!"
         xml_filepath = xml_files[0]
 
-        xml_root = et.parse(str(xml_filepath).getroot())
+        xml_root = et.parse(str(xml_filepath)).getroot()
         self._sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text)
 
         res_files = get_shank_files(folder_path=folder_path, suffix=".res")
