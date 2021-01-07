@@ -32,19 +32,33 @@ class TestExtractors(unittest.TestCase):
         geom = np.random.RandomState(seed=seed).normal(0, 1, (num_channels, 2))
         X = (X * 100).astype(int)
         ttls = np.sort(np.random.permutation(num_frames)[:num_ttls])
+
         RX = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
-        RX2 = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
-        RX3 = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
         RX.set_ttls(ttls)
+        RX.set_channel_locations([0, 0], channel_ids=0)
+        RX.add_epoch("epoch1", 0, 10)
+        RX.add_epoch("epoch2", 10, 20)
+        for i, channel_id in enumerate(RX.get_channel_ids()):
+            RX.set_channel_property(channel_id=channel_id, property_name='shared_channel_prop', value=i)
+
+        RX2 = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
+        RX2.copy_epochs(RX)
+
+        RX3 = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
+
         SX = se.NumpySortingExtractor()
+        SX.set_sampling_frequency(sampling_frequency)
         spike_times = [200, 300, 400]
         train1 = np.sort(np.rint(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times[0])).astype(int))
         SX.add_unit(unit_id=1, times=train1)
         SX.add_unit(unit_id=2, times=np.sort(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times[1])))
         SX.add_unit(unit_id=3, times=np.sort(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times[2])))
         SX.set_unit_property(unit_id=1, property_name='stability', value=80)
-        SX.set_sampling_frequency(sampling_frequency)
+        SX.add_epoch("epoch1", 0, 10)
+        SX.add_epoch("epoch2", 10, 20)
+
         SX2 = se.NumpySortingExtractor()
+        SX2.set_sampling_frequency(sampling_frequency)
         spike_times2 = [100, 150, 450]
         train2 = np.rint(np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times2[0])).astype(int)
         SX2.add_unit(unit_id=3, times=train2)
@@ -52,19 +66,14 @@ class TestExtractors(unittest.TestCase):
         SX2.add_unit(unit_id=5, times=np.random.RandomState(seed=seed).uniform(0, num_frames, spike_times2[2]))
         SX2.set_unit_property(unit_id=4, property_name='stability', value=80)
         SX2.set_unit_spike_features(unit_id=3, feature_name='widths', value=np.asarray([3] * spike_times2[0]))
-        RX.set_channel_locations([0, 0], channel_ids=0)
-        RX.add_epoch("epoch1", 0, 10)
-        RX.add_epoch("epoch2", 10, 20)
-        SX.add_epoch("epoch1", 0, 10)
-        SX.add_epoch("epoch2", 10, 20)
-        RX2.copy_epochs(RX)
         SX2.copy_epochs(SX)
         for i, unit_id in enumerate(SX2.get_unit_ids()):
             SX2.set_unit_property(unit_id=unit_id, property_name='shared_unit_prop', value=i)
-            SX2.set_unit_spike_features(unit_id=unit_id, feature_name='shared_unit_feature',
-                                        value=np.asarray([i] * spike_times2[i]))
-        for i, channel_id in enumerate(RX.get_channel_ids()):
-            RX.set_channel_property(channel_id=channel_id, property_name='shared_channel_prop', value=i)
+            SX2.set_unit_spike_features(
+                unit_id=unit_id,
+                feature_name='shared_unit_feature',
+                value=np.asarray([i] * spike_times2[i])
+            )
 
         SX3 = se.NumpySortingExtractor()
         train3 = np.asarray([1, 20, 21, 35, 38, 45, 46, 47])
@@ -149,10 +158,10 @@ class TestExtractors(unittest.TestCase):
         print(self.RX.get_channel_locations())
         self.assertTrue(np.array_equal(self.RX3.get_channel_locations(),
                                        self.RX2.get_channel_locations()))
-        self.RX3.set_channel_groups(groups=[1],channel_ids=[1])
-        self.assertEqual(self.RX3.get_channel_groups(channel_ids=[1]),1)
+        self.RX3.set_channel_groups(groups=[1], channel_ids=[1])
+        self.assertEqual(self.RX3.get_channel_groups(channel_ids=[1]), 1)
         self.RX3.clear_channel_groups()
-        self.assertEqual(self.RX3.get_channel_groups(channel_ids=[1]),0)
+        self.assertEqual(self.RX3.get_channel_groups(channel_ids=[1]), 0)
         self.RX3.set_channel_locations(locations=[[np.nan, np.nan, np.nan]], channel_ids=[1])
         self.assertTrue('location' not in self.RX3.get_shared_channel_property_names())
         self.RX3.set_channel_locations(locations=[[0, 0, 0]], channel_ids=[1])
@@ -450,17 +459,16 @@ class TestExtractors(unittest.TestCase):
         check_dumping(RX_nwb)
 
         del RX_nwb
-        # overwrite
         se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1, overwrite=True)
         RX_nwb = se.NwbRecordingExtractor(path1)
         check_recording_return_types(RX_nwb)
         check_recordings_equal(self.RX, RX_nwb)
         check_dumping(RX_nwb)
 
-        # add sorting to existing
-        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1)
-        # create new
-        path2 = self.test_dir + '/firings_true.nwb'
+        # append sorting to existing file
+        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1, overwrite=False)
+
+        path2 = self.test_dir + "/firings_true.nwb"
         se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path2)
         se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2)
         SX_nwb = se.NwbSortingExtractor(path2)
@@ -468,15 +476,39 @@ class TestExtractors(unittest.TestCase):
         check_dumping(SX_nwb)
 
         # Test for handling unit property descriptions argument
-        property_descriptions = {'stability': 'this is a description of stability'}
-        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path1,
-                                             property_descriptions=property_descriptions)
-        # create new
-        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path2, overwrite=True)
-        se.NwbSortingExtractor.write_sorting(sorting=self.SX, save_path=path2,
-                                             property_descriptions=property_descriptions)
-        SX_nwb = se.NwbSortingExtractor(path2)
+        property_descriptions = dict(stability="This is a description of stability.")
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1, overwrite=True)
+        se.NwbSortingExtractor.write_sorting(
+            sorting=self.SX,
+            save_path=path1,
+            property_descriptions=property_descriptions
+        )
+        SX_nwb = se.NwbSortingExtractor(path1)
         check_sortings_equal(self.SX, SX_nwb)
+        check_dumping(SX_nwb)
+
+        # Test for handling skip_properties argument
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1, overwrite=True)
+        se.NwbSortingExtractor.write_sorting(
+            sorting=self.SX,
+            save_path=path1,
+            skip_properties=['stability']
+        )
+        SX_nwb = se.NwbSortingExtractor(path1)
+        assert 'stability' not in SX_nwb.get_shared_unit_property_names()
+        check_sortings_equal(self.SX, SX_nwb)
+        check_dumping(SX_nwb)
+
+        # Test for handling skip_features argument
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1, overwrite=True)
+        se.NwbSortingExtractor.write_sorting(
+            sorting=self.SX2,
+            save_path=path1,
+            skip_features=['widths']
+        )
+        SX_nwb = se.NwbSortingExtractor(path1)
+        assert 'widths' not in SX_nwb.get_shared_unit_spike_feature_names()
+        check_sortings_equal(self.SX2, SX_nwb)
         check_dumping(SX_nwb)
 
     def test_nixio_extractor(self):
