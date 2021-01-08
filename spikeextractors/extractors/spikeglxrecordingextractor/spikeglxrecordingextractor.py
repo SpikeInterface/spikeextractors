@@ -90,7 +90,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             gains = GainCorrectNI(self._timeseries, self._channels, meta)
 
         # set gains - convert from int16 to uVolt
-        self.set_channel_gains(self._channels, gains*1e6)
+        self.set_channel_gains(gains=gains*1e6, channel_ids=self._channels)
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'dtype': dtype}
 
     def get_channel_ids(self):
