@@ -1098,12 +1098,6 @@ class NwbSortingExtractor(se.SortingExtractor):
             property_descriptions = dict(default_descriptions)
         else:
             property_descriptions = dict(default_descriptions, **property_descriptions)
-        for pr in all_properties:
-            if pr not in property_descriptions:
-                warnings.warn(
-                    f"Description for property {pr} not found in property_descriptions. "
-                    "Setting description to 'no description'"
-                )
         if skip_properties is None:
             skip_properties = []
         if skip_features is None:
@@ -1133,12 +1127,18 @@ class NwbSortingExtractor(se.SortingExtractor):
                 property_shapes[pr] = shapes
 
             for pr in property_shapes.keys():
-                elems = [elem for elem in property_shapes[pr] if not np.isnan(elem)]
+                elems = [elem for elem in property_shapes[pr] if not np.any(np.isnan(elem))]
                 if not np.all([elem == elems[0] for elem in elems]):
                     print(f"Skipping property '{pr}' because it has variable size across units.")
                     skip_properties.append(pr)
 
             write_properties = set(all_properties) - set(skip_properties)
+            for pr in write_properties:
+                if pr not in property_descriptions:
+                    warnings.warn(
+                        f"Description for property {pr} not found in property_descriptions. "
+                        "Setting description to 'no description'"
+                    )
             for pr in write_properties:
                 unit_col_args = dict(name=pr, description=property_descriptions.get(pr, "No description."))
                 if pr in ['max_channel', 'max_electrode'] and nwbfile.electrodes is not None:
@@ -1232,6 +1232,8 @@ class NwbSortingExtractor(se.SortingExtractor):
                     flatten_vals = [item for sublist in values for item in sublist]
                     nspks_list = [sp for sp in nspikes.values()]
                     spikes_index = np.cumsum(nspks_list).astype('int64')
+                    print(nwbfile.units)
+                    print(unit_ids)
                     set_dynamic_table_property(
                         dynamic_table=nwbfile.units,
                         row_ids=unit_ids,
