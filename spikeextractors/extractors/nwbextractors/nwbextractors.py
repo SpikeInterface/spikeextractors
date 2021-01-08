@@ -1232,8 +1232,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                     flatten_vals = [item for sublist in values for item in sublist]
                     nspks_list = [sp for sp in nspikes.values()]
                     spikes_index = np.cumsum(nspks_list).astype('int64')
-                    print(nwbfile.units)
-                    print(unit_ids)
                     set_dynamic_table_property(
                         dynamic_table=nwbfile.units,
                         row_ids=unit_ids,
