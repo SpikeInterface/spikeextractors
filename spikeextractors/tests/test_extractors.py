@@ -495,6 +495,7 @@ class TestExtractors(unittest.TestCase):
             skip_properties=['stability']
         )
         SX_nwb = se.NwbSortingExtractor(path1)
+        assert 'stability' not in SX_nwb.get_shared_unit_property_names()
         check_sortings_equal(self.SX, SX_nwb)
         check_dumping(SX_nwb)
 
@@ -506,6 +507,7 @@ class TestExtractors(unittest.TestCase):
             skip_features=['widths']
         )
         SX_nwb = se.NwbSortingExtractor(path1)
+        assert 'widths' not in SX_nwb.get_shared_unit_spike_feature_names()
         check_sortings_equal(self.SX2, SX_nwb)
         check_dumping(SX_nwb)
 
