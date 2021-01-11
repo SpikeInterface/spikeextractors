@@ -84,15 +84,10 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
                                           dtype=dtype, numchan=numchan_from_file)
-
-<<<<<<< HEAD
-        self._kwargs = dict(file_path=str(Path(file_path).absolute()))
-=======
         if gain is not None:
             self.set_channel_gains(channel_ids=self.get_channel_ids(), gains=gain)
 
         self._kwargs = dict(file_path=str(Path(file_path).absolute()), gain=gain)
->>>>>>> master
 
     @staticmethod
     def write_recording(
