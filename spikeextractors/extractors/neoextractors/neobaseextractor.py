@@ -56,10 +56,10 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         # in neo one channel group have the same dtype/sampling_rate/group_id
         try:
             # Neo >= 0.9.0
-            channel_indexes_list = neorawio.get_group_signal_channel_indexes()
+            channel_indexes_list = self.neo_reader.get_group_signal_channel_indexes()
         except AttributeError:
             # Neo < 0.9.0
-            channel_indexes_list = neorawio.get_group_channel_indexes()        
+            channel_indexes_list = self.neo_reader.get_group_channel_indexes()        
         num_chan_group = len(channel_indexes_list)
         assert num_chan_group == 1, 'This file have several channel groups spikeextractors support only one groups'
 
