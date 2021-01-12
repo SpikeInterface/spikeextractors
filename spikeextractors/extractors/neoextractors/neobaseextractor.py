@@ -48,9 +48,9 @@ class _NeoBaseExtractor:
 
 class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
-    def __init__(self, **kargs):
+    def __init__(self, block_index=None, seg_index=None, **kargs):
         RecordingExtractor.__init__(self)
-        _NeoBaseExtractor.__init__(self, **kargs)
+        _NeoBaseExtractor.__init__(self, block_index=None, seg_index=None, **kargs)
 
         # TODO propose a meachanisim to select the appropriate channel groups
         # in neo one channel group have the same dtype/sampling_rate/group_id
