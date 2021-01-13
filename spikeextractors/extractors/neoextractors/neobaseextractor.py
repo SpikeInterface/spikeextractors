@@ -63,17 +63,6 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         num_chan_group = len(channel_indexes_list)
         assert num_chan_group == 1, 'This file have several channel groups spikeextractors support only one groups'
 
-        # Add channels properties
-        header_channels = self.neo_reader.header['signal_channels'][slice(None)]
-        channel_ids = self.get_channel_ids()
-
-        gains = header_channels['gain']
-        self.set_channel_gains(gains=gains, channel_ids=channel_ids)
-        
-        names = header_channels['name']
-        for i, ind in enumerate(channel_ids):
-            self.set_channel_property(channel_id=ind, property_name='name', value=names[i])
-
         # spikeextractor for units to be uV implicitly
         # check that units are V, mV or uV
         # otherwise raise error
@@ -88,6 +77,17 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         self.additional_gain[units == 'mV'] = 1e3
         self.additional_gain[units == 'uV'] = 1.
         self.additional_gain = self.additional_gain.reshape(1, -1)
+
+        # Add channels properties
+        header_channels = self.neo_reader.header['signal_channels'][slice(None)]
+        channel_ids = self.get_channel_ids()
+
+        gains = header_channels['gain'] * self.additional_gain[0]
+        self.set_channel_gains(gains=gains, channel_ids=channel_ids)
+        
+        names = header_channels['name']
+        for i, ind in enumerate(channel_ids):
+            self.set_channel_property(channel_id=ind, property_name='name', value=names[i])
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
