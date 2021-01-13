@@ -23,6 +23,7 @@ class BaseExtractor:
         self._tmp_folder = None
         self._key_properties = {}
         self._properties = {}
+        self._annotations = {}
         self._memmap_files = []
         self._features = {}
         self._epochs = {}
@@ -87,11 +88,12 @@ class BaseExtractor:
 
         if self.is_dumpable:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': self._kwargs,
-                         'key_properties': self._key_properties, 'version': version,
-                         'dumpable': True}
+                         'key_properties': self._key_properties, 'annotations': self._annotations,
+                         'version': version, 'dumpable': True}
         else:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': {}, 'key_properties': self._key_properties,
-                         'version': imported_module.__version__, 'dumpable': False}
+                         'annotations': self._annotations, 'version': imported_module.__version__,
+                         'dumpable': False}
         return dump_dict
 
     def dump_to_dict(self):
@@ -271,10 +273,70 @@ class BaseExtractor:
                 arr = np.zeros(shape, dtype=dtype)
         return arr
 
+    def annotate(self, annotation_key, value, overwrite=False):
+        '''This function adds an entry to the annotations dictionary.
+
+        Parameters
+        ----------
+        annotation_key: str
+            An annotation stored by the Extractor
+        value:
+            The data associated with the given property name. Could be many
+            formats as specified by the user
+        overwrite: bool
+            If True and the annotation already exists, it is overwritten
+        '''
+        if annotation_key not in self._annotations.keys():
+            self._annotations[annotation_key] = value
+        else:
+            if overwrite:
+                self._annotations[annotation_key] = value
+            else:
+                print(f"{annotation_key} is already an annotation key. Use 'overwrite=True' to overwrite it")
+
+    def get_annotation(self, annotation_name):
+        '''This function returns the data stored under the annotation name .
+
+        Parameters
+        ----------
+        annotation_name: str
+            A property stored by the Extractor
+
+        Returns
+        ----------
+        annotation_data
+            The data associated with the given property name. Could be many
+            formats as specified by the user
+        '''
+        if annotation_name not in self._annotations.keys():
+            print(f"{annotation_name} is not an annotation")
+            return None
+        else:
+            return deepcopy(self._annotations[annotation_name])
+
+    def get_annotation_keys(self):
+        '''This function returns a list of stored annotation keys
+
+        Returns
+        ----------
+        property_names: list
+            List of stored annotation keys
+        '''
+        return list(self._annotations.keys())
+
+    def copy_annotations(self, extractor):
+        '''Copy object properties from another extractor to the current extractor.
+
+        Parameters
+        ----------
+        extractor: Extractor
+            The extractor from which the annotations will be copied
+        '''
+        self._annotations = deepcopy(extractor._annotations)
+
     def _cast_start_end_frame(self, start_frame, end_frame):
         from .extraction_tools import cast_start_end_frame
         return cast_start_end_frame(start_frame, end_frame)
-
 
     @staticmethod
     def load_extractor_from_json(json_file):
@@ -395,6 +457,9 @@ def _load_extractor_from_dict(dic):
     # load properties and features
     if 'key_properties' in dic.keys():
         extractor._key_properties = dic['key_properties']
+
+    if 'annotations' in dic.keys():
+        extractor._annotations = dic['annotations']
 
     return extractor
 

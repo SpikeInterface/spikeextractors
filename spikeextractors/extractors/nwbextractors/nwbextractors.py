@@ -706,7 +706,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             scalar_conversion = 1.
             channel_conversion = gains * 1e-6
 
-        if isinstance(recording.get_traces(), np.memmap):
+        if isinstance(recording.get_traces(end_frame=5), np.memmap):
             n_bytes = np.dtype(recording.get_dtype()).itemsize
             buffer_size = int(buffer_mb * 1e6) // (recording.get_num_channels() * n_bytes)
             ephys_data = DataChunkIterator(
@@ -1112,6 +1112,11 @@ class NwbSortingExtractor(se.SortingExtractor):
         else:
             property_descriptions = dict(default_descriptions, **property_descriptions)
 
+        if skip_properties is None:
+            skip_properties = []
+        if skip_features is None:
+            skip_features = []
+
         if nwbfile.units is None:
             # Check that array properties have the same shape across units
             property_shapes = dict()
@@ -1136,7 +1141,8 @@ class NwbSortingExtractor(se.SortingExtractor):
                 property_shapes[pr] = shapes
 
             for pr in property_shapes.keys():
-                if not np.all([elem == property_shapes[pr][0] for elem in property_shapes[pr]]):
+                elems = [elem for elem in property_shapes[pr] if not np.any(np.isnan(elem))]
+                if not np.all([elem == elems[0] for elem in elems]):
                     print(f"Skipping property '{pr}' because it has variable size across units.")
                     skip_properties.update(pr)
 
@@ -1147,6 +1153,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                         f"Description for property {pr} not found in property_descriptions. "
                         "Setting description to 'no description'"
                     )
+            for pr in write_properties:
                 unit_col_args = dict(name=pr, description=property_descriptions.get(pr, "No description."))
                 if pr in ['max_channel', 'max_electrode'] and nwbfile.electrodes is not None:
                     unit_col_args.update(table=nwbfile.electrodes)
