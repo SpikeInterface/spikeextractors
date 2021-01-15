@@ -486,6 +486,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             filtering="none",
             group_name="Electrode Group"
         )
+        if metadata is None:
+            metadata = dict(
+                Ecephys=dict()
+            )
         if 'Electrodes' not in metadata['Ecephys']:
             metadata['Ecephys']['Electrodes']=[]
 
