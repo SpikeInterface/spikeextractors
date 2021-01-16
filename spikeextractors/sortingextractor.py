@@ -119,7 +119,7 @@ class SortingExtractor(ABC, BaseExtractor):
             formats as specified by the user.
         indexes: array_like
             The indices of the specified spikes (if the number of spike features
-            is less than the length of the uint's spike train). If None, it is
+            is less than the length of the unit's spike train). If None, it is
             assumed that value has the same length as the spike train.
         '''
         if isinstance(unit_id, (int, np.integer)):

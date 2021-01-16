@@ -3,7 +3,7 @@ from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingE
 import numpy as np
 from pathlib import Path
 from spikeextractors.extraction_tools import check_get_unit_spike_train, get_sub_extractors_by_property
-from typing import Union
+from typing import Union, Optional
 import re
 import warnings
 from typing import Optional
@@ -15,8 +15,23 @@ try:
 except ImportError:
     HAVE_LXML = False
 
-PathType = Union[str, Path, None]
+PathType = Union[str, Path]
+OptionalPathType = Optional[PathType]
 DtypeType = Union[str, np.dtype, None]
+
+
+def get_single_files(folder_path: Path, suffix: str):
+    return [
+        f for f in folder_path.iterdir() if f.is_file() and suffix in f.suffixes and not f.name.endswith("~")
+        and len(f.suffixes) == 1
+    ]
+
+
+def get_shank_files(folder_path: Path, suffix: str):
+    return [
+        f for f in folder_path.iterdir() if f.is_file() and suffix in f.suffixes
+        and re.search(r"\d+$", f.name) is not None and len(f.suffixes) == 2
+    ]
 
 
 class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
@@ -57,7 +72,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         assert len(xml_files) == 1, "More than one .xml file found in the folder_path."
         xml_filepath = xml_files[0]
 
-        xml_root = et.parse(str(xml_filepath.absolute())).getroot()
+        xml_root = et.parse(str(xml_filepath)).getroot()
         n_bits = int(xml_root.find('acquisitionSystem').find('nBits').text)
         dtype = f"int{n_bits}"
         numchan_from_file = int(xml_root.find('acquisitionSystem').find('nChannels').text)
@@ -69,15 +84,18 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
                                           dtype=dtype, numchan=numchan_from_file)
-
         if gain is not None:
             self.set_channel_gains(channel_ids=self.get_channel_ids(), gains=gain)
 
         self._kwargs = dict(file_path=str(Path(file_path).absolute()), gain=gain)
 
     @staticmethod
-    def write_recording(recording: RecordingExtractor, save_path: PathType, dtype: DtypeType = None,
-                        **write_binary_kwargs):
+    def write_recording(
+        recording: RecordingExtractor,
+        save_path: PathType,
+        dtype: DtypeType = None,
+        **write_binary_kwargs
+    ):
         """
         Convert and save the recording extractor to Neuroscope format.
 
@@ -97,18 +115,18 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
 
-        if save_path.suffix == '':
+        if save_path.suffix == "":
             recording_name = save_path.name
         else:
             recording_name = save_path.stem
         xml_name = recording_name
 
-        save_xml_filepath = save_path / (str(xml_name) + '.xml')
+        save_xml_filepath = save_path / f"{xml_name}.xml"
         recording_filepath = save_path / recording_name
 
         # create parameters file if none exists
         if save_xml_filepath.is_file():
-            raise FileExistsError(f'{save_xml_filepath} already exists!')
+            raise FileExistsError(f"{save_xml_filepath} already exists!")
 
         xml_root = et.Element('xml')
         et.SubElement(xml_root, 'acquisitionSystem')
@@ -120,25 +138,26 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         int_loc = recording_dtype.find('int')
         recording_n_bits = recording_dtype[(int_loc + 3):(int_loc + 5)]
 
-        if dtype is None:  # user did not specify data type
-            if int_loc != -1 and recording_n_bits in ['16', '32']:
+        valid_dtype = ["16", "32"]
+        if dtype is None:
+            if int_loc != -1 and recording_n_bits in valid_dtype:
                 n_bits = recording_n_bits
             else:
-                print('Warning: Recording data type must be int16 or int32! Defaulting to int32.')
-                n_bits = '32'
-            dtype = 'int' + n_bits  # update dtype in pass to BinDatRecordingExtractor.write_recording
+                print("Warning: Recording data type must be int16 or int32! Defaulting to int32.")
+                n_bits = "32"
+            dtype = f"int{n_bits}"  # update dtype in pass to BinDatRecordingExtractor.write_recording
         else:
             dtype = str(dtype)  # if user passed numpy data type
             int_loc = dtype.find('int')
-            assert int_loc != -1, 'Data type must be int16 or int32! Non-integer received.'
+            assert int_loc != -1, "Data type must be int16 or int32! Non-integer received."
             n_bits = dtype[(int_loc + 3):(int_loc + 5)]
-            assert n_bits in ['16', '32'], 'Data type must be int16 or int32!'
+            assert n_bits in valid_dtype, "Data type must be int16 or int32!"
 
         xml_root.find('acquisitionSystem').find('nBits').text = n_bits
         xml_root.find('acquisitionSystem').find('nChannels').text = str(recording.get_num_channels())
         xml_root.find('acquisitionSystem').find('samplingRate').text = str(recording.get_sampling_frequency())
 
-        et.ElementTree(xml_root).write(str(save_xml_filepath.absolute()), pretty_print=True)
+        et.ElementTree(xml_root).write(str(save_xml_filepath), pretty_print=True)
 
         recording.write_to_binary_dat_format(recording_filepath, dtype=dtype, **write_binary_kwargs)
 
@@ -178,8 +197,12 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
         self._kwargs = dict(folder_path=str(folder_path.absolute()), gain=gain)
 
     @staticmethod
-    def write_recording(recording: Union[MultiRecordingTimeExtractor, RecordingExtractor],
-                        save_path: PathType, dtype: DtypeType = None, **write_binary_kwargs):
+    def write_recording(
+        recording: Union[MultiRecordingTimeExtractor, RecordingExtractor],
+        save_path: PathType,
+        dtype: DtypeType = None,
+        **write_binary_kwargs
+    ):
         """
         Convert and save the recording extractor to Neuroscope format.
 
@@ -287,63 +310,57 @@ class NeuroscopeSortingExtractor(SortingExtractor):
 
     Parameters
     ----------
-    resfile_path : str
+    resfile_path : PathType
         Optional. Path to a particular .res text file.
-    clufile_path : str
+    clufile_path : PathType
         Optional. Path to a particular .clu text file.
-    folder_path : str
+    folder_path : PathType
         Optional. Path to the collection of .res and .clu text files. Will auto-detect format.
     keep_mua_units : bool
         Optional. Whether or not to return sorted spikes from multi-unit activity. Defaults to True.
     """
 
-    extractor_name = 'NeuroscopeSortingExtractor'
-    installed = HAVE_LXML  # check at class level if installed or not
+    extractor_name = "NeuroscopeSortingExtractor"
+    installed = HAVE_LXML
     is_writable = True
-    mode = 'custom'
-    installation_mesg = 'Please install lxml to use this extractor!'  # error message when not installed
+    mode = "custom"
+    installation_mesg = "Please install lxml to use this extractor!"
 
-    def __init__(self, resfile_path: PathType = None, clufile_path: PathType = None, folder_path: PathType = None,
-                 keep_mua_units: bool = True):
+    def __init__(
+        self,
+        resfile_path: OptionalPathType = None,
+        clufile_path: OptionalPathType = None,
+        folder_path: OptionalPathType = None,
+        keep_mua_units: bool = True
+    ):
         assert HAVE_LXML, self.installation_mesg
-
-        # None of the location arguments were passed
         assert not (folder_path is None and resfile_path is None and clufile_path is None), \
-            'Either pass a single folder_path location, or a pair of resfile_path and clufile_path. None received.'
+            "Either pass a single folder_path location, or a pair of resfile_path and clufile_path! None received."
 
-        # At least one file_path passed
         if resfile_path is not None:
-            assert clufile_path is not None, 'If passing resfile_path or clufile_path, both are required.'
+            assert clufile_path is not None, "If passing resfile_path or clufile_path, both are required!"
             resfile_path = Path(resfile_path)
             clufile_path = Path(clufile_path)
             assert resfile_path.is_file() and clufile_path.is_file(), \
-                'The resfile_path ({}) and clufile_path ({}) must be .res and .clu files!'.format(resfile_path,
-                                                                                                  clufile_path)
+                f"The resfile_path ({resfile_path}) and clufile_path ({clufile_path}) must be .res and .clu files!"
 
-            assert folder_path is None, 'Pass either a single folder_path location, ' \
-                                        'or a pair of resfile_path and clufile_path. All received.'
+            assert folder_path is None, "Pass either a single folder_path location, " \
+                                        "or a pair of resfile_path and clufile_path! All received."
             folder_path_passed = False
             folder_path = resfile_path.parent
         else:
-            assert folder_path is not None, 'Either pass resfile_path and clufile_path, or folder_path'
+            assert folder_path is not None, "Either pass resfile_path and clufile_path, or folder_path!"
             folder_path = Path(folder_path)
-            assert folder_path.is_dir(), 'The folder_path must be a directory!'
+            assert folder_path.is_dir(), "The folder_path must be a directory!"
 
-            res_files = [f for f in folder_path.iterdir() if f.is_file()
-                         and '.res' in f.suffixes 
-                         and '.temp' not in f.suffixes
-                         and not f.name.endswith('~')
-                         and len(f.suffixes) == 1]
-            clu_files = [f for f in folder_path.iterdir() if f.is_file()
-                         and '.clu' in f.suffixes 
-                         and not f.name.endswith('~')
-                         and len(f.suffixes) == 1]
+            res_files = get_single_files(folder_path=folder_path, suffix=".res")
+            clu_files = get_single_files(folder_path=folder_path, suffix=".clu")
 
             assert len(res_files) > 0 or len(clu_files) > 0, \
-                'No .res or .clu files found in the folder_path.'
+                "No .res or .clu files found in the folder_path!"
             assert len(res_files) == 1 and len(clu_files) == 1, \
-                'NeuroscopeSortingExtractor expects a single pair of .res and .clu files in the folder_path. ' \
-                'For multiple .res and .clu files, use the NeuroscopeMultiSortingExtractor instead.'
+                "NeuroscopeSortingExtractor expects a single pair of .res and .clu files in the folder_path. " \
+                "For multiple .res and .clu files, use the NeuroscopeMultiSortingExtractor instead."
 
             folder_path_passed = True  # flag for setting kwargs for proper dumping
             resfile_path = res_files[0]
@@ -354,23 +371,25 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         res_sorting_name = resfile_path.name[:resfile_path.name.find('.res')]
         clu_sorting_name = clufile_path.name[:clufile_path.name.find('.clu')]
 
-        assert res_sorting_name == clu_sorting_name, f'The .res and .clu files do not share the same name! ' \
-                                                     f'{res_sorting_name}  -- {clu_sorting_name}'
+        assert res_sorting_name == clu_sorting_name, "The .res and .clu files do not share the same name! " \
+                                                     f"{res_sorting_name}  -- {clu_sorting_name}"
 
-        xml_files = [f for f in folder_path.iterdir() if f.is_file() if f.suffix == '.xml']
-        assert len(xml_files) > 0, 'No .xml file found in the folder.'
-        assert len(xml_files) == 1, 'More than one .xml file found in the folder.'
+        xml_files = [f for f in folder_path.iterdir() if f.is_file() if f.suffix == ".xml"]
+        assert len(xml_files) > 0, "No .xml file found in the folder!"
+        assert len(xml_files) == 1, "More than one .xml file found in the folder!"
         xml_filepath = xml_files[0]
 
-        xml_root = et.parse(str(xml_filepath.absolute())).getroot()
-        self._sampling_frequency = float(xml_root.find('acquisitionSystem').find(
-            'samplingRate').text)  # careful not to confuse it with the lfpsamplingrate
+        xml_root = et.parse(str(xml_filepath)).getroot()
+        self._sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text)
 
-        res = np.loadtxt(resfile_path, dtype=np.int64, usecols=0, ndmin=1)
-        clu = np.loadtxt(clufile_path, dtype=np.int64, usecols=0, ndmin=1)
+        with open(resfile_path) as f:
+            res = np.array([int(line) for line in f], np.int64)
+        with open(clufile_path) as f:
+            clu = np.array([int(line) for line in f], np.int64)
 
-        if len(res) > 0:
-            # Extract the number of clusters read as the first line of the clufile then remove it from the clu list
+        n_spikes = len(res)
+        if n_spikes > 0:
+            # Extract the number of unique IDs from the first line of the clufile then remove it from the list
             n_clu = clu[0]
             clu = np.delete(clu, 0)
             unique_ids = np.unique(clu)
@@ -379,33 +398,32 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             if 1 not in unique_ids:  # missing mua IDs
                 n_clu += 1
 
-            # Initialize spike trains and extract times from .res and appropriate clusters from .clu based on
-            # user input for ignoring multi-unit activity
             self._spiketrains = []
-            if keep_mua_units:  # default
+            if keep_mua_units:
                 n_clu -= 1
-                self._unit_ids = [x + 1 for x in range(n_clu)]  # generates list from 1,...,clu[0]-1
+                self._unit_ids = [x + 1 for x in range(n_clu)]  # from 1,...,clu[0]-1
                 for s_id in self._unit_ids:
                     self._spiketrains.append(res[(clu == s_id).nonzero()])
             else:
-                # Ignoring IDs of 0 until get_unsorted_spike_train is implemented into base
-                # Also ignoring IDs of 1 since user called keep_mua_units=False
                 n_clu -= 2
-                self._unit_ids = [x + 1 for x in range(n_clu)]  # generates list from 1,...,clu[0]-2
+                self._unit_ids = [x + 1 for x in range(n_clu)]  # from 1,...,clu[0]-2
                 for s_id in self._unit_ids:
-                    self._spiketrains.append(
-                        res[(clu == s_id + 1).nonzero()])  # only reading cluster IDs 2,...,clu[0]-1
+                    self._spiketrains.append(res[(clu == s_id + 1).nonzero()])  # from 2,...,clu[0]-1
 
         if folder_path_passed:
-            self._kwargs = {'resfile_path': None,
-                            'clufile_path': None,
-                            'folder_path': str(folder_path.absolute()),
-                            'keep_mua_units': keep_mua_units}
+            self._kwargs = dict(
+                resfile_path=None,
+                clufile_path=None,
+                folder_path=str(folder_path.absolute()),
+                keep_mua_units=keep_mua_units
+            )
         else:
-            self._kwargs = {'resfile_path': str(resfile_path.absolute()),
-                            'clufile_path': str(clufile_path.absolute()),
-                            'folder_path': None,
-                            'keep_mua_units': keep_mua_units}
+            self._kwargs = dict(
+                resfile_path=str(resfile_path.absolute()),
+                clufile_path=str(clufile_path.absolute()),
+                folder_path=None,
+                keep_mua_units=keep_mua_units
+            )
 
     def get_unit_ids(self):
         return list(self._unit_ids)
@@ -499,77 +517,82 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         final integer of all the .res.%i and .clu.%i pairs.
     """
 
-    extractor_name = 'NeuroscopeMultiSortingExtractor'
-    installed = HAVE_LXML  # check at class level if installed or not
+    extractor_name = "NeuroscopeMultiSortingExtractor"
+    installed = HAVE_LXML
     is_writable = True
-    mode = 'folder'
-    installation_mesg = 'Please install lxml to use this extractor!'  # error message when not installed
+    mode = "folder"
+    installation_mesg = "Please install lxml to use this extractor!"
 
-    def __init__(self, folder_path: PathType, keep_mua_units: bool = True, exclude_shanks: Union[list, None] = None):
+    def __init__(
+        self,
+        folder_path: PathType,
+        keep_mua_units: bool = True,
+        exclude_shanks: Optional[list] = None
+    ):
         assert HAVE_LXML, self.installation_mesg
 
         folder_path = Path(folder_path)
 
         if exclude_shanks is not None:  # dumping checks do not like having an empty list as default
             assert all([isinstance(x, (int, np.integer)) and x >= 0 for x in
-                        exclude_shanks]), 'Optional argument "exclude_shanks" must contain positive integers only!'
+                        exclude_shanks]), "Optional argument 'exclude_shanks' must contain positive integers only!"
             exclude_shanks_passed = True
         else:
             exclude_shanks = []
             exclude_shanks_passed = False
-        xml_files = [f for f in folder_path.iterdir() if f.is_file if f.suffix == '.xml']
-        assert len(xml_files) > 0, 'No .xml file found in the folder.'
-        assert len(xml_files) == 1, 'More than one .xml file found in the folder.'
+        xml_files = [f for f in folder_path.iterdir() if f.is_file if f.suffix == ".xml"]
+        assert len(xml_files) > 0, "No .xml file found in the folder!"
+        assert len(xml_files) == 1, "More than one .xml file found in the folder!"
         xml_filepath = xml_files[0]
 
-        xml_root = et.parse(str(xml_filepath.absolute())).getroot()
-        self._sampling_frequency = float(xml_root.find('acquisitionSystem').find(
-            'samplingRate').text)  # careful not to confuse it with the lfpsamplingrate
+        xml_root = et.parse(str(xml_filepath)).getroot()
+        self._sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text)
 
-        res_files = [f for f in folder_path.iterdir() if f.is_file()
-                     and '.res' in f.suffixes 
-                     and re.search(r'\d+$', f.name) is not None
-                     and len(f.suffixes) == 2]
-        clu_files = [f for f in folder_path.iterdir() if f.is_file()
-                     and '.clu' in f.suffixes 
-                     and re.search(r'\d+$', f.name) is not None
-                     and len(f.suffixes) == 2]
+        res_files = get_shank_files(folder_path=folder_path, suffix=".res")
+        clu_files = get_shank_files(folder_path=folder_path, suffix=".clu")
 
-        assert len(res_files) > 0 or len(clu_files) > 0, \
-            'No .res or .clu files found in the folder_path.'
+        assert len(res_files) > 0 or len(clu_files) > 0, "No .res or .clu files found in the folder_path!"
         assert len(res_files) == len(clu_files)
 
         res_ids = [int(x.suffix[1:]) for x in res_files]
         clu_ids = [int(x.suffix[1:]) for x in clu_files]
-        assert sorted(res_ids) == sorted(clu_ids), 'Unmatched .clu.%i and .res.%i files detected!'
+        assert sorted(res_ids) == sorted(clu_ids), "Unmatched .clu.%i and .res.%i files detected!"
         if any([x not in res_ids for x in exclude_shanks]):
-            print('Warning: Detected indices in exclude_shanks that are not in the directory. These will be ignored.')
+            warnings.warn("Detected indices in exclude_shanks that are not in the directory! These will be ignored.")
 
         resfile_names = [x.name[:x.name.find('.res')] for x in res_files]
         clufile_names = [x.name[:x.name.find('.clu')] for x in clu_files]
         assert np.all(r == c for (r, c) in zip(resfile_names, clufile_names)), \
-            'Some of the .res.%i and .clu.%i files do not share the same name!'
+            "Some of the .res.%i and .clu.%i files do not share the same name!"
         sorting_name = resfile_names[0]
 
         all_shanks_list_se = []
         for shank_id in list(set(res_ids) - set(exclude_shanks)):
-            resfile_path = folder_path / f'{sorting_name}.res.{shank_id}'
-            clufile_path = folder_path / f'{sorting_name}.clu.{shank_id}'
+            resfile_path = folder_path / f"{sorting_name}.res.{shank_id}"
+            clufile_path = folder_path / f"{sorting_name}.clu.{shank_id}"
 
-            all_shanks_list_se.append(NeuroscopeSortingExtractor(resfile_path=resfile_path,
-                                                                 clufile_path=clufile_path,
-                                                                 keep_mua_units=keep_mua_units))
+            all_shanks_list_se.append(
+                NeuroscopeSortingExtractor(
+                    resfile_path=resfile_path,
+                    clufile_path=clufile_path,
+                    keep_mua_units=keep_mua_units
+                )
+            )
 
         MultiSortingExtractor.__init__(self, sortings=all_shanks_list_se)
 
         if exclude_shanks_passed:
-            self._kwargs = {'folder_path': str(folder_path.absolute()),
-                            'keep_mua_units': keep_mua_units,
-                            'exclude_shanks': exclude_shanks}
+            self._kwargs = dict(
+                folder_path=str(folder_path.absolute()),
+                keep_mua_units=keep_mua_units,
+                exclude_shanks=exclude_shanks
+            )
         else:
-            self._kwargs = {'folder_path': str(folder_path.absolute()),
-                            'keep_mua_units': keep_mua_units,
-                            'exclude_shanks': None}
+            self._kwargs = dict(
+                folder_path=str(folder_path.absolute()),
+                keep_mua_units=keep_mua_units,
+                exclude_shanks=None
+            )
 
     @staticmethod
     def write_sorting(sorting: Union[MultiSortingExtractor, SortingExtractor], save_path: PathType):
@@ -581,11 +604,11 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         xml_name = sorting_name
         save_xml_filepath = save_path / (str(xml_name) + '.xml')
 
-        assert not save_path.is_file(), "'save_path' should be a folder"
+        assert not save_path.is_file(), "Argument 'save_path' should be a folder!"
         save_path.mkdir(parents=True, exist_ok=True)
 
         if save_xml_filepath.is_file():
-            raise FileExistsError(f'{save_xml_filepath} already exists!')
+            raise FileExistsError(f"{save_xml_filepath} already exists!")
 
         xml_root = et.Element('xml')
         et.SubElement(xml_root, 'acquisitionSystem')
@@ -597,14 +620,14 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
             counter = 1
             for sort in sorting.sortings:
                 # Create and save .res.%i and .clu.%i files from the current sorting object
-                save_res = save_path / f'{sorting_name}.res.{counter}'
-                save_clu = save_path / f'{sorting_name}.clu.{counter}'
+                save_res = save_path / f"{sorting_name}.res.{counter}"
+                save_clu = save_path / f"{sorting_name}.clu.{counter}"
                 counter += 1
 
                 res, clu = _extract_res_clu_arrays(sort)
 
-                np.savetxt(save_res, res, fmt='%i')
-                np.savetxt(save_clu, clu, fmt='%i')
+                np.savetxt(save_res, res, fmt="%i")
+                np.savetxt(save_clu, clu, fmt="%i")
 
         elif isinstance(sorting, SortingExtractor):
             # assert units have group property
@@ -613,13 +636,13 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
 
             for (sort, group) in zip(sortings, groups):
                 # Create and save .res.%i and .clu.%i files from the current sorting object
-                save_res = save_path / f'{sorting_name}.res.{group}'
-                save_clu = save_path / f'{sorting_name}.clu.{group}'
+                save_res = save_path / f"{sorting_name}.res.{group}"
+                save_clu = save_path / f"{sorting_name}.clu.{group}"
 
                 res, clu = _extract_res_clu_arrays(sort)
 
-                np.savetxt(save_res, res, fmt='%i')
-                np.savetxt(save_clu, clu, fmt='%i')
+                np.savetxt(save_res, res, fmt="%i")
+                np.savetxt(save_clu, clu, fmt="%i")
 
 
 def _extract_res_clu_arrays(sorting):
