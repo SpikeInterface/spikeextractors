@@ -693,12 +693,14 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             description="electrode_table_region"
         )
 
-        # channels gains - for RecordingExtractor, these are values to cast traces to uV
+        # channel gains - for RecordingExtractor, these are values to cast traces to uV
         # for nwb, the conversions (gains) cast the data to Volts
         # To get traces in Volts = data*channel_conversion*conversion
-        gains = np.squeeze([recording.get_channel_gains(channel_ids=[ch])
-                            if 'gain' in recording.get_channel_property_names(channel_id=ch) else 1
-                            for ch in channel_ids])
+        gains = np.squeeze([
+            recording.get_channel_gains(channel_ids=[ch])
+            if 'gain' in recording.get_channel_property_names(channel_id=ch) else 1
+            for ch in channel_ids
+        ])
         if len(np.unique(gains)) == 1:  # if all gains are equal
             scalar_conversion = np.unique(gains)[0] * 1e-6
             channel_conversion = None
@@ -791,11 +793,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 if [epoch_name] in nwbfile.epochs['tags'][:]:
                     ind = nwbfile.epochs['tags'][:].index([epoch_name])
                     nwbfile.epochs['start_time'].data[ind] = recording.frame_to_time(epoch['start_frame'])
-                    nwbfile.epochs['stop_time'].data[ind] = recording.frame_to_time(epoch['end_frame'])
+                    nwbfile.epochs['stop_time'].data[ind] = recording.frame_to_time(epoch['end_frame'] - 1)
                 else:
                     nwbfile.add_epoch(
                         start_time=recording.frame_to_time(epoch['start_frame']),
-                        stop_time=recording.frame_to_time(epoch['end_frame']),
+                        stop_time=recording.frame_to_time(epoch['end_frame'] - 1),
                         tags=epoch_name
                     )
 
@@ -1159,6 +1161,20 @@ class NwbSortingExtractor(se.SortingExtractor):
                     unit_col_args.update(table=nwbfile.electrodes)
                 nwbfile.add_unit_column(**unit_col_args)
 
+            if write_waveforms:
+                nwbfile.units.waveform_rate = sf  # Hz
+
+                # channel gains - for RecordingExtractor, these are values to cast traces to uV
+                # for nwb, the conversions (gains) cast the data to Volts
+                gain = np.unique(np.squeeze([
+                    sorting.get_unit_property(unit_id=unit_id, property_name='gain')
+                    if 'gain' in sorting.get_unit_property_names(unit_id=unit_id) else 1
+                    for unit_id in unit_ids
+                ]))
+                if len(gain) > 1:
+                    raise NotImplementedError("Writing waveforms with channel conversion factors is not supported!")
+                # nwbfile.units.waveform_conversion = gain[0] * 1e-6  # This awaits implementation in the NWB schema
+
             for unit_id in unit_ids:
                 unit_kwargs = dict(id=unit_id)
 
@@ -1181,6 +1197,9 @@ class NwbSortingExtractor(se.SortingExtractor):
                 if write_waveforms:
                     check_waveform_features(sorting=sorting, unit_id=unit_id)
                     wf = sorting.get_unit_spike_features(unit_id=unit_id, feature_name='waveforms')
+                    # This is temporary until the NWB Schema allows conversion factors for waveforms in the units table
+                    wf = wf * gain * 1e-6
+                    # ---
                     unit_kwargs.update(waveforms=wf)
 
                 if write_waveform_stats:
@@ -1193,20 +1212,6 @@ class NwbSortingExtractor(se.SortingExtractor):
                     unit_kwargs.update(waveform_mean=traces_avg, waveform_sd=traces_std)
 
                 nwbfile.add_unit(**unit_kwargs)
-
-            if write_waveforms:
-                nwbfile.units.waveform_rate = sf  # Hz
-
-                # channels gains - for RecordingExtractor, these are values to cast traces to uV
-                # for nwb, the conversions (gains) cast the data to Volts
-                gain = np.unique(np.squeeze([
-                    sorting.get_unit_property(unit_id=unit_id, property_name='gain')
-                    if 'gain' in sorting.get_unit_property_names(unit_id=unit_id) else 1
-                    for unit_id in unit_ids
-                ]))
-                if len(gain) > 1:
-                    raise NotImplementedError("Writing waveforms with channel conversion factors is not supported!")
-                nwbfile.units.waveform_conversion = gain[0] * 1e-6
 
             # Check that multidimensional features have the same shape across units
             write_features = all_features - skip_features
