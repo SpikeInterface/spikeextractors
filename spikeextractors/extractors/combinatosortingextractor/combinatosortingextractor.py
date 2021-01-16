@@ -1,7 +1,7 @@
 from pathlib import Path
 import numpy as np
 from spikeextractors import SortingExtractor
-from spikeextractors.extraction_tools import check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_unit_spike_train
 from typing import Union
 
 
@@ -81,7 +81,7 @@ class CombinatoSortingExtractor(SortingExtractor):
         return self._unit_ids
 
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
 

@@ -61,7 +61,7 @@ class IntanRecordingExtractor(RecordingExtractor):
         return self._fs
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, dtype=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True, dtype=None):
         channel_idxs = np.array([self._channel_ids.index(ch) for ch in channel_ids])
         analog_chans = self._analog_channels[channel_idxs]
         if dtype is None:

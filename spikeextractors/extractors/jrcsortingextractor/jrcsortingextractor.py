@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 
 from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor, HAVE_MAT
-from spikeextractors.extraction_tools import check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_unit_spike_train
 
 PathType = Union[str, Path]
 
@@ -133,7 +133,7 @@ class JRCSortingExtractor(MATSortingExtractor):
         self._kwargs["keep_good_only"] = keep_good_only
 
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_features(self, unit_id, feature_name, start_frame=None, end_frame=None):
         if feature_name not in ("raw_traces", "filtered_traces", "cluster_features"):
             return super().get_unit_spike_features(unit_id, feature_name, start_frame, end_frame)
@@ -146,11 +146,11 @@ class JRCSortingExtractor(MATSortingExtractor):
         else:
             return self._cluster_features[:, :, mask]
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_feature_names(self, unit_id):
         return super().get_unit_spike_feature_names(unit_id) + ["raw_traces", "filtered_traces", "cluster_features"]
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
 

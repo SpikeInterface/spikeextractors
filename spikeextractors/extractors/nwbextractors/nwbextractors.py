@@ -9,7 +9,7 @@ from typing import Union, List, Optional
 import warnings
 
 import spikeextractors as se
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train
 
 try:
     import pynwb
@@ -278,7 +278,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         })
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             es = nwbfile.acquisition[self._electrical_series_name]
@@ -1051,13 +1051,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             unit_ids = [int(i) for i in nwbfile.units.id[:]]
         return unit_ids
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
+
         check_nwb_install()
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
