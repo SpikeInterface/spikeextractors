@@ -615,7 +615,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
                 keep_mua_units=keep_mua_units
             )
 
-            if write_waveforms:
+            if load_waveforms:
                 spk_files = get_shank_files(folder_path=folder_path, suffix=".spk")
                 assert len(spk_files) > 0, "No .spk files found in the folder_path, but 'write_waveforms' is True!"
                 assert len(spk_files) == len(res_files), "Mismatched number of .spk and .res files!"
