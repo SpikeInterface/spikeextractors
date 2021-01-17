@@ -549,7 +549,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
     exclude_shanks : list
         Optional. List of indices to ignore. The set of all possible indices is chosen by default, extracted as the
         final integer of all the .res.%i and .clu.%i pairs.
-    write_waveforms : bool
+    load_waveforms : bool
         Optional. If True, extracts waveform data from .spk.%i files in the path corresponding to
         the .res.%i and .clue.%i files and sets these as unit spike features. Defaults to False.
     gain : float
