@@ -1148,7 +1148,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     print(f"Skipping property '{pr}' because it has variable size across units.")
                     skip_properties.update(pr)
 
-            write_properties = all_properties - skip_properties
+            write_properties = all_properties - set(skip_properties)
             for pr in write_properties:
                 if pr not in property_descriptions:
                     warnings.warn(
@@ -1214,7 +1214,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                 nwbfile.add_unit(**unit_kwargs)
 
             # Check that multidimensional features have the same shape across units
-            write_features = all_features - skip_features
+            write_features = all_features - set(skip_features)
             feature_shapes = dict()
             for ft in write_features:
                 shapes = []
