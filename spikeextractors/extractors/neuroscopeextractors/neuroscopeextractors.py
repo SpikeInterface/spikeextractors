@@ -567,7 +567,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         folder_path: PathType,
         keep_mua_units: bool = True,
         exclude_shanks: Optional[list] = None,
-        write_waveforms: bool = False,
+        load_waveforms: bool = False,
         gain: Optional[float] = None
     ):
         assert HAVE_LXML, self.installation_mesg
