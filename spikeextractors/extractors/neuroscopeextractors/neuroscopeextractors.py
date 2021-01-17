@@ -646,7 +646,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
                 folder_path=str(folder_path.absolute()),
                 keep_mua_units=keep_mua_units,
                 exclude_shanks=None,
-                write_waveforms=write_waveforms,
+                load_waveforms=load_waveforms,
                 gain=gain
             )
 
