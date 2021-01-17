@@ -1206,7 +1206,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     check_waveform_features(sorting=sorting, unit_id=unit_id)
                     wf = sorting.get_unit_spike_features(unit_id=unit_id, feature_name='waveforms')
                     relevant_ch = most_relevant_ch(wf)
-                    traces = wf[:, :, relevant_ch]
+                    traces = wf[:, relevant_ch, :]
                     traces_avg = np.mean(traces, axis=0)
                     traces_std = np.std(traces, axis=0)
                     unit_kwargs.update(waveform_mean=traces_avg, waveform_sd=traces_std)
