@@ -421,9 +421,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             n_bits = int(xml_root.find('acquisitionSystem').find('nBits').text)
             dtype = f"int{n_bits}"
             n_samples = int(xml_root.find('neuroscope').find('spikes').find('nSamples').text)
-            wf = np.memmap(spkfile_path, dtype=dtype)
-            n_channels = int(wf.size / (n_spikes * n_samples))
-            wf = np.moveaxis(wf.reshape(n_spikes, n_samples, n_channels), 1, -1)
+            wf = np.moveaxis(np.memmap(spkfile_path, dtype=dtype).reshape(n_spikes, n_samples, -1), 1, -1)
 
             for unit_id in self.get_unit_ids():
                 if gain is not None:
