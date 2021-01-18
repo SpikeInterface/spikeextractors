@@ -547,7 +547,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
     exclude_shanks : list
         Optional. List of indices to ignore. The set of all possible indices is chosen by default, extracted as the
         final integer of all the .res.%i and .clu.%i pairs.
-    write_waveforms : bool
+    load_waveforms : bool
         Optional. If True, extracts waveform data from .spk.%i files in the path corresponding to
         the .res.%i and .clue.%i files and sets these as unit spike features. Defaults to False.
     gain : float
@@ -565,7 +565,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         folder_path: PathType,
         keep_mua_units: bool = True,
         exclude_shanks: Optional[list] = None,
-        write_waveforms: bool = False,
+        load_waveforms: bool = False,
         gain: Optional[float] = None
     ):
         assert HAVE_LXML, self.installation_mesg
@@ -613,7 +613,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
                 keep_mua_units=keep_mua_units
             )
 
-            if write_waveforms:
+            if load_waveforms:
                 spk_files = get_shank_files(folder_path=folder_path, suffix=".spk")
                 assert len(spk_files) > 0, "No .spk files found in the folder_path, but 'write_waveforms' is True!"
                 assert len(spk_files) == len(res_files), "Mismatched number of .spk and .res files!"
@@ -636,7 +636,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
                 folder_path=str(folder_path.absolute()),
                 keep_mua_units=keep_mua_units,
                 exclude_shanks=exclude_shanks,
-                write_waveforms=write_waveforms,
+                load_waveforms=load_waveforms,
                 gain=gain
             )
         else:
@@ -644,7 +644,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
                 folder_path=str(folder_path.absolute()),
                 keep_mua_units=keep_mua_units,
                 exclude_shanks=None,
-                write_waveforms=write_waveforms,
+                load_waveforms=load_waveforms,
                 gain=gain
             )
 
