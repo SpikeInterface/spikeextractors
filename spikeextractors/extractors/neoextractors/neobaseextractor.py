@@ -106,14 +106,12 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
             channel_idxs = np.array([list(channel_ids).index(ch) for ch in channel_ids])
             # and then to uV
             scaled_traces *= self.additional_gain[:, channel_idxs]
-
-            # fortunatly neo works with (samples, channels) strides
-            # so transpose to spieextractors wolrd
-            scaled_traces = scaled_traces.transpose()
-
-            return scaled_traces
+            traces = scaled_traces
         else:
-            return raw_traces
+            traces = raw_traces
+        # neo works with (samples, channels) strides
+        # so transpose to spikeextractors wolrd
+        return traces.transpose()
 
     def get_num_frames(self):
         # channel_indexes=None means all channels
