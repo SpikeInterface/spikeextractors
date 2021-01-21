@@ -2,7 +2,7 @@ import numpy as np
 
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train
 
 try:
     import neo
@@ -78,8 +78,19 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         self.additional_gain[units == 'uV'] = 1.
         self.additional_gain = self.additional_gain.reshape(1, -1)
 
+        # Add channels properties
+        header_channels = self.neo_reader.header['signal_channels'][slice(None)]
+        channel_ids = self.get_channel_ids()
+
+        gains = header_channels['gain'] * self.additional_gain[0]
+        self.set_channel_gains(gains=gains, channel_ids=channel_ids)
+        
+        names = header_channels['name']
+        for i, ind in enumerate(channel_ids):
+            self.set_channel_property(channel_id=ind, property_name='name', value=names[i])
+
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         # in neo rawio channel can acces by names/ids/indexes
         # there is no garranty that ids/names are unique on some formats
         raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
@@ -87,19 +98,20 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
                                                             channel_indexes=None, channel_names=None,
                                                             channel_ids=channel_ids)
 
-        # rescale traces to natural units (can be anything)
-        scaled_traces = self.neo_reader.rescale_signal_raw_to_float(raw_traces, dtype='float32',
-                                                                    channel_indexes=None, channel_names=None,
-                                                                    channel_ids=channel_ids)
-        channel_idxs = np.array([list(channel_ids).index(ch) for ch in channel_ids])
-        # and then to uV
-        scaled_traces *= self.additional_gain[:, channel_idxs]
-
-        # fortunatly neo works with (samples, channels) strides
-        # so transpose to spieextractors wolrd
-        scaled_traces = scaled_traces.transpose()
-
-        return scaled_traces
+        if return_scaled:
+            # rescale traces to natural units (can be anything)
+            scaled_traces = self.neo_reader.rescale_signal_raw_to_float(raw_traces, dtype='float32',
+                                                                        channel_indexes=None, channel_names=None,
+                                                                        channel_ids=channel_ids)
+            channel_idxs = np.array([list(channel_ids).index(ch) for ch in channel_ids])
+            # and then to uV
+            scaled_traces *= self.additional_gain[:, channel_idxs]
+            traces = scaled_traces
+        else:
+            traces = raw_traces
+        # neo works with (samples, channels) strides
+        # so transpose to spikeextractors wolrd
+        return traces.transpose()
 
     def get_num_frames(self):
         # channel_indexes=None means all channels
@@ -161,7 +173,7 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         unit_ids = np.arange(self.neo_reader.header['unit_channels'].size, dtype='int64')
         return unit_ids
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         # this is a string

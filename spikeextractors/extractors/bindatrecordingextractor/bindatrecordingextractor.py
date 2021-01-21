@@ -63,7 +63,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         if np.all(channel_ids == self.get_channel_ids()):
             recordings = self._timeseries[:, start_frame:end_frame]
         else:
@@ -77,7 +77,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
             exp_idx = self._dtype.find('int') + 3
             exp = int(self._dtype[exp_idx:])
             recordings = recordings.astype('float32') - 2**(exp - 1)
-        if self._gain is not None:
+        if self._gain is not None and return_scaled:
             recordings = recordings * self._gain
         return recordings
 

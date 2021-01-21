@@ -1,6 +1,6 @@
 from spikeextractors import SortingExtractor
 from pathlib import Path
-from spikeextractors.extraction_tools import check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_unit_spike_train
 
 try:
     import tridesclous as tdc
@@ -45,7 +45,7 @@ class TridesclousSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return self._unit_ids
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         spikes = self._all_spikes

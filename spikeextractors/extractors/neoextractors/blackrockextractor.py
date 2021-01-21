@@ -31,8 +31,11 @@ class BlackrockRecordingExtractor(NeoBaseRecordingExtractor):
     installed = HAVE_NEO
     NeoRawIOClass = 'BlackrockRawIO'
 
-    def __init__(self, filename: PathType, block_index: Optional[float] = None, seg_index: Optional[float] = None):
-        super().__init__(filename=filename, block_index=block_index, seg_index=seg_index)
+    def __init__(self, filename: PathType, nsx_to_load: Optional[int] = None,
+                 block_index: Optional[float] = None, seg_index: Optional[float] = None,
+                 **kwargs):
+        super().__init__(filename=filename, nsx_to_load=nsx_to_load, 
+                         block_index=block_index, seg_index=seg_index, **kwargs)
 
 
 class BlackrockSortingExtractor(NeoBaseSortingExtractor):

@@ -10,7 +10,7 @@ except ImportError:
 
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train
 
 
 class NIXIORecordingExtractor(RecordingExtractor):
@@ -54,7 +54,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
         return sampling_frequency
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         channels = np.array([self._traces[cid] for cid in channel_ids])
         return channels[:, start_frame:end_frame]
 
@@ -165,12 +165,14 @@ class NIXIOSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return [int(da.label) for da in self._spike_das]
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         name = "spikes-{}".format(unit_id)
         da = self._spike_das[name]
-        return da[start_frame:end_frame]
+        if np.isfinite(end_frame):
+            return da[start_frame:end_frame]
+        else:
+            return da[start_frame:]
 
     def _load_properties(self):
         spikes_md = self._spike_das[0].metadata
