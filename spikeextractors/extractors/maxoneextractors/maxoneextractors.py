@@ -111,7 +111,9 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         else:
             signals = self._signals[np.array(channel_ids), start_frame:end_frame]
         if return_scaled:
-            return (signals * self._lsb).astype('float32')
+            signals = signals.astype('float32')
+            signals *= self._lsb
+        return signals
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
