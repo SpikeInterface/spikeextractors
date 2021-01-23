@@ -336,7 +336,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             name="Device",
             description="Ecephys probe."
         )
-        if metadata is None:
+        if metadata is None or 'Device' not in metadata['Ecephys']:
             metadata = dict(
                 Ecephys=dict(
                     Device=[defaults]
@@ -386,7 +386,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             location="unknown",
             device_name="Device"
         )
-        if metadata is None:
+        if metadata is None or 'ElectrodeGroup' not in metadata['Ecephys']:
             metadata = dict(
                 Ecephys=dict(
                     ElectrodeGroup=[]
@@ -466,6 +466,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
         if nwbfile.electrode_groups is None:
+            print("\n\n\nhere 1\n\n\n")
             se.NwbRecordingExtractor.add_electrode_groups(recording, nwbfile, metadata)
         # For older versions of pynwb, we need to manually add these columns
         if distutils.version.LooseVersion(pynwb.__version__) < '1.3.0':
@@ -485,7 +486,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             filtering="none",
             group_name="Electrode Group"
         )
-        if metadata is None:
+        if metadata is None or 'Electrodes' not in metadata['Ecephys']:
             metadata = dict(
                 Ecephys=dict(
                     Electrodes=[]
@@ -649,7 +650,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             name="LFP",
             description="Local field potential signal."
         )
-        if metadata is None:
+        if metadata is None or not any([x in metadata['Ecephys'] for x in ['ElectricalSeries', 'LFPElectricalSeries']]):
             metadata = dict(Ecephys=dict())
             if not write_as_lfp:
                 metadata['Ecephys'].update(
