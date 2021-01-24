@@ -82,10 +82,14 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         else:
             sampling_frequency = float(xml_root.find('fieldPotentials').find('lfpSamplingRate').text)
 
-        BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
-                                          dtype=dtype, numchan=numchan_from_file)
-        if gain is not None:
-            self.set_channel_gains(channel_ids=self.get_channel_ids(), gains=gain)
+        BinDatRecordingExtractor.__init__(
+            self,
+            file_path,
+            sampling_frequency=sampling_frequency,
+            dtype=dtype,
+            numchan=numchan_from_file,
+            gain=gain
+        )
 
         self._kwargs = dict(file_path=str(Path(file_path).absolute()), gain=gain)
 
