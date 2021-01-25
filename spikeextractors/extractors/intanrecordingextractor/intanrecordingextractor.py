@@ -1,8 +1,10 @@
-from spikeextractors import RecordingExtractor
-from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args
 import numpy as np
 from pathlib import Path
 from distutils.version import StrictVersion
+from typing import Optional
+
+from spikeextractors import RecordingExtractor
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args
 
 try:
     import pyintan
@@ -49,7 +51,7 @@ class IntanRecordingExtractor(RecordingExtractor):
             for i, ch in enumerate(self._analog_channels):
                 self.set_channel_property(i, 'offset', ch['offset'])
 
-        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'verbose': verbose}
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'dtype': dtype, 'verbose': verbose}
 
     def get_channel_ids(self):
         return self._channel_ids
@@ -61,16 +63,29 @@ class IntanRecordingExtractor(RecordingExtractor):
         return self._fs
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True, dtype=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled: Optional[bool] = None,
+                   dtype: Optional[str] = None):
+        if return_scaled is not None and dtype is None:
+            if return_scaled:
+                dtype = 'float'
+            else:
+                raise ValueError("If attempting to return unscaled traces for the IntanRecordingExtractor, "
+                                 "set dtype to 'int16' or 'uint16'!")
+        if dtype is not None:
+            assert dtype in ['float', 'int16', 'uint16'], "'dtype' must be either 'float', 'int16', or 'uint16'!"
+            return_scaled = dtype == 'float'
+        if return_scaled is None and dtype is None:
+            dtype = self._dtype
+        if return_scaled is False and dtype == 'float':  # User explicitly passed both conflicting arguments
+            raise ValueError("Unable to return unscaled traces with dtype set to 'float'! "
+                             "To return unscaled traces, set dtype to 'int16' or 'uint16'.")
+        if return_scaled is True and dtype != 'float':  # User explicitly passed both conflicting arguments
+            raise ValueError("Unable to return scaled traces with dtype set to 'int16' or 'uint16'!")
+
         channel_idxs = np.array([self._channel_ids.index(ch) for ch in channel_ids])
         analog_chans = self._analog_channels[channel_idxs]
-        if dtype is None:
-            return self._recording._read_analog(channels=analog_chans, i_start=start_frame, i_stop=end_frame,
-                                                dtype=self._dtype).T
-        else:
-            assert dtype in ['float', 'int16', 'uint16'], "'dtype' can be either 'float', 'int16', or 'uint16'"
-            return self._recording._read_analog(channels=analog_chans, i_start=start_frame, i_stop=end_frame,
-                                                dtype=dtype).T
+        return self._recording._read_analog(channels=analog_chans, i_start=start_frame, i_stop=end_frame,
+                                            dtype=dtype).T
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
