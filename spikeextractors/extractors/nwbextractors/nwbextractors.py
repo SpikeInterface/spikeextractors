@@ -237,10 +237,19 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             self._epochs = {}
             if nwbfile.epochs is not None:
                 df_epochs = nwbfile.epochs.to_dataframe()
-                self._epochs = {row['tags'][0]: {
-                    'start_frame': self.time_to_frame(row['start_time']),
-                    'end_frame': self.time_to_frame(row['stop_time'])}
-                    for _, row in df_epochs.iterrows()}
+
+                if 'tags' in df_epochs:
+                    tags_or_label = 'tags'  # older nwb schema version
+                else:
+                    tags_or_label = 'label'
+
+                self._epochs = {
+                    row[tags_or_label][0]: {
+                        'start_frame': self.time_to_frame(row['start_time']),
+                        'end_frame': self.time_to_frame(row['stop_time'])
+                    }
+                    for _, row in df_epochs.iterrows()
+                }
 
             self._kwargs = {'file_path': str(Path(file_path).absolute()),
                             'electrical_series_name': electrical_series_name}
