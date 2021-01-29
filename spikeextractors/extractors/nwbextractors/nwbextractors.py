@@ -569,22 +569,32 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
                 if not any([x.get('name', '') == 'group_name' for x in metadata['Ecephys']['Electrodes']]):
                     group_id = recording.get_channel_groups(channel_ids=channel_id)[0]
-                    if group_id in range(len(nwbfile.electrode_groups)):
-                        group_name = list(nwbfile.electrode_groups.keys())[group_id]
+                    if str(group_id) in nwbfile.electrode_groups:
                         electrode_kwargs.update(
                             dict(
-                                group=nwbfile.electrode_groups[group_name],
-                                group_name=group_name
+                                group=nwbfile.electrode_groups[str(group_id)],
+                                group_name=str(group_id)
                             )
                         )
                     else:
-                        warnings.warn("No metadata was passed specifying the electrode group for "
-                                      f"electrode {channel_id}, and the internal recording channel group was "
-                                      f"assigned a value ({group_id}) outside the indices of the electrode "
-                                      "groups in the nwbfile! Electrode will not be added.")
-                        continue
+                        if group_id in range(len(nwbfile.electrode_groups)):
+                            group_name = list(nwbfile.electrode_groups.keys())[group_id]
+                            electrode_kwargs.update(
+                                dict(
+                                    group=nwbfile.electrode_groups[group_name],
+                                    group_name=group_name
+                                )
+                            )
+                        else:
+                            warnings.warn("No metadata was passed specifying the electrode group for "
+                                          f"electrode {channel_id}, and the internal recording channel group was "
+                                          f"assigned a value ({group_id}) outside the indices of the electrode "
+                                          "groups in the nwbfile! Electrode will not be added.")
+                            continue
 
                 nwbfile.add_electrode(**electrode_kwargs)
+        assert nwbfile.electrodes is not None, \
+            "Unable to form electrode table! Check device, electrode group, and electrode metadata."
 
         # property 'gain' should not be in the NWB electrodes_table
         # property 'brain_area' of RX channels corresponds to 'location' of NWB electrodes
