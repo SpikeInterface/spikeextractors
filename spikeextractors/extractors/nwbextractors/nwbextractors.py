@@ -610,8 +610,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None,
-                              buffer_mb: int = 500, use_timestamps: bool = False, write_as_lfp: bool = False,
-                              return_scaled: bool = True):
+                              buffer_mb: int = 500, use_timestamps: bool = False, write_as_lfp: bool = False):
         """
         Auxiliary static method for nwbextractor.
 
@@ -708,14 +707,14 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             n_bytes = np.dtype(recording.get_dtype()).itemsize
             buffer_size = int(buffer_mb * 1e6) // (recording.get_num_channels() * n_bytes)
             ephys_data = DataChunkIterator(
-                data=recording.get_traces(return_scaled=return_scaled).T,  # nwb standard is time as zero axis
+                data=recording.get_traces(return_scaled=False).T,  # nwb standard is time as zero axis
                 buffer_size=buffer_size
             )
         else:
             def data_generator(recording, channels_ids):
                 # generates data chunks for iterator
                 for id in channels_ids:
-                    data = recording.get_traces(channel_ids=[id], return_scaled=return_scaled).flatten()
+                    data = recording.get_traces(channel_ids=[id], return_scaled=False).flatten()
                     yield data
             ephys_data = DataChunkIterator(
                 data=data_generator(
@@ -799,8 +798,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def add_all_to_nwbfile(recording: se.RecordingExtractor, nwbfile=None,
-                           use_timestamps: bool = False, metadata: dict = None, write_as_lfp: bool = False,
-                           return_scaled: bool = True):
+                           use_timestamps: bool = False, metadata: dict = None, write_as_lfp: bool = False):
         '''
         Auxiliary static method for nwbextractor.
         Adds all recording related information from recording object and metadata
@@ -849,8 +847,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             nwbfile=nwbfile,
             use_timestamps=use_timestamps,
             metadata=metadata,
-            write_as_lfp=write_as_lfp,
-            return_scaled=return_scaled
+            write_as_lfp=write_as_lfp
         )
 
         # Add epochs
@@ -862,8 +859,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def write_recording(recording: se.RecordingExtractor, save_path: PathType = None, overwrite: bool = False,
-                        nwbfile=None, use_timestamps: bool = False, metadata: dict = None, write_as_lfp: bool = False,
-                        return_scaled: bool = True):
+                        nwbfile=None, use_timestamps: bool = False, metadata: dict = None, write_as_lfp: bool = False):
         """
         Primary method for writing a RecordingExtractor object to an NWBFile.
 
@@ -944,8 +940,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     nwbfile=nwbfile,
                     metadata=metadata,
                     use_timestamps=use_timestamps,
-                    write_as_lfp=write_as_lfp,
-                    return_scaled=return_scaled
+                    write_as_lfp=write_as_lfp
                 )
 
                 # Write to file
@@ -956,8 +951,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 nwbfile=nwbfile,
                 use_timestamps=use_timestamps,
                 metadata=metadata,
-                write_as_lfp=write_as_lfp,
-                return_scaled=return_scaled
+                write_as_lfp=write_as_lfp
             )
 
 

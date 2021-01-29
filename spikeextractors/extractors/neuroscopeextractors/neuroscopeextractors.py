@@ -36,7 +36,7 @@ def get_shank_files(folder_path: Path, suffix: str):
 
 class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     """
-    Extracts raw neural recordings from large binary .dat files in the neuroscope format.
+    Extracts raw neural recordings from binary .dat files in the neuroscope format.
 
     The recording extractor always returns channel IDs starting from 0.
 
