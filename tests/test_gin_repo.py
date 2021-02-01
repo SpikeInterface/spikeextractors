@@ -1,7 +1,8 @@
+import tempfile
 import unittest
 from pathlib import Path
 
-from datalad.api import install
+from datalad.api import install, Dataset
 from parameterized import parameterized
 
 from spikeextractors import NwbRecordingExtractor, NeuralynxRecordingExtractor
@@ -10,7 +11,12 @@ from spikeextractors import NwbRecordingExtractor, NeuralynxRecordingExtractor
 class TestNwbConversions(unittest.TestCase):
 
     def setUp(self):
-        self.dataset = install('https://gin.g-node.org/NeuralEnsemble/ephy_testing_data')
+        pt = Path.cwd()/'ephys_testing_data'
+        if pt.exists():
+            self.dataset = Dataset(pt)
+        else:
+            self.dataset = install('https://gin.g-node.org/NeuralEnsemble/ephys_testing_data')
+        self.savedir = Path(tempfile.mkdtemp())
 
     def get_data(self, rt_write_fname, rt_read_fname, save_fname, dataset_path):
         if rt_read_fname is None:
@@ -28,7 +34,7 @@ class TestNwbConversions(unittest.TestCase):
             'neuralynx/Cheetah_v1.1.0/orginial_data/CSC67_trunc.Ncs',
             'neuralynx/Cheetah_v1.1.0/orginial_data/CSC67_trunc.Ncs',
             'neuralynx_test.nwb',
-            'neuralynx_test.hdf5'
+            'neuralynx_test.Ncs'
         )
     ])
     def test_convert_recording_extractor_to_nwb(
