@@ -38,12 +38,15 @@ class IntanRecordingExtractor(RecordingExtractor):
         self._channel_ids = list(range(self._num_channels))
         self._fs = float(self._recording.sample_rate.rescale('Hz').magnitude)
 
-        assert dtype in ['float', 'uint16'], "'dtype' can be either 'float' or 'uint16'"
+        assert dtype in ['float', 'int16', 'uint16'], "'dtype' can be either 'float', 'int16', or 'uint16'"
         self._dtype = dtype
+
+        if self._dtype in ['int16', 'uint16']:
+            for i, ch in enumerate(self._analog_channels):
+                self.set_channel_property(i, 'gain', ch['gain'])
 
         if self._dtype == 'uint16':
             for i, ch in enumerate(self._analog_channels):
-                self.set_channel_property(i, 'gain', ch['gain'])
                 self.set_channel_property(i, 'offset', ch['offset'])
 
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'verbose': verbose}
@@ -65,7 +68,7 @@ class IntanRecordingExtractor(RecordingExtractor):
             return self._recording._read_analog(channels=analog_chans, i_start=start_frame, i_stop=end_frame,
                                                 dtype=self._dtype).T
         else:
-            assert dtype in ['float', 'uint16'], "'dtype' can be either 'float' or 'uint16'"
+            assert dtype in ['float', 'int16', 'uint16'], "'dtype' can be either 'float', 'int16', or 'uint16'"
             return self._recording._read_analog(channels=analog_chans, i_start=start_frame, i_stop=end_frame,
                                                 dtype=dtype).T
 

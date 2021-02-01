@@ -1,11 +1,23 @@
 from pathlib import Path
 from typing import Union
 import numpy as np
+import sys
+import os
 
-from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor, HAVE_MAT
+from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor
 from spikeextractors.extraction_tools import check_valid_unit_id
 
 PathType = Union[str, Path]
+
+convert_cell_array_to_struct_code = """
+hdsortOutput = load(fileName);
+hdsortOutput.Units = [hdsortOutput.Units{:}];
+Units = hdsortOutput.Units;
+MultiElectrode = hdsortOutput.MultiElectrode;
+noiseStd = hdsortOutput.noiseStd;
+samplingRate = hdsortOutput.samplingRate;
+save(fileName, 'Units', 'MultiElectrode', 'noiseStd', 'samplingRate');
+"""
 
 
 class HDSortSortingExtractor(MATSortingExtractor):
@@ -109,7 +121,9 @@ class HDSortSortingExtractor(MATSortingExtractor):
         return self._unit_ids.tolist()
 
     @staticmethod
-    def write_sorting(sorting, save_path, locations=None, noise_std_by_channel=None, start_frame=0):
+    def write_sorting(sorting, save_path, locations=None, noise_std_by_channel=None, start_frame=0,
+                      convert_cell_to_struct=True):
+
         # First, find out how many channels there are
         if locations is not None:
             # write_locations must be a 2D numpy array with n_channels in first dim., (x,y) in second dim.
@@ -154,7 +168,7 @@ class HDSortSortingExtractor(MATSortingExtractor):
                 unit["detectionChannel"] = np.ones(num_spikes, np.double)
 
             if "template" in sorting.get_unit_property_names(uid):
-                unit["footprint"] = sorting.get_unit_property(uid, "template")
+                unit["footprint"] = sorting.get_unit_property(uid, "template").T
             else:
                 # If this unit does not have a footprint, create an empty one:
                 unit["footprint"] = np.zeros((3, n_channels), np.double)
@@ -178,13 +192,41 @@ class HDSortSortingExtractor(MATSortingExtractor):
         if noise_std_by_channel is None:
             noise_std_by_channel = np.ones((1, n_channels))
 
-        dict_to_save = {'Units': units,
+        dict_to_save = {'Units': np.array(units),
                         'MultiElectrode': multi_electrode,
                         'noiseStd': noise_std_by_channel,
                         "samplingRate": sorting._sampling_frequency}
 
         # Save Units and MultiElectrode to .mat file:
         MATSortingExtractor.write_dict_to_mat(save_path, dict_to_save, version='7.3')
+
+        if convert_cell_to_struct:
+            # read the template txt files
+            convert_cellarray_to_structarray = f"fileName='{str(Path(save_path).absolute())}';\n" \
+                                               f"{convert_cell_array_to_struct_code}"
+            convert_script = Path(save_path).parent / "convert_cellarray_to_structarray.m"
+
+            with convert_script.open('w') as f:
+                f.write(convert_cellarray_to_structarray)
+
+            if 'win' in sys.platform and sys.platform != 'darwin':
+                matlab_cmd = '''
+                             #!/bin/bash
+                             cd {tmpdir}
+                             matlab -nosplash -wait -log -r convert_cellarray_to_structarray
+                             '''.format(tmpdir={str(convert_script.parent)})
+            else:
+                matlab_cmd = '''
+                             #!/bin/bash
+                             cd {tmpdir}
+                             matlab -nosplash -nodisplay -log -r convert_cellarray_to_structarray
+                             '''.format(tmpdir={str(convert_script.parent)})
+
+            try:
+                os.system(matlab_cmd)
+            except:
+                print("Failed to convert cell array to struct array")
+            convert_script.unlink()
 
 
 # For .mat v7.3: Function to extract all fields of a struct-array:

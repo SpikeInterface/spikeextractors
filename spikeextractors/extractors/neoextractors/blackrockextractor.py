@@ -1,10 +1,15 @@
 from .neobaseextractor import NeoBaseRecordingExtractor, NeoBaseSortingExtractor
+from pathlib import Path
+from typing import Union, Optional
 
 try:
     import neo
     HAVE_NEO = True
 except ImportError:
     HAVE_NEO = False
+
+
+PathType = Union[str, Path]
 
 
 class BlackrockRecordingExtractor(NeoBaseRecordingExtractor):
@@ -25,6 +30,9 @@ class BlackrockRecordingExtractor(NeoBaseRecordingExtractor):
     mode = 'file'
     installed = HAVE_NEO
     NeoRawIOClass = 'BlackrockRawIO'
+
+    def __init__(self, filename: PathType, block_index: Optional[float] = None, seg_index: Optional[float] = None):
+        super().__init__(filename=filename, block_index=block_index, seg_index=seg_index)
 
 
 class BlackrockSortingExtractor(NeoBaseSortingExtractor):

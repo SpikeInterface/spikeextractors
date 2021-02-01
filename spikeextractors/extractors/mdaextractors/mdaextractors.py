@@ -100,8 +100,9 @@ class MdaRecordingExtractor(RecordingExtractor):
 
     @staticmethod
     def write_recording(recording, save_path, params=dict(), raw_fname='raw.mda', params_fname='params.json',
-                        geom_fname='geom.csv', dtype=None, chunk_size=None, chunk_mb=500, verbose=False):
+                        geom_fname='geom.csv', dtype=None, chunk_size=None, n_jobs=None, chunk_mb=500, verbose=False):
         '''
+        Writes recording to file in MDA format.
 
         Parameters
         ----------
@@ -122,6 +123,8 @@ class MdaRecordingExtractor(RecordingExtractor):
         chunk_size: None or int
             Number of chunks to save the file in. This avoid to much memory consumption for big files.
             If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
+        n_jobs: int
+            Number of jobs to use (Default 1)
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
         verbose: bool
@@ -149,7 +152,7 @@ class MdaRecordingExtractor(RecordingExtractor):
             header = MdaHeader(dt0=dtype, dims0=(num_chan, num_frames))
             header.write(f)
             # takes care of the chunking
-            write_to_binary_dat_format(recording, file_handle=f, dtype=dtype, chunk_size=chunk_size,
+            write_to_binary_dat_format(recording, file_handle=f, dtype=dtype, n_jobs=n_jobs, chunk_size=chunk_size,
                                        chunk_mb=chunk_mb, verbose=verbose)
 
         params["samplerate"] = recording.get_sampling_frequency()
@@ -175,10 +178,6 @@ class MdaSortingExtractor(SortingExtractor):
         self._labels = self._firings[2, :]
         self._unit_ids = np.unique(self._labels).astype(int)
         self._sampling_frequency = sampling_frequency
-        for unit_id in self._unit_ids:
-            inds = np.where(self._labels == unit_id)
-            max_channels = self._max_channels[inds].astype(int)
-            self.set_unit_property(unit_id, 'mda_max_channel', max_channels[0])
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'sampling_frequency': sampling_frequency}
 
     def get_unit_ids(self):
