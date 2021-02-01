@@ -1,3 +1,4 @@
 datalad
+parameterized
 numpy
 tqdm
