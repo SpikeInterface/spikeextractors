@@ -2,3 +2,11 @@ datalad
 parameterized
 numpy
 tqdm
+lxml
+h5py
+shybrid
+pynwb
+nixio
+MEArec
+hdf5storage
+exdir
