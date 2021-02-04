@@ -5,17 +5,17 @@ from pathlib import Path
 from datalad.api import install, Dataset
 from parameterized import parameterized
 
-from spikeextractors import NwbRecordingExtractor, NeuralynxRecordingExtractor
+from spikeextractors import NwbRecordingExtractor, NeuralynxRecordingExtractor, NeuroscopeRecordingExtractor
 
 
 class TestNwbConversions(unittest.TestCase):
 
     def setUp(self):
-        pt = Path.cwd()/'ephys_testing_data'
+        pt = Path.cwd()/'ephy_testing_data'
         if pt.exists():
             self.dataset = Dataset(pt)
         else:
-            self.dataset = install('https://gin.g-node.org/NeuralEnsemble/ephys_testing_data')
+            self.dataset = install('https://gin.g-node.org/NeuralEnsemble/ephy_testing_data')
         self.savedir = Path(tempfile.mkdtemp())
 
     def get_data(self, rt_write_fname, rt_read_fname, save_fname, dataset_path):
@@ -29,12 +29,19 @@ class TestNwbConversions(unittest.TestCase):
         return rt_write_path, rt_read_path, save_path
 
     @parameterized.expand([
+        #(
+        #    NeuralynxRecordingExtractor,
+        #    'neuralynx/Cheetah_v1.1.0/original_data/CSC67_trunc.Ncs',
+        #    'neuralynx/Cheetah_v1.1.0/original_data/CSC67_trunc.Ncs',
+        #    'neuralynx_test.nwb',
+        #    'neuralynx_test.Ncs'
+        #)
         (
-            NeuralynxRecordingExtractor,
-            'neuralynx/Cheetah_v1.1.0/orginial_data/CSC67_trunc.Ncs',
-            'neuralynx/Cheetah_v1.1.0/orginial_data/CSC67_trunc.Ncs',
-            'neuralynx_test.nwb',
-            'neuralynx_test.Ncs'
+            NeuroscopeRecordingExtractor,
+            "neuroscope/test1",
+            "neuroscope/test1/test1.dat",
+            "neuroscope_test.nwb",
+            "neuroscope_test.dat"
         )
     ])
     def test_convert_recording_extractor_to_nwb(
@@ -43,7 +50,10 @@ class TestNwbConversions(unittest.TestCase):
 
         rt_write_path, rt_read_path, save_path = self.get_data(rt_write_fname, rt_read_fname, save_fname, dataset_path)
 
-        path = Path.cwd()/'ephys_testing_data'/dataset_path_arg
+        path = Path.cwd()/'ephy_testing_data'/dataset_path_arg
+        print(f"\n\nHere: {path}, but {path.is_file()} \n\n")
+        path2 = Path.cwd()/'ephy_testing_data'/'neuroscope/test1/test1.xml'
+        print(f"\n\nHere2: {path2}, but {path2.is_file()}\n\n")
         re = se_class(path)
         NwbRecordingExtractor.write_recording(re, save_path)
         # nwb_seg_ex = NwbSegmentationExtractor(save_path)
@@ -53,14 +63,6 @@ class TestNwbConversions(unittest.TestCase):
         # except NotImplementedError:
         #     return
         # seg_ex_rt = roi_ex_class(rt_read_path)
-
-    def test_convert_neuralynx(self):
-        resp = self.dataset.get('neuralynx/Cheetah_v1.1.0/orginial_data/CSC67_trunc.Ncs')
-        path = resp[0]['path']
-        re = NeuralynxRecordingExtractor(path)
-
-        NwbRecordingExtractor.write_recording(re, 'nlx_test.nwb')
-
 
 if __name__ == '__main__':
     unittest.main()
