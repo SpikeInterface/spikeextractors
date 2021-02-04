@@ -51,9 +51,6 @@ class TestNwbConversions(unittest.TestCase):
         rt_write_path, rt_read_path, save_path = self.get_data(rt_write_fname, rt_read_fname, save_fname, dataset_path)
 
         path = Path.cwd()/'ephy_testing_data'/dataset_path_arg
-        print(f"\n\nHere: {path}, but {path.is_file()} \n\n")
-        path2 = Path.cwd()/'ephy_testing_data'/'neuroscope/test1/test1.xml'
-        print(f"\n\nHere2: {path2}, but {path2.is_file()}\n\n")
         re = se_class(path)
         NwbRecordingExtractor.write_recording(re, save_path)
         # nwb_seg_ex = NwbSegmentationExtractor(save_path)

@@ -27,6 +27,7 @@ class TestTools(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
     def test_load_save_probes(self):
+        print(f"\n\n{Path('spikeextractors/tests/probe_test.prb').absolute}\n\n")
         sub_RX = se.load_probe_file(self.RX, 'spikeextractors/tests/probe_test.prb')
         # print(SX.get_channel_property_names())
         assert 'location' in sub_RX.get_shared_channel_property_names()
