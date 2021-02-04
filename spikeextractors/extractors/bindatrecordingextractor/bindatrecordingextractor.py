@@ -136,7 +136,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
             exp = int(self._dtype[exp_idx:])
             recordings = recordings.astype('float32') - 2**(exp - 1)
         if 'gain' in self.get_shared_channel_property_names() and return_scaled:
-            recordings = recordings * np.reshape(self.get_channel_gains(channel_ids=channel_ids), (len(channel_ids), 1))
+            recordings = recordings * self.get_channel_gains(channel_ids=channel_ids)[:, None]
         return recordings
 
     def write_to_binary_dat_format(
