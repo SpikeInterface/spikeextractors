@@ -577,20 +577,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                             )
                         )
                     else:
-                        if group_id in range(len(nwbfile.electrode_groups)):
-                            group_name = list(nwbfile.electrode_groups.keys())[group_id]
-                            electrode_kwargs.update(
-                                dict(
-                                    group=nwbfile.electrode_groups[group_name],
-                                    group_name=group_name
-                                )
-                            )
-                        else:
-                            warnings.warn("No metadata was passed specifying the electrode group for "
-                                          f"electrode {channel_id}, and the internal recording channel group was "
-                                          f"assigned a value ({group_id}) outside the indices of the electrode "
-                                          "groups in the nwbfile! Electrode will not be added.")
-                            continue
+                        warnings.warn("No metadata was passed specifying the electrode group for "
+                                      f"electrode {channel_id}, and the internal recording channel group was "
+                                      f"assigned a value (str({group_id})) not present as electrode "
+                                      "groups in the NWBFile! Electrode will not be added.")
+                        continue
 
                 nwbfile.add_electrode(**electrode_kwargs)
         assert nwbfile.electrodes is not None, \
