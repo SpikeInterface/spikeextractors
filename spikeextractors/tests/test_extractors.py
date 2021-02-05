@@ -381,7 +381,6 @@ class TestExtractors(unittest.TestCase):
             recordings=[self.RX, self.RX2, self.RX3],
             groups=[1, 2, 3]
         )
-        print(RX_multi.get_channel_groups())
         RX_sub = se.SubRecordingExtractor(RX_multi, channel_ids=[4, 5, 6, 7], renamed_channel_ids=[0, 1, 2, 3])
         check_recordings_equal(self.RX2, RX_sub)
         check_recordings_equal(self.RX, RX_multi.recordings[0])
@@ -389,6 +388,20 @@ class TestExtractors(unittest.TestCase):
         check_recordings_equal(self.RX3, RX_multi.recordings[2])
         self.assertEqual([2, 2, 2, 2], list(RX_sub.get_channel_groups()))
         self.assertEqual(12, len(RX_multi.get_channel_ids()))
+
+        rx1 = self.RX
+        rx2 = self.RX2
+        rx3 = self.RX3
+        rx2.set_channel_property(0, "foo", 100)
+        rx3.set_channel_locations([11, 11], channel_ids=0)
+        RX_multi_c = se.MultiRecordingChannelExtractor(
+            recordings=[rx1, rx2, rx3],
+            groups=[0, 0, 1]
+        )
+        self.assertTrue(np.array_equal([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], RX_multi_c.get_channel_ids()))
+        self.assertTrue(np.array_equal([0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1], RX_multi_c.get_channel_groups()))
+        self.assertEqual(rx2.get_channel_property(0, "foo"), RX_multi_c.get_channel_property(4, "foo"))
+        self.assertTrue(np.array_equal(rx3.get_channel_locations([0])[0], RX_multi_c.get_channel_locations([8])[0]))
 
     def test_ttl_frames_in_sub_multi(self):
         # sub recording

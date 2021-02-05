@@ -39,7 +39,9 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
                 for i, group in enumerate(groups):
                     recording = recordings[i]
                     channel_ids = recording.get_channel_ids()
-                    group_values += [group] * len(channel_ids)
+                    recording_groups = [group] * len(channel_ids)
+                    group_values += recording_groups
+                    recording.set_channel_groups(groups=recording_groups)
                 self.set_channel_groups(groups=group_values)
             else:
                 raise ValueError("recordings and groups must have same length")
@@ -49,6 +51,14 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         for i, recording in enumerate(recordings):
             locations = np.vstack((locations, recording.get_channel_locations()))
         self.set_channel_locations(locations)
+
+        #set all normal properties
+        for channel_id in self.get_channel_ids():
+            recording = self._recordings[self._channel_map[channel_id]['recording']]
+            channel_id_recording = self._channel_map[channel_id]['channel_id']
+            for property_name in recording.get_channel_property_names(channel_id_recording):
+                value = recording.get_channel_property(channel_id_recording, property_name)
+                self.set_channel_property(channel_id=channel_id, property_name=property_name, value=value)
 
         self._kwargs = {'recordings': [rec.make_serialized_dict() for rec in recordings], 'groups': groups}
 
@@ -81,23 +91,6 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
 
     def get_sampling_frequency(self):
         return self._sampling_frequency
-
-    def set_channel_property(self, channel_id, property_name, value):
-        recording = self._recordings[self._channel_map[channel_id]['recording']]
-        channel_id_recording = self._channel_map[channel_id]['channel_id']
-        recording.set_channel_property(channel_id_recording, property_name=property_name, value=value)
-
-    def get_channel_property(self, channel_id, property_name):
-        recording = self._recordings[self._channel_map[channel_id]['recording']]
-        channel_id_recording = self._channel_map[channel_id]['channel_id']
-        return recording.get_channel_property(channel_id_recording, property_name=property_name)
-
-    def get_channel_property_names(self, channel_id):
-        recording = self._recordings[self._channel_map[channel_id]['recording']]
-        channel_id_recording = self._channel_map[channel_id]['channel_id']
-        property_names = recording.get_channel_property_names(channel_id_recording)
-        return property_names
-
 
 def concatenate_recordings_by_channel(recordings, groups=None):
     '''
