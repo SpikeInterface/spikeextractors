@@ -27,7 +27,8 @@ class TestTools(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
     def test_load_save_probes(self):
-        sub_RX = se.load_probe_file(self.RX, 'probe_test.prb')
+        test_dir = Path('../tests')
+        sub_RX = se.load_probe_file(self.RX, test_dir / 'probe_test.prb')
         # print(SX.get_channel_property_names())
         assert 'location' in sub_RX.get_shared_channel_property_names()
         assert 'group' in sub_RX.get_shared_channel_property_names()
@@ -47,19 +48,19 @@ class TestTools(unittest.TestCase):
         for i in RX.get_channel_ids():
             channel_groups.append(i // n_group)
         RX.set_channel_groups(channel_groups)
-        RX.save_to_probe_file('probe_test_no_groups.prb')
-        RX.save_to_probe_file('probe_test_groups.prb', grouping_property='group')
+        RX.save_to_probe_file(test_dir / 'probe_test_no_groups.prb')
+        RX.save_to_probe_file(test_dir / 'probe_test_groups.prb', grouping_property='group')
 
         # load
-        RX_loaded_no_groups = se.load_probe_file(RX, 'probe_test_no_groups.prb')
-        RX_loaded_groups = se.load_probe_file(RX, 'probe_test_groups.prb')
+        RX_loaded_no_groups = se.load_probe_file(RX, test_dir / 'probe_test_no_groups.prb')
+        RX_loaded_groups = se.load_probe_file(RX, test_dir / 'probe_test_groups.prb')
 
         assert len(np.unique(RX_loaded_no_groups.get_channel_groups())) == 1
         assert len(np.unique(RX_loaded_groups.get_channel_groups())) == RX.get_num_channels() // n_group
 
         # cleanup
-        os.remove('probe_test_no_groups.prb')
-        os.remove('probe_test_groups.prb')
+        os.remove(test_dir / 'probe_test_no_groups.prb')
+        os.remove(test_dir / 'probe_test_groups.prb')
 
     def test_write_dat_file(self):
         nb_sample = self.RX.get_num_frames()
