@@ -11,3 +11,6 @@ MEArec
 hdf5storage
 exdir
 pyintan
+tridesclous
+neo
+

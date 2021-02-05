@@ -1170,7 +1170,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                         unit_kwargs.update({pr: prop_value})
                     else:  # Case of missing data for this unit and this property
                         unit_kwargs.update({pr: np.nan})
-                nwbfile.add_unit(id=unit_id, spike_times=spkt, **unit_kwargs)
+                nwbfile.add_unit(id=int(unit_id), spike_times=spkt, **unit_kwargs)
 
             # TODO
             # # Stores average and std of spike traces
