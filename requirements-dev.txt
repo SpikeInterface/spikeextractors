@@ -10,3 +10,4 @@ nixio
 MEArec
 hdf5storage
 exdir
+pyintan
