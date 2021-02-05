@@ -20,18 +20,7 @@ class TestNwbConversions(unittest.TestCase):
         self.savedir = Path(tempfile.mkdtemp())
 
     @parameterized.expand([
-        #(
-        #    se.NeuralynxRecordingExtractor,
-        #    'neuralynx/Cheetah_v1.1.0/original_data/CSC67_trunc.Ncs',
-        #    'neuralynx/Cheetah_v1.1.0/original_data/CSC67_trunc.Ncs',
-        #    'neuralynx_test.nwb',
-        #    'neuralynx_test.Ncs'
-        #)
-        (
-            se.NeuroscopeRecordingExtractor,
-            "neuroscope/test1",
-            "neuroscope/test1/test1.dat"
-        ),
+        # Intan - strptime issue in pyintan
         # (
         #     se.IntanRecordingExtractor,
         #     "intan",
@@ -42,6 +31,19 @@ class TestNwbConversions(unittest.TestCase):
         #     "intan",
         #     "intan/intan_rhd_test_1.rhs"
         # )
+        # Neuralynx - fix input arguments
+        # (
+        #     se.NeuralynxRecordingExtractor,
+        #     'neuralynx/Cheetah_v1.1.0/original_data/CSC67_trunc.Ncs',
+        #     'neuralynx/Cheetah_v1.1.0/original_data/CSC67_trunc.Ncs',
+        #     'neuralynx_test.nwb',
+        #     'neuralynx_test.Ncs'
+        # )
+        (
+            se.NeuroscopeRecordingExtractor,
+            "neuroscope/test1",
+            "neuroscope/test1/test1.dat"
+        ),
     ])
     def test_convert_recording_extractor_to_nwb(self, se_class, dataset_path, se_path_arg):
         nwb_save_path = self.savedir / f"{se_class.__name__}_test.nwb"
@@ -53,11 +55,12 @@ class TestNwbConversions(unittest.TestCase):
         check_recordings_equal(recording, nwb_recording)
 
     @parameterized.expand([
-        (
-            se.KlustaSortingExtractor,
-            "klustakwik/test1",
-            "klustakwik/test1"
-        )
+        # Klusta sorting - no known sampling frequency
+        # (
+        #     se.KlustaSortingExtractor,
+        #     "kwik",
+        #     "kwik/neo.kwik"
+        # )
     ])
     def test_convert_sorting_extractor_to_nwb(self, se_class, dataset_path, se_path_arg):
         nwb_save_path = self.savedir / f"{se_class.__name__}_test.nwb"
