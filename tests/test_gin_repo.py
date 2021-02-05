@@ -44,8 +44,7 @@ class TestNwbConversions(unittest.TestCase):
         )
     ])
     def test_convert_recording_extractor_to_nwb(self, se_class, dataset_path, se_path_arg):
-        nwb_fname = f"{se_class.__name__}_test.nwb"
-        nwb_save_path = self.savedir / nwb_fname
+        nwb_save_path = self.savedir / f"{se_class.__name__}_test.nwb"
         self.dataset.get(dataset_path)
 
         re = se_class(Path.cwd() / "ephy_testing_data" / se_path_arg)
