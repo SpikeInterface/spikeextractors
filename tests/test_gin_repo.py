@@ -34,12 +34,12 @@ class TestNwbConversions(unittest.TestCase):
         ),
         (
             se.IntanRecordingExtractor,
-            "intan/intan_rhd_test_1.rhd",
+            "intan",
             "intan/intan_rhd_test_1.rhd"
         ),
         (
             se.IntanRecordingExtractor,
-            "intan/intan_rhd_test_1.rhs",
+            "intan",
             "intan/intan_rhd_test_1.rhs"
         )
     ])
