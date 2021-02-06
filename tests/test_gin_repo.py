@@ -42,12 +42,12 @@ class TestNwbConversions(unittest.TestCase):
             "mearec/mearec_test_10s.h5",
             dict(file_path=Path.cwd() / "ephy_testing_data" / "mearec/mearec_test_10s.h5")
         ),
-        # Neuralynx - a lot of versions on the testing_data, not sure which we want to support
-        (
-            se.NeuralynxRecordingExtractor,
-            "neuralynx/Cheetah_v5.7.4/original_data",
-            dict(dirname=Path.cwd() / "ephy_testing_data" / "neuralynx/Cheetah_v5.7.4/original_data"),
-        ),
+        # Neuralynx - a lot of versions on the testing_data, not sure which we want to support; main issue is setting seg_index for many of the blocked files
+#        (
+#            se.NeuralynxRecordingExtractor,
+#            "neuralynx/Cheetah_v5.7.4/original_data",
+#            dict(dirname=Path.cwd() / "ephy_testing_data" / "neuralynx/Cheetah_v5.7.4/original_data"),
+#        ),
         (
             se.NeuroscopeRecordingExtractor,
             "neuroscope/test1",
