@@ -20,6 +20,12 @@ class TestNwbConversions(unittest.TestCase):
         self.savedir = Path(tempfile.mkdtemp())
 
     @parameterized.expand([
+        # Blackrock - PosixPath has no attribute endswith stemming from base neo io
+#        (
+#            se.BlackrockRecordingExtractor,
+#            "blackrock/blackrock_2_1",
+#            dict(filename=Path.cwd() / "ephy_testing_data" / "I101210-001.ns2")
+#        ),
         # Intan - strptime issue in pyintan
         # (
         #     se.IntanRecordingExtractor,
@@ -31,25 +37,44 @@ class TestNwbConversions(unittest.TestCase):
         #     "intan",
         #     "intan/intan_rhd_test_1.rhs"
         # )
-        # Neuralynx - fix input arguments
-        # (
-        #     se.NeuralynxRecordingExtractor,
-        #     'neuralynx/Cheetah_v1.1.0/original_data/CSC67_trunc.Ncs',
-        #     'neuralynx/Cheetah_v1.1.0/original_data/CSC67_trunc.Ncs',
-        #     'neuralynx_test.nwb',
-        #     'neuralynx_test.Ncs'
-        # )
+        (
+            se.MEArecRecordingExtractor,
+            "mearec/mearec_test_10s.h5",
+            dict(file_path=Path.cwd() / "ephy_testing_data" / "mearec/mearec_test_10s.h5")
+        ),
+        # Neuralynx - a lot of versions on the testing_data, not sure which we want to support
+        (
+            se.NeuralynxRecordingExtractor,
+            "neuralynx/Cheetah_v5.7.4/original_data",
+            dict(dirname=Path.cwd() / "ephy_testing_data" / "neuralynx/Cheetah_v5.7.4/original_data"),
+        ),
         (
             se.NeuroscopeRecordingExtractor,
             "neuroscope/test1",
-            "neuroscope/test1/test1.dat"
+            dict(file_path=Path.cwd() / "ephy_testing_data" / "neuroscope/test1/test1.dat")
         ),
+        # Nixio - PosixPath has no attribute encode
+#        (
+#            se.NIXIORecordingExtractor,
+#            "nix",
+#            dict(file_path=Path.cwd() / "ephy_testing_data" / "neoraw.nix")
+#        )
+        (
+            se.OpenEphysRecordingExtractor,
+            "openephys/OpenEphys_SampleData_1",
+            dict(folder_path=Path.cwd() / "ephy_testing_data" / "openephys/OpenEphys_SampleData_1")
+        ),
+        (
+            se.SpikeGLXRecordingExtractor,
+            "spikeglx/Noise4Sam_g0",
+            dict(file_path=Path.cwd() / "ephy_testing_data" / "spikeglx" / "Noise4Sam_g0" / "Noise4Sam_g0_imec0" / "Noise4Sam_g0_t0.imec0.ap.bin")
+        )
     ])
-    def test_convert_recording_extractor_to_nwb(self, se_class, dataset_path, se_path_arg):
+    def test_convert_recording_extractor_to_nwb(self, se_class, dataset_path, se_kwargs):
         nwb_save_path = self.savedir / f"{se_class.__name__}_test.nwb"
         self.dataset.get(dataset_path)
 
-        recording = se_class(Path.cwd() / "ephy_testing_data" / se_path_arg)
+        recording = se_class(**se_kwargs)
         se.NwbRecordingExtractor.write_recording(recording, nwb_save_path)
         nwb_recording = se.NwbRecordingExtractor(nwb_save_path)
         check_recordings_equal(recording, nwb_recording)
