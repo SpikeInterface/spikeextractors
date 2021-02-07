@@ -1244,7 +1244,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     spikes_index = np.cumsum(nspks_list).astype('int64')
                     set_dynamic_table_property(
                         dynamic_table=nwbfile.units,
-                        row_ids=unit_ids,
+                        row_ids=[int(k) for k in unit_ids],
                         property_name=ft,
                         values=flatten_vals,
                         index=spikes_index,
