@@ -1,0 +1,1 @@
+from .neuropixelsrecordingextractor import NeuropixelsRecordingExtractor
