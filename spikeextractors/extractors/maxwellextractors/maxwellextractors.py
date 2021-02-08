@@ -40,22 +40,46 @@ class MaxOneRecordingExtractor(RecordingExtractor):
 
     def _initialize(self):
         self._filehandle = h5py.File(self._file_path, 'r')
-        self._mapping = self._filehandle['mapping']
-        if 'lsb' in self._filehandle['settings'].keys():
-            self._lsb = self._filehandle['settings']['lsb'][0] * 1e6
-        else:
-            print("Couldn't read lsb. Setting lsb to 1")
-            self._lsb = 1.
-        channels = np.array(self._mapping['channel'])
-        electrodes = np.array(self._mapping['electrode'])
-        # remove unused channels
-        routed_idxs = np.where(electrodes > -1)[0]
-        self._channel_ids = list(channels[routed_idxs])
-        self._electrode_ids = list(electrodes[routed_idxs])
-        self._num_channels = len(self._channel_ids)
-        self._fs = float(20000)
-        self._signals = self._filehandle['sig']
-        self._num_frames = self._signals.shape[1]
+        self._version = self._filehandle['version'][0].decode()
+
+        if int(self._version) == 20160704:
+            # old format
+            self._mapping = self._filehandle['mapping']
+            if 'lsb' in self._filehandle['settings'].keys():
+                self._lsb = self._filehandle['settings']['lsb'][0] * 1e6
+            else:
+                print("Couldn't read lsb. Setting lsb to 1")
+                self._lsb = 1.
+            channels = np.array(self._mapping['channel'])
+            electrodes = np.array(self._mapping['electrode'])
+            # remove unused channels
+            routed_idxs = np.where(electrodes > -1)[0]
+            self._channel_ids = list(channels[routed_idxs])
+            self._electrode_ids = list(electrodes[routed_idxs])
+            self._num_channels = len(self._channel_ids)
+            self._fs = float(20000)
+            self._signals = self._filehandle['sig']
+            self._num_frames = self._signals.shape[1]
+        elif int(self._version) > 20160704:
+            # new format
+            well_name = 'well000'
+            rec_name = 'rec0000'
+            settings = self._filehandle['wells'][well_name][rec_name]['settings']
+            self._mapping = settings['mapping']
+            if 'lsb' in settings.keys():
+                self._lsb = settings['lsb'][()] * 1e6
+            else:
+                self._lsb = 1.
+            channels = np.array(self._mapping['channel'])
+            electrodes = np.array(self._mapping['electrode'])
+            # remove unused channels
+            routed_idxs = np.where(electrodes > -1)[0]
+            self._channel_ids = list(channels[routed_idxs])
+            self._electrode_ids = list(electrodes[routed_idxs])
+            self._num_channels = len(self._channel_ids)
+            self._fs = settings['sampling'][()][0]
+            self._signals = self._filehandle['wells'][well_name][rec_name]['groups']['routed']['raw']
+            self._num_frames = self._signals.shape[1]
 
         # This happens when only spikes are recorded
         if self._num_frames == 0:
