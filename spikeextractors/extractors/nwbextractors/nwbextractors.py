@@ -345,7 +345,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             name="Device",
             description="Ecephys probe."
         )
-        if metadata is None:
+        if metadata is None or 'Device' not in metadata['Ecephys']:
             metadata = dict(
                 Ecephys=dict(
                     Device=[defaults]
@@ -395,7 +395,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             location="unknown",
             device_name="Device"
         )
-        if metadata is None:
+        if metadata is None or 'ElectrodeGroup' not in metadata['Ecephys']:
             metadata = dict(
                 Ecephys=dict(
                     ElectrodeGroup=[]
@@ -475,6 +475,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
         if nwbfile.electrode_groups is None:
+            print("\n\n\nhere 1\n\n\n")
             se.NwbRecordingExtractor.add_electrode_groups(recording, nwbfile, metadata)
         # For older versions of pynwb, we need to manually add these columns
         if distutils.version.LooseVersion(pynwb.__version__) < '1.3.0':
@@ -494,7 +495,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             filtering="none",
             group_name="Electrode Group"
         )
-        if metadata is None:
+        if metadata is None or 'Electrodes' not in metadata['Ecephys']:
             metadata = dict(
                 Ecephys=dict(
                     Electrodes=[]
@@ -577,22 +578,23 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
                 if not any([x.get('name', '') == 'group_name' for x in metadata['Ecephys']['Electrodes']]):
                     group_id = recording.get_channel_groups(channel_ids=channel_id)[0]
-                    if group_id in range(len(nwbfile.electrode_groups)):
-                        group_name = list(nwbfile.electrode_groups.keys())[group_id]
+                    if str(group_id) in nwbfile.electrode_groups:
                         electrode_kwargs.update(
                             dict(
-                                group=nwbfile.electrode_groups[group_name],
-                                group_name=group_name
+                                group=nwbfile.electrode_groups[str(group_id)],
+                                group_name=str(group_id)
                             )
                         )
                     else:
                         warnings.warn("No metadata was passed specifying the electrode group for "
                                       f"electrode {channel_id}, and the internal recording channel group was "
-                                      f"assigned a value ({group_id}) outside the indices of the electrode "
-                                      "groups in the nwbfile! Electrode will not be added.")
+                                      f"assigned a value (str({group_id})) not present as electrode "
+                                      "groups in the NWBFile! Electrode will not be added.")
                         continue
 
                 nwbfile.add_electrode(**electrode_kwargs)
+        assert nwbfile.electrodes is not None, \
+            "Unable to form electrode table! Check device, electrode group, and electrode metadata."
 
         # property 'gain' should not be in the NWB electrodes_table
         # property 'brain_area' of RX channels corresponds to 'location' of NWB electrodes
@@ -658,7 +660,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             name="LFP",
             description="Local field potential signal."
         )
-        if metadata is None:
+        if metadata is None or not any([x in metadata['Ecephys'] for x in ['ElectricalSeries', 'LFPElectricalSeries']]):
             metadata = dict(Ecephys=dict())
             if not write_as_lfp:
                 metadata['Ecephys'].update(
