@@ -21,9 +21,10 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         assert dtype in ['int16', 'float'], "'dtype' can be either 'int16' or 'float'"
         self._dtype = dtype
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
-        assert 'imec0.ap' in self._npxfile.name or  'imec0.lf' in self._npxfile.name or 'nidq' in self._npxfile.name, \
-            "'file_path' can be an imec0.ap, imec.lf, or nidq file"
-        assert 'bin' in self._npxfile.name, "The 'npx_file should be either the 'ap' or the 'lf' bin file."
+        assert 'imec0.ap' in self._npxfile.name or 'imec0.lf' in self._npxfile.name or \
+               'imec.ap' in self._npxfile.nameor or 'imec.lf' in self._npxfile.name or 'nidq' in self._npxfile.name, \
+               "'file_path' can be an imec0.ap, imec.lf, or nidq file"
+        assert 'bin' in self._npxfile.name, "The 'npx_file should be either the 'ap', 'lf', or 'nidq' bin file."
         if 'imec0.ap' in str(self._npxfile):
             lfp = False
             ap = True
