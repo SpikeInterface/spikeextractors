@@ -66,7 +66,7 @@ class SpykingCircusRecordingExtractor(NumpyRecordingExtractor, BinDatRecordingEx
         elif file_format == "raw_binary":
             recording_file = parent_folder / f"{recording_name}.dat"
             BinDatRecordingExtractor.__init__(self, recording_file, sampling_frequency=params["sampling_frequency"],
-                                              numchan=params["nb_channels"], dtype=params["dtype"])
+                                              numchan=params["nb_channels"], dtype=params["dtype"], time_axis=0)
         else:
             raise Exception(f"'file_format' {params['file_format']} is not supported by the "
                             f"SpykingCircusRecordingExtractor")
@@ -222,27 +222,32 @@ def _load_params(params_file):
             if 'sampling_rate' in r:
                 sampling_frequency = r.split('=')[-1]
                 if '#' in sampling_frequency:
-                    sampling_frequency = sampling_frequency[:sampling_frequency.find('#')].strip(" ")
+                    sampling_frequency = sampling_frequency[:sampling_frequency.find('#')]
+                sampling_frequency = sampling_frequency.strip(" ").strip("\n")
                 sampling_frequency = float(sampling_frequency)
                 params["sampling_frequency"] = sampling_frequency
             if 'file_format' in r:
                 file_format = r.split('=')[-1]
                 if '#' in file_format:
-                    file_format = file_format[:file_format.find('#')].strip(" ")
+                    file_format = file_format[:file_format.find('#')]
+                file_format = file_format.strip(" ").strip("\n")
                 params["file_format"] = file_format
             if 'nb_channels' in r:
                 nb_channels = r.split('=')[-1]
                 if '#' in nb_channels:
-                    nb_channels = nb_channels[:nb_channels.find('#')].strip(" ")
+                    nb_channels = nb_channels[:nb_channels.find('#')]
+                nb_channels = nb_channels.strip(" ").strip("\n")
                 params["nb_channels"] = int(nb_channels)
-            if 'dtype' in r:
+            if 'data_dtype' in r:
                 dtype = r.split('=')[-1]
                 if '#' in dtype:
-                    dtype = dtype[:dtype.find('#')].strip()
+                    dtype = dtype[:dtype.find('#')]
+                dtype = dtype.strip(" ").strip("\n")
                 params["dtype"] = dtype
             if 'mapping' in r:
                 mapping = r.split('=')[-1]
                 if '#' in mapping:
-                    mapping = mapping[:mapping.find('#')].strip().strip(" ")
+                    mapping = mapping[:mapping.find('#')]
+                mapping = mapping.strip(" ").strip("\n")
                 params["mapping"] = Path(mapping)
     return params
