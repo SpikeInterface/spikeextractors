@@ -6,6 +6,20 @@ from spikeextractors.extraction_tools import check_get_traces_args, check_get_tt
 
 
 class SpikeGLXRecordingExtractor(RecordingExtractor):
+    """
+    RecordingExtractor from a SpikeGLX Neuropixels file
+
+    Parameters
+    ----------
+    file_path: str or Path
+        Path to the ap.bin, lf.bin, or nidq.bin file
+    dtype: str
+        'int16' or 'float'. If 'float' is selected, the returned traces are converted to uV
+    x_pitch: int
+        The x pitch of the probe (default 16)
+    y_pitch: int
+        The y pitch of the probe (default 20)
+    """
     extractor_name = 'SpikeGLXRecordingExtractor'
     has_default_locations = True
     installed = True  # check at class level if installed or not
