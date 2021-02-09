@@ -80,6 +80,8 @@ class MaxOneRecordingExtractor(RecordingExtractor):
             self._fs = settings['sampling'][()][0]
             self._signals = self._filehandle['wells'][well_name][rec_name]['groups']['routed']['raw']
             self._num_frames = self._signals.shape[1]
+        else:
+            raise Exception("Could not parse the MaxOne file")
 
         # This happens when only spikes are recorded
         if self._num_frames == 0:
