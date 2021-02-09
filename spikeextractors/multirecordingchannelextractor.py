@@ -41,7 +41,7 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
                     channel_ids = recording.get_channel_ids()
                     recording_groups = [group] * len(channel_ids)
                     group_values += recording_groups
-                    recording.set_channel_groups(groups=recording_groups)
+                   
                 self.set_channel_groups(groups=group_values)
             else:
                 raise ValueError("recordings and groups must have same length")
