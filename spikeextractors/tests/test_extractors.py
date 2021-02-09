@@ -309,10 +309,10 @@ class TestExtractors(unittest.TestCase):
         check_recordings_equal(self.RX, RX_biocam)
         check_dumping(RX_biocam)
 
-    def test_mea1k_extractors(self):
+    def test_maxone_extractors(self):
         path1 = self.test_dir + '/raw.h5'
-        se.Mea1kRecordingExtractor.write_recording(self.RX, path1)
-        RX_mea1k = se.Mea1kRecordingExtractor(path1)
+        se.MaxOneRecordingExtractor.write_recording(self.RX, path1)
+        RX_mea1k = se.MaxOneRecordingExtractor(path1)
         check_recording_return_types(RX_mea1k)
         check_recordings_equal(self.RX, RX_mea1k)
         check_dumping(RX_mea1k)
