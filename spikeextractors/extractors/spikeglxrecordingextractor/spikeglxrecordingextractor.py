@@ -13,7 +13,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     mode = 'file'
     installation_mesg = "To use the SpikeGLXRecordingExtractor run:\n\n pip install mtscomp\n\n"  # error message when not installed
 
-    def __init__(self, file_path: str, dtype: str = 'int16'):
+    def __init__(self, file_path: str, dtype: str = 'int16', x_pitch: int = 16, y_pitch: int = 20):
         RecordingExtractor.__init__(self)
         self._npxfile = Path(file_path)
         self._basepath = self._npxfile.parents[0]
@@ -61,7 +61,9 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # sampling rate and ap channels
         self._sampling_frequency = SampRate(meta)
-        tot_chan, ap_chan, lfp_chan, locations = _parse_spikeglx_metafile(self._metafile)
+        tot_chan, ap_chan, lfp_chan, locations = _parse_spikeglx_metafile(self._metafile,
+                                                                          x_pitch=x_pitch,
+                                                                          y_pitch=y_pitch)
         if ap:
             if ap_chan < tot_chan:
                 self._channels = list(range(int(ap_chan)))
@@ -91,7 +93,8 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # set gains - convert from int16 to uVolt
         self.set_channel_gains(gains=gains*1e6, channel_ids=self._channels)
-        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'dtype': dtype}
+        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'dtype': dtype,
+                         'x_pitch': x_pitch, 'y_pitch': y_pitch}
 
     def get_channel_ids(self):
         return self._channels
@@ -141,12 +144,10 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         return ttl_frames[sort_idxs], ttl_states[sort_idxs]
 
 
-def _parse_spikeglx_metafile(metafile):
+def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch):
     tot_channels = None
     ap_channels = None
     lfp_channels = None
-    x_pitch = 21
-    y_pitch = 20
 
     locations = []
     with Path(metafile).open() as f:
