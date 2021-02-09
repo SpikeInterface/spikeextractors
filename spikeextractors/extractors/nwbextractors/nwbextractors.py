@@ -1083,7 +1083,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             skip_properties: Optional[List[str]] = None,
             skip_features: Optional[List[str]] = None,
             timestamps: Optional[ArrayType] = None
-        ):
+    ):
         """Auxilliary function for write_sorting."""
         unit_ids = sorting.get_unit_ids()
         fs = sorting.get_sampling_frequency()
@@ -1103,7 +1103,8 @@ class NwbSortingExtractor(se.SortingExtractor):
             max_channel="The recording channel id with the largest amplitude.",
             halfwidth="The full-width half maximum of the negative peak computed on the maximum channel.",
             peak_to_valley="The duration between the negative and the positive peaks computed on the maximum channel.",
-            snr="The signal-to-noise ratio of the unit."
+            snr="The signal-to-noise ratio of the unit.",
+            quality="Quality of the unit as defined by phy (good, mua, noise)."
         )
         if property_descriptions is None:
             property_descriptions = dict(default_descriptions)
@@ -1245,7 +1246,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     spikes_index = np.cumsum(nspks_list).astype('int64')
                     set_dynamic_table_property(
                         dynamic_table=nwbfile.units,
-                        row_ids=unit_ids,
+                        row_ids=[int(k) for k in unit_ids],
                         property_name=ft,
                         values=flatten_vals,
                         index=spikes_index,

@@ -1,9 +1,13 @@
-from spikeextractors import SortingExtractor, RecordingExtractor
-from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
-from spikeextractors.extraction_tools import read_python, write_python, check_valid_unit_id
 import numpy as np
 from pathlib import Path
 import csv
+from typing import Union, Optional
+
+from spikeextractors import SortingExtractor, RecordingExtractor
+from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
+from spikeextractors.extraction_tools import read_python, check_valid_unit_id
+
+PathType = Union[str, Path]
 
 
 class PhyRecordingExtractor(BinDatRecordingExtractor):
@@ -14,7 +18,7 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
     mode = 'folder'
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, folder_path):
+    def __init__(self, folder_path: PathType):
         RecordingExtractor.__init__(self)
         phy_folder = Path(folder_path)
 
@@ -54,7 +58,13 @@ class PhySortingExtractor(SortingExtractor):
     mode = 'folder'
     installation_mesg = ""  # error message when not installed
 
-    def __init__(self, folder_path, exclude_cluster_groups=None, load_waveforms=False, verbose=False):
+    def __init__(
+            self,
+            folder_path: PathType,
+            exclude_cluster_groups: Optional[list] = None,
+            load_waveforms: bool = False,
+            verbose: bool = False
+    ):
         SortingExtractor.__init__(self)
         phy_folder = Path(folder_path)
 
