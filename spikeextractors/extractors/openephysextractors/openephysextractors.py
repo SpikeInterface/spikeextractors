@@ -30,6 +30,9 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         
         self._file_obj = pyopenephys.File(folder_path)
         self._recording = self._file_obj.experiments[experiment_id].recordings[recording_id]
+        
+        # Set gains: int16 to uV
+        self.set_channel_gains(gains=self._recording.analog_signals[0].gain)
 
     def get_channel_ids(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))
