@@ -36,7 +36,7 @@ class TestNwbConversions(unittest.TestCase):
             se.IntanRecordingExtractor,
             "intan",
             "intan/intan_rhd_test_1.rhs"
-        )
+        ),
         (
             se.MEArecRecordingExtractor,
             "mearec/mearec_test_10s.h5",
@@ -59,7 +59,7 @@ class TestNwbConversions(unittest.TestCase):
             se.NIXIORecordingExtractor,
             "nix",
             dict(file_path=str(Path.cwd() / "ephy_testing_data" / "neoraw.nix"))
-        )
+        ),
         (
             se.OpenEphysRecordingExtractor,
             "openephys/OpenEphys_SampleData_1",
@@ -94,13 +94,13 @@ class TestNwbConversions(unittest.TestCase):
             se.NIXIOSortingExtractor,
             "nix/nixio_fr.nix",
             "nix/nixio_fr.nix"
-        )
+        ),
         # Phy - Running into unit_id non-int typing issues in spikeextractors or between spikeextractors and pynwb
         (
             se.PhySortingExtractor,
             "phy/phy_example_0",
             "phy/phy_example_0"
-        )
+        ),
         # Plexon - no documentation on use of Neo inheritor, doesn't work out of box like other extractors
         (
             se.PlexonSortingExtractor,
@@ -112,7 +112,7 @@ class TestNwbConversions(unittest.TestCase):
             se.SpykingCircusSortingExtractor,
             "spykingcircus/spykingcircus_example0",
             "spykingcircus/spykingcircus_example0/recording"
-        )
+        ),
         # Tridesclous - version issues with PyQt5 backend
         (
             se.TridesclousSortingExtractor,
