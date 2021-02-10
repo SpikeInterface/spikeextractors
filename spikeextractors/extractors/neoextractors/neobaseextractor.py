@@ -50,7 +50,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
     def __init__(self, block_index=None, seg_index=None, **kargs):
         RecordingExtractor.__init__(self)
-        _NeoBaseExtractor.__init__(self, block_index=None, seg_index=None, **kargs)
+        _NeoBaseExtractor.__init__(self, block_index=block_index, seg_index=seg_index, **kargs)
 
         # TODO propose a meachanisim to select the appropriate channel groups
         # in neo one channel group have the same dtype/sampling_rate/group_id
@@ -123,8 +123,8 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
 
 class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
-    def __init__(self, **kargs):
-        _NeoBaseExtractor.__init__(self, **kargs)
+    def __init__(self, block_index=None, seg_index=None, **kargs):
+        _NeoBaseExtractor.__init__(self, block_index=block_index, seg_index=seg_index, **kargs)
 
         # the sampling frequency is quite tricky because in neo
         # spike are handle in s or ms
@@ -146,7 +146,7 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         #  all channels are in the same neo group so
         self._neo_sig_sampling_rate = self.neo_reader.header['signal_channels']['sampling_rate'][0]
         self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
-                                                                      channel_indexes=None)
+                                                                      channel_indexes=[0])
 
         self.set_sampling_frequency(self._neo_sig_sampling_rate)
 
