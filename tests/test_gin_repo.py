@@ -83,7 +83,7 @@ class TestNwbConversions(unittest.TestCase):
         check_recordings_equal(recording, nwb_recording)
 
     @parameterized.expand([
-        # Klusta sorting - needs sampling frequency set before write
+        # Klusta
         (
             se.KlustaSortingExtractor,
             "kwik",
