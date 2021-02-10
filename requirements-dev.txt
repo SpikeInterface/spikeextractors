@@ -12,5 +12,6 @@ hdf5storage
 exdir
 pyintan
 tridesclous
+hdbscan
 neo
 pyopenephys
