@@ -69,10 +69,7 @@ class TestNwbConversions(unittest.TestCase):
             se.SpikeGLXRecordingExtractor,
             "spikeglx/Noise4Sam_g0",
             dict(
-                file_path=(
-                    Path.cwd() / "ephy_testing_data" / "spikeglx" / "Noise4Sam_g0" / "Noise4Sam_g0_imec0"
-                    / "Noise4Sam_g0_t0.imec0.ap.bin"
-                )
+                file_path=Path.cwd() / "ephy_testing_data" / "spikeglx" / "Noise4Sam_g0" / "Noise4Sam_g0_imec0" / "Noise4Sam_g0_t0.imec0.ap.bin"
             )
         )
     ])
