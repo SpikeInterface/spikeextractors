@@ -58,7 +58,7 @@ class TestNwbConversions(unittest.TestCase):
         (
             se.NIXIORecordingExtractor,
             "nix",
-            dict(file_path=Path.cwd() / "ephy_testing_data" / "neoraw.nix")
+            dict(file_path=str(Path.cwd() / "ephy_testing_data" / "neoraw.nix"))
         )
         (
             se.OpenEphysRecordingExtractor,
