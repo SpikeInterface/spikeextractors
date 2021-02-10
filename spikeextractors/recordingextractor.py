@@ -539,23 +539,24 @@ class RecordingExtractor(ABC, BaseExtractor):
             The list (or single value) of channel_ids for which the properties will be copied
         '''
         if channel_ids is None:
-            channel_ids = self.get_channel_ids()
-        elif isinstance(channel_ids, (int, np.integer)):
-            channel_ids = [channel_ids]
+            self._key_properties = deepcopy(recording._key_properties)
+            self._properties = deepcopy(recording._properties)
+        else:
+            if isinstance(channel_ids, (int, np.integer)):
+                channel_ids = [channel_ids]
+            # copy key properties
+            groups = recording.get_channel_groups(channel_ids=channel_ids)
+            locations = recording.get_channel_locations(channel_ids=channel_ids)
+            self.set_channel_groups(groups)
+            self.set_channel_locations(locations)
 
-        # copy key properties
-        groups = recording.get_channel_groups(channel_ids=channel_ids)
-        locations = recording.get_channel_locations(channel_ids=channel_ids)
-        self.set_channel_groups(groups)
-        self.set_channel_locations(locations)
-
-        # copy normal properties
-        for channel_id in channel_ids:
-            curr_property_names = recording.get_channel_property_names(channel_id=channel_id)
-            for curr_property_name in curr_property_names:
-                if curr_property_name not in self._key_properties.keys():  # key property
-                    value = recording.get_channel_property(channel_id=channel_id, property_name=curr_property_name)
-                    self.set_channel_property(channel_id=channel_id, property_name=curr_property_name, value=value)
+            # copy normal properties
+            for channel_id in channel_ids:
+                curr_property_names = recording.get_channel_property_names(channel_id=channel_id)
+                for curr_property_name in curr_property_names:
+                    if curr_property_name not in self._key_properties.keys():  # key property
+                        value = recording.get_channel_property(channel_id=channel_id, property_name=curr_property_name)
+                        self.set_channel_property(channel_id=channel_id, property_name=curr_property_name, value=value)
 
     def clear_channel_property(self, channel_id, property_name):
         '''This function clears the channel property for the given property.

@@ -57,8 +57,9 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
             recording = self._recordings[self._channel_map[channel_id]['recording']]
             channel_id_recording = self._channel_map[channel_id]['channel_id']
             for property_name in recording.get_channel_property_names(channel_id_recording):
-                value = recording.get_channel_property(channel_id_recording, property_name)
-                self.set_channel_property(channel_id=channel_id, property_name=property_name, value=value)
+                if property_name not in ("group", "location"):
+                    value = recording.get_channel_property(channel_id_recording, property_name)
+                    self.set_channel_property(channel_id=channel_id, property_name=property_name, value=value)
 
         self._kwargs = {'recordings': [rec.make_serialized_dict() for rec in recordings], 'groups': groups}
 
