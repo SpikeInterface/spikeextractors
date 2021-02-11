@@ -13,13 +13,11 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     mode = 'file'
     installation_mesg = "To use the SpikeGLXRecordingExtractor run:\n\n pip install mtscomp\n\n"  # error message when not installed
 
-    def __init__(self, file_path: str, dtype: str = 'int16'):
+    def __init__(self, file_path: str):
         RecordingExtractor.__init__(self)
         self._npxfile = Path(file_path)
         self._basepath = self._npxfile.parents[0]
 
-        assert dtype in ['int16', 'float'], "'dtype' can be either 'int16' or 'float'"
-        self._dtype = dtype
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
         assert 'imec0.ap' in self._npxfile.name or 'imec0.lf' in self._npxfile.name or \
                'imec.ap' in self._npxfile.name or 'imec.lf' in self._npxfile.name or 'nidq' in self._npxfile.name, \
@@ -92,7 +90,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # set gains - convert from int16 to uVolt
         self.set_channel_gains(gains=gains*1e6, channel_ids=self._channels)
-        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'dtype': dtype}
+        self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
     def get_channel_ids(self):
         return self._channels
@@ -104,7 +102,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, dtype=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
         if np.all(channel_ids == self.get_channel_ids()):
             recordings = self._timeseries[:, start_frame:end_frame]
@@ -114,15 +112,12 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             else:
                 # This block of the execution will return the data as an array, not a memmap
                 recordings = self._timeseries[channel_idxs, start_frame:end_frame]
-        if dtype is not None:
-            assert dtype in ['int16', 'float'], "'dtype' can be either 'int16' or 'float'"
-        else:
-            dtype = self._dtype
-        if dtype == 'int16':
-            return recordings
-        else:
+
+        if return_scaled:
             gains = np.array(self.get_channel_gains())[channel_idxs]
             return recordings * gains[:, None]
+        else:
+            return recordings
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):

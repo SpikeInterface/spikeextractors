@@ -1,7 +1,7 @@
 from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id, check_get_ttl_args
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train, check_get_ttl_args
 
 try:
     import pyopenephys
@@ -19,15 +19,13 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     mode = 'folder'
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
 
-    def __init__(self, folder_path, *, experiment_id=0, recording_id=0, dtype='float'):
+    def __init__(self, folder_path, *, experiment_id=0, recording_id=0):
         assert HAVE_OE, self.installation_mesg
-        assert dtype == 'int16' or 'float' in dtype, "'dtype' can be int16 (memory map) or 'float' (load into memory)"
         RecordingExtractor.__init__(self)
         self._recording_file = folder_path
         self._recording = pyopenephys.File(folder_path).experiments[experiment_id].recordings[recording_id]
-        self._dtype = dtype
         self._kwargs = {'folder_path': str(Path(folder_path).absolute()), 'experiment_id': experiment_id,
-                        'recording_id': recording_id, 'dtype': dtype}
+                        'recording_id': recording_id}
 
     def get_channel_ids(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))
@@ -39,10 +37,10 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         return float(self._recording.sample_rate.rescale('Hz').magnitude)
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        if self._dtype == 'int16':
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
+        if return_scaled:
             return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
-        elif self._dtype == 'float':
+        else:
             return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame] * \
                    self._recording.analog_signals[0].gain
 
@@ -80,13 +78,9 @@ class OpenEphysSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return self._unit_ids
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
+
         st = self._spiketrains[unit_id]
         inds = np.where((start_frame <= (st.times * self._recording.sample_rate)) &
                         ((st.times * self._recording.sample_rate) < end_frame))

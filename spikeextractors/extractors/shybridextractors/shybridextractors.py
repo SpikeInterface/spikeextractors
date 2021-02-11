@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 from spikeextractors import SortingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
-from spikeextractors.extraction_tools import save_to_probe_file, load_probe_file, check_valid_unit_id
+from spikeextractors.extraction_tools import save_to_probe_file, load_probe_file, check_get_unit_spike_train
 
 try:
     import hybridizer.io as sbio
@@ -116,16 +116,9 @@ class SHYBRIDSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return self._spike_clusters.keys()
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         train = self._spike_clusters[unit_id].get_actual_spike_train().spikes
-
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
-
         idxs = np.where((start_frame <= train) & (train < end_frame))
         return train[idxs]
 
