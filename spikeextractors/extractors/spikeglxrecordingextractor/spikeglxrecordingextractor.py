@@ -39,11 +39,11 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
                'imec.ap' in self._npxfile.name or 'imec.lf' in self._npxfile.name or 'nidq' in self._npxfile.name, \
                "'file_path' can be an imec.ap, imec.lf, imec0.ap, imec0.lf, or nidq file"
         assert 'bin' in self._npxfile.name, "The 'npx_file should be either the 'ap', 'lf', or 'nidq' bin file."
-        if 'imec0.ap' in str(self._npxfile):
+        if 'ap.bin' in str(self._npxfile):
             lfp = False
             ap = True
             self.is_filtered = True
-        elif 'imec0.lf' in str(self._npxfile):
+        elif 'lf.bin' in str(self._npxfile):
             lfp = True
             ap = False
         else:
