@@ -6,10 +6,10 @@ from distutils.version import StrictVersion
 
 try:
     import pyintan
-    if StrictVersion(pyintan.__version__) >= '0.2.1':
+    if StrictVersion(pyintan.__version__) >= '0.3.0':
         HAVE_INTAN = True
     else:
-        print("pyintan version requires an update (>=0.2.1). Please upgrade with 'pip install --upgrade pyintan'")
+        print("pyintan version requires an update (>=0.3.0). Please upgrade with 'pip install --upgrade pyintan'")
         HAVE_INTAN = False
 except ImportError:
     HAVE_INTAN = False
@@ -21,7 +21,7 @@ class IntanRecordingExtractor(RecordingExtractor):
     is_writable = False
     mode = 'file'
     installed = HAVE_INTAN  # check at class level if installed or not
-    installation_mesg = "To use the Intan extractor, install pyintan: \n\n pip install pyintan\n\n"  # error message when not installed
+    installation_mesg = "To use the Intan extractor, install pyintan: \n\n pip install pyintan\n\n"  
 
     def __init__(self, file_path: str, dtype: str = 'float', verbose: bool = False):
         assert HAVE_INTAN, self.installation_mesg
