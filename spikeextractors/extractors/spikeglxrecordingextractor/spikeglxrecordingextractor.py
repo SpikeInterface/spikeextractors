@@ -27,7 +27,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     mode = 'file'
     installation_mesg = "To use the SpikeGLXRecordingExtractor run:\n\n pip install mtscomp\n\n"  # error message when not installed
 
-    def __init__(self, file_path: str, dtype: str = 'int16', x_pitch: int = 16, y_pitch: int = 20):
+    def __init__(self, file_path: str, dtype: str = 'int16', x_pitch: int = 32, y_pitch: int = 20):
         RecordingExtractor.__init__(self)
         self._npxfile = Path(file_path)
         self._basepath = self._npxfile.parents[0]
@@ -40,15 +40,12 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
                "'file_path' can be an imec.ap, imec.lf, imec0.ap, imec0.lf, or nidq file"
         assert 'bin' in self._npxfile.name, "The 'npx_file should be either the 'ap', 'lf', or 'nidq' bin file."
         if 'ap.bin' in str(self._npxfile):
-            lfp = False
-            ap = True
+            rec_type = "ap"
             self.is_filtered = True
         elif 'lf.bin' in str(self._npxfile):
-            lfp = True
-            ap = False
+            rec_type = "lf"
         else:
-            lfp = False
-            ap = False
+            rec_type = "nidq"
         aux = self._npxfile.stem.split('.')[-1]
         if aux == 'nidq':
             self._ftype = aux
@@ -76,29 +73,33 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # sampling rate and ap channels
         self._sampling_frequency = SampRate(meta)
-        tot_chan, ap_chan, lfp_chan, locations = _parse_spikeglx_metafile(self._metafile,
-                                                                          x_pitch=x_pitch,
-                                                                          y_pitch=y_pitch)
-        if ap:
-            if ap_chan < tot_chan:
-                self._channels = list(range(int(ap_chan)))
-                self._timeseries = self._raw[0:ap_chan, :]
-            else:
-                self._channels = list(range(int(tot_chan)))  # OriginalChans(meta).tolist()
-        elif lfp:
-            if lfp_chan < tot_chan:
-                self._channels = list(range(int(lfp_chan)))
-                self._timeseries = self._raw[0:lfp_chan, :]
-            else:
-                self._channels = list(range(int(tot_chan)))
+
+        tot_chan, ap_chan, lfp_chan, locations, channel_ids, channel_names \
+            = _parse_spikeglx_metafile(self._metafile,
+                                       x_pitch=x_pitch,
+                                       y_pitch=y_pitch,
+                                       rec_type=rec_type)
+        if rec_type in ("ap", "lf"):
+            self._channels = channel_ids
+            # locations
+            if len(locations) > 0:
+                print("ciao")
+                self.set_channel_locations(locations)
+            if len(channel_names) > 0:
+                if len(channel_names) == len(self._channels):
+                    for i, ch in enumerate(self._channels):
+                        self.set_channel_property(ch, "channel_name", channel_names[i])
+
+            if rec_type == "ap":
+                if ap_chan < tot_chan:
+                    self._timeseries = self._raw[0:ap_chan, :]
+            elif rec_type == "lf":
+                if lfp_chan < tot_chan:
+                    self._timeseries = self._raw[0:lfp_chan, :]
         else:
             # nidq
             self._channels = list(range(int(tot_chan)))
             self._timeseries = self._raw
-
-        # locations
-        if len(locations) > 0:
-            self.set_channel_locations(locations)
 
         # get gains
         if meta['typeThis'] == 'imec':
@@ -159,12 +160,14 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         return ttl_frames[sort_idxs], ttl_states[sort_idxs]
 
 
-def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch):
+def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch, rec_type):
     tot_channels = None
     ap_channels = None
     lfp_channels = None
 
     locations = []
+    channel_names = []
+    channel_ids = []
     with Path(metafile).open() as f:
         for line in f.readlines():
             if 'nSavedChans' in line:
@@ -174,13 +177,32 @@ def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch):
                 lfp_channels = int(line.split(',')[-2].strip())
             if 'imSampRate' in line:
                 fs = float(line.split('=')[-1])
-            if 'snsShankMap' in line:
-                map = line.split('=')[-1]
-                chans = map.split(')')[1:]
-                for chan in chans:
-                    chan = chan[1:]
-                    if len(chan) > 0:
-                        x_pos = int(chan.split(':')[1])
-                        y_pos = int(chan.split(':')[2])
-                        locations.append([x_pos*x_pitch, y_pos*y_pitch])
-    return tot_channels, ap_channels, lfp_channels, locations
+            if rec_type in ("ap", "lf"):
+                if 'snsChanMap' in line:
+                    map = line.split('=')[-1]
+                    chans = map.split(')')[1:]
+                    for chan in chans:
+                        chan_name = chan[1:].split(';')[0]
+                        if rec_type == "ap":
+                            if "AP" in chan_name:
+                                channel_names.append(chan_name)
+                                chan_id = int(chan_name[2:])
+                                channel_ids.append(chan_id)
+                        elif rec_type == "lf":
+                            if "LF" in chan_name:
+                                channel_names.append(chan_name)
+                                chan_id = int(chan_name[2:])
+                                channel_ids.append(chan_id)
+                if 'snsShankMap' in line:
+                    map = line.split('=')[-1]
+                    chans = map.split(')')[1:]
+                    for chan in chans:
+                        chan = chan[1:]
+                        if len(chan) > 0:
+                            x_idx = int(chan.split(':')[1])
+                            y_idx = int(chan.split(':')[2])
+                            stagger = np.mod(y_idx + 1, 2) * x_pitch / 2
+                            x_pos = x_idx * x_pitch + stagger
+                            y_pos = y_idx * y_pitch
+                            locations.append([x_pos, y_pos])
+    return tot_channels, ap_channels, lfp_channels, locations, channel_ids, channel_names
