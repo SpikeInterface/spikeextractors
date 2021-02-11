@@ -1,4 +1,4 @@
-from spikeextractors import SortingExtractor
+from spikeextractors import RecordingExtractor, SortingExtractor
 from spikeextractors.extractors.numpyextractors import NumpyRecordingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 import numpy as np
@@ -12,9 +12,9 @@ except ImportError:
     HAVE_SCSX = False
 
 
-class SpykingCircusRecordingExtractor(NumpyRecordingExtractor, BinDatRecordingExtractor):
+class SpykingCircusRecordingExtractor(RecordingExtractor):
     """
-    Extracts a RecordingExtractor from a SpykingCircus output folder or file
+    RecordingExtractor for a SpykingCircus output folder
 
     Parameters
     ----------
@@ -29,6 +29,7 @@ class SpykingCircusRecordingExtractor(NumpyRecordingExtractor, BinDatRecordingEx
     installation_mesg = ""  # error message when not installed
 
     def __init__(self, folder_path):
+        RecordingExtractor.__init__(self)
         spykingcircus_folder = Path(folder_path)
         listfiles = spykingcircus_folder.iterdir()
 
@@ -62,11 +63,12 @@ class SpykingCircusRecordingExtractor(NumpyRecordingExtractor, BinDatRecordingEx
         file_format = params["file_format"].lower()
         if file_format == "numpy":
             recording_file = parent_folder / f"{recording_name}.npy"
-            NumpyRecordingExtractor.__init__(self, recording_file, params["sampling_frequency"])
+            self._recording = NumpyRecordingExtractor(recording_file, params["sampling_frequency"])
         elif file_format == "raw_binary":
             recording_file = parent_folder / f"{recording_name}.dat"
-            BinDatRecordingExtractor.__init__(self, recording_file, sampling_frequency=params["sampling_frequency"],
-                                              numchan=params["nb_channels"], dtype=params["dtype"], time_axis=0)
+            self._recording = BinDatRecordingExtractor(recording_file, sampling_frequency=params["sampling_frequency"],
+                                                       numchan=params["nb_channels"], dtype=params["dtype"],
+                                                       time_axis=0)
         else:
             raise Exception(f"'file_format' {params['file_format']} is not supported by the "
                             f"SpykingCircusRecordingExtractor")
@@ -79,10 +81,22 @@ class SpykingCircusRecordingExtractor(NumpyRecordingExtractor, BinDatRecordingEx
 
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
+    def get_channel_ids(self):
+        return self._recording.get_channel_ids()
+
+    def get_num_frames(self):
+        return self._recording.get_num_frames()
+
+    def get_sampling_frequency(self):
+        return self._recording.get_sampling_frequency()
+
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+        return self._recording.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame)
+
 
 class SpykingCircusSortingExtractor(SortingExtractor):
     """
-    Extracts a SortingExtractor from a SpykingCircus output folder or file
+    SortingExtractor for SpykingCircus output folder or file
 
     Parameters
     ----------
