@@ -11,7 +11,8 @@ from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor,
 from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor, NwbSortingExtractor
 from .extractors.maxoneextractors import MaxOneRecordingExtractor, MaxOneSortingExtractor
 from .extractors.mea1kextractors import Mea1kRecordingExtractor, Mea1kSortingExtractor
-from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
+from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor, \
+    OpenEphysNPIXRecordingExtractor
 from .extractors.phyextractors.phyextractors import PhyRecordingExtractor, PhySortingExtractor
 from .extractors.bindatrecordingextractor.bindatrecordingextractor import BinDatRecordingExtractor
 from .extractors.spykingcircusextractors.spykingcircusextractors import SpykingCircusSortingExtractor, \
@@ -42,6 +43,7 @@ recording_extractor_full_list = [
     BiocamRecordingExtractor,
     ExdirRecordingExtractor,
     OpenEphysRecordingExtractor,
+    OpenEphysNPIXRecordingExtractor,
     IntanRecordingExtractor,
     BinDatRecordingExtractor,
     KlustaRecordingExtractor,
