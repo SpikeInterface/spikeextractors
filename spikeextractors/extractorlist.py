@@ -9,8 +9,8 @@ from .extractors.klustaextractors.klustaextractors import KlustaSortingExtractor
 from .extractors.kilosortextractors.kilosortextractors import KiloSortSortingExtractor, KiloSortRecordingExtractor
 from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor, NumpySortingExtractor
 from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor, NwbSortingExtractor
-from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor, \
-    OpenEphysNPIXRecordingExtractor
+from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, \
+    OpenEphysSortingExtractor, OpenEphysNPIXRecordingExtractor
 from .extractors.maxwellextractors import MaxOneRecordingExtractor, MaxOneSortingExtractor, MaxTwoRecordingExtractor, \
     MaxTwoSortingExtractor
 from .extractors.phyextractors.phyextractors import PhyRecordingExtractor, PhySortingExtractor
