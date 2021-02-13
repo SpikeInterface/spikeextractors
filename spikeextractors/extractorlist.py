@@ -34,7 +34,7 @@ from .extractors.combinatosortingextractor import CombinatoSortingExtractor
 from .extractors.alfsortingextractor import ALFSortingExtractor
 from .extractors.cedextractors import CEDRecordingExtractor
 from .extractors.cellexplorersortingextractor import CellExplorerSortingExtractor
-from .extractors.neuropixelsrecordingextractor import NeuropixelsRecordingExtractor
+from .extractors.neuropixelsdatrecordingextractor import NeuropixelsDatRecordingExtractor
 
 recording_extractor_full_list = [
     MdaRecordingExtractor,
@@ -54,10 +54,11 @@ recording_extractor_full_list = [
     MCSH5RecordingExtractor,
     SHYBRIDRecordingExtractor,
     NIXIORecordingExtractor,
+    NwbRecordingExtractor,
     NeuroscopeRecordingExtractor,
     NeuroscopeMultiRecordingTimeExtractor,
     CEDRecordingExtractor,
-    NeuropixelsRecordingExtractor,
+    NeuropixelsDatRecordingExtractor,
 
     # neo based
     PlexonRecordingExtractor,
@@ -89,6 +90,7 @@ sorting_extractor_full_list = [
     NIXIOSortingExtractor,
     NeuroscopeSortingExtractor,
     NeuroscopeMultiSortingExtractor,
+    NwbSortingExtractor,
     WaveClusSortingExtractor,
     YassSortingExtractor,
     CombinatoSortingExtractor,
