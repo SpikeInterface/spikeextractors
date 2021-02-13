@@ -56,10 +56,10 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     mode = "file"
     installation_mesg = "Please install lxml to use this extractor!"
 
-    def __init__(self, file_path: PathType, gain: Optional[float] = None):
+    def __init__(self, file_path: PathType, gain: Optional[float] = None, xml_file_path: OptionalPathType = None):
         assert HAVE_LXML, self.installation_mesg
         file_path = Path(file_path)
-        assert file_path.is_file() and file_path.suffix in [".dat", ".eeg"], \
+        assert file_path.is_file() and file_path.suffix in [".dat", ".eeg", ".lfp"], \
             "file_path must lead to a .dat or .eeg file!"
 
         RecordingExtractor.__init__(self)
@@ -67,12 +67,15 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         file_path = Path(file_path)
         folder_path = file_path.parent
 
-        xml_files = [f for f in folder_path.iterdir() if f.is_file() if f.suffix == ".xml"]
-        assert any(xml_files), "No .xml file found in the folder_path."
-        assert len(xml_files) == 1, "More than one .xml file found in the folder_path."
-        xml_filepath = xml_files[0]
+        if xml_file_path is None:
+            xml_files = [f for f in folder_path.iterdir() if f.is_file() if f.suffix == ".xml"]
+            assert any(xml_files), "No .xml files found in the folder_path."
+            assert len(xml_files) == 1, "More than one .xml file found in the folder_path! Specify xml_file_path."
+            xml_file_path = xml_files[0]
+        else:
+            assert Path(xml_file_path).is_file(), f".xml file ({xml_file_path}) not found!"
 
-        xml_root = et.parse(str(xml_filepath)).getroot()
+        xml_root = et.parse(str(xml_file_path)).getroot()
         n_bits = int(xml_root.find('acquisitionSystem').find('nBits').text)
         dtype = f"int{n_bits}"
         numchan_from_file = int(xml_root.find('acquisitionSystem').find('nChannels').text)
