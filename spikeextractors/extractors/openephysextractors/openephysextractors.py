@@ -30,7 +30,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         self._recording = self._file_obj.experiments[experiment_id].recordings[recording_id]
         
         # Set gains: int16 to uV
-        self.set_channel_gains(gains=self._recording.analog_signals[0].gain)
+        self.set_channel_gains(gains=self._recording.analog_signals[0].gains)
 
     def get_channel_ids(self):
         return list(range(self._recording.analog_signals[0].signal.shape[0]))
@@ -44,7 +44,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         if return_scaled:  # Returns traces as uV
-            return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame] * self._recording.analog_signals[0].gain
+            return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame] * np.array([self.get_channel_gains(channel_ids=channel_ids)]).T
         else:   # Returns traces as int16 
             return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
 
