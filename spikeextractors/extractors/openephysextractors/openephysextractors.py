@@ -19,14 +19,12 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     mode = 'folder'
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
 
-    def __init__(self, folder_path, *, experiment_id=0, recording_id=0, dtype='int16'):
+    def __init__(self, folder_path, *, experiment_id=0, recording_id=0):
         assert HAVE_OE, self.installation_mesg
-        assert dtype == 'int16' or 'float' in dtype, "'dtype' can be int16 (memory map) or 'float' (load into memory)"
         RecordingExtractor.__init__(self)
         self._recording_file = folder_path
-        self._dtype = dtype
         self._kwargs = {'folder_path': str(Path(folder_path).absolute()), 'experiment_id': experiment_id,
-                        'recording_id': recording_id, 'dtype': dtype}
+                        'recording_id': recording_id}
         
         self._file_obj = pyopenephys.File(folder_path)
         self._recording = self._file_obj.experiments[experiment_id].recordings[recording_id]
@@ -44,12 +42,11 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         return float(self._recording.sample_rate.rescale('Hz').magnitude)
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        if self._dtype == 'int16':   # Returns traces as int16
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
+        if return_scaled:  # Returns traces as uV
+            return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame] * self._recording.analog_signals[0].gain
+        else:   # Returns traces as int16 
             return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame]
-        elif self._dtype == 'float':   # Returns traces as uV
-            return self._recording.analog_signals[0].signal[channel_ids, start_frame:end_frame] * \
-                   self._recording.analog_signals[0].gain
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
