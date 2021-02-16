@@ -141,7 +141,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
 
         if 'gain' in self.get_shared_channel_property_names() and return_scaled:
             gains = self.get_channel_gains(channel_ids=channel_ids)[:, None]
-            offsets = self._channel_offset[:. None]
+            offsets = self._channel_offset[:, None]
             # unint needs to be converted to float in this case!
             if self._dtype.startswith('uint'):
                 exp_idx = self._dtype.find('int') + 3
