@@ -11,7 +11,7 @@ https://github.com/kwikteam/phy-doc/blob/master/docs/kwik-model.md
 
 from spikeextractors import SortingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
-from spikeextractors.extraction_tools import read_python, check_valid_unit_id
+from spikeextractors.extraction_tools import read_python, check_get_unit_spike_train
 import numpy as np
 from pathlib import Path
 
@@ -102,30 +102,34 @@ class KlustaSortingExtractor(SortingExtractor):
                 cs_to_exclude.append(ec.lower())
 
         for channel_group in kf_reader.get('/channel_groups'):
-            chan_cluster_id_arr = kf_reader.get(f'/channel_groups/{channel_group}/spikes/clusters/main')[()]
-            chan_cluster_times_arr = kf_reader.get(f'/channel_groups/{channel_group}/spikes/time_samples')[()]
-            chan_cluster_ids = np.unique(chan_cluster_id_arr)  # if clusters were merged in gui,
-                                                                # the original id's are still in the kwiktree, but
-                                                                # in this array
+            if 'spikes' not in kf_reader.get(f'/channel_groups/{channel_group}'):
+                print('No spikes found for this channel group')
+                continue
+            else:
+                chan_cluster_id_arr = kf_reader.get(f'/channel_groups/{channel_group}/spikes/clusters/main')[()]
+                chan_cluster_times_arr = kf_reader.get(f'/channel_groups/{channel_group}/spikes/time_samples')[()]
+                chan_cluster_ids = np.unique(chan_cluster_id_arr)  # if clusters were merged in gui,
+                                                                    # the original id's are still in the kwiktree, but
+                                                                    # in this array
 
-            for cluster_id in chan_cluster_ids:
-                cluster_frame_idx = np.nonzero(chan_cluster_id_arr == cluster_id)  # the [()] is a h5py thing
-                st = chan_cluster_times_arr[cluster_frame_idx]
-                assert st.shape[0] > 0, 'no spikes in cluster'
-                cluster_group = kf_reader.get(f'/channel_groups/{channel_group}/clusters/main/{cluster_id}').attrs['cluster_group']
+                for cluster_id in chan_cluster_ids:
+                    cluster_frame_idx = np.nonzero(chan_cluster_id_arr == cluster_id)  # the [()] is a h5py thing
+                    st = chan_cluster_times_arr[cluster_frame_idx]
+                    assert st.shape[0] > 0, 'no spikes in cluster'
+                    cluster_group = kf_reader.get(f'/channel_groups/{channel_group}/clusters/main/{cluster_id}').attrs['cluster_group']
 
-                assert cluster_group in self.default_cluster_groups.keys(), f'cluster_group not in "default_dict: {cluster_group}'
-                cluster_group_name = self.default_cluster_groups[cluster_group]
+                    assert cluster_group in self.default_cluster_groups.keys(), f'cluster_group not in "default_dict: {cluster_group}'
+                    cluster_group_name = self.default_cluster_groups[cluster_group]
 
-                if cluster_group_name.lower() in cs_to_exclude:
-                    continue
+                    if cluster_group_name.lower() in cs_to_exclude:
+                        continue
 
-                self._spiketrains.append(st)
-                klusta_units.append(int(cluster_id))
-                unique_units.append(unit)
-                unit += 1
-                groups.append(int(channel_group))
-                cluster_groups_name.append(cluster_group_name)
+                    self._spiketrains.append(st)
+                    klusta_units.append(int(cluster_id))
+                    unique_units.append(unit)
+                    unit += 1
+                    groups.append(int(channel_group))
+                    cluster_groups_name.append(cluster_group_name)
 
         if len(np.unique(klusta_units)) == len(np.unique(unique_units)):
             self._unit_ids = klusta_units
@@ -141,13 +145,9 @@ class KlustaSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._unit_ids)
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
+
         times = self._spiketrains[self.get_unit_ids().index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]

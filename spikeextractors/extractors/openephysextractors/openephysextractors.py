@@ -1,7 +1,7 @@
 from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id, check_get_ttl_args
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train, check_get_ttl_args
 
 try:
     import pyopenephys
@@ -23,6 +23,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         assert HAVE_OE, self.installation_mesg
         RecordingExtractor.__init__(self)
         self._recording_file = folder_path
+
         self._kwargs = {'folder_path': str(Path(folder_path).absolute()), 'experiment_id': experiment_id,
                         'recording_id': recording_id}
         
@@ -82,13 +83,9 @@ class OpenEphysSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return self._unit_ids
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
+
         st = self._spiketrains[unit_id]
         inds = np.where((start_frame <= (st.times * self._recording.sample_rate)) &
                         ((st.times * self._recording.sample_rate) < end_frame))

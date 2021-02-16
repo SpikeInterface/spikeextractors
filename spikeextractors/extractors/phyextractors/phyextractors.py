@@ -5,12 +5,20 @@ from typing import Union, Optional
 
 from spikeextractors import SortingExtractor, RecordingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
-from spikeextractors.extraction_tools import read_python, check_valid_unit_id
+from spikeextractors.extraction_tools import read_python, check_get_unit_spike_train
 
 PathType = Union[str, Path]
 
 
 class PhyRecordingExtractor(BinDatRecordingExtractor):
+    """
+    RecordingExtractor for a Phy output folder
+
+    Parameters
+    ----------
+    folder_path: str or Path
+        Path to the output Phy folder (containing the params.py)
+    """
     extractor_name = 'PhyRecording'
     has_default_locations = True
     installed = True  # check at class level if installed or not
@@ -27,10 +35,10 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
 
         if (phy_folder / 'channel_map_si.npy').is_file():
             channel_map = list(np.squeeze(np.load(phy_folder / 'channel_map_si.npy')))
-            assert len(channel_map) == self.params['n_channels_dat']
+            assert max(channel_map) < self.params['n_channels_dat'], "Channel map inconsistent with dat file."
         elif (phy_folder / 'channel_map.npy').is_file():
             channel_map = list(np.squeeze(np.load(phy_folder / 'channel_map.npy')))
-            assert len(channel_map) == self.params['n_channels_dat']
+            assert max(channel_map) < self.params['n_channels_dat'], "Channel map inconsistent with dat file."
         else:
             channel_map = list(range(self.params['n_channels_dat']))
 
@@ -52,19 +60,23 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
 
 
 class PhySortingExtractor(SortingExtractor):
+    """
+    SortingExtractor for a Phy output folder
+
+    Parameters
+    ----------
+    folder_path: str or Path
+        Path to the output Phy folder (containing the params.py)
+    exclude_cluster_groups: list (optional)
+        List of cluster groups to exclude (e.g. ["noise", "mua"]
+    """
     extractor_name = 'PhySortingExtractor'
     installed = True  # check at class level if installed or not
     is_writable = False
     mode = 'folder'
     installation_mesg = ""  # error message when not installed
 
-    def __init__(
-            self,
-            folder_path: PathType,
-            exclude_cluster_groups: Optional[list] = None,
-            load_waveforms: bool = False,
-            verbose: bool = False
-    ):
+    def __init__(self, folder_path: PathType, exclude_cluster_groups: Optional[list] = None):
         SortingExtractor.__init__(self)
         phy_folder = Path(folder_path)
 
@@ -159,60 +171,14 @@ class PhySortingExtractor(SortingExtractor):
             if pc_features is not None:
                 self.set_unit_spike_features(clust, 'pc_features', pc_features[idx])
 
-        if load_waveforms:
-            datfile = [x for x in phy_folder.iterdir() if x.suffix == '.dat' or x.suffix == '.bin']
-
-            recording = BinDatRecordingExtractor(datfile[0], sampling_frequency=float(self.params['sample_rate']),
-                                                 dtype=self.params['dtype'], numchan=self.params['n_channels_dat'])
-            # if channel groups are present, compute waveforms by group
-            if (phy_folder / 'channel_groups.npy').is_file():
-                channel_groups = np.load(phy_folder / 'channel_groups.npy')
-                assert len(channel_groups) == recording.get_num_channels()
-                recording.set_channel_groups(channel_groups)
-                for u_i, u in enumerate(self.get_unit_ids()):
-                    if verbose:
-                        print('Computing waveform by group for unit', u)
-                    frames_before = int(0.5 / 1000. * recording.get_sampling_frequency())
-                    frames_after = int(2 / 1000. * recording.get_sampling_frequency())
-                    spiketrain = self.get_unit_spike_train(u)
-                    if 'group' in self.get_unit_property_names(u):
-                        group_idx = np.where(channel_groups == int(self.get_unit_property(u, 'group')))[0]
-                        wf = recording.get_snippets(reference_frames=spiketrain,
-                                                    snippet_len=[frames_before, frames_after],
-                                                    channel_ids=group_idx)
-                    else:
-                        wf = recording.get_snippets(reference_frames=spiketrain,
-                                                    snippet_len=[frames_before, frames_after])
-                        max_chan = np.unravel_index(np.argmin(np.mean(wf, axis=0)), np.mean(wf, axis=0).shape)[0]
-                        group = recording.get_channel_groups(int(max_chan))
-                        self.set_unit_property(u, 'group', group)
-                        group_idx = np.where(channel_groups == group)[0]
-                        wf = wf[:, group_idx]
-                    self.set_unit_spike_features(u, 'waveforms', wf)
-            else:
-                for u_i, u in enumerate(self.get_unit_ids()):
-                    if verbose:
-                        print('Computing full waveform for unit', u)
-                    frames_before = 0.5 * recording.get_sampling_frequency()
-                    frames_after = 2 * recording.get_sampling_frequency()
-                    spiketrain = self.get_unit_spike_train(u)
-                    wf = recording.get_snippets(reference_frames=spiketrain,
-                                                snippet_len=[int(frames_before), int(frames_after)])
-                    self.set_unit_spike_features(u, 'waveforms', wf)
         self._kwargs = {'folder_path': str(Path(folder_path).absolute()),
-                        'exclude_cluster_groups': exclude_cluster_groups,
-                        'load_waveforms': load_waveforms, 'verbose': verbose}
+                        'exclude_cluster_groups': exclude_cluster_groups}
 
     def get_unit_ids(self):
         return list(self._unit_ids)
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
         times = self._spiketrains[self.get_unit_ids().index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]

@@ -1,11 +1,26 @@
-from spikeextractors import RecordingExtractor
 from .readSGLX import readMeta, SampRate, makeMemMapRaw, GainCorrectIM, GainCorrectNI, ExtractDigital
 import numpy as np
 from pathlib import Path
+
+from spikeextractors import RecordingExtractor
 from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args
 
 
 class SpikeGLXRecordingExtractor(RecordingExtractor):
+    """
+    RecordingExtractor from a SpikeGLX Neuropixels file
+
+    Parameters
+    ----------
+    file_path: str or Path
+        Path to the ap.bin, lf.bin, or nidq.bin file
+    dtype: str
+        'int16' or 'float'. If 'float' is selected, the returned traces are converted to uV
+    x_pitch: int
+        The x pitch of the probe (default 16)
+    y_pitch: int
+        The y pitch of the probe (default 20)
+    """
     extractor_name = 'SpikeGLXRecordingExtractor'
     has_default_locations = True
     installed = True  # check at class level if installed or not
@@ -13,28 +28,23 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     mode = 'file'
     installation_mesg = "To use the SpikeGLXRecordingExtractor run:\n\n pip install mtscomp\n\n"  # error message when not installed
 
-    def __init__(self, file_path: str, dtype: str = 'int16'):
+    def __init__(self, file_path: str, x_pitch: int = 32, y_pitch: int = 20):
         RecordingExtractor.__init__(self)
         self._npxfile = Path(file_path)
         self._basepath = self._npxfile.parents[0]
 
-        assert dtype in ['int16', 'float'], "'dtype' can be either 'int16' or 'float'"
-        self._dtype = dtype
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
         assert 'imec0.ap' in self._npxfile.name or 'imec0.lf' in self._npxfile.name or \
                'imec.ap' in self._npxfile.name or 'imec.lf' in self._npxfile.name or 'nidq' in self._npxfile.name, \
                "'file_path' can be an imec.ap, imec.lf, imec0.ap, imec0.lf, or nidq file"
         assert 'bin' in self._npxfile.name, "The 'npx_file should be either the 'ap', 'lf', or 'nidq' bin file."
-        if 'imec0.ap' in str(self._npxfile):
-            lfp = False
-            ap = True
+        if 'ap.bin' in str(self._npxfile):
+            rec_type = "ap"
             self.is_filtered = True
-        elif 'imec0.lf' in str(self._npxfile):
-            lfp = True
-            ap = False
+        elif 'lf.bin' in str(self._npxfile):
+            rec_type = "lf"
         else:
-            lfp = False
-            ap = False
+            rec_type = "nidq"
         aux = self._npxfile.stem.split('.')[-1]
         if aux == 'nidq':
             self._ftype = aux
@@ -62,27 +72,33 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # sampling rate and ap channels
         self._sampling_frequency = SampRate(meta)
-        tot_chan, ap_chan, lfp_chan, locations = _parse_spikeglx_metafile(self._metafile)
-        if ap:
-            if ap_chan < tot_chan:
-                self._channels = list(range(int(ap_chan)))
-                self._timeseries = self._raw[0:ap_chan, :]
-            else:
-                self._channels = list(range(int(tot_chan)))  # OriginalChans(meta).tolist()
-        elif lfp:
-            if lfp_chan < tot_chan:
-                self._channels = list(range(int(lfp_chan)))
-                self._timeseries = self._raw[0:lfp_chan, :]
-            else:
-                self._channels = list(range(int(tot_chan)))
+
+        tot_chan, ap_chan, lfp_chan, locations, channel_ids, channel_names \
+            = _parse_spikeglx_metafile(self._metafile,
+                                       x_pitch=x_pitch,
+                                       y_pitch=y_pitch,
+                                       rec_type=rec_type)
+        if rec_type in ("ap", "lf"):
+            self._channels = channel_ids
+            # locations
+            if len(locations) > 0:
+                print("ciao")
+                self.set_channel_locations(locations)
+            if len(channel_names) > 0:
+                if len(channel_names) == len(self._channels):
+                    for i, ch in enumerate(self._channels):
+                        self.set_channel_property(ch, "channel_name", channel_names[i])
+
+            if rec_type == "ap":
+                if ap_chan < tot_chan:
+                    self._timeseries = self._raw[0:ap_chan, :]
+            elif rec_type == "lf":
+                if lfp_chan < tot_chan:
+                    self._timeseries = self._raw[0:lfp_chan, :]
         else:
             # nidq
             self._channels = list(range(int(tot_chan)))
             self._timeseries = self._raw
-
-        # locations
-        if len(locations) > 0:
-            self.set_channel_locations(locations)
 
         # get gains
         if meta['typeThis'] == 'imec':
@@ -92,7 +108,8 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
 
         # set gains - convert from int16 to uVolt
         self.set_channel_gains(gains=gains*1e6, channel_ids=self._channels)
-        self._kwargs = {'file_path': str(Path(file_path).absolute()), 'dtype': dtype}
+        self._kwargs = {'file_path': str(Path(file_path).absolute()),
+                        'x_pitch': x_pitch, 'y_pitch': y_pitch}
 
     def get_channel_ids(self):
         return self._channels
@@ -104,7 +121,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, dtype=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
         if np.all(channel_ids == self.get_channel_ids()):
             recordings = self._timeseries[:, start_frame:end_frame]
@@ -114,15 +131,12 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             else:
                 # This block of the execution will return the data as an array, not a memmap
                 recordings = self._timeseries[channel_idxs, start_frame:end_frame]
-        if dtype is not None:
-            assert dtype in ['int16', 'float'], "'dtype' can be either 'int16' or 'float'"
-        else:
-            dtype = self._dtype
-        if dtype == 'int16':
-            return recordings
-        else:
+
+        if return_scaled:
             gains = np.array(self.get_channel_gains())[channel_idxs]
             return recordings * gains[:, None]
+        else:
+            return recordings
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
@@ -142,14 +156,14 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         return ttl_frames[sort_idxs], ttl_states[sort_idxs]
 
 
-def _parse_spikeglx_metafile(metafile):
+def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch, rec_type):
     tot_channels = None
     ap_channels = None
     lfp_channels = None
-    x_pitch = 21
-    y_pitch = 20
 
     locations = []
+    channel_names = []
+    channel_ids = []
     with Path(metafile).open() as f:
         for line in f.readlines():
             if 'nSavedChans' in line:
@@ -159,13 +173,32 @@ def _parse_spikeglx_metafile(metafile):
                 lfp_channels = int(line.split(',')[-2].strip())
             if 'imSampRate' in line:
                 fs = float(line.split('=')[-1])
-            if 'snsShankMap' in line:
-                map = line.split('=')[-1]
-                chans = map.split(')')[1:]
-                for chan in chans:
-                    chan = chan[1:]
-                    if len(chan) > 0:
-                        x_pos = int(chan.split(':')[1])
-                        y_pos = int(chan.split(':')[2])
-                        locations.append([x_pos*x_pitch, y_pos*y_pitch])
-    return tot_channels, ap_channels, lfp_channels, locations
+            if rec_type in ("ap", "lf"):
+                if 'snsChanMap' in line:
+                    map = line.split('=')[-1]
+                    chans = map.split(')')[1:]
+                    for chan in chans:
+                        chan_name = chan[1:].split(';')[0]
+                        if rec_type == "ap":
+                            if "AP" in chan_name:
+                                channel_names.append(chan_name)
+                                chan_id = int(chan_name[2:])
+                                channel_ids.append(chan_id)
+                        elif rec_type == "lf":
+                            if "LF" in chan_name:
+                                channel_names.append(chan_name)
+                                chan_id = int(chan_name[2:])
+                                channel_ids.append(chan_id)
+                if 'snsShankMap' in line:
+                    map = line.split('=')[-1]
+                    chans = map.split(')')[1:]
+                    for chan in chans:
+                        chan = chan[1:]
+                        if len(chan) > 0:
+                            x_idx = int(chan.split(':')[1])
+                            y_idx = int(chan.split(':')[2])
+                            stagger = np.mod(y_idx + 1, 2) * x_pitch / 2
+                            x_pos = x_idx * x_pitch + stagger
+                            y_pos = y_idx * y_pitch
+                            locations.append([x_pos, y_pos])
+    return tot_channels, ap_channels, lfp_channels, locations, channel_ids, channel_names
