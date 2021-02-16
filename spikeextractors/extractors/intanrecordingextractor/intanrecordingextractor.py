@@ -11,10 +11,10 @@ OptionalArrayType = Optional[Union[np.ndarray, list]]
 
 try:
     import pyintan
-    if StrictVersion(pyintan.__version__) >= '0.2.1':
+    if StrictVersion(pyintan.__version__) >= '0.3.0':
         HAVE_INTAN = True
     else:
-        print("pyintan version requires an update (>=0.2.1). Please upgrade with 'pip install --upgrade pyintan'")
+        print("pyintan version requires an update (>=0.3.0). Please upgrade with 'pip install --upgrade pyintan'")
         HAVE_INTAN = False
 except ImportError:
     HAVE_INTAN = False

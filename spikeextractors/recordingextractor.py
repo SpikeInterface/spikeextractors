@@ -546,7 +546,6 @@ class RecordingExtractor(ABC, BaseExtractor):
         else:
             if isinstance(channel_ids, (int, np.integer)):
                 channel_ids = [channel_ids]
-
             # copy key properties
             groups = recording.get_channel_groups(channel_ids=channel_ids)
             locations = recording.get_channel_locations(channel_ids=channel_ids)
