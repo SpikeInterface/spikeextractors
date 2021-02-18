@@ -21,9 +21,8 @@ class KiloSortSortingExtractor(PhySortingExtractor):
     is_writable = False
     mode = 'folder'
 
-    def __init__(self, folder_path, exclude_cluster_groups=None, load_waveforms=False, keep_good_only=False,
-                 verbose=False):
-        PhySortingExtractor.__init__(self, folder_path, exclude_cluster_groups, load_waveforms, verbose)
+    def __init__(self, folder_path, exclude_cluster_groups=None, keep_good_only=False):
+        PhySortingExtractor.__init__(self, folder_path, exclude_cluster_groups)
         self._keep_good_only = keep_good_only
         self._good_units = []
 
@@ -35,5 +34,4 @@ class KiloSortSortingExtractor(PhySortingExtractor):
             self._unit_ids = self._good_units
 
         self._kwargs = {'folder_path': str(Path(folder_path).absolute()),
-                        'exclude_cluster_groups': exclude_cluster_groups, 'keep_good_only': keep_good_only,
-                        'verbose': verbose}
+                        'exclude_cluster_groups': exclude_cluster_groups, 'keep_good_only': keep_good_only}
