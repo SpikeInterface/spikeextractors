@@ -24,35 +24,36 @@ class TestNwbConversions(unittest.TestCase):
         (
             se.BlackrockRecordingExtractor,
             "blackrock/blackrock_2_1",
-            dict(filename=Path.cwd() / "ephy_testing_data" / "I101210-001.ns2")
+            dict(filename=Path.cwd() / "ephy_testing_data" / "blackrock" / "blackrock_2_1" / "l101210-001.nev",
+                 nsx_to_load=5)
         ),
         # Intan - strptime issue in pyintan
         (
             se.IntanRecordingExtractor,
             "intan",
-            "intan/intan_rhd_test_1.rhd"
+            dict(file_path=Path.cwd() / "ephy_testing_data" / "intan" / "intan_rhd_test_1.rhd")
         ),
         (
             se.IntanRecordingExtractor,
             "intan",
-            "intan/intan_rhd_test_1.rhs"
+            dict(file_path=Path.cwd() / "ephy_testing_data" / "intan" / "intan_rhd_test_1.rhs")
         ),
         (
             se.MEArecRecordingExtractor,
             "mearec/mearec_test_10s.h5",
-            dict(file_path=Path.cwd() / "ephy_testing_data" / "mearec/mearec_test_10s.h5")
+            dict(file_path=Path.cwd() / "ephy_testing_data" / "mearec" / "mearec_test_10s.h5")
         ),
         # Neuralynx - a lot of versions on the testing_data, not sure which we want to support;
         # main issue is setting seg_index for many of the blocked files
         (
             se.NeuralynxRecordingExtractor,
             "neuralynx/Cheetah_v5.7.4/original_data",
-            dict(dirname=Path.cwd() / "ephy_testing_data" / "neuralynx/Cheetah_v5.7.4/original_data"),
+            dict(dirname=Path.cwd() / "ephy_testing_data" / "neuralynx"/ "Cheetah_v5.7.4" / "original_data"),
         ),
         (
             se.NeuroscopeRecordingExtractor,
             "neuroscope/test1",
-            dict(file_path=Path.cwd() / "ephy_testing_data" / "neuroscope/test1/test1.dat")
+            dict(file_path=Path.cwd() / "ephy_testing_data" / "neuroscope" / "test1" / "test1.dat")
         ),
         # Nixio - PosixPath has no attribute encode
         (
@@ -63,17 +64,19 @@ class TestNwbConversions(unittest.TestCase):
         (
             se.OpenEphysRecordingExtractor,
             "openephys/OpenEphys_SampleData_1",
-            dict(folder_path=Path.cwd() / "ephy_testing_data" / "openephys/OpenEphys_SampleData_1")
+            dict(folder_path=Path.cwd() / "ephy_testing_data" / "openephys" / "OpenEphys_SampleData_1")
         ),
         (
             se.SpikeGLXRecordingExtractor,
             "spikeglx/Noise4Sam_g0",
             dict(
-                file_path=Path.cwd() / "ephy_testing_data" / "spikeglx" / "Noise4Sam_g0" / "Noise4Sam_g0_imec0" / "Noise4Sam_g0_t0.imec0.ap.bin"
+                file_path=Path.cwd() / "ephy_testing_data" / "spikeglx" / "Noise4Sam_g0" / "Noise4Sam_g0_imec0" /
+                          "Noise4Sam_g0_t0.imec0.ap.bin"
             )
         )
     ])
     def test_convert_recording_extractor_to_nwb(self, se_class, dataset_path, se_kwargs):
+        print(f"\n\n\n TESTING {se_class.extractor_name}...")
         nwb_save_path = self.savedir / f"{se_class.__name__}_test.nwb"
         self.dataset.get(dataset_path)
 
@@ -87,44 +90,45 @@ class TestNwbConversions(unittest.TestCase):
         (
             se.KlustaSortingExtractor,
             "kwik",
-            "kwik/neo.kwik"
+            dict(file_or_folder_path=Path.cwd() / "ephy_testing_data" / "kwik" / "neo.kwik")
         ),
         # NIXIO - PosixPath has no attribute encode in nixio/pycore/file
         (
             se.NIXIOSortingExtractor,
             "nix/nixio_fr.nix",
-            "nix/nixio_fr.nix"
+            dict(file_path=Path.cwd() / "ephy_testing_data" / "nix" / "nixio_fr.nix")
         ),
         # Phy - Running into unit_id non-int typing issues in spikeextractors or between spikeextractors and pynwb
         (
             se.PhySortingExtractor,
             "phy/phy_example_0",
-            "phy/phy_example_0"
+            dict(folder_path=Path.cwd() / "ephy_testing_data" / "phy" / "phy_example_0")
         ),
         # Plexon - no documentation on use of Neo inheritor, doesn't work out of box like other extractors
         (
             se.PlexonSortingExtractor,
             "plexon",
-            "plexon/File_plexon_1.plx"
+            dict(filename=Path.cwd() / "ephy_testing_data" / "plexon" / "File_plexon_1.plx")
         ),
         # SpykingCircus - read/write is passing but re-loaded sortings are not equal
         (
             se.SpykingCircusSortingExtractor,
             "spykingcircus/spykingcircus_example0",
-            "spykingcircus/spykingcircus_example0/recording"
+            dict(file_or_folder_path=Path.cwd() / "ephy_testing_data" / "spykingcircus" / "spykingcircus_example0" / "recording")
         ),
         # Tridesclous - version issues with PyQt5 backend
         (
             se.TridesclousSortingExtractor,
             "tridesclous/tdc_example0",
-            "tridesclous/tdc_example0"
+            dict(folder_path=Path.cwd() / "ephy_testing_data" / "tridesclous" / "tdc_example0")
         )
     ])
-    def test_convert_sorting_extractor_to_nwb(self, se_class, dataset_path, se_path_arg):
+    def test_convert_sorting_extractor_to_nwb(self, se_class, dataset_path, se_kwargs):
+        print(f"\n\n\n TESTING {se_class.extractor_name}...")
         nwb_save_path = self.savedir / f"{se_class.__name__}_test.nwb"
         self.dataset.get(dataset_path)
 
-        sorting = se_class(Path.cwd() / "ephy_testing_data" / se_path_arg)
+        sorting = se_class(**se_kwargs)
         sf = sorting.get_sampling_frequency()
         if sf is None:
             sorting.set_sampling_frequency(1)

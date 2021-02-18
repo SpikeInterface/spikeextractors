@@ -22,6 +22,7 @@ except ImportError:
 
 extractors_dir = Path(__file__).parent.parent
 
+
 class OpenEphysRecordingExtractor(RecordingExtractor):
     extractor_name = 'OpenEphysRecording'
     has_default_locations = False

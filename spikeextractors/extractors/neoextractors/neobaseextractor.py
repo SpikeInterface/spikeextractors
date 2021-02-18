@@ -25,6 +25,7 @@ class _NeoBaseExtractor:
         """
         assert HAVE_NEO, self.installation_mesg
         neoIOclass = eval('neo.rawio.' + self.NeoRawIOClass)
+
         self.neo_reader = neoIOclass(**kargs)
         self.neo_reader.parse_header()
 
