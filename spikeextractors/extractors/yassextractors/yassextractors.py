@@ -3,7 +3,7 @@ from pathlib import Path
 
 from spikeextractors import SortingExtractor
 from spikeextractors.extractors.numpyextractors import NumpyRecordingExtractor
-from spikeextractors.extraction_tools import check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_unit_spike_train
 
 try:
     import yaml

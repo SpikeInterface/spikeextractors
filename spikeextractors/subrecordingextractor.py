@@ -36,11 +36,12 @@ class SubRecordingExtractor(RecordingExtractor):
                         'renamed_channel_ids': renamed_channel_ids, 'start_frame': start_frame, 'end_frame': end_frame}
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         sf = self._start_frame + start_frame
         ef = self._start_frame + end_frame
         original_ch_ids = self.get_original_channel_ids(channel_ids)
-        return self._parent_recording.get_traces(channel_ids=original_ch_ids, start_frame=sf, end_frame=ef)
+        return self._parent_recording.get_traces(channel_ids=original_ch_ids, start_frame=sf, end_frame=ef,
+                                                 return_scaled=return_scaled)
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):

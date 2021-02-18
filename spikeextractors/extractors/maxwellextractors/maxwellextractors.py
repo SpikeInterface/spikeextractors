@@ -1,7 +1,7 @@
 from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
-from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args, check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args, check_get_unit_spike_train
 
 try:
     import h5py
@@ -191,17 +191,21 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         return frameno
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         if np.array(channel_ids).size > 1:
             if np.any(np.diff(channel_ids) < 0):
                 sorted_channel_ids = np.sort(channel_ids)
                 sorted_idx = np.array([list(sorted_channel_ids).index(ch) for ch in channel_ids])
-                recordings = (self._signals[sorted_channel_ids, start_frame:end_frame] * self._lsb).astype('float32')
-                return recordings[sorted_idx]
+                traces = self._signals[sorted_channel_ids, start_frame:end_frame][sorted_idx]
             else:
-                return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
+                traces = self._signals[np.array(channel_ids), start_frame:end_frame]
         else:
-            return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
+            traces = self._signals[np.array(channel_ids), start_frame:end_frame]
+
+        if return_scaled:
+            return (traces * self._lsb).astype("float32")
+        else:
+            return traces
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
@@ -269,7 +273,7 @@ class MaxOneSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return self._unit_ids
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
@@ -387,18 +391,22 @@ class MaxTwoRecordingExtractor(RecordingExtractor):
         return rec_names
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
         if np.array(channel_idxs).size > 1:
             if np.any(np.diff(channel_idxs) < 0):
                 sorted_channel_ids = np.sort(channel_idxs)
                 sorted_idx = np.array([list(sorted_channel_ids).index(ch) for ch in channel_idxs])
-                recordings = (self._signals[sorted_channel_ids, start_frame:end_frame] * self._lsb).astype('float32')
-                return recordings[sorted_idx]
+                traces = self._signals[sorted_channel_ids, start_frame:end_frame][sorted_idx]
             else:
-                return (self._signals[np.array(channel_idxs), start_frame:end_frame] * self._lsb).astype('float32')
+                traces = self._signals[np.array(channel_idxs), start_frame:end_frame]
         else:
-            return (self._signals[np.array(channel_idxs), start_frame:end_frame] * self._lsb).astype('float32')
+            traces = self._signals[np.array(channel_idxs), start_frame:end_frame]
+
+        if return_scaled:
+            return (traces * self._lsb).astype("float32")
+        else:
+            return traces
 
 
 class MaxTwoSortingExtractor(SortingExtractor):
@@ -457,7 +465,7 @@ class MaxTwoSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return self._unit_ids
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:

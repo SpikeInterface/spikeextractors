@@ -22,7 +22,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         # Set default values for location and group properties
 
     @abstractmethod
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         '''This function extracts and returns a trace from the recorded data from the
         given channels ids and the given start and end frame. It will return
         traces from within three ranges:
@@ -48,6 +48,8 @@ class RecordingExtractor(ABC, BaseExtractor):
         channel_ids: array_like
             A list or 1D array of channel ids (ints) from which each trace will be
             extracted
+        return_scaled: bool
+            If True, traces are returned after scaling (using gain/offset). If False, the raw traces are returned
 
         Returns
         ----------
@@ -544,7 +546,6 @@ class RecordingExtractor(ABC, BaseExtractor):
         else:
             if isinstance(channel_ids, (int, np.integer)):
                 channel_ids = [channel_ids]
-
             # copy key properties
             groups = recording.get_channel_groups(channel_ids=channel_ids)
             locations = recording.get_channel_locations(channel_ids=channel_ids)
