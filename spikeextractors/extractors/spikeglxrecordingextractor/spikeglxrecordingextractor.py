@@ -82,7 +82,6 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
             self._channels = channel_ids
             # locations
             if len(locations) > 0:
-                print("ciao")
                 self.set_channel_locations(locations)
             if len(channel_names) > 0:
                 if len(channel_names) == len(self._channels):
@@ -161,6 +160,9 @@ def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch, rec_type):
     ap_channels = None
     lfp_channels = None
 
+    y_offset = 20
+    x_offset = 11
+
     locations = []
     channel_names = []
     channel_ids = []
@@ -197,8 +199,8 @@ def _parse_spikeglx_metafile(metafile, x_pitch, y_pitch, rec_type):
                         if len(chan) > 0:
                             x_idx = int(chan.split(':')[1])
                             y_idx = int(chan.split(':')[2])
-                            stagger = np.mod(y_idx + 1, 2) * x_pitch / 2
-                            x_pos = x_idx * x_pitch + stagger
-                            y_pos = y_idx * y_pitch
+                            stagger = np.mod(y_idx + 0, 2) * x_pitch / 2
+                            x_pos = (1 - x_idx) * x_pitch + stagger + x_offset
+                            y_pos = y_idx * y_pitch + y_offset
                             locations.append([x_pos, y_pos])
     return tot_channels, ap_channels, lfp_channels, locations, channel_ids, channel_names
