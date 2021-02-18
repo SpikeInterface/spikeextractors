@@ -9,9 +9,10 @@ from .extractors.klustaextractors.klustaextractors import KlustaSortingExtractor
 from .extractors.kilosortextractors.kilosortextractors import KiloSortSortingExtractor, KiloSortRecordingExtractor
 from .extractors.numpyextractors.numpyextractors import NumpyRecordingExtractor, NumpySortingExtractor
 from .extractors.nwbextractors.nwbextractors import NwbRecordingExtractor, NwbSortingExtractor
+from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, \
+    OpenEphysSortingExtractor, OpenEphysNPIXRecordingExtractor
 from .extractors.maxwellextractors import MaxOneRecordingExtractor, MaxOneSortingExtractor, MaxTwoRecordingExtractor, \
     MaxTwoSortingExtractor
-from .extractors.openephysextractors.openephysextractors import OpenEphysRecordingExtractor, OpenEphysSortingExtractor
 from .extractors.phyextractors.phyextractors import PhyRecordingExtractor, PhySortingExtractor
 from .extractors.bindatrecordingextractor.bindatrecordingextractor import BinDatRecordingExtractor
 from .extractors.spykingcircusextractors.spykingcircusextractors import SpykingCircusSortingExtractor, \
@@ -34,6 +35,7 @@ from .extractors.combinatosortingextractor import CombinatoSortingExtractor
 from .extractors.alfsortingextractor import ALFSortingExtractor
 from .extractors.cedextractors import CEDRecordingExtractor
 from .extractors.cellexplorersortingextractor import CellExplorerSortingExtractor
+from .extractors.neuropixelsdatrecordingextractor import NeuropixelsDatRecordingExtractor
 
 recording_extractor_full_list = [
     MdaRecordingExtractor,
@@ -41,6 +43,7 @@ recording_extractor_full_list = [
     BiocamRecordingExtractor,
     ExdirRecordingExtractor,
     OpenEphysRecordingExtractor,
+    OpenEphysNPIXRecordingExtractor,
     IntanRecordingExtractor,
     BinDatRecordingExtractor,
     KlustaRecordingExtractor,
@@ -53,9 +56,11 @@ recording_extractor_full_list = [
     MCSH5RecordingExtractor,
     SHYBRIDRecordingExtractor,
     NIXIORecordingExtractor,
+    NwbRecordingExtractor,
     NeuroscopeRecordingExtractor,
     NeuroscopeMultiRecordingTimeExtractor,
     CEDRecordingExtractor,
+    NeuropixelsDatRecordingExtractor,
 
     # neo based
     PlexonRecordingExtractor,
@@ -87,6 +92,7 @@ sorting_extractor_full_list = [
     NIXIOSortingExtractor,
     NeuroscopeSortingExtractor,
     NeuroscopeMultiSortingExtractor,
+    NwbSortingExtractor,
     WaveClusSortingExtractor,
     YassSortingExtractor,
     CombinatoSortingExtractor,
