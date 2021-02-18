@@ -1,13 +1,17 @@
-from spikeextractors import RecordingExtractor
-from spikeextractors.extraction_tools import read_binary, write_to_binary_dat_format, check_get_traces_args
 import shutil
 import numpy as np
 from pathlib import Path
 from typing import Union, Optional
 
+from spikeextractors import RecordingExtractor
+from spikeextractors.extraction_tools import read_binary, write_to_binary_dat_format, check_get_traces_args
+
 PathType = Union[str, Path]
 DtypeType = Union[str, np.dtype]
 ArrayType = Union[list, np.ndarray]
+OptionalDtypeType = Optional[DtypeType]
+OptionalArrayType = Optional[Union[np.ndarray, list]]
+
 
 class BinDatRecordingExtractor(RecordingExtractor):
     """
@@ -27,12 +31,14 @@ class BinDatRecordingExtractor(RecordingExtractor):
         The axis of the time dimension (default 0: F order)
     recording_channels: list (optional)
         A list of channel ids
-    offset: float (optional)
-        The offset to apply to the traces
     geom: array-like (optional)
         A list or array with channel locations
-    gain: float (optional)
+    offset: int (optional)
+        Number of bytes in the file to offset by during memmap instantiation.
+    gain: float or array-like (optional)
         The gain to apply to the traces
+    channel_offset: float or array-like
+        The offset to apply to the traces
     gain_first: bool
         If True and gain and offset are provided, traces are scaled as: original_traces * gain - offset
         If False and gain and offset are provided, traces are scaled as: (original_traces - offset) * gain
@@ -41,28 +47,27 @@ class BinDatRecordingExtractor(RecordingExtractor):
     """
     extractor_name = 'BinDatRecordingExtractor'
     has_default_locations = False
-    installed = True  # check at class level if installed or not
+    installed = True
     is_writable = True
-    mode = 'file'
-    installation_mesg = ""  # error message when not installed
+    mode = "file"
+    installation_mesg = ""
 
     def __init__(self, file_path: PathType, sampling_frequency: float, numchan: int, dtype: DtypeType,
                  time_axis: int = 0, recording_channels: Optional[list] = None,  geom: Optional[ArrayType] = None,
-                 offset: Optional[float] = 0, gain: Optional[float] = None, gain_first: bool = True,
-                 is_filtered: Optional[bool] = None):
+                 offset: Optional[float] = 0,
+                 gain: Optional[Union[float, ArrayType]] = None,
+                 channel_offset: Optional[Union[float, ArrayType]] = None,
+                 gain_first: bool = True, is_filtered: Optional[bool] = None):
         RecordingExtractor.__init__(self)
         self._datfile = Path(file_path)
         self._time_axis = time_axis
         self._dtype = str(dtype)
         self._sampling_frequency = float(sampling_frequency)
-        self._gain = gain
         self._numchan = numchan
         self._geom = geom
-        self._offset = offset
         self._gain_first = gain_first
         self._timeseries = read_binary(self._datfile, numchan, dtype, time_axis, offset)
 
-        # keep track of filter status when dumping
         if is_filtered is not None:
             self.is_filtered = is_filtered
         else:
@@ -84,15 +89,28 @@ class BinDatRecordingExtractor(RecordingExtractor):
 
         if geom is not None:
             self.set_channel_locations(self._geom)
+
         if 'numpy' in str(dtype):
             dtype_str = str(dtype).replace("<class '", "").replace("'>", "")
-            # drop 'numpy
             dtype_str = dtype_str.split('.')[1]
         else:
             dtype_str = str(dtype)
+
+        if gain is not None:
+            self.set_channel_gains(channel_ids=self.get_channel_ids(), gains=gain)
+        if channel_offset is not None:
+            if isinstance(channel_offset, (int, float, np.integer, np.float)):
+                self._channel_offset = np.array([channel_offset] * self.get_num_channels())
+            elif isinstance(channel_offset, (list, np.ndarray)):
+                assert len(channel_offset) == self.get_num_channels(), "'channel_offset' should have the same length" \
+                                                                       "as the number of channels"
+                self._channel_offset = np.array(channel_offset)
+        else:
+            self._channel_offset = np.array([0] * self.get_num_channels())
+
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'sampling_frequency': sampling_frequency,
                         'numchan': numchan, 'dtype': dtype_str, 'recording_channels': recording_channels,
-                        'time_axis': time_axis, 'geom': geom, 'offset': offset, 'gain': gain,
+                        'time_axis': time_axis, 'geom': geom, 'offset': offset, 'gain': gain, 'gain_first': gain_first,
                         'is_filtered': is_filtered}
 
     def get_channel_ids(self):
@@ -105,7 +123,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         if self._complete_channels:
             if np.all(channel_ids == self.get_channel_ids()):
                 recordings = self._timeseries[:, start_frame:end_frame]
@@ -121,79 +139,108 @@ class BinDatRecordingExtractor(RecordingExtractor):
             # in this case channel ids are actually indexes
             recordings = self._timeseries[channel_ids, start_frame:end_frame]
 
-        if self._gain is not None:
+        if 'gain' in self.get_shared_channel_property_names() and return_scaled:
+            gains = self.get_channel_gains(channel_ids=channel_ids)[:, None]
+            offsets = self._channel_offset[:, None]
             # unint needs to be converted to float in this case!
             if self._dtype.startswith('uint'):
                 exp_idx = self._dtype.find('int') + 3
                 exp = int(self._dtype[exp_idx:])
                 recordings = recordings.astype('float32') - 2 ** (exp - 1)
-            if self._offset is None:
-                offset = 0
-            else:
-                offset = self._offset
+
             if self._gain_first:
-                recordings = recordings * self._gain - offset
+                recordings = recordings * gains - offsets
             else:
-                recordings = (recordings - offset) * self._gain
+                recordings = (recordings - offsets) * gains
 
         return recordings
 
-    def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500,
-                                   n_jobs=1, joblib_backend='loky', verbose=False):
-        '''Saves the traces of this recording extractor into binary .dat format.
+    def write_to_binary_dat_format(
+        self,
+        save_path: PathType,
+        time_axis: int = 0,
+        dtype: OptionalDtypeType = None,
+        chunk_size: Optional[int] = None,
+        chunk_mb: int = 500,
+        n_jobs: int = 1,
+        joblib_backend: str = 'loky',
+        verbose: bool = False
+    ):
+        """
+        Save the traces of this recording extractor into binary .dat format.
 
         Parameters
         ----------
-        save_path: str
+        save_path : str
             The path to the file.
-        time_axis: 0 (default) or 1
+        time_axis : 0 (default) or 1
             If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
             If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
-        dtype: dtype
-            Type of the saved data. Default float32
-        chunk_size: None or int
+        dtype : dtype
+            Type of the saved data. Default float32.
+        chunk_size : None or int
             If not None then the file is saved in chunks.
             This avoid to much memory consumption for big files.
             If 'auto' the file is saved in chunks of ~ 500Mb
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
-        n_jobs: int
+        n_jobs : int
             Number of jobs to use (Default 1)
-        joblib_backend: str
+        joblib_backend : str
             Joblib backend for parallel processing ('loky', 'threading', 'multiprocessing')
-        '''
+        """
         if dtype is None or dtype == self.get_dtype():
             try:
                 shutil.copy(self._datfile, save_path)
             except Exception as e:
                 print('Error occurred while copying:', e)
                 print('Writing to binary')
-                write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
-                                           chunk_size=chunk_size, chunk_mb=chunk_mb, n_jobs=n_jobs,
-                                           joblib_backend=joblib_backend)
+                write_to_binary_dat_format(
+                    self,
+                    save_path=save_path,
+                    time_axis=time_axis,
+                    dtype=dtype,
+                    chunk_size=chunk_size,
+                    chunk_mb=chunk_mb,
+                    n_jobs=n_jobs,
+                    joblib_backend=joblib_backend
+                )
         else:
-            write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
-                                       chunk_size=chunk_size, chunk_mb=chunk_mb, n_jobs=n_jobs,
-                                       joblib_backend=joblib_backend)
-
+            write_to_binary_dat_format(
+                self,
+                save_path=save_path,
+                time_axis=time_axis,
+                dtype=dtype,
+                chunk_size=chunk_size,
+                chunk_mb=chunk_mb,
+                n_jobs=n_jobs,
+                joblib_backend=joblib_backend
+            )
 
     @staticmethod
-    def write_recording(recording, save_path, time_axis=0, dtype=None, chunk_size=None):
-        '''Saves the traces of a recording extractor in binary .dat format.
+    def write_recording(
+        recording: RecordingExtractor,
+        save_path: PathType,
+        time_axis: int = 0,
+        dtype: OptionalDtypeType = None,
+        chunk_size: Optional[int] = None
+    ):
+        """
+        Save the traces of a recording extractor in binary .dat format.
 
         Parameters
         ----------
-        recording: RecordingExtractor
-            The recording extractor object to be saved in .dat format
-        save_path: str
+        recording : RecordingExtractor
+            The recording extractor object to be saved in .dat format.
+        save_path : str
             The path to the file.
-        time_axis: 0 (default) or 1
+        time_axis : int, optional
             If 0 then traces are transposed to ensure (nb_sample, nb_channel) in the file.
             If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
-        dtype: dtype
+        dtype : dtype
             Type of the saved data. Default float32.
-        chunk_size: None or int
+        chunk_size : None or int
             If not None then the copy done by chunk size.
             This avoid to much memory consumption for big files.
-        '''
+        """
         write_to_binary_dat_format(recording, save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size)

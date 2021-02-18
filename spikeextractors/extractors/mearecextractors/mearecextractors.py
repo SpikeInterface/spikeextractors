@@ -1,6 +1,6 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train
 
 import numpy as np
 from pathlib import Path
@@ -75,7 +75,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         return self._fs
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         if np.any(np.diff(channel_ids) < 0):
             sorted_channel_ids = np.sort(channel_ids)
             sorted_idx = np.array([list(sorted_channel_ids).index(ch) for ch in channel_ids])
@@ -158,13 +158,9 @@ class MEArecSortingExtractor(SortingExtractor):
             self._initialize()
         return self._num_units
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
+
         if self._spike_trains is None:
             self._initialize()
         times = (self._spike_trains[self.get_unit_ids().index(unit_id)].times.rescale('s') *
