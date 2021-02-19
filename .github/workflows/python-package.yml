@@ -3,35 +3,36 @@ name: Python Package using Conda
 on: [push]
 
 jobs:
-  name: Test on (${{ matrix.os }})
-  runs-on: ${{ matrix.os }}
-  strategy:
-    fail-fast: false
-    matrix:
-      os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-  steps:
-    - uses: actions/checkout@v2
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        auto-activate-base: true
-        python-version: 3.8
-        activate-environment: ""
-    - name: Install dependencies
-      run: |
-        conda install -c conda-forge datalad
-        conda install -c conda-forge ruamel.yaml
-        conda install pip
-        pip install -r requirements-dev.txt
-        pip install -r requirements.txt
-        pip install -e .
-    - name: Lint with flake8
-      run: |
-        conda install flake8
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest and build coverage report
-      run: |
-        conda install pytest
-        pytest
+  build-and-test:
+    name: Test on (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-activate-base: true
+          python-version: 3.8
+          activate-environment: ""
+      - name: Install dependencies
+        run: |
+          conda install -c conda-forge datalad
+          conda install -c conda-forge ruamel.yaml
+          conda install pip
+          pip install -r requirements-dev.txt
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Lint with flake8
+        run: |
+          conda install flake8
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Test with pytest and build coverage report
+        run: |
+          conda install pytest
+          pytest
