@@ -18,6 +18,7 @@ jobs:
           activate-environment: test
       - name: Which python
         run: |
+          conda activate test
           which python
       - name: Install dependencies
         run: |
