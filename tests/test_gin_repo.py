@@ -113,7 +113,7 @@ class TestNwbConversions(unittest.TestCase):
         (
             se.PlexonSortingExtractor,
             "plexon",
-            dict(filename=Path.cwd() / "ephy_testing_data" / "plexon" / "File_plexon_1.plx")
+            dict(filename=Path.cwd() / "ephy_testing_data" / "plexon" / "File_plexon_2.plx")
         ),
         # SpykingCircus - read/write is passing but re-loaded sortings are not equal
         (

@@ -7,7 +7,8 @@ import os
 from copy import copy
 from pathlib import Path
 
-this_file = Path(__file__)
+this_file = Path(__file__).parent
+
 
 class TestTools(unittest.TestCase):
     def setUp(self):
@@ -65,44 +66,44 @@ class TestTools(unittest.TestCase):
         nb_chan = self.RX.get_num_channels()
 
         # time_axis=0 chunk_size=None
-        self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=0, dtype='float32', chunk_size=None)
+        self.RX.write_to_binary_dat_format(self.test_dir / 'rec.dat', time_axis=0, dtype='float32', chunk_size=None)
         data = np.memmap(self.test_dir / 'rec.dat', dtype='float32', mode='r', shape=(nb_sample, nb_chan)).T
         assert np.allclose(data, self.RX.get_traces())
         del data  # this close the file
 
         # time_axis=1 chunk_size=None
-        self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=1, dtype='float32', chunk_size=None)
+        self.RX.write_to_binary_dat_format(self.test_dir / 'rec.dat', time_axis=1, dtype='float32', chunk_size=None)
         data = np.memmap(self.test_dir / 'rec.dat', dtype='float32', mode='r', shape=(nb_chan, nb_sample))
         assert np.allclose(data, self.RX.get_traces())
         del data  # this close the file
 
         # time_axis=0 chunk_size=99
-        self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=0, dtype='float32', chunk_size=99)
+        self.RX.write_to_binary_dat_format(self.test_dir / 'rec.dat', time_axis=0, dtype='float32', chunk_size=99)
         data = np.memmap(self.test_dir / 'rec.dat', dtype='float32', mode='r', shape=(nb_sample, nb_chan)).T
         assert np.allclose(data, self.RX.get_traces())
         del(data) # this close the file
 
         # time_axis=0 chunk_mb=2
-        self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=0, dtype='float32', chunk_mb=2)
+        self.RX.write_to_binary_dat_format(self.test_dir /  'rec.dat', time_axis=0, dtype='float32', chunk_mb=2)
         data = np.memmap(self.test_dir / 'rec.dat', dtype='float32', mode='r', shape=(nb_sample, nb_chan)).T
         assert np.allclose(data, self.RX.get_traces())
         del data  # this close the file
 
         # time_axis=1 chunk_mb=2
-        self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=1, dtype='float32', chunk_mb=2)
+        self.RX.write_to_binary_dat_format(self.test_dir / 'rec.dat', time_axis=1, dtype='float32', chunk_mb=2)
         data = np.memmap(self.test_dir / 'rec.dat', dtype='float32', mode='r', shape=(nb_chan, nb_sample))
         assert np.allclose(data, self.RX.get_traces())
         del data  # this close the file
 
         # time_axis=0 chunk_mb=10, n_jobs=2
-        self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=0,
+        self.RX.write_to_binary_dat_format(self.test_dir / 'rec.dat', time_axis=0,
                                            dtype='float32', chunk_mb=10, n_jobs=2)
         data = np.memmap(self.test_dir / 'rec.dat', dtype='float32', mode='r', shape=(nb_sample, nb_chan)).T
         assert np.allclose(data, self.RX.get_traces())
         del data  # this close the file
 
         # time_axis=1 chunk_mb=10 n_jobs=2
-        self.RX.write_to_binary_dat_format(self.test_dir + 'rec.dat', time_axis=1,
+        self.RX.write_to_binary_dat_format(self.test_dir / 'rec.dat', time_axis=1,
                                            dtype='float32', chunk_mb=2, n_jobs=2)
         data = np.memmap(self.test_dir / 'rec.dat', dtype='float32', mode='r', shape=(nb_chan, nb_sample))
         assert np.allclose(data, self.RX.get_traces())
