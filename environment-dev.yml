@@ -18,3 +18,4 @@ dependencies:
     - exdir
     - hdbscan
     - tridesclous
+    - parametrized

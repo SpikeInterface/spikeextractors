@@ -18,6 +18,13 @@ jobs:
           activate-environment: test
       - name: Which python
         run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+                conda init bash
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+                conda init powershell
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+                conda init zsh
+          fi
           conda activate test
           which python
       - name: Install dependencies
