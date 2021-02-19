@@ -22,7 +22,7 @@ jobs:
                 conda init bash
           elif [ "$RUNNER_OS" == "Windows" ]; then
                 conda init powershell
-          elif [ "$RUNNER_OS" == "Windows" ]; then
+          elif [ "$RUNNER_OS" == "macOS" ]; then
                 conda init zsh
           fi
           conda activate test
