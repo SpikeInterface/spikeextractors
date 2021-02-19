@@ -81,9 +81,8 @@ class TestNwbConversions(unittest.TestCase):
     ])
     def test_convert_recording_extractor_to_nwb(self, se_class, dataset_path, se_kwargs):
         print(f"\n\n\n TESTING {se_class.extractor_name}...")
-        N = 10
-        random_str = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(N))
-        nwb_save_path = self.savedir / f"{se_class.__name__}_test_{random_str}.nwb"
+        dataset_stem = Path(dataset_path).stem
+        nwb_save_path = self.savedir / f"{se_class.__name__}_test_{dataset_stem}.nwb"
         self.dataset.get(dataset_path)
 
         recording = se_class(**se_kwargs)
@@ -110,12 +109,12 @@ class TestNwbConversions(unittest.TestCase):
         #     "phy/phy_example_0",
         #     dict(folder_path=Path.cwd() / "ephy_testing_data" / "phy" / "phy_example_0")
         # ),
-        # Plexon - Error: self._neo_sig_sampling_rate = self.neo_reader.header['signal_channels']['sampling_rate'][0]
-        # (
-        #     se.PlexonSortingExtractor,
-        #     "plexon",
-        #     dict(filename=Path.cwd() / "ephy_testing_data" / "plexon" / "File_plexon_1.plx")
-        # ),
+        # Plexon
+        (
+            se.PlexonSortingExtractor,
+            "plexon",
+            dict(filename=Path.cwd() / "ephy_testing_data" / "plexon" / "File_plexon_1.plx")
+        ),
         # SpykingCircus - read/write is passing but re-loaded sortings are not equal
         (
             se.SpykingCircusSortingExtractor,
@@ -131,15 +130,15 @@ class TestNwbConversions(unittest.TestCase):
     ])
     def test_convert_sorting_extractor_to_nwb(self, se_class, dataset_path, se_kwargs):
         print(f"\n\n\n TESTING {se_class.extractor_name}...")
-        N = 10
-        random_str = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(N))
-        nwb_save_path = self.savedir / f"{se_class.__name__}_test_{random_str}.nwb"
+        dataset_stem = Path(dataset_path).stem
+        nwb_save_path = self.savedir / f"{se_class.__name__}_test_{dataset_stem}.nwb"
         self.dataset.get(dataset_path)
 
         sorting = se_class(**se_kwargs)
         sf = sorting.get_sampling_frequency()
         if sf is None:
-            sf = 1
+            sf = 30000
+            sorting.set_sampling_frequency(sf)
         se.NwbSortingExtractor.write_sorting(sorting, nwb_save_path)
         # dummy sampling frequency b/c no associated acquisition
         nwb_sorting = se.NwbSortingExtractor(nwb_save_path, sampling_frequency=sf)

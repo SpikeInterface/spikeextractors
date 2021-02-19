@@ -10,10 +10,10 @@ try:
     import pyopenephys
     HAVE_OE = True
 
-    if pyopenephys.__version__ >= StrictVersion("1.1.0"):
+    if pyopenephys.__version__ >= StrictVersion("1.1.2"):
         HAVE_OE_11 = True
     else:
-        warnings.warn("pyopenephys>=1.1 should be installed. Support for older versions will be removed in "
+        warnings.warn("pyopenephys>=1.1.2 should be installed. Support for older versions will be removed in "
                       "future releases. Install with:\n\n pip install --upgrade pyopenephys\n\n")
         HAVE_OE_11 = False
 except ImportError:
