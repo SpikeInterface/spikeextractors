@@ -12,20 +12,12 @@ jobs:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
     steps:
       - uses: actions/checkout@v2
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: s-weigand/setup-conda@v1
         with:
-          environment-file: environment-dev.yml
-          activate-environment: test
+          python-version: 3.7
       - name: Which python
         run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-                conda init bash
-          elif [ "$RUNNER_OS" == "Windows" ]; then
-                conda init powershell
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-                conda init zsh
-          fi
-          conda activate test
+          conda --version
           which python
       - name: Install dependencies
         run: |
@@ -33,13 +25,15 @@ jobs:
           conda install -c conda-forge ruamel.yaml
           conda install flake8
           conda install pytest
+          pip install -r requirements-dev.txt
+          pip install -r requirements.txt
           pip install -e .
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
-          python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          python -m flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Test with pytest and build coverage report
         run: |
-          python -m pytest
+          pytest
