@@ -1,9 +1,6 @@
 import tempfile
 import unittest
 from pathlib import Path
-import numpy as np
-import random
-import string
 import sys
 
 from datalad.api import install, Dataset
@@ -24,14 +21,12 @@ if sys.platform == "linux":
             self.savedir = Path(tempfile.mkdtemp())
 
         @parameterized.expand([
-            # Blackrock - PosixPath has no attribute endswith stemming from base neo io
             (
                 se.BlackrockRecordingExtractor,
                 "blackrock/blackrock_2_1",
                 dict(filename=str(Path.cwd() / "ephy_testing_data" / "blackrock" / "blackrock_2_1" / "l101210-001"),
                      seg_index=0, nsx_to_load=5)
             ),
-            # Intan - strptime issue in pyintan
             (
                 se.IntanRecordingExtractor,
                 "intan",
@@ -47,8 +42,6 @@ if sys.platform == "linux":
                 "mearec/mearec_test_10s.h5",
                 dict(file_path=Path.cwd() / "ephy_testing_data" / "mearec" / "mearec_test_10s.h5")
             ),
-            # Neuralynx - a lot of versions on the testing_data, not sure which we want to support;
-            # main issue is setting seg_index for many of the blocked files
             (
                 se.NeuralynxRecordingExtractor,
                 "neuralynx/Cheetah_v5.7.4/original_data",
@@ -61,11 +54,11 @@ if sys.platform == "linux":
                 dict(file_path=Path.cwd() / "ephy_testing_data" / "neuroscope" / "test1" / "test1.dat")
             ),
             # Nixio - 'traces' not found
-            # (
-            #     se.NIXIORecordingExtractor,
-            #     "nix",
-            #     dict(file_path=str(Path.cwd() / "ephy_testing_data" / "neoraw.nix"))
-            # ),
+            (
+                se.NIXIORecordingExtractor,
+                "nix",
+                dict(file_path=str(Path.cwd() / "ephy_testing_data" / "neoraw.nix"))
+            ),
             (
                 se.OpenEphysRecordingExtractor,
                 "openephys/OpenEphys_SampleData_1",
@@ -92,31 +85,28 @@ if sys.platform == "linux":
             check_recordings_equal(recording, nwb_recording)
 
         @parameterized.expand([
-            # Klusta OK
             (
                 se.KlustaSortingExtractor,
                 "kwik",
                 dict(file_or_folder_path=Path.cwd() / "ephy_testing_data" / "kwik" / "neo.kwik")
             ),
-            # NIXIO - PosixPath has no attribute encode in nixio/pycore/file
-            # (
-            #     se.NIXIOSortingExtractor,
-            #     "nix/nixio_fr.nix",
-            #     dict(file_path=Path.cwd() / "ephy_testing_data" / "nix" / "nixio_fr.nix")
-            # ),
+            # NIXIO
+            (
+                se.NIXIOSortingExtractor,
+                "nix/nixio_fr.nix",
+                dict(file_path=str(Path.cwd() / "ephy_testing_data" / "nix" / "nixio_fr.nix"))
+            ),
             # Phy - something wrong in NWB write function
-            # (
-            #     se.PhySortingExtractor,
-            #     "phy/phy_example_0",
-            #     dict(folder_path=Path.cwd() / "ephy_testing_data" / "phy" / "phy_example_0")
-            # ),
-            # Plexon
+            (
+                se.PhySortingExtractor,
+                "phy/phy_example_0",
+                dict(folder_path=Path.cwd() / "ephy_testing_data" / "phy" / "phy_example_0")
+            ),
             (
                 se.PlexonSortingExtractor,
                 "plexon",
                 dict(filename=Path.cwd() / "ephy_testing_data" / "plexon" / "File_plexon_2.plx")
             ),
-            # SpykingCircus - read/write is passing but re-loaded sortings are not equal
             (
                 se.SpykingCircusSortingExtractor,
                 "spykingcircus/spykingcircus_example0",
@@ -125,11 +115,11 @@ if sys.platform == "linux":
                 )
             ),
             # # Tridesclous - dataio error
-            # (
-            #     se.TridesclousSortingExtractor,
-            #     "tridesclous/tdc_example0",
-            #     dict(folder_path=Path.cwd() / "ephy_testing_data" / "tridesclous" / "tdc_example0")
-            # )
+            (
+                se.TridesclousSortingExtractor,
+                "tridesclous/tdc_example0",
+                dict(folder_path=Path.cwd() / "ephy_testing_data" / "tridesclous" / "tdc_example0")
+            )
         ])
         def test_convert_sorting_extractor_to_nwb(self, se_class, dataset_path, se_kwargs):
             print(f"\n\n\n TESTING {se_class.extractor_name}...")
@@ -139,11 +129,10 @@ if sys.platform == "linux":
 
             sorting = se_class(**se_kwargs)
             sf = sorting.get_sampling_frequency()
-            if sf is None:
+            if sf is None:  # need to set dummy sampling frequency since no associated acquisition in file
                 sf = 30000
                 sorting.set_sampling_frequency(sf)
             se.NwbSortingExtractor.write_sorting(sorting, nwb_save_path)
-            # dummy sampling frequency b/c no associated acquisition
             nwb_sorting = se.NwbSortingExtractor(nwb_save_path, sampling_frequency=sf)
             check_sortings_equal(sorting, nwb_sorting)
 
