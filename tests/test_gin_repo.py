@@ -24,8 +24,11 @@ if sys.platform == "linux":
             (
                 se.BlackrockRecordingExtractor,
                 "blackrock/blackrock_2_1",
-                dict(filename=str(Path.cwd() / "ephy_testing_data" / "blackrock" / "blackrock_2_1" / "l101210-001"),
-                     seg_index=0, nsx_to_load=5)
+                dict(
+                    filename=str(Path.cwd() / "ephy_testing_data" / "blackrock" / "blackrock_2_1" / "l101210-001"),
+                    seg_index=0,
+                    nsx_to_load=5
+                )
             ),
             (
                 se.IntanRecordingExtractor,
@@ -45,8 +48,10 @@ if sys.platform == "linux":
             (
                 se.NeuralynxRecordingExtractor,
                 "neuralynx/Cheetah_v5.7.4/original_data",
-                dict(dirname=Path.cwd() / "ephy_testing_data" / "neuralynx" / "Cheetah_v5.7.4" / "original_data",
-                     seg_index=0)
+                dict(
+                    dirname=Path.cwd() / "ephy_testing_data" / "neuralynx" / "Cheetah_v5.7.4" / "original_data",
+                    seg_index=0
+                )
             ),
             (
                 se.NeuroscopeRecordingExtractor,
@@ -65,13 +70,30 @@ if sys.platform == "linux":
                 dict(folder_path=Path.cwd() / "ephy_testing_data" / "openephys" / "OpenEphys_SampleData_1")
             ),
             (
+                se.PhyRecordingExtractor,
+                "phy/phy_example_0",
+                dict(folder_path=Path.cwd() / "ephy_testing_data" / "phy" / "phy_example_0")
+            ),
+            (
+                se.PlexonRecordingExtractor,
+                "plexon",
+                dict(filename=Path.cwd() / "ephy_testing_data" / "plexon" / "File_plexon_2.plx")
+            ),
+            (
                 se.SpikeGLXRecordingExtractor,
                 "spikeglx/Noise4Sam_g0",
                 dict(
                     file_path=Path.cwd() / "ephy_testing_data/spikeglx/Noise4Sam_g0/Noise4Sam_g0_imec0" /
                     "Noise4Sam_g0_t0.imec0.ap.bin"
                 )
-            )
+            ),
+            (
+                se.SpykingCircusRecordingExtractor,
+                "spykingcircus/spykingcircus_example0",
+                dict(
+                    folder_path=Path.cwd() / "ephy_testing_data/spykingcircus/spykingcircus_example0/recording"
+                )
+            ),
         ])
         def test_convert_recording_extractor_to_nwb(self, se_class, dataset_path, se_kwargs):
             print(f"\n\n\n TESTING {se_class.extractor_name}...")
@@ -86,9 +108,26 @@ if sys.platform == "linux":
 
         @parameterized.expand([
             (
+                se.BlackrockSortingExtractor,
+                "blackrock/blackrock_2_1",
+                dict(
+                    filename=str(Path.cwd() / "ephy_testing_data" / "blackrock" / "blackrock_2_1" / "l101210-001"),
+                    seg_index=0,
+                    nsx_to_load=5
+                 )
+            ),
+            (
                 se.KlustaSortingExtractor,
                 "kwik",
                 dict(file_or_folder_path=Path.cwd() / "ephy_testing_data" / "kwik" / "neo.kwik")
+            ),
+            (
+                se.NeuralynxSortingExtractor,
+                "neuralynx/Cheetah_v5.7.4/original_data",
+                dict(
+                    dirname=Path.cwd() / "ephy_testing_data" / "neuralynx" / "Cheetah_v5.7.4" / "original_data",
+                    seg_index=0
+                )
             ),
             # NIXIO - return [int(da.label) for da in self._spike_das]
             # TypeError: int() argument must be a string, a bytes-like object or a number, not 'NoneType'
@@ -97,7 +136,6 @@ if sys.platform == "linux":
             #     "nix/nixio_fr.nix",
             #     dict(file_path=str(Path.cwd() / "ephy_testing_data" / "nix" / "nixio_fr.nix"))
             # ),
-            # Phy - something wrong in NWB write function
             (
                 se.PhySortingExtractor,
                 "phy/phy_example_0",
