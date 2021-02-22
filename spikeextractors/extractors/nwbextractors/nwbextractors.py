@@ -617,8 +617,14 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 )
 
     @staticmethod
-    def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None,
-                              buffer_mb: int = 500, use_timestamps: bool = False, write_as_lfp: bool = False):
+    def add_electrical_series(
+            recording: se.RecordingExtractor,
+            nwbfile=None,
+            metadata: dict = None,
+            buffer_mb: int = 500,
+            use_timestamps: bool = False,
+            write_as_lfp: bool = False
+    ):
         """
         Auxiliary static method for nwbextractor.
 
@@ -805,18 +811,27 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     )
 
     @staticmethod
-    def add_all_to_nwbfile(recording: se.RecordingExtractor, nwbfile=None,
-                           use_timestamps: bool = False, metadata: dict = None, write_as_lfp: bool = False):
-        '''
+    def add_all_to_nwbfile(
+            recording: se.RecordingExtractor,
+            nwbfile=None,
+            buffer_mb: int = 500,
+            use_timestamps: bool = False,
+            metadata: dict = None,
+            write_as_lfp: bool = False
+    ):
+        """
         Auxiliary static method for nwbextractor.
-        Adds all recording related information from recording object and metadata
-        to the nwbfile object.
+
+        Adds all recording related information from recording object and metadata to the nwbfile object.
 
         Parameters
         ----------
         recording: RecordingExtractor
         nwbfile: NWBFile
             nwb file to which the recording information is to be added
+        buffer_mb: int (optional, defaults to 500MB)
+            maximum amount of memory (in MB) to use per iteration of the
+            DataChunkIterator (requires traces to be memmap objects)
         use_timestamps: bool
             If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
             the sampling rate is used.
@@ -826,7 +841,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             about metadata format.
         write_as_lfp: bool (optional, defaults to False)
             If True, writes the traces under a processing LFP module in the NWBFile instead of acquisition.
-        '''
+        """
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
 
@@ -835,30 +850,24 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             nwbfile=nwbfile,
             metadata=metadata
         )
-
         se.NwbRecordingExtractor.add_electrode_groups(
             recording=recording,
             nwbfile=nwbfile,
             metadata=metadata
         )
-
-        # Add electrodes
         se.NwbRecordingExtractor.add_electrodes(
             recording=recording,
             nwbfile=nwbfile,
             metadata=metadata
         )
-
-        # Add electrical series
         se.NwbRecordingExtractor.add_electrical_series(
             recording=recording,
             nwbfile=nwbfile,
+            buffer_mb=buffer_mb,
             use_timestamps=use_timestamps,
             metadata=metadata,
             write_as_lfp=write_as_lfp
         )
-
-        # Add epochs
         se.NwbRecordingExtractor.add_epochs(
             recording=recording,
             nwbfile=nwbfile,
@@ -866,8 +875,16 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         )
 
     @staticmethod
-    def write_recording(recording: se.RecordingExtractor, save_path: PathType = None, overwrite: bool = False,
-                        nwbfile=None, use_timestamps: bool = False, metadata: dict = None, write_as_lfp: bool = False):
+    def write_recording(
+            recording: se.RecordingExtractor,
+            save_path: PathType = None,
+            overwrite: bool = False,
+            nwbfile=None,
+            buffer_mb: int = 500,
+            use_timestamps: bool = False,
+            metadata: dict = None,
+            write_as_lfp: bool = False
+    ):
         """
         Primary method for writing a RecordingExtractor object to an NWBFile.
 
@@ -886,6 +903,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 my_recording_extractor, my_nwbfile
             )
             will result in the appropriate changes to the my_nwbfile object.
+        buffer_mb: int (optional, defaults to 500MB)
+            maximum amount of memory (in MB) to use per iteration of the
+            DataChunkIterator (requires traces to be memmap objects)
         use_timestamps: bool
             If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
             the sampling rate is used.
