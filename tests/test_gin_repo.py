@@ -89,13 +89,13 @@ if sys.platform == "linux":
                 )
             ),
             # SpykingCircus - TypeError: 'timeseries' can be a str or a numpy array
-            # (
-            #     se.SpykingCircusRecordingExtractor,
-            #     "spykingcircus/spykingcircus_example0",
-            #     dict(
-            #         folder_path=Path.cwd() / "ephy_testing_data/spykingcircus/spykingcircus_example0/recording"
-            #     )
-            # ),
+            (
+                se.SpykingCircusRecordingExtractor,
+                "spykingcircus/spykingcircus_example0",
+                dict(
+                    folder_path=Path.cwd() / "ephy_testing_data/spykingcircus/spykingcircus_example0/recording"
+                )
+            ),
         ])
         def test_convert_recording_extractor_to_nwb(self, se_class, dataset_path, se_kwargs):
             print(f"\n\n\n TESTING {se_class.extractor_name}...")
