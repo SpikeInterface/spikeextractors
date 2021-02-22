@@ -40,11 +40,12 @@ if sys.platform == "linux":
                 "intan",
                 dict(file_path=Path.cwd() / "ephy_testing_data" / "intan" / "intan_rhs_test_1.rhs")
             ),
-            (
-                se.KlustaRecordingExtractor,
-                "kwik",
-                dict(folder_path=Path.cwd() / "ephy_testing_data" / "kwik")
-            ),
+            # Klusta - no .prm config file in ephy_testing
+            # (
+            #     se.KlustaRecordingExtractor,
+            #     "kwik",
+            #     dict(folder_path=Path.cwd() / "ephy_testing_data" / "kwik")
+            # ),
             (
                 se.MEArecRecordingExtractor,
                 "mearec/mearec_test_10s.h5",
