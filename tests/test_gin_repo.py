@@ -9,7 +9,7 @@ from parameterized import parameterized
 import spikeextractors as se
 from spikeextractors.testing import check_recordings_equal, check_sortings_equal
 
-run_local = True
+run_local = False
 
 if sys.platform == "linux" or run_local:
     class TestNwbConversions(unittest.TestCase):
@@ -114,7 +114,7 @@ if sys.platform == "linux" or run_local:
                 se.SpikeGLXRecordingExtractor,
                 "spikeglx/Noise4Sam_g0",
                 dict(
-                    file_path=Path.cwd() / "ephy_testing_data/spikeglx/Noise4Sam_g0/Noise4Sam_g0_imec0" /
+                    file_path=Path.cwd() / "ephy_testing_data" / "spikeglx" / "Noise4Sam_g0" / "Noise4Sam_g0_imec0" /
                     "Noise4Sam_g0_t0.imec0.ap.bin"
                 )
             )
@@ -181,7 +181,8 @@ if sys.platform == "linux" or run_local:
                 se.SpykingCircusSortingExtractor,
                 "spykingcircus/spykingcircus_example0",
                 dict(
-                    file_or_folder_path=Path.cwd() / "ephy_testing_data/spykingcircus/spykingcircus_example0/recording"
+                    file_or_folder_path=Path.cwd() / "ephy_testing_data" / "spykingcircus" / "spykingcircus_example0" /
+                                        "recording"
                 )
             ),
             # # Tridesclous - dataio error, GIN data is not correct?
