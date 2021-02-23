@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
@@ -25,6 +26,7 @@ class _NeoBaseExtractor:
         """
         assert HAVE_NEO, self.installation_mesg
         neoIOclass = eval('neo.rawio.' + self.NeoRawIOClass)
+
         self.neo_reader = neoIOclass(**kargs)
         self.neo_reader.parse_header()
 
@@ -136,6 +138,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
 class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
     def __init__(self, block_index=None, seg_index=None, **kargs):
+        SortingExtractor.__init__(self)
         _NeoBaseExtractor.__init__(self, block_index=block_index, seg_index=seg_index, **kargs)
 
         # the sampling frequency is quite tricky because in neo
@@ -156,11 +159,20 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
 
         # here the generic case
         #  all channels are in the same neo group so
-        self._neo_sig_sampling_rate = self.neo_reader.header['signal_channels']['sampling_rate'][0]
-        self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
-                                                                      channel_indexes=[0])
+        if len(self.neo_reader.header['signal_channels']['sampling_rate']) > 0:
+            self._neo_sig_sampling_rate = self.neo_reader.header['signal_channels']['sampling_rate'][0]
+            self.set_sampling_frequency(self._neo_sig_sampling_rate)
+        else:
+            warnings.warn("Sampling frequency not found: setting it to 30 kHz")
+            self._sampling_frequency = 30000
+            self._neo_sig_sampling_rate = self._sampling_frequency
 
-        self.set_sampling_frequency(self._neo_sig_sampling_rate)
+        if len(self.neo_reader.get_group_signal_channel_indexes()) > 0:
+            self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
+                                                                          channel_indexes=[0])
+        else:
+            warnings.warn("Start time not found: setting it to 0 s")
+            self._neo_sig_time_start = 0
 
         # For some IOs when there is no signals at inside the dataset this could not work
         # in that case the extractor class must overwrite this method

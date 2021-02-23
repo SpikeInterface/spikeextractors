@@ -49,7 +49,7 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
         dtype = 'int16'
         sampling_frequency = float(30000)
         offset = 0
-        
+
         channel_locations = np.loadtxt(source_dir / 'channel_positions_neuropixels.txt')
         if self._settings_file is not None:
             with open(self._settings_file) as f:
@@ -65,13 +65,13 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
             used_channel_gains = []
             for c in channel_info['CHANNEL']:
                 if 'AP' in c['@name'] and int(c['@number']) in recorded_channels:
-                    used_channels.append(int(c['@number']))        
+                    used_channels.append(int(c['@number']))
                     used_channel_gains.append(float(c['@gain']))
             if verbose:
                 print(f'{len(recorded_channels)} total channels found, with {len(used_channels)} recording AP')
                 print(f'Channels used:\n{used_channels}')
             numchan = len(used_channels)
-            geom = channel_locations[:,np.array(used_channels)].T
+            geom = channel_locations[:, np.array(used_channels)].T
             gain = used_channel_gains[0]
             channels = used_channels
         else:
@@ -79,7 +79,7 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
                           "using a default of 384 channels at the probe tip."
                           "If the recording differs, use settings_file=settings.xml")
             numchan = 384
-            geom = channel_locations[:,:384].T
+            geom = channel_locations[:, :384].T
             gain = None
             channels = range(384)
 

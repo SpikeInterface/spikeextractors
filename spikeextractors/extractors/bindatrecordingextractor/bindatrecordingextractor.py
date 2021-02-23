@@ -39,9 +39,6 @@ class BinDatRecordingExtractor(RecordingExtractor):
         The gain to apply to the traces
     channel_offset: float or array-like
         The offset to apply to the traces
-    gain_first: bool
-        If True and gain and offset are provided, traces are scaled as: original_traces * gain - offset
-        If False and gain and offset are provided, traces are scaled as: (original_traces - offset) * gain
     is_filtered: bool
         If True, the recording is assumed to be filtered
     """
@@ -61,11 +58,10 @@ class BinDatRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         self._datfile = Path(file_path)
         self._time_axis = time_axis
-        self._dtype = str(dtype)
+        self._dtype = np.dtype(dtype).name
         self._sampling_frequency = float(sampling_frequency)
         self._numchan = numchan
         self._geom = geom
-        self._gain_first = gain_first
         self._timeseries = read_binary(self._datfile, numchan, dtype, time_axis, offset)
 
         if is_filtered is not None:
@@ -140,18 +136,15 @@ class BinDatRecordingExtractor(RecordingExtractor):
             recordings = self._timeseries[channel_ids, start_frame:end_frame]
 
         if 'gain' in self.get_shared_channel_property_names() and return_scaled:
-            gains = self.get_channel_gains(channel_ids=channel_ids)[:, None]
-            offsets = self._channel_offset[:, None]
-            # unint needs to be converted to float in this case!
+            channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
+            gains = np.array(self.get_channel_gains(channel_ids=channel_ids))[:, None]
+            offsets = self._channel_offset[channel_idxs, None]
+            # uint needs to be converted to float in this case!
             if self._dtype.startswith('uint'):
                 exp_idx = self._dtype.find('int') + 3
                 exp = int(self._dtype[exp_idx:])
                 recordings = recordings.astype('float32') - 2 ** (exp - 1)
-
-            if self._gain_first:
-                recordings = recordings * gains - offsets
-            else:
-                recordings = (recordings - offsets) * gains
+            recordings = recordings * gains - offsets
 
         return recordings
 

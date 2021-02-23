@@ -1,13 +1,16 @@
-import numpy as np
 import os
-from pathlib import Path
-import unittest
-import tempfile
 import shutil
+import tempfile
+import unittest
+from pathlib import Path
+
+import numpy as np
+
 import spikeextractors as se
-from .utils import check_sortings_equal, check_recordings_equal, check_dumping, check_recording_return_types, \
-    check_sorting_return_types
 from spikeextractors.exceptions import NotDumpableExtractorError
+from spikeextractors.testing import check_sortings_equal, check_recordings_equal, check_dumping, \
+    check_recording_return_types, \
+    check_sorting_return_types
 
 
 class TestExtractors(unittest.TestCase):
@@ -146,10 +149,14 @@ class TestExtractors(unittest.TestCase):
         self.assertEqual(tuple(self.SX.get_epoch_info("epoch1").values()), self.example_info['epochs_info'][0])
         self.assertEqual(tuple(self.SX.get_epoch_info("epoch2").values()), self.example_info['epochs_info'][1])
 
-        self.assertEqual(tuple(self.RX.get_epoch_info("epoch1").values()), tuple(self.RX2.get_epoch_info("epoch1").values()))
-        self.assertEqual(tuple(self.RX.get_epoch_info("epoch2").values()), tuple(self.RX2.get_epoch_info("epoch2").values()))
-        self.assertEqual(tuple(self.SX.get_epoch_info("epoch1").values()), tuple(self.SX2.get_epoch_info("epoch1").values()))
-        self.assertEqual(tuple(self.SX.get_epoch_info("epoch2").values()), tuple(self.SX2.get_epoch_info("epoch2").values()))
+        self.assertEqual(tuple(self.RX.get_epoch_info("epoch1").values()),
+                         tuple(self.RX2.get_epoch_info("epoch1").values()))
+        self.assertEqual(tuple(self.RX.get_epoch_info("epoch2").values()),
+                         tuple(self.RX2.get_epoch_info("epoch2").values()))
+        self.assertEqual(tuple(self.SX.get_epoch_info("epoch1").values()),
+                         tuple(self.SX2.get_epoch_info("epoch1").values()))
+        self.assertEqual(tuple(self.SX.get_epoch_info("epoch2").values()),
+                         tuple(self.SX2.get_epoch_info("epoch2").values()))
 
         self.RX3.clear_channel_locations()
         self.assertTrue('location' not in self.RX3.get_shared_channel_property_names())

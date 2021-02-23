@@ -23,6 +23,7 @@ class NIXIORecordingExtractor(RecordingExtractor):
 
     def __init__(self, file_path):
         assert HAVE_NIXIO, self.installation_mesg
+        file_path = str(file_path)
         RecordingExtractor.__init__(self)
         self._file = nix.File.open(file_path, nix.FileMode.ReadOnly)
         self._load_properties()
@@ -145,6 +146,7 @@ class NIXIOSortingExtractor(SortingExtractor):
 
     def __init__(self, file_path):
         assert HAVE_NIXIO, self.installation_mesg
+        file_path = str(file_path)
         SortingExtractor.__init__(self)
         self._file = nix.File.open(file_path, nix.FileMode.ReadOnly)
         md = self._file.sections

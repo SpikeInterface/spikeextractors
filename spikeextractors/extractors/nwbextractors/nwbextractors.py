@@ -302,6 +302,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 traces = recordings[sorted_idx, :]
             else:
                 traces = es.data[start_frame:end_frame, channel_inds].T
+
+            # TODO: how to handle this?
+            # if return_scaled and "gain" in self.get_shared_channel_property_names():
+            #     gains = np.array(self.get_channel_gains())[:, None]
+            #     traces = traces.astype("float") * gains
+
+
             # This DatasetView and lazy operations will only work within context
             # We're keeping the non-lazy version for now
             # es_view = DatasetView(es.data)  # es is an instantiated h5py dataset
@@ -620,8 +627,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 )
 
     @staticmethod
-    def add_electrical_series(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None,
-                              buffer_mb: int = 500, use_timestamps: bool = False, write_as_lfp: bool = False):
+    def add_electrical_series(
+            recording: se.RecordingExtractor,
+            nwbfile=None,
+            metadata: dict = None,
+            buffer_mb: int = 500,
+            use_timestamps: bool = False,
+            write_as_lfp: bool = False,
+            write_scaled: bool = False
+    ):
         """
         Auxiliary static method for nwbextractor.
 
@@ -714,18 +728,18 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             scalar_conversion = 1.
             channel_conversion = gains * 1e-6
 
-        if isinstance(recording.get_traces(end_frame=5), np.memmap):
+        if isinstance(recording.get_traces(end_frame=5, return_scaled=write_scaled), np.memmap):
             n_bytes = np.dtype(recording.get_dtype()).itemsize
             buffer_size = int(buffer_mb * 1e6) // (recording.get_num_channels() * n_bytes)
             ephys_data = DataChunkIterator(
-                data=recording.get_traces(return_scaled=False).T,  # nwb standard is time as zero axis
+                data=recording.get_traces(return_scaled=write_scaled).T,  # nwb standard is time as zero axis
                 buffer_size=buffer_size
             )
         else:
             def data_generator(recording, channels_ids):
                 # generates data chunks for iterator
                 for id in channels_ids:
-                    data = recording.get_traces(channel_ids=[id], return_scaled=False).flatten()
+                    data = recording.get_traces(channel_ids=[id], return_scaled=write_scaled).flatten()
                     yield data
             ephys_data = DataChunkIterator(
                 data=data_generator(
@@ -808,18 +822,28 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     )
 
     @staticmethod
-    def add_all_to_nwbfile(recording: se.RecordingExtractor, nwbfile=None,
-                           use_timestamps: bool = False, metadata: dict = None, write_as_lfp: bool = False):
-        '''
+    def add_all_to_nwbfile(
+            recording: se.RecordingExtractor,
+            nwbfile=None,
+            buffer_mb: int = 500,
+            use_timestamps: bool = False,
+            metadata: dict = None,
+            write_as_lfp: bool = False,
+            write_scaled: bool = False
+    ):
+        """
         Auxiliary static method for nwbextractor.
-        Adds all recording related information from recording object and metadata
-        to the nwbfile object.
+
+        Adds all recording related information from recording object and metadata to the nwbfile object.
 
         Parameters
         ----------
         recording: RecordingExtractor
         nwbfile: NWBFile
             nwb file to which the recording information is to be added
+        buffer_mb: int (optional, defaults to 500MB)
+            maximum amount of memory (in MB) to use per iteration of the
+            DataChunkIterator (requires traces to be memmap objects)
         use_timestamps: bool
             If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
             the sampling rate is used.
@@ -829,7 +853,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             about metadata format.
         write_as_lfp: bool (optional, defaults to False)
             If True, writes the traces under a processing LFP module in the NWBFile instead of acquisition.
-        '''
+        """
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
 
@@ -838,30 +862,25 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             nwbfile=nwbfile,
             metadata=metadata
         )
-
         se.NwbRecordingExtractor.add_electrode_groups(
             recording=recording,
             nwbfile=nwbfile,
             metadata=metadata
         )
-
-        # Add electrodes
         se.NwbRecordingExtractor.add_electrodes(
             recording=recording,
             nwbfile=nwbfile,
             metadata=metadata
         )
-
-        # Add electrical series
         se.NwbRecordingExtractor.add_electrical_series(
             recording=recording,
             nwbfile=nwbfile,
+            buffer_mb=buffer_mb,
             use_timestamps=use_timestamps,
             metadata=metadata,
-            write_as_lfp=write_as_lfp
+            write_as_lfp=write_as_lfp,
+            write_scaled=write_scaled
         )
-
-        # Add epochs
         se.NwbRecordingExtractor.add_epochs(
             recording=recording,
             nwbfile=nwbfile,
@@ -869,8 +888,17 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         )
 
     @staticmethod
-    def write_recording(recording: se.RecordingExtractor, save_path: PathType = None, overwrite: bool = False,
-                        nwbfile=None, use_timestamps: bool = False, metadata: dict = None, write_as_lfp: bool = False):
+    def write_recording(
+            recording: se.RecordingExtractor,
+            save_path: PathType = None,
+            overwrite: bool = False,
+            nwbfile=None,
+            buffer_mb: int = 500,
+            use_timestamps: bool = False,
+            metadata: dict = None,
+            write_as_lfp: bool = False,
+            write_scaled: bool = False
+    ):
         """
         Primary method for writing a RecordingExtractor object to an NWBFile.
 
@@ -889,6 +917,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 my_recording_extractor, my_nwbfile
             )
             will result in the appropriate changes to the my_nwbfile object.
+        buffer_mb: int (optional, defaults to 500MB)
+            maximum amount of memory (in MB) to use per iteration of the
+            DataChunkIterator (requires traces to be memmap objects)
         use_timestamps: bool
             If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
             the sampling rate is used.
@@ -954,7 +985,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     nwbfile=nwbfile,
                     metadata=metadata,
                     use_timestamps=use_timestamps,
-                    write_as_lfp=write_as_lfp
+                    write_as_lfp=write_as_lfp,
+                    write_scaled=write_scaled
                 )
 
                 # Write to file
@@ -965,7 +997,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 nwbfile=nwbfile,
                 use_timestamps=use_timestamps,
                 metadata=metadata,
-                write_as_lfp=write_as_lfp
+                write_as_lfp=write_as_lfp,
+                write_scaled=write_scaled
             )
 
     @staticmethod
@@ -1207,7 +1240,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                         unit_kwargs.update({pr: prop_value})
                     else:  # Case of missing data for this unit and this property
                         unit_kwargs.update({pr: np.nan})
-                nwbfile.add_unit(id=unit_id, spike_times=spkt, **unit_kwargs)
+                nwbfile.add_unit(id=int(unit_id), spike_times=spkt, **unit_kwargs)
 
             # TODO
             # # Stores average and std of spike traces
