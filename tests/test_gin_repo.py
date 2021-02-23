@@ -163,6 +163,11 @@ if sys.platform == "linux" or run_local:
             #     dict(file_path=str(Path.cwd() / "ephy_testing_data" / "nix" / "nixio_fr.nix"))
             # ),
             (
+                se.MEArecSortingExtractor,
+                "mearec/mearec_test_10s.h5",
+                dict(file_path=Path.cwd() / "ephy_testing_data" / "mearec" / "mearec_test_10s.h5")
+            ),
+            (
                 se.PhySortingExtractor,
                 "phy/phy_example_0",
                 dict(folder_path=Path.cwd() / "ephy_testing_data" / "phy" / "phy_example_0")
