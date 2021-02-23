@@ -1,8 +1,13 @@
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 import numpy as np
 from pathlib import Path
-import xmltodict
 import warnings
+
+try:
+    import xmltodict
+    HAVE_XMLTODICT = True
+except ImportError:
+    HAVE_XMLTODICT = False
 
 
 class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
@@ -30,12 +35,13 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
     """
     extractor_name = 'NeuropixelsDatRecording'
     has_default_locations = False
-    installed = True  # check at class level if installed or not
+    installed = HAVE_XMLTODICT
     is_writable = False
     mode = 'file'
-    installation_mesg = ""  # error message when not installed
+    installation_mesg = "To use the NeuropixelsDat extractor, install xmltodict: \n\n pip install xmltodict\n\n"
 
     def __init__(self, file_path, settings_file=None, is_filtered=None, verbose=False):
+        assert HAVE_XMLTODICT, self.installation_mesg
         source_dir = Path(Path(__file__).parent)
         self._settings_file = settings_file
         datfile = Path(file_path)
