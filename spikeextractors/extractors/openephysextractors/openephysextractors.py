@@ -48,7 +48,6 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
         self._kwargs = {'folder_path': str(Path(folder_path).absolute()), 'experiment_id': experiment_id,
                         'recording_id': recording_id}
 
-
     def get_channel_ids(self):
         if HAVE_OE_11:
             return list(self._analogsignals.channel_ids)
@@ -110,7 +109,6 @@ class OpenEphysNPIXRecordingExtractor(OpenEphysRecordingExtractor):
         analogsignals = self._recording.analog_signals
         for analog in analogsignals:
             channel_names = analog.channel_names
-
             if np.all([stream.upper() in chan for chan in channel_names]):
                 self._analogsignals = analog
                 # load neuropixels locations
@@ -119,16 +117,14 @@ class OpenEphysNPIXRecordingExtractor(OpenEphysRecordingExtractor):
                 # get correct channel ID from channel name (e.g. AP32 --> 32)
                 channel_ids = [int(chan_name[chan_name.find(stream.upper())+len(stream):]) - 1
                                for chan_name in channel_names]
-                self._channel_ids = channel_ids
                 locations = channel_locations[channel_ids]
                 self.set_channel_locations(locations)
+                for i, ch in enumerate(self.get_channel_ids()):
+                    self.set_channel_property(ch, "channel_name", channel_names[i])
                 break
 
         self._kwargs = {'folder_path': str(Path(folder_path).absolute()), 'experiment_id': experiment_id,
                         'recording_id': recording_id, 'stream': stream}
-
-    def get_channel_ids(self):
-        return self._channel_ids
 
 
 class OpenEphysSortingExtractor(SortingExtractor):

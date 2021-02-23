@@ -9,7 +9,9 @@ from parameterized import parameterized
 import spikeextractors as se
 from spikeextractors.testing import check_recordings_equal, check_sortings_equal
 
-if sys.platform == "linux":
+run_local = True
+
+if sys.platform == "linux" or run_local:
     class TestNwbConversions(unittest.TestCase):
 
         def setUp(self):
@@ -74,6 +76,28 @@ if sys.platform == "linux":
                 se.OpenEphysRecordingExtractor,
                 "openephys/OpenEphys_SampleData_1",
                 dict(folder_path=Path.cwd() / "ephy_testing_data" / "openephys" / "OpenEphys_SampleData_1")
+            ),
+            (
+                se.OpenEphysRecordingExtractor,
+                "openephysbinary/v0.4.4.1_with_video_tracking",
+                dict(folder_path=Path.cwd() / "ephy_testing_data" / "openephysbinary" / "v0.4.4.1_with_video_tracking")
+            ),
+            (
+                se.OpenEphysNPIXRecordingExtractor,
+                "openephysbinary/v0.5.3_two_neuropixels_stream",
+                dict(
+                    folder_path=Path.cwd() / "ephy_testing_data" / "openephysbinary" / "v0.5.3_two_neuropixels_stream"
+                                / "Record_Node_107")
+            ),
+            (
+                se.NeuropixelsDatRecordingExtractor,
+                "openephysbinary/v0.5.3_two_neuropixels_stream",
+                dict(
+                    file_path=Path.cwd() / "ephy_testing_data" / "openephysbinary" / "v0.5.3_two_neuropixels_stream" /
+                              "Record_Node_107" / "experiment1" / "recording1" / "continuous" /
+                              "Neuropix-PXI-116.0" / "continuous.dat",
+                    settings_file=Path.cwd() / "ephy_testing_data" / "openephysbinary" /
+                                  "v0.5.3_two_neuropixels_stream" / "Record_Node_107" / "settings.xml")
             ),
             (
                 se.PhyRecordingExtractor,
