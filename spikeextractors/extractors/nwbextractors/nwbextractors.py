@@ -302,13 +302,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 traces = recordings[sorted_idx, :]
             else:
                 traces = es.data[start_frame:end_frame, channel_inds].T
-
-            # TODO: how to handle this?
-            # if return_scaled and "gain" in self.get_shared_channel_property_names():
-            #     gains = np.array(self.get_channel_gains())[:, None]
-            #     traces = traces.astype("float") * gains
-
-
             # This DatasetView and lazy operations will only work within context
             # We're keeping the non-lazy version for now
             # es_view = DatasetView(es.data)  # es is an instantiated h5py dataset
@@ -463,7 +456,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 metadata['Ecephys']['Electrodes'] = [{'name': my_name,
                                                       'description': my_description,
                                                       'data': [my_electrode_data]}, ...]
-            where each dictionary corresponds to a column in the Electrodes table and [my_electrode_data] is a list in 
+            where each dictionary corresponds to a column in the Electrodes table and [my_electrode_data] is a list in
             one-to-one correspondence with the nwbfile electrode ids and RecordingExtractor channel ids.
 
         Missing keys in an element of metadata['Ecephys']['ElectrodeGroup'] will be auto-populated with defaults
@@ -659,6 +652,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             the sampling rate is used.
         write_as_lfp: bool (optional, defaults to False)
             If True, writes the traces under a processing LFP module in the NWBFile instead of acquisition.
+        write_scaled: bool (optional, defaults to True)
+            If True, writes the scaled traces (return_scaled=True)
 
         Missing keys in an element of metadata['Ecephys']['ElectrodeGroup'] will be auto-populated with defaults
         whenever possible.
@@ -853,6 +848,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             about metadata format.
         write_as_lfp: bool (optional, defaults to False)
             If True, writes the traces under a processing LFP module in the NWBFile instead of acquisition.
+        write_scaled: bool (optional, defaults to True)
+            If True, writes the scaled traces (return_scaled=True)
         """
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
@@ -862,6 +859,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             nwbfile=nwbfile,
             metadata=metadata
         )
+
         se.NwbRecordingExtractor.add_electrode_groups(
             recording=recording,
             nwbfile=nwbfile,
@@ -941,6 +939,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                                            'description': my_description}
         write_as_lfp: bool (optional, defaults to False)
             If True, writes the traces under a processing LFP module in the NWBFile instead of acquisition.
+        write_scaled: bool (optional, defaults to True)
+            If True, writes the scaled traces (return_scaled=True)
         """
         assert HAVE_NWB, NwbRecordingExtractor.installation_mesg
 

@@ -35,10 +35,10 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
     """
     extractor_name = 'NeuropixelsDatRecording'
     has_default_locations = False
-    installed = HAVE_XMLTODICT  # check at class level if installed or not
+    installed = HAVE_XMLTODICT
     is_writable = False
     mode = 'file'
-    installation_mesg = "To use the NeuropixelsDatRecordingExtractor, install xmltodict: \n\n pip install xmltodict\n\n"
+    installation_mesg = "To use the NeuropixelsDat extractor, install xmltodict: \n\n pip install xmltodict\n\n"
 
     def __init__(self, file_path, settings_file=None, is_filtered=None, verbose=False):
         assert self.installed, self.installation_mesg
