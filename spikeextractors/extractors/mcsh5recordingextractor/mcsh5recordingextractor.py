@@ -14,6 +14,7 @@ except ImportError:
 class MCSH5RecordingExtractor(RecordingExtractor):
     extractor_name = 'MCSH5RecordingExtractor'
     has_default_locations = False
+    has_unscaled = False
     installed = HAVE_MCSH5  # check at class level if installed or not
     is_writable = False
     mode = 'file'
@@ -66,13 +67,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
             return list(range(len(analog_stream_names)))
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         channel_idxs = []
         for m in channel_ids:
             assert m in self._channel_ids, 'channel_id {} not found'.format(m)
@@ -85,12 +80,16 @@ class MCSH5RecordingExtractor(RecordingExtractor):
             if np.any(np.diff(channel_idxs) < 0):
                 sorted_channel_ids = np.sort(channel_idxs)
                 sorted_idx = np.array([list(sorted_channel_ids).index(ch) for ch in channel_idxs])
-                recordings = stream.get('ChannelData')[sorted_channel_ids, start_frame:end_frame]
-                return recordings[sorted_idx] * conv
+                signals = stream.get('ChannelData')[sorted_channel_ids, start_frame:end_frame][sorted_idx]
             else:
-                return stream.get('ChannelData')[np.sort(channel_idxs), start_frame:end_frame] * conv
+                signals =  stream.get('ChannelData')[np.sort(channel_idxs), start_frame:end_frame]
         else:
-            return stream.get('ChannelData')[np.array(channel_idxs), start_frame:end_frame] * conv
+            signals = stream.get('ChannelData')[np.array(channel_idxs), start_frame:end_frame]
+        if return_scaled:
+            return signals * conv
+        else:
+            return signals
+
 
     @staticmethod
     def write_recording(recording, save_path):

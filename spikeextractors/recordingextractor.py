@@ -23,7 +23,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         # Set default values for location and group properties
 
     @abstractmethod
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         """This function extracts and returns a trace from the recorded data from the
         given channels ids and the given start and end frame. It will return
         traces from within three ranges:
@@ -49,6 +49,8 @@ class RecordingExtractor(ABC, BaseExtractor):
         channel_ids: array_like
             A list or 1D array of channel ids (ints) from which each trace will be
             extracted
+        return_scaled: bool
+            If True, traces are returned after scaling (using gain/offset). If False, the raw traces are returned
 
         Returns
         ----------
@@ -119,7 +121,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         return self.get_traces(channel_ids=[self.get_channel_ids()[0]], start_frame=0, end_frame=1,
                                return_scaled=return_scaled).dtype
-    
+
     def set_timestamps(self, timestamps):
         """This function sets the recording timestamps (in seconds) for each frame
 
@@ -150,7 +152,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             return np.round(frames / self.get_sampling_frequency(), 6)
         else:
             return self._timestamps[frames]
-        
+
     def time_to_frame(self, times):
         """This function converts a user-inputted times (in seconds) to a frame indexes.
 
@@ -170,7 +172,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         else:
             return np.searchsorted(self._timestamps, times).astype('int64')
 
-    def get_snippets(self, reference_frames, snippet_len, channel_ids=None):
+    def get_snippets(self, reference_frames, snippet_len, channel_ids=None, return_scaled=True):
         """This function returns data snippets from the given channels that
         are starting on the given frames and are the length of the given snippet
         lengths before and after.
@@ -188,6 +190,8 @@ class RecordingExtractor(ABC, BaseExtractor):
         channel_ids: array_like
             A list or array of channel ids (ints) from which each trace will be
             extracted
+        return_scaled: bool
+            If True, snippets are returned after scaling (using gain/offset). If False, the raw traces are returned
 
         Returns
         ----------
@@ -229,7 +233,8 @@ class RecordingExtractor(ABC, BaseExtractor):
                     snippet_range[1] -= snippet_range[1] - num_frames
                 snippet_chunk[:, snippet_buffer[0]:snippet_buffer[1]] = self.get_traces(channel_ids=channel_ids,
                                                                                         start_frame=snippet_range[0],
-                                                                                        end_frame=snippet_range[1])
+                                                                                        end_frame=snippet_range[1],
+                                                                                        return_scaled=return_scaled)
             snippets[i] = snippet_chunk
         return snippets
 

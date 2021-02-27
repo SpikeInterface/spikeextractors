@@ -14,6 +14,7 @@ except ImportError:
 class BiocamRecordingExtractor(RecordingExtractor):
     extractor_name = 'BiocamRecording'
     has_default_locations = True
+    has_unscaled = False
     installed = HAVE_BIOCAM  # check at class level if installed or not
     is_writable = True
     mode = 'file'
@@ -45,7 +46,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
         return self._samplingRate
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         data = self._read_function(self._rf, start_frame, end_frame, self.get_num_channels())
         # transform to slice if possible
         if sorted(channel_ids) == channel_ids and np.all(np.diff(channel_ids) == 1):
@@ -139,7 +140,7 @@ def openBiocamFile(filename, mea_pitch, verbose=False):
         read_function = readHDF5t_101_i
     else:
         raise RuntimeError("File format unknown.")
-    return (rf, nFrames, samplingRate, nRecCh, chIndices, file_format, signalInv, rawIndices, read_function)
+    return rf, nFrames, samplingRate, nRecCh, chIndices, file_format, signalInv, rawIndices, read_function
 
 
 def readHDF5t_100(rf, t0, t1, nch):

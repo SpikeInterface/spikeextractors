@@ -2,7 +2,7 @@ from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
 from pathlib import Path
 import numpy as np
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id, check_get_ttl_args
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train, check_get_ttl_args
 
 '''
 The NumpyExtractors can be constructed and used to encapsulate custom file formats and data structures which
@@ -13,6 +13,8 @@ like any other Recording/SortingExtractor.
 class NumpyRecordingExtractor(RecordingExtractor):
     extractor_name = 'NumpyRecordingExtractor'
     is_writable = True
+    has_default_locations = False
+    has_unscaled = False
 
     def __init__(self, timeseries, sampling_frequency, geom=None):
         RecordingExtractor.__init__(self)
@@ -57,7 +59,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         recordings = self._timeseries[:, start_frame:end_frame][channel_ids, :]
         return recordings
 
@@ -141,13 +143,8 @@ class NumpySortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._units.keys())
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
         times = self._units[unit_id]['times']
         inds = np.where((start_frame <= times) & (times < end_frame))[0]
         return np.rint(times[inds]).astype(int)

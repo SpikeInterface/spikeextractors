@@ -1,9 +1,11 @@
-import numpy as np
-import shutil
-from spikeextractors.extraction_tools import load_extractor_from_pickle, load_extractor_from_dict, \
-    load_extractor_from_json
 import os
+import shutil
 from pathlib import Path
+
+import numpy as np
+
+from .extraction_tools import load_extractor_from_pickle, load_extractor_from_dict, \
+    load_extractor_from_json
 
 
 def check_recordings_equal(RX1, RX2, force_dtype=None):
@@ -107,7 +109,6 @@ def check_sorting_properties_features(SX1, SX2):
         for u in SX1.get_unit_ids():
             assert np.allclose(np.array(SX1.get_unit_spike_features(u, feat)),
                                np.array(SX2.get_unit_spike_features(u, feat)))
-
 
 
 def check_dumping(extractor):

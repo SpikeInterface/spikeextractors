@@ -14,6 +14,7 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         self._first_recording = recordings[0]
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
         self._num_frames = self._first_recording.get_num_frames()
+        self.has_unscaled = self._first_recording.has_unscaled
 
         # Test if all recording extractors have same sampling frequency
         for i, recording in enumerate(recordings[1:]):
@@ -68,19 +69,19 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         return self._recordings
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         traces = []
         if channel_ids is not None:
             for channel_id in channel_ids:
                 recording = self._recordings[self._channel_map[channel_id]['recording']]
                 channel_id_recording = self._channel_map[channel_id]['channel_id']
                 traces_recording = recording.get_traces(channel_ids=[channel_id_recording], start_frame=start_frame,
-                                                        end_frame=end_frame)
+                                                        end_frame=end_frame, return_scaled=return_scaled)
                 traces.append(traces_recording)
         else:
             for recording in self._recordings:
                 traces_all_recording = recording.get_traces(channel_ids=channel_ids, start_frame=start_frame,
-                                                            end_frame=end_frame)
+                                                            end_frame=end_frame, return_scaled=return_scaled)
                 traces.append(traces_all_recording)
         return np.concatenate(traces, axis=0)
 
