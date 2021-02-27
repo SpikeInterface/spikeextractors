@@ -34,7 +34,8 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
     
     """
     extractor_name = 'NeuropixelsDatRecording'
-    has_default_locations = False
+    has_default_locations = True
+    has_unscaled = True
     installed = HAVE_XMLTODICT
     is_writable = False
     mode = 'file'

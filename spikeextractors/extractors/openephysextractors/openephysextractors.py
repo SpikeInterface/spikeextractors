@@ -26,6 +26,7 @@ extractors_dir = Path(__file__).parent.parent
 class OpenEphysRecordingExtractor(RecordingExtractor):
     extractor_name = 'OpenEphysRecording'
     has_default_locations = False
+    has_unscaled = True
     installed = HAVE_OE  # check at class level if installed or not
     is_writable = False
     mode = 'folder'

@@ -15,6 +15,7 @@ installation_mesg = "To use the MaxOneRecordingExtractor install h5py: \n\n pip 
 class MaxOneRecordingExtractor(RecordingExtractor):
     extractor_name = 'MaxOneRecording'
     has_default_locations = True
+    has_unscaled = True
     installed = HAVE_MAX  # check at class level if installed or not
     is_writable = False
     mode = 'file'
@@ -289,6 +290,7 @@ class MaxOneSortingExtractor(SortingExtractor):
 class MaxTwoRecordingExtractor(RecordingExtractor):
     extractor_name = 'MaxTwoRecording'
     has_default_locations = True
+    has_unscaled = True
     installed = HAVE_MAX  # check at class level if installed or not
     is_writable = False
     mode = 'file'

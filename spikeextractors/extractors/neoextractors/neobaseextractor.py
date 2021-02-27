@@ -16,6 +16,8 @@ class _NeoBaseExtractor:
     NeoRawIOClass = None
     installed = True
     is_writable = False
+    has_default_locations = False
+    has_unscaled = True
     installation_mesg = "To use the Neo extractors, install Neo: \n\n pip install neo\n\n"
 
     def __init__(self, block_index=None, seg_index=None, **kargs):

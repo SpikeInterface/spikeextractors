@@ -44,6 +44,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
     """
     extractor_name = 'BinDatRecordingExtractor'
     has_default_locations = False
+    has_unscaled = False
     installed = True
     is_writable = True
     mode = "file"
@@ -85,6 +86,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
 
         if geom is not None:
             self.set_channel_locations(self._geom)
+            self.has_default_locations = True
 
         if 'numpy' in str(dtype):
             dtype_str = str(dtype).replace("<class '", "").replace("'>", "")
@@ -94,6 +96,8 @@ class BinDatRecordingExtractor(RecordingExtractor):
 
         if gain is not None:
             self.set_channel_gains(channel_ids=self.get_channel_ids(), gains=gain)
+            self.has_unscaled = True
+
         if channel_offset is not None:
             if isinstance(channel_offset, (int, float, np.integer, np.float)):
                 self._channel_offset = np.array([channel_offset] * self.get_num_channels())

@@ -22,6 +22,7 @@ except ImportError:
 class MEArecRecordingExtractor(RecordingExtractor):
     extractor_name = 'MEArecRecordingExtractor'
     has_default_locations = True
+    has_unscaled = False
     installed = HAVE_MREX  # check at class level if installed or not
     is_writable = True
     mode = 'file'

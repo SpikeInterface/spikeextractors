@@ -3,7 +3,7 @@ import csv
 import os
 import sys
 from pathlib import Path
-import json
+import warnings
 import datetime
 from functools import wraps
 from spikeextractors.baseextractor import BaseExtractor
@@ -82,7 +82,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
 
     Returns
     ---------
-    subrecording = SubRecordingExtractor
+    subrecording: SubRecordingExtractor
         The extractor containing all of the probe information.
     '''
     from .subrecordingextractor import SubRecordingExtractor
@@ -783,6 +783,11 @@ def check_get_traces_args(func):
             end_frame = recording.get_num_frames()
         assert end_frame - start_frame > 0, "'start_frame' must be less than 'end_frame'!"
         start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
+
+        if not recording.has_unscaled and not return_scaled:
+            warnings.warn("The recording extractor does not have unscaled traces. Returning scaled traces")
+            return_scaled = True
+
         get_traces_correct_arg = func(recording, channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame,
                                       return_scaled=return_scaled, **kwargs)
 

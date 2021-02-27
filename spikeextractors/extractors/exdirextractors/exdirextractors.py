@@ -18,6 +18,7 @@ except ImportError:
 class ExdirRecordingExtractor(RecordingExtractor):
     extractor_name = 'ExdirRecording'
     has_default_locations = False
+    has_unscaled = False
     installed = HAVE_EXDIR  # check at class level if installed or not
     is_writable = True
     mode = 'folder'

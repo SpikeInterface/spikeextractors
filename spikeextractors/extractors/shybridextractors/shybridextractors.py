@@ -1,21 +1,24 @@
 import os
 from pathlib import Path
 import numpy as np
-from spikeextractors import SortingExtractor
+from spikeextractors import RecordingExtractor, SortingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 from spikeextractors.extraction_tools import save_to_probe_file, load_probe_file, check_get_unit_spike_train
 
 try:
     import hybridizer.io as sbio
     import hybridizer.probes as sbprb
+
     HAVE_SBEX = True
 except ImportError:
     HAVE_SBEX = False
 
 
-class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
+class SHYBRIDRecordingExtractor(RecordingExtractor):
     extractor_name = 'SHYBRIDRecording'
     installed = HAVE_SBEX
+    has_default_locations = True
+    has_unscaled = False
     is_writable = True
     mode = 'file'
     installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
@@ -38,14 +41,28 @@ class SHYBRIDRecordingExtractor(BinDatRecordingExtractor):
             time_axis = 0
 
         # piggyback on binary data recording extractor
-        BinDatRecordingExtractor.__init__(self,
-                                          file_path,
-                                          params['fs'],
-                                          nb_channels,
-                                          params['dtype'],
-                                          time_axis=time_axis)
+        recording = BinDatRecordingExtractor(
+            file_path,
+            params['fs'],
+            nb_channels,
+            params['dtype'],
+            time_axis=time_axis)
+        # load probe file
+        self._recording = load_probe_file(recording, params['probe'])
         self._kwargs = {'file_path': str(Path(file_path).absolute())}
-        self = load_probe_file(self, params['probe'])
+
+    def get_channel_ids(self):
+        return self._recording.get_channel_ids()
+
+    def get_num_frames(self):
+        return self._recording.get_num_frames()
+
+    def get_sampling_frequency(self):
+        return self._recording.get_sampling_frequency()
+
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
+        return self._recording.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame,
+                                          return_scaled=return_scaled)
 
 
     @staticmethod
@@ -137,8 +154,8 @@ class SHYBRIDSortingExtractor(SortingExtractor):
         dump = np.empty((0, 2))
 
         for unit_id in sorting.get_unit_ids():
-            spikes = sorting.get_unit_spike_train(unit_id)[:,np.newaxis]
-            expanded_id = (np.ones(spikes.size) * unit_id)[:,np.newaxis]
+            spikes = sorting.get_unit_spike_train(unit_id)[:, np.newaxis]
+            expanded_id = (np.ones(spikes.size) * unit_id)[:, np.newaxis]
             tmp_concat = np.concatenate((expanded_id, spikes), axis=1)
 
             dump = np.concatenate((dump, tmp_concat), axis=0)
@@ -152,12 +169,13 @@ class GeometryNotLoadedError(Exception):
     """
     pass
 
+
 params_template = \
-"""clusters:
-  csv: {initial_sorting_fn}
-data:
-  dtype: {data_type}
-  fs: {sampling_frequency}
-  order: {byte_ordering}
-  probe: {probe_fn}
-"""
+    """clusters:
+      csv: {initial_sorting_fn}
+    data:
+      dtype: {data_type}
+      fs: {sampling_frequency}
+      order: {byte_ordering}
+      probe: {probe_fn}
+    """

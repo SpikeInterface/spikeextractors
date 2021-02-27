@@ -13,6 +13,8 @@ like any other Recording/SortingExtractor.
 class NumpyRecordingExtractor(RecordingExtractor):
     extractor_name = 'NumpyRecordingExtractor'
     is_writable = True
+    has_default_locations = False
+    has_unscaled = False
 
     def __init__(self, timeseries, sampling_frequency, geom=None):
         RecordingExtractor.__init__(self)

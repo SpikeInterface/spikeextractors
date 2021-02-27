@@ -12,6 +12,7 @@ import shutil
 class MdaRecordingExtractor(RecordingExtractor):
     extractor_name = 'MdaRecordingExtractor'
     has_default_locations = True
+    has_unscaled = False
     installed = True  # check at class level if installed or not
     is_writable = True
     mode = 'folder'

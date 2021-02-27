@@ -23,6 +23,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     """
     extractor_name = 'SpikeGLXRecordingExtractor'
     has_default_locations = True
+    has_unscaled = True
     installed = True  # check at class level if installed or not
     is_writable = False
     mode = 'file'
