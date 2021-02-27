@@ -334,6 +334,7 @@ class BaseExtractor:
         '''
         self._annotations = deepcopy(extractor._annotations)
 
+
     def _cast_start_end_frame(self, start_frame, end_frame):
         from .extraction_tools import cast_start_end_frame
         return cast_start_end_frame(start_frame, end_frame)

@@ -13,6 +13,8 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         self._num_channels = self._first_recording.get_num_channels()
         self._channel_ids = self._first_recording.get_channel_ids()
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
+        self.has_unscaled = self._first_recording.has_unscaled
+
         if epoch_names is None:
             epoch_names = [str(i) for i in range(len(recordings))]
             

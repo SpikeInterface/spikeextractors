@@ -8,6 +8,7 @@ from spikeextractors.extraction_tools import save_to_probe_file, load_probe_file
 try:
     import hybridizer.io as sbio
     import hybridizer.probes as sbprb
+    import yaml
 
     HAVE_SBEX = True
 except ImportError:
@@ -21,11 +22,13 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
     has_unscaled = False
     is_writable = True
     mode = 'file'
-    installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
+    installation_mesg = "To use the SHYBRID extractors, install SHYBRID and pyyaml: " \
+                        "\n\n pip install shybrid pyyaml\n\n"
 
     def __init__(self, file_path):
         # load params file related to the given shybrid recording
         assert HAVE_SBEX, self.installation_mesg
+        RecordingExtractor.__init__(self)
         params = sbio.get_params(file_path)['data']
 
         # create a shybrid probe object
@@ -47,6 +50,7 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
             nb_channels,
             params['dtype'],
             time_axis=time_axis)
+        
         # load probe file
         self._recording = load_probe_file(recording, params['probe'])
         self._kwargs = {'file_path': str(Path(file_path).absolute())}
@@ -63,7 +67,6 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         return self._recording.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame,
                                           return_scaled=return_scaled)
-
 
     @staticmethod
     def write_recording(recording, save_path, initial_sorting_fn, dtype='float32'):
@@ -101,16 +104,16 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
         save_to_probe_file(recording, probe_fn)
 
         # create parameters file
-        parameters = params_template.format(initial_sorting_fn=initial_sorting_fn,
-                                            data_type=dtype,
-                                            sampling_frequency=str(recording.get_sampling_frequency()),
-                                            byte_ordering='F',
-                                            probe_fn=probe_fn)
+        parameters = dict(clusters=initial_sorting_fn,
+                          data=dict(dtype=dtype,
+                                    fs=str(recording.get_sampling_frequency()),
+                                    order='F',
+                                    probe=probe_fn))
 
         # write parameters file
         parameters_fn = os.path.join(save_path, PARAMETERS_NAME)
         with open(parameters_fn, 'w') as fp:
-            fp.write(parameters)
+            yaml.dump(parameters, fp)
 
 
 class SHYBRIDSortingExtractor(SortingExtractor):

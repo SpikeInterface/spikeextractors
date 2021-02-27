@@ -13,6 +13,7 @@ class SubRecordingExtractor(RecordingExtractor):
         self._renamed_channel_ids = renamed_channel_ids
         self._start_frame = start_frame
         self._end_frame = end_frame
+        self.has_unscaled = self._parent_recording.has_unscaled
         if self._channel_ids is None:
             self._channel_ids = self._parent_recording.get_channel_ids()
         if self._renamed_channel_ids is None:

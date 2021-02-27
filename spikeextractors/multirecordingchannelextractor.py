@@ -14,6 +14,7 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         self._first_recording = recordings[0]
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
         self._num_frames = self._first_recording.get_num_frames()
+        self.has_unscaled = self._first_recording.has_unscaled
 
         # Test if all recording extractors have same sampling frequency
         for i, recording in enumerate(recordings[1:]):
