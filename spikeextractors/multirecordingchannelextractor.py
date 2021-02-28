@@ -1,6 +1,7 @@
 from .recordingextractor import RecordingExtractor
 from .extraction_tools import check_get_traces_args
 import numpy as np
+import warnings
 
 
 # Concatenates the given recordings by channel
@@ -15,6 +16,21 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
         self._num_frames = self._first_recording.get_num_frames()
         self.has_unscaled = self._first_recording.has_unscaled
+
+        use_timestamps = True
+        if np.all([rec._timestamps is not None for rec in self._recordings]):
+            timestamps_0 = self._recordings[0]._timestamps
+            for rec in self._recordings[1:]:
+                timestamps_i = rec._timestamps
+                if not np.allclose(timestamps_0, timestamps_i):
+                    use_timestamps = False
+                    warnings.warn("The recordings have different timestamps! Reset timestamps with the "
+                                  "'set_timestamps() function")
+        elif np.all([rec._timestamps is not None for rec in self._recordings]):
+            warnings.warn("Not all the recordings have timestamps! Reset timestamps with the "
+                          "'set_timestamps() function")
+        else:
+            use_timestamps = False
 
         # Test if all recording extractors have same sampling frequency
         for i, recording in enumerate(recordings[1:]):
@@ -32,6 +48,9 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
                 new_channel_id += 1
 
         RecordingExtractor.__init__(self)
+
+        if use_timestamps:
+            self.copy_timestamps(self._recordings[0])
 
         # set group information for channels if available
         if groups is not None:
@@ -93,6 +112,7 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
 
     def get_sampling_frequency(self):
         return self._sampling_frequency
+
 
 def concatenate_recordings_by_channel(recordings, groups=None):
     '''
