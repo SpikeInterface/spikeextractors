@@ -1,5 +1,4 @@
 from .sortingextractor import SortingExtractor
-from .recordingextractor import RecordingExtractor
 import numpy as np
 from .extraction_tools import check_get_unit_spike_train
 
