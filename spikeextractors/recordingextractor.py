@@ -134,6 +134,17 @@ class RecordingExtractor(ABC, BaseExtractor):
                                                          "number of frames"
         self._timestamps = timestamps
 
+    def copy_timestamps(self, extractor):
+        """This function copies timestamps from another extractor.
+
+        Parameters
+        ----------
+        extractor: BaseExtractor
+            The extractor from which the epochs will be copied
+        """
+        if extractor._timestamps is not None:
+            self.set_timestamps(deepcopy(extractor._timestamps))
+
     def frame_to_time(self, frames):
         """This function converts user-inputted frame indexes to times with units of seconds.
 

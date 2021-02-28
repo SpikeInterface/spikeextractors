@@ -169,18 +169,6 @@ class MaxOneRecordingExtractor(RecordingExtractor):
             if verbose:
                 print("No missing frames found")
 
-    def frame_to_time(self, frames):
-        if self._timestamps is None:
-            return super().frame_to_time(frames)
-        else:
-            return self._timestamps[frames]
-
-    def time_to_frame(self, times):
-        if self._timestamps is None:
-            return super().time_to_frame(times)
-        else:
-            return np.searchsorted(self._timestamps, times).astype('int64')
-
     def _get_frame_numbers(self):
         bitvals = self._signals[-2:, :]
         frame_nos = np.bitwise_or(np.left_shift(bitvals[-1].astype('int64'), 16), bitvals[0])

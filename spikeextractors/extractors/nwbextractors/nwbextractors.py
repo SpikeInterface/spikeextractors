@@ -1137,12 +1137,6 @@ class NwbSortingExtractor(se.SortingExtractor):
             frames = self.time_to_frame(times)
         return frames[(frames > start_frame) & (frames < end_frame)]
 
-    def time_to_frame(self, time):
-        return np.round(time * self.get_sampling_frequency()).astype('int64')
-
-    def frame_to_time(self, frame):
-        return np.round(frame / self.get_sampling_frequency(), 6)
-
     @staticmethod
     def write_units(
             sorting: se.SortingExtractor,

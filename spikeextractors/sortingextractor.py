@@ -240,10 +240,21 @@ class SortingExtractor(ABC, BaseExtractor):
         timestamps: array-like
             The timestamps in seconds for each frame
         """
-        max_frames = np.array([np.max(self.get_units_spike_train(u)) for u in self.get_unit_ids()])
-        assert np.any(max_frames > len(timestamps) - 1), "The length of 'timestamps' should be greater than the maximum" \
-                                                         "spike frame index"
+        max_frames = np.array([np.max(self.get_unit_spike_train(u)) for u in self.get_unit_ids()])
+        assert np.all(max_frames < len(timestamps)), "The length of 'timestamps' should be greater than the maximum " \
+                                                     "spike frame index"
         self._timestamps = timestamps
+
+    def copy_timestamps(self, extractor):
+        """This function copies timestamps from another extractor.
+
+        Parameters
+        ----------
+        extractor: BaseExtractor
+            The extractor from which the epochs will be copied
+        """
+        if extractor._timestamps is not None:
+            self.set_timestamps(deepcopy(extractor._timestamps))
 
     def frame_to_time(self, frames):
         """This function converts user-inputted frame indexes to times with units of seconds.
