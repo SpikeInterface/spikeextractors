@@ -27,7 +27,7 @@ class BaseExtractor:
         self._memmap_files = []
         self._features = {}
         self._epochs = {}
-        self._timestamps = None
+        self._times = None
         self.is_dumpable = True
         self.id = np.random.randint(low=0, high=9223372036854775807, dtype='int64')
 
@@ -192,8 +192,8 @@ class BaseExtractor:
         if include_features:
             if len(self._features.keys()) > 0:
                 dump_dict['features'] = self._features
-        # include timestamps
-        dump_dict["timestamps"] = self._timestamps
+        # include times
+        dump_dict["times"] = self._times
 
         file_path.write_bytes(pickle.dumps(dump_dict))
 
@@ -478,8 +478,8 @@ class BaseExtractor:
             extractor._properties = d['properties']
         if 'features' in d.keys():
             extractor._features = d['features']
-        if 'timestamps' in d.keys():
-            extractor._timestamps = d['timestamps']
+        if 'times' in d.keys():
+            extractor._times = d['times']
         return extractor
 
     @staticmethod

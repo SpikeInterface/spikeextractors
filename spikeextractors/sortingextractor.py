@@ -232,29 +232,29 @@ class SortingExtractor(ABC, BaseExtractor):
         else:
             raise ValueError(str(unit_id) + " must be an int")
 
-    def set_timestamps(self, timestamps):
-        """This function sets the sorting timestamps to convert spike trains to seconds
+    def set_times(self, times):
+        """This function sets the sorting times to convert spike trains to seconds
 
         Parameters
         ----------
-        timestamps: array-like
-            The timestamps in seconds for each frame
+        times: array-like
+            The times in seconds for each frame
         """
         max_frames = np.array([np.max(self.get_unit_spike_train(u)) for u in self.get_unit_ids()])
-        assert np.all(max_frames < len(timestamps)), "The length of 'timestamps' should be greater than the maximum " \
+        assert np.all(max_frames < len(times)), "The length of 'times' should be greater than the maximum " \
                                                      "spike frame index"
-        self._timestamps = timestamps
+        self._times = times.astype('float64')
 
-    def copy_timestamps(self, extractor):
-        """This function copies timestamps from another extractor.
+    def copy_times(self, extractor):
+        """This function copies times from another extractor.
 
         Parameters
         ----------
         extractor: BaseExtractor
             The extractor from which the epochs will be copied
         """
-        if extractor._timestamps is not None:
-            self.set_timestamps(deepcopy(extractor._timestamps))
+        if extractor._times is not None:
+            self.set_times(deepcopy(extractor._times))
 
     def frame_to_time(self, frames):
         """This function converts user-inputted frame indexes to times with units of seconds.
@@ -270,10 +270,10 @@ class SortingExtractor(ABC, BaseExtractor):
             The corresponding times in seconds
         """
         # Default implementation
-        if self._timestamps is None:
+        if self._times is None:
             return np.round(frames / self.get_sampling_frequency(), 6)
         else:
-            return self._timestamps[frames]
+            return self._times[frames]
 
     def time_to_frame(self, times):
         """This function converts a user-inputted times (in seconds) to a frame indexes.
@@ -289,10 +289,10 @@ class SortingExtractor(ABC, BaseExtractor):
             The corresponding frame indexes
         """
         # Default implementation
-        if self._timestamps is None:
+        if self._times is None:
             return np.round(times * self.get_sampling_frequency()).astype('int64')
         else:
-            return np.searchsorted(self._timestamps, times).astype('int64')
+            return np.searchsorted(self._times, times).astype('int64')
 
     def clear_unit_spike_features(self, unit_id, feature_name):
         """This function clears the unit spikes features for the given feature.

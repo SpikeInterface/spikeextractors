@@ -46,8 +46,8 @@ class TestExtractors(unittest.TestCase):
 
         RX2 = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
         RX2.copy_epochs(RX)
-        timestamps = np.arange(RX.get_num_frames()) / RX.get_sampling_frequency() + 5
-        RX2.set_timestamps(timestamps)
+        times = np.arange(RX.get_num_frames()) / RX.get_sampling_frequency() + 5
+        RX2.set_times(times)
 
         RX3 = se.NumpyRecordingExtractor(timeseries=X, sampling_frequency=sampling_frequency, geom=geom)
 
@@ -72,7 +72,7 @@ class TestExtractors(unittest.TestCase):
         SX2.set_unit_property(unit_id=4, property_name='stability', value=80)
         SX2.set_unit_spike_features(unit_id=3, feature_name='widths', value=np.asarray([3] * spike_times2[0]))
         SX2.copy_epochs(SX)
-        SX2.copy_timestamps(RX2)
+        SX2.copy_times(RX2)
         for i, unit_id in enumerate(SX2.get_unit_ids()):
             SX2.set_unit_property(unit_id=unit_id, property_name='shared_unit_prop', value=i)
             SX2.set_unit_spike_features(
@@ -105,7 +105,7 @@ class TestExtractors(unittest.TestCase):
             ttls=ttls,
             epochs_info=((0, 10), (10, 20)),
             geom=geom,
-            timestamps=timestamps
+            times=times
         )
 
         return (RX, RX2, RX3, SX, SX2, SX3, example_info)
@@ -164,7 +164,7 @@ class TestExtractors(unittest.TestCase):
                          tuple(self.SX2.get_epoch_info("epoch2").values()))
 
         self.assertTrue(np.array_equal(self.RX2.frame_to_time(np.arange(self.RX2.get_num_frames())),
-                                       self.example_info['timestamps']))
+                                       self.example_info['times']))
         self.assertTrue(np.array_equal(self.SX2.get_unit_spike_train(3) / self.SX2.get_sampling_frequency() + 5,
                                        self.SX2.frame_to_time(self.SX2.get_unit_spike_train(3))))
 
@@ -389,10 +389,10 @@ class TestExtractors(unittest.TestCase):
             groups=[1, 2, 3]
         )
         RX_sub = se.SubRecordingExtractor(RX_multi, channel_ids=[4, 5, 6, 7], renamed_channel_ids=[0, 1, 2, 3])
-        # RX2 has timestamps
-        check_recordings_equal(self.RX2, RX_sub, check_timestamps=False)
+        # RX2 has times
+        check_recordings_equal(self.RX2, RX_sub, check_times=False)
         check_recordings_equal(self.RX, RX_multi.recordings[0])
-        check_recordings_equal(self.RX2, RX_multi.recordings[1], check_timestamps=False)
+        check_recordings_equal(self.RX2, RX_multi.recordings[1], check_times=False)
         check_recordings_equal(self.RX3, RX_multi.recordings[2])
         self.assertEqual([2, 2, 2, 2], list(RX_sub.get_channel_groups()))
         self.assertEqual(12, len(RX_multi.get_channel_ids()))
@@ -402,9 +402,9 @@ class TestExtractors(unittest.TestCase):
             groups=[1, 2, 3]
         )
         RX_sub = se.SubRecordingExtractor(RX_multi, channel_ids=[4, 5, 6, 7], renamed_channel_ids=[0, 1, 2, 3])
-        check_recordings_equal(self.RX2, RX_sub, check_timestamps=False)
+        check_recordings_equal(self.RX2, RX_sub, check_times=False)
         check_recordings_equal(self.RX2, RX_multi.recordings[0])
-        check_recordings_equal(self.RX2, RX_multi.recordings[1], check_timestamps=False)
+        check_recordings_equal(self.RX2, RX_multi.recordings[1], check_times=False)
         check_recordings_equal(self.RX2, RX_multi.recordings[2])
         self.assertTrue(np.array_equal([2, 2, 2, 2], list(RX_sub.get_channel_groups())))
         self.assertTrue(12 == len(RX_multi.get_channel_ids()))

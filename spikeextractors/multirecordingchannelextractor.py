@@ -17,20 +17,20 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         self._num_frames = self._first_recording.get_num_frames()
         self.has_unscaled = self._first_recording.has_unscaled
 
-        use_timestamps = True
-        if np.all([rec._timestamps is not None for rec in self._recordings]):
-            timestamps_0 = self._recordings[0]._timestamps
+        use_times = True
+        if np.all([rec._times is not None for rec in self._recordings]):
+            times_0 = self._recordings[0]._times
             for rec in self._recordings[1:]:
-                timestamps_i = rec._timestamps
-                if not np.allclose(timestamps_0, timestamps_i):
-                    use_timestamps = False
-                    warnings.warn("The recordings have different timestamps! Reset timestamps with the "
-                                  "'set_timestamps() function")
-        elif np.all([rec._timestamps is not None for rec in self._recordings]):
-            warnings.warn("Not all the recordings have timestamps! Reset timestamps with the "
-                          "'set_timestamps() function")
+                times_i = rec._times
+                if not np.allclose(times_0, times_i):
+                    use_times = False
+                    warnings.warn("The recordings have different times! Reset times with the "
+                                  "'set_times() function")
+        elif np.all([rec._times is not None for rec in self._recordings]):
+            warnings.warn("Not all the recordings have times! Reset times with the "
+                          "'set_times() function")
         else:
-            use_timestamps = False
+            use_times = False
 
         # Test if all recording extractors have same sampling frequency
         for i, recording in enumerate(recordings[1:]):
@@ -49,8 +49,8 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
 
         RecordingExtractor.__init__(self)
 
-        if use_timestamps:
-            self.copy_timestamps(self._recordings[0])
+        if use_times:
+            self.copy_times(self._recordings[0])
 
         # set group information for channels if available
         if groups is not None:

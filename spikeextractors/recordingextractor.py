@@ -122,28 +122,28 @@ class RecordingExtractor(ABC, BaseExtractor):
         return self.get_traces(channel_ids=[self.get_channel_ids()[0]], start_frame=0, end_frame=1,
                                return_scaled=return_scaled).dtype
 
-    def set_timestamps(self, timestamps):
-        """This function sets the recording timestamps (in seconds) for each frame
+    def set_times(self, times):
+        """This function sets the recording times (in seconds) for each frame
 
         Parameters
         ----------
-        timestamps: array-like
-            The timestamps in seconds for each frame
+        times: array-like
+            The times in seconds for each frame
         """
-        assert len(timestamps) == self.get_num_frames(), "'timestamps' should have the same length of the " \
+        assert len(times) == self.get_num_frames(), "'times' should have the same length of the " \
                                                          "number of frames"
-        self._timestamps = timestamps
+        self._times = times.astype('float64')
 
-    def copy_timestamps(self, extractor):
-        """This function copies timestamps from another extractor.
+    def copy_times(self, extractor):
+        """This function copies times from another extractor.
 
         Parameters
         ----------
         extractor: BaseExtractor
             The extractor from which the epochs will be copied
         """
-        if extractor._timestamps is not None:
-            self.set_timestamps(deepcopy(extractor._timestamps))
+        if extractor._times is not None:
+            self.set_times(deepcopy(extractor._times))
 
     def frame_to_time(self, frames):
         """This function converts user-inputted frame indexes to times with units of seconds.
@@ -159,10 +159,10 @@ class RecordingExtractor(ABC, BaseExtractor):
             The corresponding times in seconds
         """
         # Default implementation
-        if self._timestamps is None:
+        if self._times is None:
             return np.round(frames / self.get_sampling_frequency(), 6)
         else:
-            return self._timestamps[frames]
+            return self._times[frames]
 
     def time_to_frame(self, times):
         """This function converts a user-inputted times (in seconds) to a frame indexes.
@@ -178,10 +178,10 @@ class RecordingExtractor(ABC, BaseExtractor):
             The corresponding frame indexes
         """
         # Default implementation
-        if self._timestamps is None:
+        if self._times is None:
             return np.round(times * self.get_sampling_frequency()).astype('int64')
         else:
-            return np.searchsorted(self._timestamps, times).astype('int64')
+            return np.searchsorted(self._times, times).astype('int64')
 
     def get_snippets(self, reference_frames, snippet_len, channel_ids=None, return_scaled=True):
         """This function returns data snippets from the given channels that

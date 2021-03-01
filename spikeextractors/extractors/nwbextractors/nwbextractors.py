@@ -626,7 +626,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             nwbfile=None,
             metadata: dict = None,
             buffer_mb: int = 500,
-            use_timestamps: bool = False,
+            use_times: bool = False,
             write_as_lfp: bool = False,
             write_scaled: bool = False
     ):
@@ -648,8 +648,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         buffer_mb: int (optional, defaults to 500MB)
             maximum amount of memory (in MB) to use per iteration of the
             DataChunkIterator (requires traces to be memmap objects)
-        use_timestamps: bool (optional, defaults to False)
-            If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
+        use_times: bool (optional, defaults to False)
+            If True, the times are saved to the nwb file using recording.frame_to_time(). If False (defualut),
             the sampling rate is used.
         write_as_lfp: bool (optional, defaults to False)
             If True, writes the traces under a processing LFP module in the NWBFile instead of acquisition.
@@ -754,7 +754,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             channel_conversion=channel_conversion,
             comments="Generated from SpikeInterface::NwbRecordingExtractor"
         )
-        if not use_timestamps:
+        if not use_times:
             eseries_kwargs.update(
                 starting_time=recording.frame_to_time(0),
                 rate=float(recording.get_sampling_frequency())
@@ -822,7 +822,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             recording: se.RecordingExtractor,
             nwbfile=None,
             buffer_mb: int = 500,
-            use_timestamps: bool = False,
+            use_times: bool = False,
             metadata: dict = None,
             write_as_lfp: bool = False,
             write_scaled: bool = False
@@ -840,8 +840,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         buffer_mb: int (optional, defaults to 500MB)
             maximum amount of memory (in MB) to use per iteration of the
             DataChunkIterator (requires traces to be memmap objects)
-        use_timestamps: bool
-            If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
+        use_times: bool
+            If True, the times are saved to the nwb file using recording.frame_to_time(). If False (defualut),
             the sampling rate is used.
         metadata: dict
             metadata info for constructing the nwb file (optional).
@@ -875,7 +875,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             recording=recording,
             nwbfile=nwbfile,
             buffer_mb=buffer_mb,
-            use_timestamps=use_timestamps,
+            use_times=use_times,
             metadata=metadata,
             write_as_lfp=write_as_lfp,
             write_scaled=write_scaled
@@ -893,7 +893,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             overwrite: bool = False,
             nwbfile=None,
             buffer_mb: int = 500,
-            use_timestamps: bool = False,
+            use_times: bool = False,
             metadata: dict = None,
             write_as_lfp: bool = False,
             write_scaled: bool = False
@@ -919,8 +919,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         buffer_mb: int (optional, defaults to 500MB)
             maximum amount of memory (in MB) to use per iteration of the
             DataChunkIterator (requires traces to be memmap objects)
-        use_timestamps: bool
-            If True, the timestamps are saved to the nwb file using recording.frame_to_time(). If False (defualut),
+        use_times: bool
+            If True, the times are saved to the nwb file using recording.frame_to_time(). If False (defualut),
             the sampling rate is used.
         metadata: dict
             metadata info for constructing the nwb file (optional). Should be
@@ -985,7 +985,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     recording=recording,
                     nwbfile=nwbfile,
                     metadata=metadata,
-                    use_timestamps=use_timestamps,
+                    use_times=use_times,
                     write_as_lfp=write_as_lfp,
                     write_scaled=write_scaled
                 )
@@ -996,7 +996,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             se.NwbRecordingExtractor.add_all_to_nwbfile(
                 recording=recording,
                 nwbfile=nwbfile,
-                use_timestamps=use_timestamps,
+                use_times=use_times,
                 metadata=metadata,
                 write_as_lfp=write_as_lfp,
                 write_scaled=write_scaled
@@ -1144,7 +1144,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             property_descriptions: Optional[dict] = None,
             skip_properties: Optional[List[str]] = None,
             skip_features: Optional[List[str]] = None,
-            timestamps: Optional[ArrayType] = None
+            times: Optional[ArrayType] = None
     ):
         """Auxilliary function for write_sorting."""
         unit_ids = sorting.get_unit_ids()
@@ -1222,11 +1222,11 @@ class NwbSortingExtractor(se.SortingExtractor):
             for unit_id in unit_ids:
                 unit_kwargs = dict()
                 # spike trains withinin the SortingExtractor object are not scaled by sampling frequency
-                if timestamps is not None:
+                if times is not None:
                     spike_train_frames = sorting.get_unit_spike_train(unit_id=unit_id)
-                    assert spike_train_frames[-1] < len(timestamps), "Number of 'timestamps' differs from number of " \
-                                                                     "'frames'!"
-                    spkt = np.array(timestamps)[spike_train_frames]
+                    assert spike_train_frames[-1] < len(times), "Number of 'times' differs from number of " \
+                                                                "'frames'!"
+                    spkt = np.array(times)[spike_train_frames]
                 else:
                     spkt = sorting.get_unit_spike_train(unit_id=unit_id) / fs
                 for pr in write_properties:
@@ -1325,7 +1325,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             property_descriptions: Optional[dict] = None,
             skip_properties: Optional[List[str]] = None,
             skip_features: Optional[List[str]] = None,
-            timestamps: ArrayType = None,
+            times: ArrayType = None,
             **nwbfile_kwargs
         ):
         """
@@ -1353,9 +1353,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             Each string in this list that matches a unit property will not be written to the NWBFile.
         skip_features: list of str
             Each string in this list that matches a spike feature will not be written to the NWBFile.
-        timestamps: array-like
-            If provided, the timestamps in seconds or the assiciated RecordingExtractor to be saved as the unit
-            timestamps. (default=None)
+        times: array-like
+            If provided, the times in seconds or the assiciated RecordingExtractor to be saved as the unit
+            times. (default=None)
         nwbfile_kwargs: dict
             Information for constructing the nwb file (optional).
             Only used if no nwbfile exists at the save_path, and no nwbfile
@@ -1390,7 +1390,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     property_descriptions=property_descriptions,
                     skip_properties=skip_properties,
                     skip_features=skip_features,
-                    timestamps=timestamps
+                    times=times
                 )
                 io.write(nwbfile)
         else:
@@ -1400,5 +1400,5 @@ class NwbSortingExtractor(se.SortingExtractor):
                     property_descriptions=property_descriptions,
                     skip_properties=skip_properties,
                     skip_features=skip_features,
-                    timestamps=timestamps
+                    times=times
             )

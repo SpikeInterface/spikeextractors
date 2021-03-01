@@ -8,7 +8,7 @@ from .extraction_tools import load_extractor_from_pickle, load_extractor_from_di
     load_extractor_from_json
 
 
-def check_recordings_equal(RX1, RX2, force_dtype=None, check_timestamps=True):
+def check_recordings_equal(RX1, RX2, force_dtype=None, check_times=True):
     N = RX1.get_num_frames()
     # get_channel_ids
     assert np.allclose(RX1.get_channel_ids(), RX2.get_channel_ids())
@@ -32,7 +32,7 @@ def check_recordings_equal(RX1, RX2, force_dtype=None, check_timestamps=True):
     else:
         assert np.allclose(RX1.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef).astype(force_dtype),
                            RX2.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef).astype(force_dtype))
-    if check_timestamps:
+    if check_times:
         for f in range(0, RX1.get_num_frames(), 10):
             assert np.isclose(RX1.frame_to_time(f), RX2.frame_to_time(f))
             assert np.isclose(RX1.time_to_frame(RX1.frame_to_time(f)), RX2.time_to_frame(RX2.frame_to_time(f)))
