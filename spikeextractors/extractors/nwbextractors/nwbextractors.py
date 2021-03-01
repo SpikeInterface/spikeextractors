@@ -1144,7 +1144,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             property_descriptions: Optional[dict] = None,
             skip_properties: Optional[List[str]] = None,
             skip_features: Optional[List[str]] = None,
-            times: Optional[ArrayType] = None
+            use_times: bool = False,
     ):
         """Auxilliary function for write_sorting."""
         unit_ids = sorting.get_unit_ids()
@@ -1222,11 +1222,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             for unit_id in unit_ids:
                 unit_kwargs = dict()
                 # spike trains withinin the SortingExtractor object are not scaled by sampling frequency
-                if times is not None:
+                if use_times and sorting._times is not None:
                     spike_train_frames = sorting.get_unit_spike_train(unit_id=unit_id)
-                    assert spike_train_frames[-1] < len(times), "Number of 'times' differs from number of " \
-                                                                "'frames'!"
-                    spkt = np.array(times)[spike_train_frames]
+                    spkt = sorting.frame_to_time(spike_train_frames)
                 else:
                     spkt = sorting.get_unit_spike_train(unit_id=unit_id) / fs
                 for pr in write_properties:
@@ -1325,7 +1323,7 @@ class NwbSortingExtractor(se.SortingExtractor):
             property_descriptions: Optional[dict] = None,
             skip_properties: Optional[List[str]] = None,
             skip_features: Optional[List[str]] = None,
-            times: ArrayType = None,
+            use_times: bool = False,
             **nwbfile_kwargs
         ):
         """
@@ -1353,9 +1351,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             Each string in this list that matches a unit property will not be written to the NWBFile.
         skip_features: list of str
             Each string in this list that matches a spike feature will not be written to the NWBFile.
-        times: array-like
-            If provided, the times in seconds or the assiciated RecordingExtractor to be saved as the unit
-            times. (default=None)
+        use_times: bool (optional, defaults to False)
+            If True, the times are saved to the nwb file using recording.frame_to_time(). If False (defualut),
+            the sampling rate is used.
         nwbfile_kwargs: dict
             Information for constructing the nwb file (optional).
             Only used if no nwbfile exists at the save_path, and no nwbfile
@@ -1390,7 +1388,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     property_descriptions=property_descriptions,
                     skip_properties=skip_properties,
                     skip_features=skip_features,
-                    times=times
+                    use_times=use_times
                 )
                 io.write(nwbfile)
         else:
@@ -1400,5 +1398,5 @@ class NwbSortingExtractor(se.SortingExtractor):
                     property_descriptions=property_descriptions,
                     skip_properties=skip_properties,
                     skip_features=skip_features,
-                    times=times
+                    use_times=use_times
             )
