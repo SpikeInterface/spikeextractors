@@ -536,10 +536,12 @@ class TestExtractors(unittest.TestCase):
 
         # Test for handling skip_features argument
         se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1, overwrite=True)
+        # SX2 has timestamps, so loading it back from Nwb will not recover the same spike frames. USe use_times=False
         se.NwbSortingExtractor.write_sorting(
             sorting=self.SX2,
             save_path=path1,
-            skip_features=['widths']
+            skip_features=['widths'],
+            use_times=False
         )
         SX_nwb = se.NwbSortingExtractor(path1)
         assert 'widths' not in SX_nwb.get_shared_unit_spike_feature_names()
