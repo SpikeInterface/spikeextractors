@@ -627,7 +627,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     description=descr
                 )
 
-    # TODO: do not save gain and offset when write_scaled is True!
     @staticmethod
     def add_electrical_series(
             recording: se.RecordingExtractor,
