@@ -695,8 +695,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 and isinstance(metadata['Ecephys']['ElectricalSeries'], dict)) \
                or ('LFPElectricalSeries' in metadata['Ecephys']
                    and isinstance(metadata['Ecephys']['LFPElectricalSeries'], dict)), \
-            "Expected either metadata['Ecephys']['ElectricalSeries'] or metadata['Ecephys']['LFPElectricalSeries'] " \
-            "to be a dictionary!"
+               ("Expected either metadata['Ecephys']['ElectricalSeries'] or "
+                "metadata['Ecephys']['LFPElectricalSeries'] to be a dictionary!")
 
         if not write_as_lfp:
             es_name = metadata['Ecephys']['ElectricalSeries'].get('name', raw_defaults['name'])
@@ -719,18 +719,34 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             description="electrode_table_region"
         )
 
-        # channels gains - for RecordingExtractor, these are values to cast traces to uV
-        # for nwb, the conversions (gains) cast the data to Volts
-        # To get traces in Volts = data*channel_conversion*conversion
-        gains = recording.get_channel_gains()
-        if len(np.unique(gains)) == 1:  # if all gains are equal
-            scalar_conversion = np.unique(gains)[0] * 1e-6
-            channel_conversion = None
-        else:
-            scalar_conversion = 1.
-            channel_conversion = gains * 1e-6
+        eseries_kwargs = dict(
+            name=es_name,
+            electrodes=electrode_table_region,
+            comments="Generated from SpikeInterface::NwbRecordingExtractor"
+        )
 
-        if isinstance(recording.get_traces(end_frame=5, return_scaled=write_scaled), np.memmap):
+        # channels gains - for RecordingExtractor, these are values to cast traces to uV.
+        # For nwb, the conversions (gains) cast the data to Volts.
+        # To get traces in Volts we take data*channel_conversion*conversion.
+        channel_conversion = recording.get_channel_gains()
+        channel_offset = recording.get_channel_offsets()
+        unsigned_coercion = channel_offset / channel_conversion
+        if not np.all([x.is_integer() for x in unsigned_coercion]):
+            raise NotImplementedError(
+                "Unable to coerce underlying unsigned data type to signed type, which is currently required for NWB "
+                "Schema v2.2.5! Please specify 'write_scaled=True'."
+            )
+        if write_scaled:
+            eseries_kwargs.update(conversion=1e-6)
+        else:
+            if len(np.unique(channel_conversion)) == 1:  # if all gains are equal
+                eseries_kwargs.update(conversion=channel_conversion[0] * 1e-6)
+            else:
+                eseries_kwargs.update(conversion=1e-6)
+                eseries_kwargs.update(channel_conversion=channel_conversion)
+
+        if isinstance(recording.get_traces(end_frame=5, return_scaled=write_scaled), np.memmap) \
+                and np.all(channel_offset == 0):
             n_bytes = np.dtype(recording.get_dtype()).itemsize
             buffer_size = int(buffer_mb * 1e6) // (recording.get_num_channels() * n_bytes)
             ephys_data = DataChunkIterator(
@@ -738,29 +754,22 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 buffer_size=buffer_size
             )
         else:
-            def data_generator(recording, channels_ids):
-                # generates data chunks for iterator
+            def data_generator(recording, channels_ids, unsigned_coercion):
                 for id in channels_ids:
-                    data = recording.get_traces(channel_ids=[id], return_scaled=write_scaled).flatten()
-                    yield data
-
+                    data = recording.get_traces(channel_ids=[id], return_scaled=write_scaled) \
+                        + unsigned_coercion
+                    yield data.flatten()
             ephys_data = DataChunkIterator(
                 data=data_generator(
                     recording=recording,
-                    channels_ids=channel_ids
+                    channels_ids=channel_ids,
+                    unsigned_coercion=unsigned_coercion
                 ),
                 iter_axis=1,  # nwb standard is time as zero axis
                 maxshape=(recording.get_num_frames(), recording.get_num_channels())
             )
 
-        eseries_kwargs = dict(
-            name=es_name,
-            data=H5DataIO(ephys_data, compression="gzip"),
-            electrodes=electrode_table_region,
-            conversion=scalar_conversion,
-            channel_conversion=channel_conversion,
-            comments="Generated from SpikeInterface::NwbRecordingExtractor"
-        )
+        eseries_kwargs.update(data=H5DataIO(ephys_data, compression="gzip"))
         if not use_times:
             eseries_kwargs.update(
                 starting_time=recording.frame_to_time(0),
