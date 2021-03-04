@@ -4,7 +4,7 @@ from pathlib import Path
 
 from spikeextractors import RecordingExtractor
 from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args
-
+import re
 
 class SpikeGLXRecordingExtractor(RecordingExtractor):
     """
@@ -34,10 +34,9 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         self._basepath = self._npxfile.parents[0]
 
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
-        assert 'imec0.ap' in self._npxfile.name or 'imec0.lf' in self._npxfile.name or \
-               'imec.ap' in self._npxfile.name or 'imec.lf' in self._npxfile.name or 'nidq' in self._npxfile.name, \
+        assert re.search(r'imec[0-9]*.(ap|lf){1}.bin$', self._npxfile.name) or  'nidq' in self._npxfile.name, \
                "'file_path' can be an imec.ap, imec.lf, imec0.ap, imec0.lf, or nidq file"
-        assert 'bin' in self._npxfile.name, "The 'npx_file should be either the 'ap', 'lf', or 'nidq' bin file."
+           
         if 'ap.bin' in str(self._npxfile):
             rec_type = "ap"
             self.is_filtered = True
