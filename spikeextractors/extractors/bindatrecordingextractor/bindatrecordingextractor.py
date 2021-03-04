@@ -133,25 +133,6 @@ class BinDatRecordingExtractor(RecordingExtractor):
             traces = self._timeseries[channel_ids, start_frame:end_frame]
         return traces
 
-        # # scaling
-        # if self.has_unscaled and return_scaled:
-        #     channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
-        #     gains = self.get_channel_gains()[channel_idxs, None]
-        #     offsets = self.get_channel_offsets()[channel_idxs, None]
-        #     recordings = recordings.astype(float) * gains - offsets
-
-        # if 'gain' in self.get_shared_channel_property_names() and return_scaled:
-        #     channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
-        #     gains = np.array(self.get_channel_gains(channel_ids=channel_ids))[:, None]
-        #     offsets = self._channel_offset[channel_idxs, None]
-        #     # uint needs to be converted to float in this case!
-        #     if self._dtype.startswith('uint'):
-        #         exp_idx = self._dtype.find('int') + 3
-        #         exp = int(self._dtype[exp_idx:])
-        #         recordings = recordings.astype('float32') - 2 ** (exp - 1)
-        #     recordings = recordings * gains - offsets
-
-
     @staticmethod
     def write_recording(
         recording: RecordingExtractor,

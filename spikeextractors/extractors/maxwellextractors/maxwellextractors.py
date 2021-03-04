@@ -193,12 +193,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
                 traces = self._signals[np.array(channel_ids), start_frame:end_frame]
         else:
             traces = self._signals[np.array(channel_ids), start_frame:end_frame]
-
         return traces
-        # if return_scaled:
-        #     return (traces * self._lsb).astype("float32")
-        # else:
-        #     return traces
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
@@ -399,10 +394,6 @@ class MaxTwoRecordingExtractor(RecordingExtractor):
         else:
             traces = self._signals[np.array(channel_idxs), start_frame:end_frame]
         return traces
-        # if return_scaled:
-        #     return (traces * self._lsb).astype("float32")
-        # else:
-        #     return traces
 
 
 class MaxTwoSortingExtractor(SortingExtractor):

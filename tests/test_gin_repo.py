@@ -9,7 +9,7 @@ from parameterized import parameterized
 import spikeextractors as se
 from spikeextractors.testing import check_recordings_equal, check_sortings_equal
 
-run_local = True
+run_local = False
 test_nwb = True
 test_caching = True
 
