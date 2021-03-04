@@ -63,8 +63,8 @@ class IntanRecordingExtractor(RecordingExtractor):
         self._fs = float(self._recording.sample_rate.rescale('Hz').magnitude)
 
         for i, ch in enumerate(self._analog_channels):
-            self.set_channel_property(i, 'gain', ch['gain'])
-            self.set_channel_property(i, 'offset', ch['offset'])
+            self.set_channel_gains(channel_ids=i, gains=ch['gain'])
+            self.set_channel_offsets(channel_ids=i, offsets=ch['offset'])
 
         self._kwargs = dict(file_path=str(Path(file_path).absolute()), verbose=verbose)
 
@@ -84,7 +84,6 @@ class IntanRecordingExtractor(RecordingExtractor):
         start_frame: Optional[int] = None,
         end_frame: Optional[int] = None,
         return_scaled: bool = True,
-        dtype: Optional[DtypeType] = None
     ):
         """
         This function extracts and returns a trace from the recorded data from the
@@ -115,32 +114,19 @@ class IntanRecordingExtractor(RecordingExtractor):
         return_scaled : bool, optional
             If True, traces are returned after scaling (using gain/offset). If False, the raw traces are returned.
             Defaults to True.
-        dtype : dtype, optional
-            Any of 'float', 'int16', or 'uint16'. return_scaled must be False to return 'int16' or 'uint16'.
+
         Returns
         ----------
         traces: numpy.ndarray
             A 2D array that contains all of the traces from each channel.
             Dimensions are: (num_channels x num_frames)
         """
-        assert dtype in ['float', 'int16', 'uint16', None], "'dtype' must be either 'float', 'int16', or 'uint16'!"
-
-        if return_scaled:
-            assert dtype not in ['int16', 'uint16'], "To access 'int16' or 'uint16' data, set return_scaled=False!"
-            pyintan_dtype = 'float'
-        else:
-            assert dtype != 'float', "With return_scaled=False, please specify dtype as either 'int16' or 'uint16'!"
-            if dtype is None:
-                pyintan_dtype = 'uint16'
-            else:
-                pyintan_dtype = dtype
-
         channel_idxs = np.array([self._channel_ids.index(ch) for ch in channel_ids])
         return self._recording._read_analog(
             channels=self._analog_channels[channel_idxs],
             i_start=start_frame,
             i_stop=end_frame,
-            dtype=pyintan_dtype
+            dtype="uint16"
         ).T
 
     @check_get_ttl_args

@@ -18,9 +18,8 @@ class RecordingExtractor(ABC, BaseExtractor):
 
     def __init__(self):
         BaseExtractor.__init__(self)
-        self._key_properties = {'group': None, 'location': None}
+        self._key_properties = {'group': None, 'location': None, 'gain': None, 'offset': None}
         self.is_filtered = False
-        # Set default values for location and group properties
 
     @abstractmethod
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
@@ -131,7 +130,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             The times in seconds for each frame
         """
         assert len(times) == self.get_num_frames(), "'times' should have the same length of the " \
-                                                         "number of frames"
+                                                    "number of frames"
         self._times = times.astype('float64')
 
     def copy_times(self, extractor):
@@ -250,7 +249,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         return snippets
 
     def set_channel_locations(self, locations, channel_ids=None):
-        """This function sets the location properties of each specified channel
+        """This function sets the location key properties of each specified channel
         id with the corresponding locations of the passed in locations list.
 
         Parameters
@@ -265,7 +264,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         if isinstance(channel_ids, (int, np.integer)):
             channel_ids = [channel_ids]
             locations = [locations]
-        #Only None upon initialization
+        # Only None upon initialization
         if self._key_properties['location'] is None:
             default_locations = np.empty((self.get_num_channels(), 3), dtype='float')
             default_locations[:] = np.nan
@@ -287,7 +286,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             raise ValueError("channel_ids and locations must have same length")
 
     def get_channel_locations(self, channel_ids=None, locations_2d=True):
-        """This function returns the location of each channel specifed by
+        """This function returns the location of each channel specified by
         channel_ids
 
         Parameters
@@ -308,7 +307,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         if isinstance(channel_ids, (int, np.integer)):
             channel_ids = [channel_ids]
         locations = self._key_properties['location']
-        #Only None upon initialization
+        # Only None upon initialization
         if locations is None:
             locations = np.empty((self.get_num_channels(), 3), dtype='float')
             locations[:] = np.nan
@@ -320,7 +319,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         return locations[channel_idxs]
 
     def clear_channel_locations(self, channel_ids=None):
-        """This function clears the location of each channel specifed by
+        """This function clears the location of each channel specified by
         channel_ids.
 
         Parameters
@@ -332,12 +331,12 @@ class RecordingExtractor(ABC, BaseExtractor):
             channel_ids = list(self.get_channel_ids())
         if isinstance(channel_ids, (int, np.integer)):
             channel_ids = [channel_ids]
-        #Reset to default locations (NaN)
+        # Reset to default locations (NaN)
         default_locations =  np.array([[np.nan, np.nan, np.nan] for i in range(len(channel_ids))])
         self.set_channel_locations(default_locations, channel_ids)
 
     def set_channel_groups(self, groups, channel_ids=None):
-        """This function sets the group property of each specified channel
+        """This function sets the group key property of each specified channel
         id with the corresponding group of the passed in groups list.
 
         Parameters
@@ -353,7 +352,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             channel_ids = [channel_ids]
         if isinstance(groups, (int, np.integer)):
             groups = [groups]
-        #Only None upon initialization
+        # Only None upon initialization
         if self._key_properties['group'] is None:
             self._key_properties['group'] = np.zeros(self.get_num_channels(), dtype='int')
         if len(channel_ids) == len(groups):
@@ -367,7 +366,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             raise ValueError("channel_ids and groups must have same length")
 
     def get_channel_groups(self, channel_ids=None):
-        """This function returns the group of each channel specifed by
+        """This function returns the group of each channel specified by
         channel_ids
 
         Parameters
@@ -378,7 +377,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         Returns
         ----------
         groups: array_like
-            Returns a list of corresonding groups (ints) for the given
+            Returns a list of corresponding groups (ints) for the given
             channel_ids
         """
         if channel_ids is None:
@@ -386,7 +385,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         if isinstance(channel_ids, (int, np.integer)):
             channel_ids = [channel_ids]
         groups = self._key_properties['group']
-        #Only None upon initialization
+        # Only None upon initialization
         if groups is None:
             groups = np.zeros(self.get_num_channels(), dtype='int')
             self._key_properties['group'] = groups
@@ -395,7 +394,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         return groups[channel_idxs]
 
     def clear_channel_groups(self, channel_ids=None):
-        """This function clears the group of each channel specifed by
+        """This function clears the group of each channel specified by
         channel_ids
 
         Parameters
@@ -407,12 +406,12 @@ class RecordingExtractor(ABC, BaseExtractor):
             channel_ids = list(self.get_channel_ids())
         if isinstance(channel_ids, (int, np.integer)):
             channel_ids = [channel_ids]
-        #Reset to default groups (0)
+        # Reset to default groups (0)
         default_groups = [0] * len(channel_ids)
         self.set_channel_groups(default_groups, channel_ids)
 
     def set_channel_gains(self, gains, channel_ids=None):
-        """This function sets the gain property of each specified channel
+        """This function sets the gain key property of each specified channel
         id with the corresponding group of the passed in gains float/list.
 
         Parameters
@@ -425,24 +424,25 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(gains, (int, np.integer, float, np.float64)):
-            gain = float(gains)
+        if isinstance(channel_ids, (int, np.integer)):
+            channel_ids = [channel_ids]
+        if isinstance(gains, (int, np.integer, float)):
+            gains = [gains] * len(channel_ids)
+        # Only None upon initialization
+        if self._key_properties['gain'] is None:
+            self._key_properties['gain'] = np.ones(self.get_num_channels(), dtype='float')
+        if len(channel_ids) == len(gains):
             for i in range(len(channel_ids)):
-                self.set_channel_property(channel_ids[i], 'gain', gain)
-        elif isinstance(gains, (list, np.ndarray)):
-            if len(channel_ids) == len(gains):
-                for i in range(len(channel_ids)):
-                    if isinstance(gains[i], (int, np.integer, float, np.float64)):
-                        self.set_channel_property(channel_ids[i], 'gain', float(gains[i]))
-                    else:
-                        raise TypeError("all gains must be floats or ints")
-            else:
-                raise ValueError("channel_ids and gains must have same length")
+                if isinstance(gains[i], (int, np.integer, float)):
+                    channel_idx = list(self.get_channel_ids()).index(channel_ids[i])
+                    self._key_properties['gain'][channel_idx] = float(gains[i])
+                else:
+                    raise TypeError("'gain' must be an int or float")
         else:
-            raise TypeError("gains must be a int/float or a list of int/floats")
+            raise ValueError("channel_ids and gains must have same length")
 
     def get_channel_gains(self, channel_ids=None):
-        """This function returns the gain of each channel specifed by
+        """This function returns the gain of each channel specified by
         channel_ids.
 
         Parameters
@@ -453,16 +453,114 @@ class RecordingExtractor(ABC, BaseExtractor):
         Returns
         ----------
         gains: array_like
-            Returns a list of corresonding gains (floats) for the given
+            Returns a list of corresponding gains (floats) for the given
             channel_ids
         """
         if channel_ids is None:
-            channel_ids = self.get_channel_ids()
-        gains = []
-        for channel_id in channel_ids:
-            gain = self.get_channel_property(channel_id, 'gain')
-            gains.append(gain)
-        return gains
+            channel_ids = list(self.get_channel_ids())
+        if isinstance(channel_ids, (int, np.integer)):
+            channel_ids = [channel_ids]
+        gains = self._key_properties['gain']
+        # Only None upon initialization
+        if gains is None:
+            gains = np.ones(self.get_num_channels(), dtype='float')
+            self._key_properties['gain'] = gains
+        gains = np.array(gains)
+        channel_idxs = np.array([list(self.get_channel_ids()).index(ch) for ch in channel_ids])
+        return gains[channel_idxs]
+
+    def clear_channel_gains(self, channel_ids=None):
+        """This function clears the gains of each channel specified by
+        channel_ids
+
+        Parameters
+        ----------
+        channel_ids: array-like or int
+            The channel ids (ints) for which the groups will be cleared. If None, all channel ids are assumed.
+        """
+        if channel_ids is None:
+            channel_ids = list(self.get_channel_ids())
+        if isinstance(channel_ids, (int, np.integer)):
+            channel_ids = [channel_ids]
+        # Reset to default gains (1)
+        default_gains = [1.] * len(channel_ids)
+        self.set_channel_gains(default_gains, channel_ids)
+
+    def set_channel_offsets(self, offsets, channel_ids=None):
+        """This function sets the offset key property of each specified channel
+        id with the corresponding group of the passed in gains float/list.
+
+        Parameters
+        ----------
+        offsets: float/array_like
+            If a float, each channel will be assigned the corresponding offset.
+            If a list, each channel will be given an offset from the list
+        channel_ids: array_like or None
+            The channel ids (ints) for which the groups will be specified. If None, all channel ids are assumed.
+        """
+        if channel_ids is None:
+            channel_ids = list(self.get_channel_ids())
+        if isinstance(channel_ids, (int, np.integer)):
+            channel_ids = [channel_ids]
+        if isinstance(offsets, (int, np.integer, float)):
+            offsets = [offsets] * len(channel_ids)
+        # Only None upon initialization
+        if self._key_properties['offset'] is None:
+            self._key_properties['offset'] = np.zeros(self.get_num_channels(), dtype='float')
+        if len(channel_ids) == len(offsets):
+            for i in range(len(channel_ids)):
+                if isinstance(offsets[i], (int, np.integer, float)):
+                    channel_idx = list(self.get_channel_ids()).index(channel_ids[i])
+                    self._key_properties['offset'][channel_idx] = float(offsets[i])
+                else:
+                    raise TypeError("'offset' must be an int or float")
+        else:
+            raise ValueError("channel_ids and offsets must have same length")
+
+    def get_channel_offsets(self, channel_ids=None):
+        """This function returns the offset of each channel specified by
+        channel_ids.
+
+        Parameters
+        ----------
+        channel_ids: array_like
+            The channel ids (ints) for which the gains will be returned
+
+        Returns
+        ----------
+        offsets: array_like
+            Returns a list of corresponding offsets for the given
+            channel_ids
+        """
+        if channel_ids is None:
+            channel_ids = list(self.get_channel_ids())
+        if isinstance(channel_ids, (int, np.integer)):
+            channel_ids = [channel_ids]
+        offsets = self._key_properties['offset']
+        # Only None upon initialization
+        if offsets is None:
+            offsets = np.zeros(self.get_num_channels(), dtype='float')
+            self._key_properties['offset'] = offsets
+        offsets = np.array(offsets)
+        channel_idxs = np.array([list(self.get_channel_ids()).index(ch) for ch in channel_ids])
+        return offsets[channel_idxs]
+
+    def clear_channel_offsets(self, channel_ids=None):
+        """This function clears the gains of each channel specified by
+        channel_ids
+
+        Parameters
+        ----------
+        channel_ids: array-like or int
+            The channel ids (ints) for which the groups will be cleared. If None, all channel ids are assumed.
+        """
+        if channel_ids is None:
+            channel_ids = list(self.get_channel_ids())
+        if isinstance(channel_ids, (int, np.integer)):
+            channel_ids = [channel_ids]
+        # Reset to default offets (0)
+        default_offsets = [0.] * len(channel_ids)
+        self.set_channel_offsets(default_offsets, channel_ids)
 
     def set_channel_property(self, channel_id, property_name, value):
         """This function adds a property dataset to the given channel under the
@@ -521,8 +619,12 @@ class RecordingExtractor(ABC, BaseExtractor):
             return self.get_channel_locations(channel_id)[0]
         if property_name == 'group':
             return self.get_channel_groups(channel_id)[0]
+        if property_name == 'gain':
+            return self.get_channel_gains(channel_id)[0]
+        if property_name == 'offset':
+            return self.get_channel_offsets(channel_id)[0]
         if channel_id not in self._properties.keys():
-            raise ValueError('no properties found for channel' + str(channel_id))
+            raise ValueError('no properties found for channel ' + str(channel_id))
         if property_name not in self._properties[channel_id]:
             raise RuntimeError(str(property_name) + " has not been added to channel " + str(channel_id))
         if not isinstance(property_name, str):
@@ -549,6 +651,8 @@ class RecordingExtractor(ABC, BaseExtractor):
                 if np.all(np.logical_not(np.isnan(self.get_channel_locations(channel_id)))):
                     property_names.extend(['location'])
                 property_names.extend(['group'])
+                property_names.extend(['gain'])
+                property_names.extend(['offset'])
                 return sorted(property_names)
             else:
                 raise ValueError(str(channel_id) + " is not a valid channel_id")
@@ -556,7 +660,8 @@ class RecordingExtractor(ABC, BaseExtractor):
             raise TypeError(str(channel_id) + " must be an int")
 
     def get_shared_channel_property_names(self, channel_ids=None):
-        """Get the intersection of channel property names for a given set of channels or for all channels if channel_ids is None.
+        """Get the intersection of channel property names for a given set of channels or for all channels
+        if channel_ids is None.
         
         Parameters
         ----------
@@ -597,8 +702,12 @@ class RecordingExtractor(ABC, BaseExtractor):
             # copy key properties
             groups = recording.get_channel_groups(channel_ids=channel_ids)
             locations = recording.get_channel_locations(channel_ids=channel_ids)
+            gains = recording.get_channel_gains(channel_ids=channel_ids)
+            offsets = recording.get_channel_offsets(channel_ids=channel_ids)
             self.set_channel_groups(groups)
             self.set_channel_locations(locations)
+            self.set_channel_gains(gains)
+            self.set_channel_offsets(offsets)
 
             # copy normal properties
             for channel_id in channel_ids:
@@ -710,7 +819,7 @@ class RecordingExtractor(ABC, BaseExtractor):
                            graph=graph, geometry=geometry, verbose=verbose)
 
     def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500,
-                                   n_jobs=1, joblib_backend='loky', verbose=False):
+                                   n_jobs=1, joblib_backend='loky', return_scaled=True, verbose=False):
         """Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
@@ -732,11 +841,14 @@ class RecordingExtractor(ABC, BaseExtractor):
             Number of jobs to use (Default 1)
         joblib_backend: str
             Joblib backend for parallel processing ('loky', 'threading', 'multiprocessing')
+        return_scaled: bool
+            If True, traces are returned after scaling (using gain/offset). If False, the raw traces are returned
         verbose: bool
             If True, output is verbose (when chunks are used)
         """
         write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size,
-                                   chunk_mb=chunk_mb, n_jobs=n_jobs, joblib_backend=joblib_backend, verbose=verbose)
+                                   chunk_mb=chunk_mb, n_jobs=n_jobs, joblib_backend=joblib_backend,
+                                   return_scaled=return_scaled, verbose=verbose)
 
     def write_to_h5_dataset_format(self, dataset_path, save_path=None, file_handle=None,
                                    time_axis=0, dtype=None, chunk_size=None, chunk_mb=500, verbose=False):

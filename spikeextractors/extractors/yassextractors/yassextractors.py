@@ -66,8 +66,8 @@ class YassSortingExtractor(SortingExtractor):
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
 
-        '''Code to extract spike frames from the specified unit.
-        '''
+        """Code to extract spike frames from the specified unit.
+        """
 
         if self.spike_train is None:
             self.spike_train = np.load(self.fname_spike_train)

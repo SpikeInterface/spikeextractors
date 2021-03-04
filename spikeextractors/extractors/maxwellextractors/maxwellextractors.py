@@ -94,6 +94,9 @@ class MaxOneRecordingExtractor(RecordingExtractor):
             self.set_channel_locations([self._mapping['x'][i_ch], self._mapping['y'][i_ch]], ch)
             self.set_channel_property(ch, 'electrode', el)
 
+        # set gains
+        self.set_channel_gains(self._lsb)
+
         if self._load_spikes:
             if 'proc0' in self._filehandle:
                 if 'spikeTimes' in self._filehandle['proc0']:
@@ -191,10 +194,11 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         else:
             traces = self._signals[np.array(channel_ids), start_frame:end_frame]
 
-        if return_scaled:
-            return (traces * self._lsb).astype("float32")
-        else:
-            return traces
+        return traces
+        # if return_scaled:
+        #     return (traces * self._lsb).astype("float32")
+        # else:
+        #     return traces
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
@@ -328,6 +332,8 @@ class MaxTwoRecordingExtractor(RecordingExtractor):
         for i_ch, ch, el in zip(routed_idxs, self._channel_ids, self._electrode_ids):
             self.set_channel_locations([self._mapping['x'][i_ch], self._mapping['y'][i_ch]], ch)
             self.set_channel_property(ch, 'electrode', el)
+        # set gains
+        self.set_channel_gains(self._lsb)
 
         if self._load_spikes:
             if "spikes" in self._filehandle["wells"][self._well_name][self._rec_name].keys():
@@ -392,11 +398,11 @@ class MaxTwoRecordingExtractor(RecordingExtractor):
                 traces = self._signals[np.array(channel_idxs), start_frame:end_frame]
         else:
             traces = self._signals[np.array(channel_idxs), start_frame:end_frame]
-
-        if return_scaled:
-            return (traces * self._lsb).astype("float32")
-        else:
-            return traces
+        return traces
+        # if return_scaled:
+        #     return (traces * self._lsb).astype("float32")
+        # else:
+        #     return traces
 
 
 class MaxTwoSortingExtractor(SortingExtractor):

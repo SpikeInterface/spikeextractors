@@ -123,19 +123,15 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
         if np.all(channel_ids == self.get_channel_ids()):
-            recordings = self._timeseries[:, start_frame:end_frame]
+            traces = self._timeseries[:, start_frame:end_frame]
         else:
             if np.all(np.diff(channel_idxs) == 1):
-                recordings = self._timeseries[channel_idxs[0]:channel_idxs[0]+len(channel_idxs), start_frame:end_frame]
+                traces = self._timeseries[channel_idxs[0]:channel_idxs[0]+len(channel_idxs), start_frame:end_frame]
             else:
                 # This block of the execution will return the data as an array, not a memmap
-                recordings = self._timeseries[channel_idxs, start_frame:end_frame]
+                traces = self._timeseries[channel_idxs, start_frame:end_frame]
 
-        if return_scaled:
-            gains = np.array(self.get_channel_gains())[channel_idxs]
-            return recordings * gains[:, None]
-        else:
-            return recordings
+        return traces
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):

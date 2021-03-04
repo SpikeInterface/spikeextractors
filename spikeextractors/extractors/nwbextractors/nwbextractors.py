@@ -202,15 +202,19 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 gains = es.conversion * es.channel_conversion[:] * 1e6
             else:
                 gains = es.conversion * np.ones(num_channels) * 1e6
-
             # Extractors channel groups must be integers, but Nwb electrodes group_name can be strings
             if 'group_name' in nwbfile.electrodes.colnames:
                 unique_grp_names = list(np.unique(nwbfile.electrodes['group_name'][:]))
 
             # Fill channel properties dictionary from electrodes table
             self.channel_ids = es.electrodes.table.id[es.electrodes.data]
+
+            # If gains are not 1, set has_scaled to True
+            if np.any(gains != 1):
+                self.set_channel_gains(gains)
+                self.has_unscaled = True
+
             for es_ind, (channel_id, electrode_table_index) in enumerate(zip(self.channel_ids, es.electrodes.data)):
-                self.set_channel_property(channel_id, 'gain', gains[es_ind])
                 this_loc = []
                 if 'rel_x' in nwbfile.electrodes:
                     this_loc.append(nwbfile.electrodes['rel_x'][electrode_table_index])
@@ -229,6 +233,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     elif col == 'location':
                         self.set_channel_property(channel_id, 'brain_area',
                                                   nwbfile.electrodes[col][electrode_table_index])
+                    elif col == 'offset':
+                        self.set_channel_offsets(channel_ids=channel_id,
+                                                 offsets=nwbfile.electrodes[col][electrode_table_index])
                     elif col in ['x', 'y', 'z', 'rel_x', 'rel_y']:
                         continue
                     else:
@@ -502,7 +509,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 Ecephys=dict()
             )
         if 'Electrodes' not in metadata['Ecephys']:
-            metadata['Ecephys']['Electrodes']=[]
+            metadata['Ecephys']['Electrodes'] = []
 
         assert all([isinstance(x, dict) and set(x.keys()) == set(['name', 'description', 'data'])
                     and isinstance(x['data'], list) for x in metadata['Ecephys']['Electrodes']]), \
@@ -603,7 +610,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         # property 'gain' should not be in the NWB electrodes_table
         # property 'brain_area' of RX channels corresponds to 'location' of NWB electrodes
         channel_prop_names = set(recording.get_shared_channel_property_names()) - set(nwbfile.electrodes.colnames) \
-            - set(['gain', 'location'])
+                             - set(['gain', 'location'])
         for channel_prop_name in channel_prop_names:
             for channel_id in recording.get_channel_ids():
                 val = recording.get_channel_property(channel_id, channel_prop_name)
@@ -620,6 +627,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     description=descr
                 )
 
+    # TODO: do not save gain and offset when write_scaled is True!
     @staticmethod
     def add_electrical_series(
             recording: se.RecordingExtractor,
@@ -685,8 +693,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 )
         assert ('ElectricalSeries' in metadata['Ecephys']
                 and isinstance(metadata['Ecephys']['ElectricalSeries'], dict)) \
-            or ('LFPElectricalSeries' in metadata['Ecephys']
-                and isinstance(metadata['Ecephys']['LFPElectricalSeries'], dict)), \
+               or ('LFPElectricalSeries' in metadata['Ecephys']
+                   and isinstance(metadata['Ecephys']['LFPElectricalSeries'], dict)), \
             "Expected either metadata['Ecephys']['ElectricalSeries'] or metadata['Ecephys']['LFPElectricalSeries'] " \
             "to be a dictionary!"
 
@@ -714,9 +722,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         # channels gains - for RecordingExtractor, these are values to cast traces to uV
         # for nwb, the conversions (gains) cast the data to Volts
         # To get traces in Volts = data*channel_conversion*conversion
-        gains = np.squeeze([recording.get_channel_gains(channel_ids=[ch])
-                            if 'gain' in recording.get_channel_property_names(channel_id=ch) else 1
-                            for ch in channel_ids])
+        gains = recording.get_channel_gains()
         if len(np.unique(gains)) == 1:  # if all gains are equal
             scalar_conversion = np.unique(gains)[0] * 1e-6
             channel_conversion = None
@@ -737,6 +743,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 for id in channels_ids:
                     data = recording.get_traces(channel_ids=[id], return_scaled=write_scaled).flatten()
                     yield data
+
             ephys_data = DataChunkIterator(
                 data=data_generator(
                     recording=recording,
@@ -781,7 +788,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     @staticmethod
     def add_epochs(recording: se.RecordingExtractor, nwbfile=None,
                    metadata: dict = None):
-        '''
+        """
         Auxiliary static method for nwbextractor.
         Adds epochs from recording object to nwbfile object.
 
@@ -792,7 +799,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             nwb file to which the recording information is to be added
         metadata: dict
             metadata info for constructing the nwb file (optional).
-        '''
+        """
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
 
@@ -1113,12 +1120,12 @@ class NwbSortingExtractor(se.SortingExtractor):
                         'sampling_frequency': sampling_frequency}
 
     def get_unit_ids(self):
-        '''This function returns a list of ids (ints) for each unit in the sorted result.
+        """This function returns a list of ids (ints) for each unit in the sorted result.
         Returns
         ----------
         unit_ids: array_like
             A list of the unit ids in the sorted result (ints).
-        '''
+        """
         check_nwb_install()
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
@@ -1315,15 +1322,15 @@ class NwbSortingExtractor(se.SortingExtractor):
     @staticmethod
     def write_sorting(
             sorting: se.SortingExtractor,
-            save_path: PathType = None, 
-            overwrite: bool = False, 
+            save_path: PathType = None,
+            overwrite: bool = False,
             nwbfile=None,
             property_descriptions: Optional[dict] = None,
             skip_properties: Optional[List[str]] = None,
             skip_features: Optional[List[str]] = None,
             use_times: bool = True,
             **nwbfile_kwargs
-        ):
+    ):
         """
         Primary method for writing a SortingExtractor object to an NWBFile.
 
@@ -1391,10 +1398,10 @@ class NwbSortingExtractor(se.SortingExtractor):
                 io.write(nwbfile)
         else:
             se.NwbSortingExtractor.write_units(
-                    sorting=sorting,
-                    nwbfile=nwbfile,
-                    property_descriptions=property_descriptions,
-                    skip_properties=skip_properties,
-                    skip_features=skip_features,
-                    use_times=use_times
+                sorting=sorting,
+                nwbfile=nwbfile,
+                property_descriptions=property_descriptions,
+                skip_properties=skip_properties,
+                skip_features=skip_features,
+                use_times=use_times
             )

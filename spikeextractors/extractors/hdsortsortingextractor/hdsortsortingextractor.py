@@ -206,17 +206,17 @@ class HDSortSortingExtractor(MATSortingExtractor):
                 f.write(convert_cellarray_to_structarray)
 
             if 'win' in sys.platform and sys.platform != 'darwin':
-                matlab_cmd = '''
+                matlab_cmd = """
                              #!/bin/bash
                              cd {tmpdir}
                              matlab -nosplash -wait -log -r convert_cellarray_to_structarray
-                             '''.format(tmpdir={str(convert_script.parent)})
+                             """.format(tmpdir={str(convert_script.parent)})
             else:
-                matlab_cmd = '''
+                matlab_cmd = """
                              #!/bin/bash
                              cd {tmpdir}
                              matlab -nosplash -nodisplay -log -r convert_cellarray_to_structarray
-                             '''.format(tmpdir={str(convert_script.parent)})
+                             """.format(tmpdir={str(convert_script.parent)})
 
             try:
                 os.system(matlab_cmd)

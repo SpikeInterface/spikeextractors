@@ -164,7 +164,7 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
 
 
 def concatenate_recordings_by_time(recordings, epoch_names=None):
-    '''
+    """
     Concatenates recordings together by time. The order of the recordings
     determines the order of the time series in the concatenated recording.
 
@@ -179,7 +179,7 @@ def concatenate_recordings_by_time(recordings, epoch_names=None):
     recording: MultiRecordingTimeExtractor
         The concatenated recording extractors enscapsulated in the
         MultiRecordingTimeExtractor object (which is also a recording extractor)
-    '''
+    """
     return MultiRecordingTimeExtractor(
         recordings=recordings,
         epoch_names=epoch_names,

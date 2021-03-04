@@ -89,7 +89,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
         
     @staticmethod
     def write_recording(recording, save_path, check_suffix=True):
-        '''
+        """
         Save recording extractor to MEArec format.
         Parameters
         ----------
@@ -97,7 +97,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
             Recording extractor object to be saved
         save_path: str
             .h5 or .hdf5 path
-        '''
+        """
         assert HAVE_MREX, MEArecRecordingExtractor.installation_mesg
         save_path = Path(save_path)
         if save_path.is_dir():
@@ -171,7 +171,7 @@ class MEArecSortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, save_path, sampling_frequency, check_suffix=True):
-        '''
+        """
         Save sorting extractor to MEArec format.
         Parameters
         ----------
@@ -182,7 +182,7 @@ class MEArecSortingExtractor(SortingExtractor):
         sampling_frequency: int
             Sampling frequency in Hz
 
-        '''
+        """
         assert HAVE_MREX, MEArecSortingExtractor.installation_mesg
         save_path = Path(save_path)
         if save_path.is_dir():

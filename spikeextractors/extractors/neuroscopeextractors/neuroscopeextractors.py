@@ -464,13 +464,13 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         self._unit_ids = [x + shift for x in self._unit_ids]
 
     def add_unit(self, unit_id, spike_times):
-        '''This function adds a new unit with the given spike times.
+        """This function adds a new unit with the given spike times.
 
         Parameters
         ----------
         unit_id: int
             The unit_id of the unit to be added.
-        '''
+        """
         self._unit_ids.append(unit_id)
         self._spiketrains.append(spike_times)
 

@@ -4,11 +4,11 @@ from pathlib import Path
 import numpy as np
 from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train, check_get_ttl_args
 
-'''
+"""
 The NumpyExtractors can be constructed and used to encapsulate custom file formats and data structures which
 contain information about recordings or sorting results. NumpyExtractors are instantiated in-memory and function
 like any other Recording/SortingExtractor.
-'''
+"""
 
 class NumpyRecordingExtractor(RecordingExtractor):
     extractor_name = 'NumpyRecordingExtractor'
@@ -88,7 +88,7 @@ class NumpySortingExtractor(SortingExtractor):
         self.is_dumpable = False
 
     def load_from_extractor(self, sorting, copy_unit_properties=False, copy_unit_spike_features=False):
-        '''This function loads the information from a SortingExtractor into this extractor.
+        """This function loads the information from a SortingExtractor into this extractor.
 
         Parameters
         ----------
@@ -98,7 +98,7 @@ class NumpySortingExtractor(SortingExtractor):
             If True, the unit_properties will be copied from the given SortingExtractor to this extractor.
         copy_unit_spike_features: bool
             If True, the unit_spike_features will be copied from the given SortingExtractor to this extractor.
-        '''
+        """
         ids = sorting.get_unit_ids()
         for id in ids:
             self.add_unit(id, sorting.get_unit_spike_train(id))
@@ -113,7 +113,7 @@ class NumpySortingExtractor(SortingExtractor):
         self._sampling_frequency = sampling_frequency
 
     def set_times_labels(self, times, labels):
-        '''This function takes in an array of spike times (in frames) and an array of spike labels and adds all the
+        """This function takes in an array of spike times (in frames) and an array of spike labels and adds all the
         unit information in these lists into the extractor.
 
         Parameters
@@ -122,14 +122,14 @@ class NumpySortingExtractor(SortingExtractor):
             An array of spike times (in frames).
         labels: np.array
             An array of spike labels corresponding to the given times.
-        '''
+        """
         units = np.sort(np.unique(labels))
         for unit in units:
             times0 = times[np.where(labels == unit)[0]]
             self.add_unit(unit_id=int(unit), times=times0)
 
     def add_unit(self, unit_id, times):
-        '''This function adds a new unit with the given spike times.
+        """This function adds a new unit with the given spike times.
 
         Parameters
         ----------
@@ -137,7 +137,7 @@ class NumpySortingExtractor(SortingExtractor):
             The unit_id of the unit to be added.
         times: np.array
             An array of spike times (in frames).
-        '''
+        """
         self._units[unit_id] = dict(times=times)
 
     def get_unit_ids(self):

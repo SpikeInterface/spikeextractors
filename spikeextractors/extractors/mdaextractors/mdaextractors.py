@@ -57,7 +57,7 @@ class MdaRecordingExtractor(RecordingExtractor):
 
     def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500,
                                    n_jobs=1, joblib_backend='loky', verbose=False):
-        '''Saves the traces of this recording extractor into binary .dat format.
+        """Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
         ----------
@@ -80,7 +80,7 @@ class MdaRecordingExtractor(RecordingExtractor):
             Joblib backend for parallel processing ('loky', 'threading', 'multiprocessing')
         verbose: bool
             If True, output is verbose
-        '''
+        """
         X = DiskReadMda(self._timeseries_path)
         header_size = X._header.header_size
         if dtype is None or dtype == self.get_dtype():
@@ -102,7 +102,7 @@ class MdaRecordingExtractor(RecordingExtractor):
     @staticmethod
     def write_recording(recording, save_path, params=dict(), raw_fname='raw.mda', params_fname='params.json',
                         geom_fname='geom.csv', dtype=None, chunk_size=None, n_jobs=None, chunk_mb=500, verbose=False):
-        '''
+        """
         Writes recording to file in MDA format.
 
         Parameters
@@ -130,7 +130,7 @@ class MdaRecordingExtractor(RecordingExtractor):
             Chunk size in Mb (default 500Mb)
         verbose: bool
             If True, output is verbose
-        '''
+        """
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
         save_file_path = save_path / raw_fname
