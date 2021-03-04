@@ -86,7 +86,7 @@ class ALFSortingExtractor(SortingExtractor):
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
 
-        '''Code to extract spike frames from the specified unit.
+        """Code to extract spike frames from the specified unit.
         It will return spike frames from within three ranges:
             [start_frame, t_start+1, ..., end_frame-1]
             [start_frame, start_frame+1, ..., final_unit_spike_frame - 1]
@@ -98,7 +98,7 @@ class ALFSortingExtractor(SortingExtractor):
         array_like of spike frames. In this implementation, start_frame is inclusive
         and end_frame is exclusive conforming to numpy standards.
 
-        '''
+        """
         unit_idx = self._units_map.get(unit_id)
         if unit_idx is None:
             raise ValueError(f'enter one of unit_id={self.get_unit_ids()}')
@@ -118,11 +118,11 @@ class ALFSortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, save_path):
-        '''
+        """
         This is an example of a function that is not abstract so it is optional if you want to override it. It allows other
         SortingExtractors to use your new SortingExtractor to convert their sorted data into your
         sorting file format.
-        '''
+        """
         assert HAVE_PANDAS, ALFSortingExtractor.installation_mesg
         # write cluster properties as clusters.<property_name>.npy
         save_path = Path(save_path)

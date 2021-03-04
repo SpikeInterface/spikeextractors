@@ -23,6 +23,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     """
     extractor_name = 'SpikeGLXRecordingExtractor'
     has_default_locations = True
+    has_unscaled = True
     installed = True  # check at class level if installed or not
     is_writable = False
     mode = 'file'
@@ -32,7 +33,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
         RecordingExtractor.__init__(self)
         self._npxfile = Path(file_path)
         self._basepath = self._npxfile.parents[0]
-
+        
         # Gets file type: 'imec0.ap', 'imec0.lf' or 'nidq'
         assert re.search(r'imec[0-9]*.(ap|lf){1}.bin$', self._npxfile.name) or  'nidq' in self._npxfile.name, \
                "'file_path' can be an imec.ap, imec.lf, imec0.ap, imec0.lf, or nidq file"
@@ -122,19 +123,15 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
         if np.all(channel_ids == self.get_channel_ids()):
-            recordings = self._timeseries[:, start_frame:end_frame]
+            traces = self._timeseries[:, start_frame:end_frame]
         else:
             if np.all(np.diff(channel_idxs) == 1):
-                recordings = self._timeseries[channel_idxs[0]:channel_idxs[0]+len(channel_idxs), start_frame:end_frame]
+                traces = self._timeseries[channel_idxs[0]:channel_idxs[0]+len(channel_idxs), start_frame:end_frame]
             else:
                 # This block of the execution will return the data as an array, not a memmap
-                recordings = self._timeseries[channel_idxs, start_frame:end_frame]
+                traces = self._timeseries[channel_idxs, start_frame:end_frame]
 
-        if return_scaled:
-            gains = np.array(self.get_channel_gains())[channel_idxs]
-            return recordings * gains[:, None]
-        else:
-            return recordings
+        return traces
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):

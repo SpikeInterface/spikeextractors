@@ -21,6 +21,7 @@ class PhyRecordingExtractor(BinDatRecordingExtractor):
     """
     extractor_name = 'PhyRecording'
     has_default_locations = True
+    has_unscaled = False
     installed = True  # check at class level if installed or not
     is_writable = False
     mode = 'folder'

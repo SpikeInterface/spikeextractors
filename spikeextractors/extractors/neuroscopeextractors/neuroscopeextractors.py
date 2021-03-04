@@ -52,6 +52,8 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
     extractor_name = "NeuroscopeRecordingExtractor"
     installed = HAVE_LXML
+    has_default_locations = False
+    has_unscaled = False
     is_writable = True
     mode = "file"
     installation_mesg = "Please install lxml to use this extractor!"
@@ -86,10 +88,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
             sampling_frequency = float(xml_root.find('fieldPotentials').find('lfpSamplingRate').text)
 
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
-                                          dtype=dtype, numchan=numchan_from_file)
-        if gain is not None:
-            self.set_channel_gains(channel_ids=self.get_channel_ids(), gains=gain)
-
+                                          dtype=dtype, numchan=numchan_from_file, gain=gain)
         self._kwargs = dict(file_path=str(Path(file_path).absolute()), gain=gain)
 
     @staticmethod
@@ -465,13 +464,13 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         self._unit_ids = [x + shift for x in self._unit_ids]
 
     def add_unit(self, unit_id, spike_times):
-        '''This function adds a new unit with the given spike times.
+        """This function adds a new unit with the given spike times.
 
         Parameters
         ----------
         unit_id: int
             The unit_id of the unit to be added.
-        '''
+        """
         self._unit_ids.append(unit_id)
         self._spiketrains.append(spike_times)
 

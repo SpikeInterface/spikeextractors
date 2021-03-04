@@ -16,6 +16,7 @@ from spikeextractors.extraction_tools import check_get_traces_args, check_get_un
 class NIXIORecordingExtractor(RecordingExtractor):
     extractor_name = 'NIXIORecording'
     has_default_locations = False
+    has_unscaled = False
     installed = HAVE_NIXIO
     is_writable = True
     installation_mesg = "To use the NIXIORecordingExtractor install nixio: \n\n pip install nixio\n\n"

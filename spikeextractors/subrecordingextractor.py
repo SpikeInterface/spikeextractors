@@ -13,6 +13,7 @@ class SubRecordingExtractor(RecordingExtractor):
         self._renamed_channel_ids = renamed_channel_ids
         self._start_frame = start_frame
         self._end_frame = end_frame
+        self.has_unscaled = self._parent_recording.has_unscaled
         if self._channel_ids is None:
             self._channel_ids = self._parent_recording.get_channel_ids()
         if self._renamed_channel_ids is None:
@@ -77,13 +78,13 @@ class SubRecordingExtractor(RecordingExtractor):
         frame2 = frame1 - self._start_frame
         return frame2.astype('int64')
 
-    def get_snippets(self, *, reference_frames, snippet_len, channel_ids=None):
+    def get_snippets(self, reference_frames, snippet_len, channel_ids=None, return_scaled=True):
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
         reference_frames_shift = self._start_frame + np.array(reference_frames)
         original_ch_ids = self.get_original_channel_ids(channel_ids)
         return self._parent_recording.get_snippets(reference_frames=reference_frames_shift, snippet_len=snippet_len,
-                                                   channel_ids=original_ch_ids)
+                                                   channel_ids=original_ch_ids, return_scaled=return_scaled)
 
     def copy_channel_properties(self, recording, channel_ids=None):
         if channel_ids is None:

@@ -34,11 +34,12 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
     
     """
     extractor_name = 'NeuropixelsDatRecording'
-    has_default_locations = False
-    installed = HAVE_XMLTODICT  # check at class level if installed or not
+    has_default_locations = True
+    has_unscaled = True
+    installed = HAVE_XMLTODICT
     is_writable = False
     mode = 'file'
-    installation_mesg = "To use the NeuropixelsDatRecordingExtractor, install xmltodict: \n\n pip install xmltodict\n\n"
+    installation_mesg = "To use the NeuropixelsDat extractor, install xmltodict: \n\n pip install xmltodict\n\n"
 
     def __init__(self, file_path, settings_file=None, is_filtered=None, verbose=False):
         assert self.installed, self.installation_mesg
@@ -84,7 +85,7 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
             channels = range(384)
 
         BinDatRecordingExtractor.__init__(self, file_path=datfile, numchan=numchan, dtype=dtype,
-                                          sampling_frequency=sampling_frequency, gain=gain, offset=offset, geom=geom,
+                                          sampling_frequency=sampling_frequency, gain=gain, geom=geom,
                                           recording_channels=channels, time_axis=time_axis, is_filtered=is_filtered)
 
         self._kwargs = {'filename': str(Path(file_path).absolute()), 'settings_file': settings_file,

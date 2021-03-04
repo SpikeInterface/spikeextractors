@@ -9,7 +9,7 @@ pynwb
 nixio
 MEArec
 hdf5storage
-exdir
+exdir==0.4.1
 pyintan
 tridesclous
 hdbscan

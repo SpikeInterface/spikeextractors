@@ -27,6 +27,7 @@ except ImportError:
 class KlustaRecordingExtractor(BinDatRecordingExtractor):
     extractor_name = 'KlustaRecordingExtractor'
     has_default_locations = False
+    has_unscaled = False
     installed = HAVE_KLSX  # check at class level if installed or not
     is_writable = True
     mode = 'folder'

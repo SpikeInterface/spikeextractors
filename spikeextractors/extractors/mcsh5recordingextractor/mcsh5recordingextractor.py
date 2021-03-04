@@ -14,6 +14,7 @@ except ImportError:
 class MCSH5RecordingExtractor(RecordingExtractor):
     extractor_name = 'MCSH5RecordingExtractor'
     has_default_locations = False
+    has_unscaled = False
     installed = HAVE_MCSH5  # check at class level if installed or not
     is_writable = False
     mode = 'file'

@@ -23,6 +23,7 @@ class SpykingCircusRecordingExtractor(RecordingExtractor):
     """
     extractor_name = 'SpykingCircusRecordingExtractor'
     has_default_locations = False
+    has_unscaled = False
     installed = True  # check at class level if installed or not
     is_writable = False
     mode = 'folder'
@@ -74,11 +75,9 @@ class SpykingCircusRecordingExtractor(RecordingExtractor):
                             f"SpykingCircusRecordingExtractor")
 
         if params["mapping"].is_file():
-            rec = self.load_probe_file(params["mapping"])
-            self.set_channel_groups(rec.get_channel_groups())
-            self.set_channel_locations(rec.get_channel_locations())
-        self.params = params
+            self._recording = self.load_probe_file(params["mapping"])
 
+        self.params = params
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
     def get_channel_ids(self):
@@ -90,8 +89,9 @@ class SpykingCircusRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._recording.get_sampling_frequency()
 
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        return self._recording.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame)
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
+        return self._recording.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame,
+                                          return_scaled=return_scaled)
 
 
 class SpykingCircusSortingExtractor(SortingExtractor):

@@ -13,6 +13,8 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         self._num_channels = self._first_recording.get_num_channels()
         self._channel_ids = self._first_recording.get_channel_ids()
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
+        self.has_unscaled = self._first_recording.has_unscaled
+
         if epoch_names is None:
             epoch_names = [str(i) for i in range(len(recordings))]
             
@@ -162,7 +164,7 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
 
 
 def concatenate_recordings_by_time(recordings, epoch_names=None):
-    '''
+    """
     Concatenates recordings together by time. The order of the recordings
     determines the order of the time series in the concatenated recording.
 
@@ -177,7 +179,7 @@ def concatenate_recordings_by_time(recordings, epoch_names=None):
     recording: MultiRecordingTimeExtractor
         The concatenated recording extractors enscapsulated in the
         MultiRecordingTimeExtractor object (which is also a recording extractor)
-    '''
+    """
     return MultiRecordingTimeExtractor(
         recordings=recordings,
         epoch_names=epoch_names,

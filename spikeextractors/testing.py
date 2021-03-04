@@ -8,7 +8,7 @@ from .extraction_tools import load_extractor_from_pickle, load_extractor_from_di
     load_extractor_from_json
 
 
-def check_recordings_equal(RX1, RX2, force_dtype=None):
+def check_recordings_equal(RX1, RX2, return_scaled=True, force_dtype=None, check_times=True):
     N = RX1.get_num_frames()
     # get_channel_ids
     assert np.allclose(RX1.get_channel_ids(), RX2.get_channel_ids())
@@ -20,25 +20,29 @@ def check_recordings_equal(RX1, RX2, force_dtype=None):
     assert np.allclose(RX1.get_sampling_frequency(), RX2.get_sampling_frequency())
     # get_traces
     if force_dtype is None:
-        assert np.allclose(RX1.get_traces(), RX2.get_traces())
+        assert np.allclose(RX1.get_traces(return_scaled=return_scaled), RX2.get_traces(return_scaled=return_scaled))
     else:
-        assert np.allclose(RX1.get_traces().astype(force_dtype), RX2.get_traces().astype(force_dtype))
+        assert np.allclose(RX1.get_traces(return_scaled=return_scaled).astype(force_dtype),
+                           RX2.get_traces(return_scaled=return_scaled).astype(force_dtype))
     sf = 0
     ef = N
     ch = [RX1.get_channel_ids()[0], RX1.get_channel_ids()[-1]]
     if force_dtype is None:
-        assert np.allclose(RX1.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef),
-                           RX2.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef))
+        assert np.allclose(RX1.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef, return_scaled=return_scaled),
+                           RX2.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef, return_scaled=return_scaled))
     else:
-        assert np.allclose(RX1.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef).astype(force_dtype),
-                           RX2.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef).astype(force_dtype))
-    for f in range(0, RX1.get_num_frames(), 10):
-        assert np.isclose(RX1.frame_to_time(f), RX2.frame_to_time(f))
-        assert np.isclose(RX1.time_to_frame(RX1.frame_to_time(f)), RX2.time_to_frame(RX2.frame_to_time(f)))
+        assert np.allclose(RX1.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef,
+                                          return_scaled=return_scaled).astype(force_dtype),
+                           RX2.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef,
+                                          return_scaled=return_scaled).astype(force_dtype))
+    if check_times:
+        for f in range(0, RX1.get_num_frames(), 10):
+            assert np.isclose(RX1.frame_to_time(f), RX2.frame_to_time(f))
+            assert np.isclose(RX1.time_to_frame(RX1.frame_to_time(f)), RX2.time_to_frame(RX2.frame_to_time(f)))
     # get_snippets
     frames = [30, 50, 80]
-    snippets1 = RX1.get_snippets(reference_frames=frames, snippet_len=20)
-    snippets2 = RX2.get_snippets(reference_frames=frames, snippet_len=(10, 10))
+    snippets1 = RX1.get_snippets(reference_frames=frames, snippet_len=20, return_scaled=return_scaled)
+    snippets2 = RX2.get_snippets(reference_frames=frames, snippet_len=(10, 10), return_scaled=return_scaled)
     if force_dtype is None:
         for ii in range(len(frames)):
             assert np.allclose(snippets1[ii], snippets2[ii])

@@ -1,5 +1,4 @@
 from .sortingextractor import SortingExtractor
-from .recordingextractor import RecordingExtractor
 import numpy as np
 from .extraction_tools import check_get_unit_spike_train
 
@@ -106,7 +105,7 @@ class MultiSortingExtractor(SortingExtractor):
 
 
 def concatenate_sortings(sortings):
-    '''
+    """
     Concatenates sortings together. The sortings should be non-continuous
 
     Parameters
@@ -118,7 +117,7 @@ def concatenate_sortings(sortings):
     recording: MultiSortingExtractor
         The concatenated sorting extractors enscapsulated in the
         MultiSortingExtractor object (which is also a sorting extractor)
-    '''
+    """
     return MultiSortingExtractor(
         sortings=sortings,
     )

@@ -50,6 +50,18 @@ class SubSortingExtractor(SortingExtractor):
     def get_sampling_frequency(self):
         return self._parent_sorting.get_sampling_frequency()
 
+    def frame_to_time(self, frame):
+        frame2 = frame + self._start_frame
+        time1 = self._parent_sorting.frame_to_time(frame2)
+        start_time = self._parent_sorting.frame_to_time(self._start_frame)
+        return np.round(time1 - start_time, 6)
+
+    def time_to_frame(self, time):
+        time2 = time + self._parent_sorting.frame_to_time(self._start_frame)
+        frame1 = self._parent_sorting.time_to_frame(time2)
+        frame2 = frame1 - self._start_frame
+        return frame2.astype('int64')
+
     def copy_unit_properties(self, sorting, unit_ids=None):
         if unit_ids is None:
             unit_ids = self.get_unit_ids()

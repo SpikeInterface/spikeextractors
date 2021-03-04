@@ -1,6 +1,7 @@
 from .recordingextractor import RecordingExtractor
 from .extraction_tools import check_get_traces_args
 import numpy as np
+import warnings
 
 
 # Concatenates the given recordings by channel
@@ -14,6 +15,22 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         self._first_recording = recordings[0]
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
         self._num_frames = self._first_recording.get_num_frames()
+        self.has_unscaled = self._first_recording.has_unscaled
+
+        use_times = True
+        if np.all([rec._times is not None for rec in self._recordings]):
+            times_0 = self._recordings[0]._times
+            for rec in self._recordings[1:]:
+                times_i = rec._times
+                if not np.allclose(times_0, times_i):
+                    use_times = False
+                    warnings.warn("The recordings have different times! Reset times with the "
+                                  "'set_times() function")
+        elif np.all([rec._times is not None for rec in self._recordings]):
+            warnings.warn("Not all the recordings have times! Reset times with the "
+                          "'set_times() function")
+        else:
+            use_times = False
 
         # Test if all recording extractors have same sampling frequency
         for i, recording in enumerate(recordings[1:]):
@@ -31,6 +48,9 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
                 new_channel_id += 1
 
         RecordingExtractor.__init__(self)
+
+        if use_times:
+            self.copy_times(self._recordings[0])
 
         # set group information for channels if available
         if groups is not None:
@@ -93,8 +113,9 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._sampling_frequency
 
+
 def concatenate_recordings_by_channel(recordings, groups=None):
-    '''
+    """
     Concatenates recordings together by channel. The order of the recordings
     determines the order of the channels in the concatenated recording.
 
@@ -110,7 +131,7 @@ def concatenate_recordings_by_channel(recordings, groups=None):
     recording: MultiRecordingChannelExtractor
         The concatenated recording extractors enscapsulated in the
         MultiRecordingChannelExtractor object (which is also a recording extractor)
-    '''
+    """
     return MultiRecordingChannelExtractor(
         recordings=recordings,
         groups=groups,

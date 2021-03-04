@@ -15,6 +15,7 @@ installation_mesg = "To use the MaxOneRecordingExtractor install h5py: \n\n pip 
 class MaxOneRecordingExtractor(RecordingExtractor):
     extractor_name = 'MaxOneRecording'
     has_default_locations = True
+    has_unscaled = True
     installed = HAVE_MAX  # check at class level if installed or not
     is_writable = False
     mode = 'file'
@@ -29,7 +30,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._recordings = None
         self._filehandle = None
         self._load_spikes = load_spikes
-        self._timestamps = None
+        self._times = None
         self._mapping = None
         self._initialize()
         self._kwargs = {'file_path': str(Path(file_path).absolute()),
@@ -92,6 +93,9 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         for i_ch, ch, el in zip(routed_idxs, self._channel_ids, self._electrode_ids):
             self.set_channel_locations([self._mapping['x'][i_ch], self._mapping['y'][i_ch]], ch)
             self.set_channel_property(ch, 'electrode', el)
+
+        # set gains
+        self.set_channel_gains(self._lsb)
 
         if self._load_spikes:
             if 'proc0' in self._filehandle:
@@ -160,25 +164,13 @@ class MaxOneRecordingExtractor(RecordingExtractor):
             if verbose:
                 print(f"Found {len(delays_in_frames)} missing intervals")
 
-            self._timestamps = np.round(np.arange(self.get_num_frames()) / self.get_sampling_frequency(), 6)
+            self._times = np.round(np.arange(self.get_num_frames()) / self.get_sampling_frequency(), 6)
 
             for mf_idx, duration in zip(missing_frames_idxs, delays_in_frames):
-                self._timestamps[mf_idx:] += np.round(duration / self.get_sampling_frequency(), 6)
+                self._times[mf_idx:] += np.round(duration / self.get_sampling_frequency(), 6)
         else:
             if verbose:
                 print("No missing frames found")
-
-    def frame_to_time(self, frames):
-        if self._timestamps is None:
-            return super().frame_to_time(frames)
-        else:
-            return self._timestamps[frames]
-
-    def time_to_frame(self, times):
-        if self._timestamps is None:
-            return super().time_to_frame(times)
-        else:
-            return np.searchsorted(self._timestamps, times).astype('int64')
 
     def _get_frame_numbers(self):
         bitvals = self._signals[-2:, :]
@@ -202,10 +194,11 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         else:
             traces = self._signals[np.array(channel_ids), start_frame:end_frame]
 
-        if return_scaled:
-            return (traces * self._lsb).astype("float32")
-        else:
-            return traces
+        return traces
+        # if return_scaled:
+        #     return (traces * self._lsb).astype("float32")
+        # else:
+        #     return traces
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
@@ -289,6 +282,7 @@ class MaxOneSortingExtractor(SortingExtractor):
 class MaxTwoRecordingExtractor(RecordingExtractor):
     extractor_name = 'MaxTwoRecording'
     has_default_locations = True
+    has_unscaled = True
     installed = HAVE_MAX  # check at class level if installed or not
     is_writable = False
     mode = 'file'
@@ -338,6 +332,8 @@ class MaxTwoRecordingExtractor(RecordingExtractor):
         for i_ch, ch, el in zip(routed_idxs, self._channel_ids, self._electrode_ids):
             self.set_channel_locations([self._mapping['x'][i_ch], self._mapping['y'][i_ch]], ch)
             self.set_channel_property(ch, 'electrode', el)
+        # set gains
+        self.set_channel_gains(self._lsb)
 
         if self._load_spikes:
             if "spikes" in self._filehandle["wells"][self._well_name][self._rec_name].keys():
@@ -402,11 +398,11 @@ class MaxTwoRecordingExtractor(RecordingExtractor):
                 traces = self._signals[np.array(channel_idxs), start_frame:end_frame]
         else:
             traces = self._signals[np.array(channel_idxs), start_frame:end_frame]
-
-        if return_scaled:
-            return (traces * self._lsb).astype("float32")
-        else:
-            return traces
+        return traces
+        # if return_scaled:
+        #     return (traces * self._lsb).astype("float32")
+        # else:
+        #     return traces
 
 
 class MaxTwoSortingExtractor(SortingExtractor):

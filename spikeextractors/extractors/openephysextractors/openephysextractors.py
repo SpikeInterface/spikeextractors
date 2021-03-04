@@ -26,6 +26,7 @@ extractors_dir = Path(__file__).parent.parent
 class OpenEphysRecordingExtractor(RecordingExtractor):
     extractor_name = 'OpenEphysRecording'
     has_default_locations = False
+    has_unscaled = True
     installed = HAVE_OE  # check at class level if installed or not
     is_writable = False
     mode = 'folder'
@@ -38,15 +39,17 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
 
         self._fileobj = pyopenephys.File(folder_path)
         self._recording = self._fileobj.experiments[experiment_id].recordings[recording_id]
-        self._analogsignals = self._recording.analog_signals[0]
+        self._set_analogsignal(self._recording.analog_signals[0])
+        self._kwargs = {'folder_path': str(Path(folder_path).absolute()), 'experiment_id': experiment_id,
+                        'recording_id': recording_id}
 
+    def _set_analogsignal(self, analogsignals):
+        self._analogsignals = analogsignals
         # Set gains: int16 to uV
         if HAVE_OE_11:
             self.set_channel_gains(gains=self._analogsignals.gains)
         else:
             self.set_channel_gains(gains=self._analogsignals.gain)
-        self._kwargs = {'folder_path': str(Path(folder_path).absolute()), 'experiment_id': experiment_id,
-                        'recording_id': recording_id}
 
     def get_channel_ids(self):
         if HAVE_OE_11:
@@ -65,20 +68,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
-        if HAVE_OE_11:
-            channel_inds = [self.get_channel_ids().index(ch) for ch in channel_ids]
-            if return_scaled:  # Returns traces as uV
-                gains = np.array(self.get_channel_gains(channel_ids=channel_ids))[:, None]
-                return self._analogsignals.signal[channel_inds, start_frame:end_frame] * gains
-            else:  # Returns traces as int16
-                return self._analogsignals.signal[channel_inds, start_frame:end_frame]
-        else:
-            # in pyopenephys < 1.1 channel_ids == channel_idxs
-            if return_scaled:  # Returns traces as uV
-                gains = np.array(self.get_channel_gains(channel_ids=channel_ids))[:, None]
-                return self._analogsignals.signal[channel_ids, start_frame:end_frame] * gains
-            else:  # Returns traces as int16
-                return self._analogsignals.signal[channel_ids, start_frame:end_frame]
+        return self._analogsignals.signal[channel_ids, start_frame:end_frame]
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
@@ -110,7 +100,7 @@ class OpenEphysNPIXRecordingExtractor(OpenEphysRecordingExtractor):
         for analog in analogsignals:
             channel_names = analog.channel_names
             if np.all([stream.upper() in chan for chan in channel_names]):
-                self._analogsignals = analog
+                self._set_analogsignal(analog)
                 # load neuropixels locations
                 channel_locations = np.loadtxt(extractors_dir / 'neuropixelsdatrecordingextractor' /
                                                'channel_positions_neuropixels.txt').T
