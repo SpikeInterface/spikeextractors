@@ -753,10 +753,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 buffer_size=buffer_size
             )
         else:
+            warnings.warn("Unable to memmap data - chunk as array")  # experiement to see how much of GIN goes through this loop
             def data_generator(recording, channels_ids, unsigned_coercion):
                 for id in channels_ids:
                     data = recording.get_traces(channel_ids=[id], return_scaled=write_scaled) \
-                        + unsigned_coercion
+                        + unsigned_coercion[id]
                     yield data.flatten()
             ephys_data = DataChunkIterator(
                 data=data_generator(
