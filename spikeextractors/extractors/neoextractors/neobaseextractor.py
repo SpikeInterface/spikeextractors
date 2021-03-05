@@ -68,13 +68,16 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
             channel_indexes_list = self.neo_reader.get_group_signal_channel_indexes()
             num_streams = len(channel_indexes_list)
             assert num_chan_group == 1, 'This file have several channel groups spikeextractors support only one groups'
+            self.after_v10 = False
         elif  hasattr(self.neo_reader, 'get_group_channel_indexes'):
             # Neo < 0.9.0
             channel_indexes_list = self.neo_reader.get_group_channel_indexes()
             num_streams = len(channel_indexes_list)
+            self.after_v10 = False
         elif   hasattr(self.neo_reader, 'signal_streams_count'):
             # Neo >= 0.10.0 (not release yet in march 2021)
             num_streams = self.neo_reader.signal_streams_count()
+            self.after_v10 = True
         else:
             raise valueError('Strange neo version')
         
@@ -98,17 +101,27 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        # in neo rawio channel can acces by names/ids/indexes
-        # there is no garranty that ids/names are unique on some formats
-        raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
-                                                            i_start=start_frame, i_stop=end_frame,
-                                                            channel_indexes=None, channel_names=None,
-                                                            channel_ids=channel_ids)
+        if self.after_v10:
+            raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
+                                                                i_start=start_frame, i_stop=end_frame,
+                                                                channel_indexes=None, channel_names=None,
+                                                                stream_index=0, channel_ids=channel_ids)
 
-        # rescale traces to natural units (can be anything)
-        scaled_traces = self.neo_reader.rescale_signal_raw_to_float(raw_traces, dtype='float32',
-                                                                    channel_indexes=None, channel_names=None,
-                                                                    channel_ids=channel_ids)
+            # rescale traces to natural units (can be anything)
+            scaled_traces = self.neo_reader.rescale_signal_raw_to_float(raw_traces, dtype='float32',
+                                                                        channel_indexes=None, channel_names=None,
+                                                                        stream_index=0, channel_ids=channel_ids)
+        else:
+            raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
+                                                                i_start=start_frame, i_stop=end_frame,
+                                                                channel_indexes=None, channel_names=None,
+                                                                channel_ids=channel_ids)
+
+            # rescale traces to natural units (can be anything)
+            scaled_traces = self.neo_reader.rescale_signal_raw_to_float(raw_traces, dtype='float32',
+                                                                        channel_indexes=None, channel_names=None,
+                                                                        channel_ids=channel_ids)
+        
         channel_idxs = np.array([list(channel_ids).index(ch) for ch in channel_ids])
         # and then to uV
         scaled_traces *= self.additional_gain[:, channel_idxs]
@@ -121,12 +134,18 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
     def get_num_frames(self):
         # channel_indexes=None means all channels
-        n = self.neo_reader.get_signal_size(self.block_index, self.seg_index, channel_indexes=None)
+        if self.after_v10:
+            n = self.neo_reader.get_signal_size(self.block_index, self.seg_index, stream_index=0)
+        else:
+            n = self.neo_reader.get_signal_size(self.block_index, self.seg_index, channel_indexes=None)
         return n
 
     def get_sampling_frequency(self):
         # channel_indexes=None means all channels
-        sf = self.neo_reader.get_signal_sampling_rate(channel_indexes=None)
+        if self.after_v10:
+            sf = self.neo_reader.get_signal_sampling_rate(stream_index=0)
+        else:
+            sf = self.neo_reader.get_signal_sampling_rate(channel_indexes=None)
         return sf
 
     def get_channel_ids(self):
