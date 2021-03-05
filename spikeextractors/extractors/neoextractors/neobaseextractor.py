@@ -54,14 +54,32 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
         # TODO propose a meachanisim to select the appropriate channel groups
         # in neo one channel group have the same dtype/sampling_rate/group_id
-        try:
+        #~ try:
+            #~ # Neo >= 0.9.0
+            #~ channel_indexes_list = self.neo_reader.get_group_signal_channel_indexes()
+        #~ except AttributeError:
+            #~ # Neo < 0.9.0
+            #~ channel_indexes_list = self.neo_reader.get_group_channel_indexes()
+        #~ num_chan_group = len(channel_indexes_list)
+        #~ assert num_chan_group == 1, 'This file have several channel groups spikeextractors support only one groups'
+        
+        if  hasattr(self.neo_reader, 'get_group_signal_channel_indexes'):
             # Neo >= 0.9.0
             channel_indexes_list = self.neo_reader.get_group_signal_channel_indexes()
-        except AttributeError:
+            num_streams = len(channel_indexes_list)
+            assert num_chan_group == 1, 'This file have several channel groups spikeextractors support only one groups'
+        elif  hasattr(self.neo_reader, 'get_group_channel_indexes'):
             # Neo < 0.9.0
-            channel_indexes_list = self.neo_reader.get_group_channel_indexes()        
-        num_chan_group = len(channel_indexes_list)
-        assert num_chan_group == 1, 'This file have several channel groups spikeextractors support only one groups'
+            channel_indexes_list = self.neo_reader.get_group_channel_indexes()
+            num_streams = len(channel_indexes_list)
+        elif   hasattr(self.neo_reader, 'signal_streams_count'):
+            # Neo >= 0.10.0 (not release yet in march 2021)
+            num_streams = self.neo_reader.signal_streams_count()
+        else:
+            raise valueError('Strange neo version')
+        
+        assert num_streams == 1, 'This file have several signal streams spikeextractors support only one streams'\
+                                                                'Maybe you can use option to select only one stream'
 
         # spikeextractor for units to be uV implicitly
         # check that units are V, mV or uV
