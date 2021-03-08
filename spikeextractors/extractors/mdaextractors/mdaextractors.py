@@ -1,6 +1,7 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-from spikeextractors.extraction_tools import write_to_binary_dat_format, check_get_traces_args, check_get_unit_spike_train
+from spikeextractors.extraction_tools import write_to_binary_dat_format, check_get_traces_args, \
+    check_get_unit_spike_train
 
 import json
 import numpy as np
@@ -27,7 +28,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         self._timeseries_path = str(timeseries0.absolute())
         geom0 = dataset_directory / geom_fname
         self._geom_fname = geom0
-        self._geom = np.loadtxt(self._geom_fname, delimiter=',',ndmin=2)
+        self._geom = np.loadtxt(self._geom_fname, delimiter=',', ndmin=2)
         X = DiskReadMda(self._timeseries_path)
         if self._geom.shape[0] != X.N1():
             raise Exception(
@@ -97,7 +98,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         else:
             write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
                                        chunk_size=chunk_size, chunk_mb=chunk_mb, n_jobs=n_jobs,
-                                       joblib_backend=joblib_backend,  verbose=verbose)
+                                       joblib_backend=joblib_backend, verbose=verbose)
 
     @staticmethod
     def write_recording(recording, save_path, params=dict(), raw_fname='raw.mda', params_fname='params.json',
@@ -175,7 +176,7 @@ class MdaSortingExtractor(SortingExtractor):
         self._firings_path = file_path
         self._firings = readmda(self._firings_path)
         self._max_channels = self._firings[0, :]
-        self._times = self._firings[1, :]
+        self._spike_times = self._firings[1, :]
         self._labels = self._firings[2, :]
         self._unit_ids = np.unique(self._labels).astype(int)
         self._sampling_frequency = sampling_frequency
@@ -187,8 +188,9 @@ class MdaSortingExtractor(SortingExtractor):
     @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
 
-        inds = np.where((self._labels == unit_id) & (start_frame <= self._times) & (self._times < end_frame))
-        return np.rint(self._times[inds]).astype(int)
+        inds = np.where(
+            (self._labels == unit_id) & (start_frame <= self._spike_times) & (self._spike_times < end_frame))
+        return np.rint(self._spike_times[inds]).astype(int)
 
     @staticmethod
     def write_sorting(sorting, save_path, write_primary_channels=False):
@@ -202,7 +204,7 @@ class MdaSortingExtractor(SortingExtractor):
             labels_list.append(np.ones(times.shape) * unit_id)
             if write_primary_channels:
                 if 'max_channel' in sorting.get_unit_property_names(unit_id):
-                    primary_channels_list.append([sorting.get_unit_property(unit_id, 'max_channel')]*times.shape[0])
+                    primary_channels_list.append([sorting.get_unit_property(unit_id, 'max_channel')] * times.shape[0])
                 else:
                     raise ValueError(
                         "Unable to write primary channels because 'max_channel' spike feature not set in unit " + str(
