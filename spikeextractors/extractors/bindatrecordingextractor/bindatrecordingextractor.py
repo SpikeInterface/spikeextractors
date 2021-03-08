@@ -42,7 +42,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
     is_filtered: bool
         If True, the recording is assumed to be filtered
     """
-    extractor_name = 'BinDatRecordingExtractor'
+    extractor_name = 'BinDatRecording'
     has_default_locations = False
     has_unscaled = False
     installed = True

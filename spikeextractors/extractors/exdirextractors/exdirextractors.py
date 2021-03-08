@@ -25,7 +25,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
     def __init__(self, folder_path):
-        assert HAVE_EXDIR, self.installation_mesg
+        assert self.installed, self.installation_mesg
         self._exdir_file = folder_path
         exdir_group = exdir.File(folder_path, plugins=[exdir.plugins.quantities])
 
@@ -53,7 +53,7 @@ class ExdirRecordingExtractor(RecordingExtractor):
 
     @staticmethod
     def write_recording(recording, save_path, lfp=False, mua=False):
-        assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
+        assert HAVE_EXDIR, ExdirRecordingExtractor.installation_mesg
         channel_ids = recording.get_channel_ids()
         raw = recording.get_traces()
         exdir_group = exdir.File(save_path, plugins=[exdir.plugins.quantities])
@@ -186,14 +186,14 @@ class ExdirRecordingExtractor(RecordingExtractor):
 
 
 class ExdirSortingExtractor(SortingExtractor):
-    extractor_name = 'ExdirSortingExtractor'
+    extractor_name = 'ExdirSorting'
     installed = HAVE_EXDIR  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
     def __init__(self, folder_path, sampling_frequency=None, channel_group=None, load_waveforms=False):
-        assert HAVE_EXDIR, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         self._exdir_file = folder_path
         exdir_group = exdir.File(folder_path, plugins=exdir.plugins.quantities)
@@ -259,7 +259,7 @@ class ExdirSortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, save_path, recording=None, sampling_frequency=None, save_waveforms=False, verbose=False):
-        assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
+        assert HAVE_EXDIR, ExdirSortingExtractor.installation_mesg
         if sampling_frequency is None and recording is None:
             raise Exception("Provide 'sampling_frequency' argument (Hz)")
         else:

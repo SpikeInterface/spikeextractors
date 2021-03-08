@@ -12,14 +12,14 @@ except ImportError:
 
 
 class HS2SortingExtractor(SortingExtractor):
-    extractor_name = 'HS2SortingExtractor'
+    extractor_name = 'HS2Sorting'
     installed = HAVE_HS2SX  # check at class level if installed or not
     is_writable = True
     mode = 'file'
     installation_mesg = "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, file_path, load_unit_info=True):
-        assert HAVE_HS2SX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         self._recording_file = file_path
         self._rf = h5py.File(self._recording_file, mode='r')
@@ -70,7 +70,7 @@ class HS2SortingExtractor(SortingExtractor):
 
     @staticmethod
     def write_sorting(sorting, save_path):
-        assert HAVE_HS2SX, "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"
+        assert HAVE_HS2SX, HS2SortingExtractor.installation_mesg
         unit_ids = sorting.get_unit_ids()
         times_list = []
         labels_list = []

@@ -10,10 +10,11 @@ try:
     HAVE_YASS = True
 except:
     HAVE_YASS = False
-    
+
+
 class YassSortingExtractor(SortingExtractor):
 
-    extractor_name = 'YassExtractor'
+    extractor_name = 'YassSorting'
     mode = 'folder'
     installed = HAVE_YASS  # check at class level if installed or not
 
@@ -23,10 +24,9 @@ class YassSortingExtractor(SortingExtractor):
     
     
     def __init__(self, folder_path):
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
 
-        assert HAVE_YASS, self.installation_mesg
-        
         self.root_dir = folder_path
         r = Path(self.root_dir)
 

@@ -21,7 +21,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     y_pitch: int
         The y pitch of the probe (default 20)
     """
-    extractor_name = 'SpikeGLXRecordingExtractor'
+    extractor_name = 'SpikeGLXRecording'
     has_default_locations = True
     has_unscaled = True
     installed = True  # check at class level if installed or not

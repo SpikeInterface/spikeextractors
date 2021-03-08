@@ -15,7 +15,7 @@ PathType = Union[str, Path]
 
 
 class CombinatoSortingExtractor(SortingExtractor):
-    extractor_name = 'CombinatoSortingExtractor'
+    extractor_name = 'CombinatoSorting'
     installation_mesg = ""  # error message when not installed
     installed = HAVE_H5PY
     is_writable = False

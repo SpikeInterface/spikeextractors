@@ -14,7 +14,7 @@ except ImportError:
 
 class _NeoBaseExtractor:
     NeoRawIOClass = None
-    installed = True
+    installed = HAVE_NEO
     is_writable = False
     has_default_locations = False
     has_unscaled = True
@@ -26,7 +26,7 @@ class _NeoBaseExtractor:
         if seg_index is None then check if only one segment
 
         """
-        assert HAVE_NEO, self.installation_mesg
+        assert self.installed, self.installation_mesg
         neoIOclass = eval('neo.rawio.' + self.NeoRawIOClass)
 
         self.neo_reader = neoIOclass(**kargs)

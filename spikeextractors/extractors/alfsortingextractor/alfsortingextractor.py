@@ -13,14 +13,14 @@ except:
 
 
 class ALFSortingExtractor(SortingExtractor):
-    extractor_name = 'ALFSortingExtractor'
+    extractor_name = 'ALFSorting'
     installed = HAVE_PANDAS  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
     installation_mesg = "To use the ALFSortingExtractor run:\n\n pip install pandas\n\n"
 
     def __init__(self, folder_path, sampling_frequency=30000):
-        assert HAVE_PANDAS, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         # check correct parent folder:
         self.file_loc = Path(folder_path)

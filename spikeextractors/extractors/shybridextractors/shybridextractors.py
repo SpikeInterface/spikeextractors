@@ -27,7 +27,7 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
 
     def __init__(self, file_path):
         # load params file related to the given shybrid recording
-        assert HAVE_SBEX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         RecordingExtractor.__init__(self)
         params = sbio.get_params(file_path)['data']
 
@@ -117,13 +117,13 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
 
 
 class SHYBRIDSortingExtractor(SortingExtractor):
-    extractor_name = 'SHYBRIDSortingExtractor'
+    extractor_name = 'SHYBRIDSorting'
     installed = HAVE_SBEX
     is_writable = True
     installation_mesg = "To use the SHYBRID extractors, install SHYBRID: \n\n pip install shybrid\n\n"
 
     def __init__(self, file_path, delimiter=','):
-        assert HAVE_SBEX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
 
         if os.path.isfile(file_path):

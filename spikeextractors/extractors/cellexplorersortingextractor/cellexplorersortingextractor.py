@@ -26,13 +26,13 @@ class CellExplorerSortingExtractor(SortingExtractor):
     """
 
     extractor_name = "CellExplorerSortingExtractor"
-    installed = True
+    installed = HAVE_SCIPY
     is_writable = True
     mode = "file"
     installation_mesg = "To use the CellExplorerSortingExtractor install scipy: \n\n pip install scipy\n\n"
 
     def __init__(self, spikes_matfile_path: PathType):
-        assert HAVE_SCIPY, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
 
         spikes_matfile_path = Path(spikes_matfile_path)

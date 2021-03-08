@@ -10,7 +10,7 @@ import shutil
 
 
 class MdaRecordingExtractor(RecordingExtractor):
-    extractor_name = 'MdaRecordingExtractor'
+    extractor_name = 'MdaRecording'
     has_default_locations = True
     has_unscaled = False
     installed = True  # check at class level if installed or not
@@ -163,7 +163,7 @@ class MdaRecordingExtractor(RecordingExtractor):
 
 
 class MdaSortingExtractor(SortingExtractor):
-    extractor_name = 'MdaSortingExtractor'
+    extractor_name = 'MdaSorting'
     installed = True  # check at class level if installed or not
     is_writable = True
     mode = 'file'

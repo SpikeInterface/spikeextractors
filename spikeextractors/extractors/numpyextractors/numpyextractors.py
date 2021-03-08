@@ -11,7 +11,7 @@ like any other Recording/SortingExtractor.
 """
 
 class NumpyRecordingExtractor(RecordingExtractor):
-    extractor_name = 'NumpyRecordingExtractor'
+    extractor_name = 'NumpyRecording'
     is_writable = True
     has_default_locations = False
     has_unscaled = False
@@ -79,7 +79,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
 
 
 class NumpySortingExtractor(SortingExtractor):
-    extractor_name = 'NumpySortingExtractor'
+    extractor_name = 'NumpySorting'
     is_writable = False
 
     def __init__(self):

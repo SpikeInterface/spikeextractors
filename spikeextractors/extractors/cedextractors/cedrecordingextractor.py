@@ -33,7 +33,7 @@ class CEDRecordingExtractor(RecordingExtractor):
         with extractor id.
     """
 
-    extractor_name = 'CEDRecordingExtractor'
+    extractor_name = 'CEDRecording'
     installed = HAVE_SONPY  # check at class level if installed or not
     is_writable = False
     has_default_locations = False
@@ -42,7 +42,7 @@ class CEDRecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the CED extractor, install sonpy: \n\n pip install sonpy\n\n"  # error message when not installed
 
     def __init__(self, file_path: PathType, smrx_channel_ids: list):
-        assert HAVE_SONPY, self.installation_mesg
+        assert self.installed, self.installation_mesg
         file_path = Path(file_path)
         assert file_path.is_file() and file_path.suffix == '.smrx', 'file_path must lead to a .smrx file!'
         assert len(smrx_channel_ids) > 0, "'smrx_channel_ids' cannot be an empty list!"

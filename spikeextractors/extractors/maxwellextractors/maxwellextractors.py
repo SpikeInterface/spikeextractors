@@ -22,7 +22,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
     installation_mesg = installation_mesg
 
     def __init__(self, file_path, load_spikes=True):
-        assert HAVE_MAX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         RecordingExtractor.__init__(self)
         self._file_path = file_path
         self._fs = None
@@ -217,7 +217,7 @@ class MaxOneSortingExtractor(SortingExtractor):
     installation_mesg = installation_mesg
 
     def __init__(self, file_path):
-        assert HAVE_MAX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         self._file_path = file_path
         self._filehandle = None
@@ -284,7 +284,7 @@ class MaxTwoRecordingExtractor(RecordingExtractor):
     installation_mesg = installation_mesg
 
     def __init__(self, file_path, well_name='well000', rec_name='rec0000', load_spikes=True):
-        assert HAVE_MAX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         RecordingExtractor.__init__(self)
         self._file_path = file_path
         self._well_name = well_name
@@ -404,7 +404,7 @@ class MaxTwoSortingExtractor(SortingExtractor):
     installation_mesg = installation_mesg
 
     def __init__(self, file_path, well_name='well000', rec_name='rec0000'):
-        assert HAVE_MAX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         self._file_path = file_path
         self._well_name = well_name

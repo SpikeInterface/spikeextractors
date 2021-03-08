@@ -21,7 +21,7 @@ class SpykingCircusRecordingExtractor(RecordingExtractor):
     folder_path: str or Path
         Path to the output Spyking Circus folder or result folder
     """
-    extractor_name = 'SpykingCircusRecordingExtractor'
+    extractor_name = 'SpykingCircusRecording'
     has_default_locations = False
     has_unscaled = False
     installed = True  # check at class level if installed or not
@@ -105,14 +105,14 @@ class SpykingCircusSortingExtractor(SortingExtractor):
     load_templates: bool
         If True, templates are loaded from Spyking Circus output
     """
-    extractor_name = 'SpykingCircusSortingExtractor'
+    extractor_name = 'SpykingCircusSorting'
     installed = HAVE_SCSX  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
     installation_mesg = "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
 
     def __init__(self, file_or_folder_path, load_templates=False):
-        assert HAVE_SCSX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         file_or_folder_path = Path(file_or_folder_path)
 

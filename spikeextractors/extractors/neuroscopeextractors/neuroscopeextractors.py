@@ -59,7 +59,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     installation_mesg = "Please install lxml to use this extractor!"
 
     def __init__(self, file_path: PathType, gain: Optional[float] = None, xml_file_path: OptionalPathType = None):
-        assert HAVE_LXML, self.installation_mesg
+        assert self.installed, self.installation_mesg
         file_path = Path(file_path)
         assert file_path.is_file() and file_path.suffix in [".dat", ".eeg", ".lfp"], \
             "file_path must lead to a .dat or .eeg file!"
@@ -187,7 +187,7 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
     installation_mesg = "Please install lxml to use this extractor!"
 
     def __init__(self, folder_path: PathType, gain: Optional[float] = None):
-        assert HAVE_LXML, self.installation_mesg
+        assert self.installed, self.installation_mesg
 
         folder_path = Path(folder_path)
         recording_files = [x for x in folder_path.iterdir() if x.is_file() and x.suffix == ".dat"]
@@ -341,7 +341,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         spkfile_path: OptionalPathType = None,
         gain: Optional[float] = None
     ):
-        assert HAVE_LXML, self.installation_mesg
+        assert self.installed, self.installation_mesg
         assert not (folder_path is None and resfile_path is None and clufile_path is None), \
             "Either pass a single folder_path location, or a pair of resfile_path and clufile_path! None received."
 
@@ -565,7 +565,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         load_waveforms: bool = False,
         gain: Optional[float] = None
     ):
-        assert HAVE_LXML, self.installation_mesg
+        assert self.installed, self.installation_mesg
 
         folder_path = Path(folder_path)
 

@@ -20,7 +20,7 @@ except ImportError:
 
 
 class MEArecRecordingExtractor(RecordingExtractor):
-    extractor_name = 'MEArecRecordingExtractor'
+    extractor_name = 'MEArecRecording'
     has_default_locations = True
     has_unscaled = False
     installed = HAVE_MREX  # check at class level if installed or not
@@ -29,6 +29,7 @@ class MEArecRecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
 
     def __init__(self, file_path, locs_2d=True):
+        assert self.installed, self.installed
         self._recording_path = file_path
         self._fs = None
         self._positions = None
@@ -45,7 +46,6 @@ class MEArecRecordingExtractor(RecordingExtractor):
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'locs_2d': locs_2d}
 
     def _initialize(self):
-        assert HAVE_MREX, self.installation_mesg
         self._recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True, check_suffix=False,
                                           load=['recordings', 'channel_positions'])
         self._fs = self._recgen.info['recordings']['fs']
@@ -116,13 +116,14 @@ class MEArecRecordingExtractor(RecordingExtractor):
 
 
 class MEArecSortingExtractor(SortingExtractor):
-    extractor_name = 'MEArecSortingExtractor'
+    extractor_name = 'MEArecSorting'
     installed = HAVE_MREX  # check at class level if installed or not
     is_writable = True
     mode = 'file'
     installation_mesg = "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"  # error message when not installed
 
     def __init__(self, file_path):
+        assert self.installed, self.installed
         SortingExtractor.__init__(self)
         self._recording_path = file_path
         self._num_units = None
@@ -133,7 +134,6 @@ class MEArecSortingExtractor(SortingExtractor):
         self._kwargs = {'file_path': str(Path(file_path).absolute())}
 
     def _initialize(self):
-        assert HAVE_MREX, "To use the MEArec extractors, install MEArec: \n\n pip install MEArec\n\n"
         recgen = mr.load_recordings(recordings=self._recording_path, return_h5_objects=True, check_suffix=False,
                                     load=['spiketrains'])
         self._num_units = len(recgen.spiketrains)
@@ -161,7 +161,6 @@ class MEArecSortingExtractor(SortingExtractor):
 
     @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-
         if self._spike_trains is None:
             self._initialize()
         times = (self._spike_trains[self.get_unit_ids().index(unit_id)].times.rescale('s') *

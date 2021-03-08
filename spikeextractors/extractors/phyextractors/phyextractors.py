@@ -71,7 +71,7 @@ class PhySortingExtractor(SortingExtractor):
     exclude_cluster_groups: list (optional)
         List of cluster groups to exclude (e.g. ["noise", "mua"]
     """
-    extractor_name = 'PhySortingExtractor'
+    extractor_name = 'PhySorting'
     installed = True  # check at class level if installed or not
     is_writable = False
     mode = 'folder'

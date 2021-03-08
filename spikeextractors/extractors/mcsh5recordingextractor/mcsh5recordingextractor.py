@@ -12,7 +12,7 @@ except ImportError:
 
 
 class MCSH5RecordingExtractor(RecordingExtractor):
-    extractor_name = 'MCSH5RecordingExtractor'
+    extractor_name = 'MCSH5Recording'
     has_default_locations = False
     has_unscaled = False
     installed = HAVE_MCSH5  # check at class level if installed or not
@@ -21,7 +21,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, file_path, stream_id=0, verbose=False):
-        assert HAVE_MCSH5, self.installation_mesg
+        assert self.installed, self.installation_mesg
         self._recording_file = file_path
         self._verbose = verbose
         self._available_stream_ids = self.get_available_stream_ids()
@@ -89,14 +89,6 @@ class MCSH5RecordingExtractor(RecordingExtractor):
             return signals * conv
         else:
             return signals
-
-
-    @staticmethod
-    def write_recording(recording, save_path):
-        # Not implemented
-        # An informative example is in BiocamRecordingExtractor
-        assert HAVE_MCSH5, "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"
-        raise NotImplementedError
 
 
 def openMCSH5File(filename, stream_id, verbose=False):

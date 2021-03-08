@@ -33,7 +33,7 @@ class OpenEphysRecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"
 
     def __init__(self, folder_path, experiment_id=0, recording_id=0):
-        assert HAVE_OE, self.installation_mesg
+        assert self.installed, self.installation_mesg
         RecordingExtractor.__init__(self)
         self._recording_file = folder_path
 
@@ -92,7 +92,7 @@ class OpenEphysNPIXRecordingExtractor(OpenEphysRecordingExtractor):
                         "install pyopenephys >= 1.1: \n\n pip install pyopenephys>=1.1\n\n"
 
     def __init__(self, folder_path, experiment_id=0, recording_id=0, stream="AP"):
-        assert HAVE_OE_11, self.installation_mesg
+        assert self.installed, self.installation_mesg
         assert stream.upper() in ["AP", "LFP"]
         OpenEphysRecordingExtractor.__init__(self, folder_path, experiment_id, recording_id)
 
@@ -118,14 +118,14 @@ class OpenEphysNPIXRecordingExtractor(OpenEphysRecordingExtractor):
 
 
 class OpenEphysSortingExtractor(SortingExtractor):
-    extractor_name = 'OpenEphysSortingExtractor'
+    extractor_name = 'OpenEphysSorting'
     installed = HAVE_OE  # check at class level if installed or not
     is_writable = False
     mode = 'file'
     installation_mesg = "To use the OpenEphys extractor, install pyopenephys: \n\n pip install pyopenephys\n\n"  # error message when not installed
 
-    def __init__(self, folder_path, *, experiment_id=0, recording_id=0):
-        assert HAVE_OE, self.installation_mesg
+    def __init__(self, folder_path, experiment_id=0, recording_id=0):
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         self._recording_file = folder_path
         self._recording = pyopenephys.File(folder_path).experiments[experiment_id].recordings[recording_id]

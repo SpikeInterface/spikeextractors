@@ -14,7 +14,7 @@ class NpzSortingExtractor(SortingExtractor):
 
 
     """
-    extractor_name = 'NpzSortingExtractor'
+    extractor_name = 'NpzSorting'
     installed = True # depend only on numpy
     installation_mesg = "Always installed"
     is_writable = True

@@ -1,4 +1,3 @@
-import os
 import uuid
 from datetime import datetime
 from collections import abc
@@ -30,7 +29,7 @@ ArrayType = Union[list, np.ndarray]
 
 
 def check_nwb_install():
-    assert HAVE_NWB, "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
+    assert HAVE_NWB, NwbRecordingExtractor.installation_mesg
 
 
 def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, index=False,
@@ -169,7 +168,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         file_path: path to NWB file
         electrical_series_name: str, optional
         """
-        assert HAVE_NWB, self.installation_mesg
+        assert self.installed, self.installation_mesg
         se.RecordingExtractor.__init__(self)
         self._path = str(file_path)
         with NWBHDF5IO(self._path, 'r') as io:
@@ -1068,7 +1067,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
 
 class NwbSortingExtractor(se.SortingExtractor):
-    extractor_name = 'NwbSortingExtractor'
+    extractor_name = 'NwbSorting'
     installed = HAVE_NWB  # check at class level if installed or not
     is_writable = True
     mode = 'file'
@@ -1081,7 +1080,7 @@ class NwbSortingExtractor(se.SortingExtractor):
         path: path to NWB file
         electrical_series: pynwb.ecephys.ElectricalSeries object
         """
-        assert HAVE_NWB, self.installation_mesg
+        assert self.installed, self.installation_mesg
         se.SortingExtractor.__init__(self)
         self._path = str(file_path)
         with NWBHDF5IO(self._path, 'r') as io:
