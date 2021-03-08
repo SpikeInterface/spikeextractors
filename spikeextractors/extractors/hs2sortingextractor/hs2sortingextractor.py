@@ -31,7 +31,7 @@ class HS2SortingExtractor(SortingExtractor):
 
         self._cluster_id = self._rf['cluster_id'][()]
         self._unit_ids = set(self._cluster_id)
-        self._times = self._rf['times'][()]
+        self._spike_times = self._rf['times'][()]
 
         if load_unit_info:
             self.load_unit_info()
@@ -39,18 +39,18 @@ class HS2SortingExtractor(SortingExtractor):
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'load_unit_info': load_unit_info}
 
     def load_unit_info(self):
-        if 'centres' in self._rf.keys() and len(self._times) > 0:
+        if 'centres' in self._rf.keys() and len(self._spike_times) > 0:
             self._unit_locs = self._rf['centres'][()]  # cache for faster access
             for u_i, unit_id in enumerate(self._unit_ids):
                 self.set_unit_property(unit_id, property_name='unit_location', value=self._unit_locs[u_i])
         inds = []  # get these only once
         for unit_id in self._unit_ids:
             inds.append(np.where(self._cluster_id == unit_id)[0])
-        if 'data' in self._rf.keys() and len(self._times) > 0:
+        if 'data' in self._rf.keys() and len(self._spike_times) > 0:
             d = self._rf['data'][()]
             for i, unit_id in enumerate(self._unit_ids):
                 self.set_unit_spike_features(unit_id, 'spike_location', d[:, inds[i]].T)
-        if 'ch' in self._rf.keys() and len(self._times) > 0:
+        if 'ch' in self._rf.keys() and len(self._spike_times) > 0:
             d = self._rf['ch'][()]
             for i, unit_id in enumerate(self._unit_ids):
                 self.set_unit_spike_features(unit_id, 'max_channel', d[inds[i]])
@@ -63,8 +63,7 @@ class HS2SortingExtractor(SortingExtractor):
 
     @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-
-        times = self._times[self.get_unit_indices(unit_id)]
+        times = self._spike_times[self.get_unit_indices(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
 
