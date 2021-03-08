@@ -738,9 +738,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 "Unable to coerce underlying unsigned data type to signed type, which is currently required for NWB "
                 "Schema v2.2.5! Please specify 'write_scaled=True'."
             )
-        else:
-            warnings.warn("NWB Schema v2.2.5 does not officially support channel offsets. The data will be converted"
-                          "to a signed type that using channel offsets.")
+        elif np.any(unsigned_coercion != 0):
+            warnings.warn(
+                "NWB Schema v2.2.5 does not officially support channel offsets. The data will be converted to a signed "
+                "type that using channel offsets."
+            )
             unsigned_coercion = unsigned_coercion.astype(int)
         if write_scaled:
             eseries_kwargs.update(conversion=1e-6)
@@ -766,9 +768,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     if not write_scaled:
                         data_dtype_name = data.dtype.name
                         if data_dtype_name.startswith("uint"):
-                            # if uint, cast to int
-                            data = data.astype(data_dtype_name[1:])
-                            data_dtype_name = data_dtype_name[1:]
+                            data_dtype_name = data_dtype_name[1:]  # Retain memory of signed data type
                         data = data + unsigned_coercion[i]
                         data = data.astype(data_dtype_name)
                     yield data.flatten()
