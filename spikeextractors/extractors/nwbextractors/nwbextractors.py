@@ -741,7 +741,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         elif np.any(unsigned_coercion != 0):
             warnings.warn(
                 "NWB Schema v2.2.5 does not officially support channel offsets. The data will be converted to a signed "
-                "type that using channel offsets."
+                "type that does not use offsets."
             )
             unsigned_coercion = unsigned_coercion.astype(int)
         if write_scaled:
