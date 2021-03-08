@@ -30,7 +30,6 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._recordings = None
         self._filehandle = None
         self._load_spikes = load_spikes
-        self._times = None
         self._mapping = None
         self._initialize()
         self._kwargs = {'file_path': str(Path(file_path).absolute()),
@@ -161,10 +160,11 @@ class MaxOneRecordingExtractor(RecordingExtractor):
             if verbose:
                 print(f"Found {len(delays_in_frames)} missing intervals")
 
-            self._times = np.round(np.arange(self.get_num_frames()) / self.get_sampling_frequency(), 6)
+            times = np.round(np.arange(self.get_num_frames()) / self.get_sampling_frequency(), 6)
 
             for mf_idx, duration in zip(missing_frames_idxs, delays_in_frames):
-                self._times[mf_idx:] += np.round(duration / self.get_sampling_frequency(), 6)
+                times[mf_idx:] += np.round(duration / self.get_sampling_frequency(), 6)
+            self.set_times(times)
         else:
             if verbose:
                 print("No missing frames found")
