@@ -11,14 +11,14 @@ except ImportError:
 
 
 class TridesclousSortingExtractor(SortingExtractor):
-    extractor_name = 'TridesclousSortingExtractor'
+    extractor_name = 'TridesclousSorting'
     installed = HAVE_TDC  # check at class level if installed or not
     is_writable = False
     mode = 'folder'
     installation_mesg = "To use the TridesclousSortingExtractor install tridesclous: \n\n pip install tridesclous\n\n"  # error message when not installed
 
     def __init__(self, folder_path, chan_grp=None):
-        assert HAVE_TDC, self.installation_mesg
+        assert self.installed, self.installation_mesg
         tdc_folder = Path(folder_path)
         SortingExtractor.__init__(self)
         

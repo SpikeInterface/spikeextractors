@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+import numpy as np
 import sys
 
 from datalad.api import install, Dataset
@@ -10,6 +11,8 @@ import spikeextractors as se
 from spikeextractors.testing import check_recordings_equal, check_sortings_equal
 
 run_local = False
+test_nwb = True
+test_caching = True
 
 if sys.platform == "linux" or run_local:
     class TestNwbConversions(unittest.TestCase):
@@ -122,13 +125,35 @@ if sys.platform == "linux" or run_local:
         def test_convert_recording_extractor_to_nwb(self, se_class, dataset_path, se_kwargs):
             print(f"\n\n\n TESTING {se_class.extractor_name}...")
             dataset_stem = Path(dataset_path).stem
-            nwb_save_path = self.savedir / f"{se_class.__name__}_test_{dataset_stem}.nwb"
             self.dataset.get(dataset_path)
-
             recording = se_class(**se_kwargs)
-            se.NwbRecordingExtractor.write_recording(recording, nwb_save_path, write_scaled=True)
-            nwb_recording = se.NwbRecordingExtractor(nwb_save_path)
-            check_recordings_equal(recording, nwb_recording)
+
+
+            # # test writing to NWB
+            if test_nwb:
+                nwb_save_path = self.savedir / f"{se_class.__name__}_test_{dataset_stem}.nwb"
+                se.NwbRecordingExtractor.write_recording(recording, nwb_save_path, write_scaled=True)
+                nwb_recording = se.NwbRecordingExtractor(nwb_save_path)
+                check_recordings_equal(recording, nwb_recording)
+
+                if recording.has_unscaled:
+                    nwb_save_path_unscaled = self.savedir / f"{se_class.__name__}_test_{dataset_stem}_unscaled.nwb"
+                    if np.all(recording.get_channel_offsets() == 0):
+                        se.NwbRecordingExtractor.write_recording(recording, nwb_save_path_unscaled, write_scaled=False)
+                        nwb_recording = se.NwbRecordingExtractor(nwb_save_path_unscaled)
+                        check_recordings_equal(recording, nwb_recording, return_scaled=False)
+                        # Skip check when NWB converts uint to int
+                        if recording.get_dtype(return_scaled=False) == nwb_recording.get_dtype(return_scaled=False):
+                            check_recordings_equal(recording, nwb_recording, return_scaled=True)
+
+            # test caching
+            if test_caching:
+                rec_cache = se.CacheRecordingExtractor(recording)
+                check_recordings_equal(recording, rec_cache)
+                if recording.has_unscaled:
+                    rec_cache_unscaled = se.CacheRecordingExtractor(recording, return_scaled=False)
+                    check_recordings_equal(recording, rec_cache_unscaled, return_scaled=False)
+                    check_recordings_equal(recording, rec_cache_unscaled, return_scaled=True)
 
         @parameterized.expand([
             (
@@ -195,7 +220,6 @@ if sys.platform == "linux" or run_local:
         def test_convert_sorting_extractor_to_nwb(self, se_class, dataset_path, se_kwargs):
             print(f"\n\n\n TESTING {se_class.extractor_name}...")
             dataset_stem = Path(dataset_path).stem
-            nwb_save_path = self.savedir / f"{se_class.__name__}_test_{dataset_stem}.nwb"
             self.dataset.get(dataset_path)
 
             sorting = se_class(**se_kwargs)
@@ -203,9 +227,16 @@ if sys.platform == "linux" or run_local:
             if sf is None:  # need to set dummy sampling frequency since no associated acquisition in file
                 sf = 30000
                 sorting.set_sampling_frequency(sf)
-            se.NwbSortingExtractor.write_sorting(sorting, nwb_save_path)
-            nwb_sorting = se.NwbSortingExtractor(nwb_save_path, sampling_frequency=sf)
-            check_sortings_equal(sorting, nwb_sorting)
+
+            if test_nwb:
+                nwb_save_path = self.savedir / f"{se_class.__name__}_test_{dataset_stem}.nwb"
+                se.NwbSortingExtractor.write_sorting(sorting, nwb_save_path)
+                nwb_sorting = se.NwbSortingExtractor(nwb_save_path, sampling_frequency=sf)
+                check_sortings_equal(sorting, nwb_sorting)
+
+            if test_caching:
+                sort_cache = se.CacheSortingExtractor(sorting)
+                check_sortings_equal(sorting, sort_cache)
 
 
 if __name__ == '__main__':

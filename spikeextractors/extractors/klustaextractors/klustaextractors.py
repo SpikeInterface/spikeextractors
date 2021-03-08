@@ -25,7 +25,7 @@ except ImportError:
 
 # noinspection SpellCheckingInspection
 class KlustaRecordingExtractor(BinDatRecordingExtractor):
-    extractor_name = 'KlustaRecordingExtractor'
+    extractor_name = 'KlustaRecording'
     has_default_locations = False
     has_unscaled = False
     installed = HAVE_KLSX  # check at class level if installed or not
@@ -34,7 +34,7 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
     installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, folder_path):
-        assert HAVE_KLSX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         klustafolder = Path(folder_path).absolute()
         config_file = [f for f in klustafolder.iterdir() if f.suffix == '.prm'][0]
         dat_file = [f for f in klustafolder.iterdir() if f.suffix == '.dat'][0]
@@ -52,7 +52,7 @@ class KlustaRecordingExtractor(BinDatRecordingExtractor):
 
 # noinspection SpellCheckingInspection
 class KlustaSortingExtractor(SortingExtractor):
-    extractor_name = 'KlustaSortingExtractor'
+    extractor_name = 'KlustaSorting'
     installed = HAVE_KLSX  # check at class level if installed or not
     installation_mesg = "To use the KlustaSortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
     is_writable = True
@@ -61,7 +61,7 @@ class KlustaSortingExtractor(SortingExtractor):
     default_cluster_groups = {0: 'Noise', 1: 'MUA', 2: 'Good', 3: 'Unsorted'}
 
     def __init__(self, file_or_folder_path, exclude_cluster_groups=None):
-        assert HAVE_KLSX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         kwik_file_or_folder = Path(file_or_folder_path)
         kwikfile = None

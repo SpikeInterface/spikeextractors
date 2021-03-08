@@ -33,7 +33,7 @@ class CEDRecordingExtractor(RecordingExtractor):
         with extractor id.
     """
 
-    extractor_name = 'CEDRecordingExtractor'
+    extractor_name = 'CEDRecording'
     installed = HAVE_SONPY  # check at class level if installed or not
     is_writable = False
     has_default_locations = False
@@ -42,7 +42,7 @@ class CEDRecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the CED extractor, install sonpy: \n\n pip install sonpy\n\n"  # error message when not installed
 
     def __init__(self, file_path: PathType, smrx_channel_ids: list):
-        assert HAVE_SONPY, self.installation_mesg
+        assert self.installed, self.installation_mesg
         file_path = Path(file_path)
         assert file_path.is_file() and file_path.suffix == '.smrx', 'file_path must lead to a .smrx file!'
         assert len(smrx_channel_ids) > 0, "'smrx_channel_ids' cannot be an empty list!"
@@ -91,7 +91,7 @@ class CEDRecordingExtractor(RecordingExtractor):
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        '''This function extracts and returns a trace from the recorded data from the
+        """This function extracts and returns a trace from the recorded data from the
         given channels ids and the given start and end frame. It will return
         traces from within three ranges:
 
@@ -122,7 +122,7 @@ class CEDRecordingExtractor(RecordingExtractor):
         traces: numpy.ndarray
             A 2D array that contains all of the traces from each channel.
             Dimensions are: (num_channels x num_frames)
-        '''
+        """
         recordings = np.vstack(
             [get_channel_data(
                 f=self._recording_file,
@@ -135,34 +135,34 @@ class CEDRecordingExtractor(RecordingExtractor):
         return recordings
 
     def get_num_frames(self):
-        '''This function returns the number of frames in the recording
+        """This function returns the number of frames in the recording
 
         Returns
         -------
         num_frames: int
             Number of frames in the recording (duration of recording)
-        '''
+        """
         return int(self._channel_smrxinfo[0]['max_time'] / self._channel_smrxinfo[0]['divide'])
 
     def get_sampling_frequency(self):
-        '''This function returns the sampling frequency in units of Hz.
+        """This function returns the sampling frequency in units of Hz.
 
         Returns
         -------
         fs: float
             Sampling frequency of the recordings in Hz
-        '''
+        """
         return self._channel_smrxinfo[0]['rate']
 
     def get_channel_ids(self):
-        '''Returns the list of channel ids. If not specified, the range from 0 to num_channels - 1 is returned.
+        """Returns the list of channel ids. If not specified, the range from 0 to num_channels - 1 is returned.
 
         Returns
         -------
         channel_ids: list
             Channel list
 
-        '''
+        """
         return list(self._channelid_to_smrxind.keys())
 
     @staticmethod

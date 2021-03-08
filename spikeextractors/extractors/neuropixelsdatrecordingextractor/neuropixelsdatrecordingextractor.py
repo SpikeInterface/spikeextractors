@@ -85,7 +85,7 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
             channels = range(384)
 
         BinDatRecordingExtractor.__init__(self, file_path=datfile, numchan=numchan, dtype=dtype,
-                                          sampling_frequency=sampling_frequency, gain=gain, offset=offset, geom=geom,
+                                          sampling_frequency=sampling_frequency, gain=gain, geom=geom,
                                           recording_channels=channels, time_axis=time_axis, is_filtered=is_filtered)
 
         self._kwargs = {'filename': str(Path(file_path).absolute()), 'settings_file': settings_file,

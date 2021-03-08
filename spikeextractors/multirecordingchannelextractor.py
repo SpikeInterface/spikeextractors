@@ -115,7 +115,7 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
 
 
 def concatenate_recordings_by_channel(recordings, groups=None):
-    '''
+    """
     Concatenates recordings together by channel. The order of the recordings
     determines the order of the channels in the concatenated recording.
 
@@ -131,7 +131,7 @@ def concatenate_recordings_by_channel(recordings, groups=None):
     recording: MultiRecordingChannelExtractor
         The concatenated recording extractors enscapsulated in the
         MultiRecordingChannelExtractor object (which is also a recording extractor)
-    '''
+    """
     return MultiRecordingChannelExtractor(
         recordings=recordings,
         groups=groups,

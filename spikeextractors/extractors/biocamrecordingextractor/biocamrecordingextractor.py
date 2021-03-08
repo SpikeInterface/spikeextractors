@@ -21,7 +21,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
     installation_mesg = "To use the BiocamRecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, file_path, verbose=False, mea_pitch=42):
-        assert HAVE_BIOCAM, self.installation_mesg
+        assert self.installed, self.installation_mesg
         self._mea_pitch = mea_pitch
         self._recording_file = file_path
         self._rf, self._nFrames, self._samplingRate, self._nRecCh, self._chIndices, \
@@ -65,7 +65,7 @@ class BiocamRecordingExtractor(RecordingExtractor):
         # DigitalValue = (AnalogValue - MVOffset)/ADCCountsToMV
         # we center at 2048
 
-        assert HAVE_BIOCAM, "To use the BiocamRecordingExtractor install h5py: \n\n pip install h5py\n\n"
+        assert HAVE_BIOCAM, BiocamRecordingExtractor.installation_mesg
         M = recording.get_num_channels()
         N = recording.get_num_frames()
         rf = h5py.File(save_path, 'w')

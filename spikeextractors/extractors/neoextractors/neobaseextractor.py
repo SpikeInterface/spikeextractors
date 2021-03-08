@@ -14,7 +14,7 @@ except ImportError:
 
 class _NeoBaseExtractor:
     NeoRawIOClass = None
-    installed = True
+    installed = HAVE_NEO
     is_writable = False
     has_default_locations = False
     has_unscaled = True
@@ -26,7 +26,7 @@ class _NeoBaseExtractor:
         if seg_index is None then check if only one segment
 
         """
-        assert HAVE_NEO, self.installation_mesg
+        assert self.installed, self.installation_mesg
         neoIOclass = eval('neo.rawio.' + self.NeoRawIOClass)
 
         self.neo_reader = neoIOclass(**kargs)
@@ -101,21 +101,9 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
                                                             i_start=start_frame, i_stop=end_frame,
                                                             channel_indexes=None, channel_names=None,
                                                             channel_ids=channel_ids)
-
-        if return_scaled:
-            # rescale traces to natural units (can be anything)
-            scaled_traces = self.neo_reader.rescale_signal_raw_to_float(raw_traces, dtype='float32',
-                                                                        channel_indexes=None, channel_names=None,
-                                                                        channel_ids=channel_ids)
-            channel_idxs = np.array([list(channel_ids).index(ch) for ch in channel_ids])
-            # and then to uV
-            scaled_traces *= self.additional_gain[:, channel_idxs]
-            traces = scaled_traces
-        else:
-            traces = raw_traces
         # neo works with (samples, channels) strides
         # so transpose to spikeextractors wolrd
-        return traces.transpose()
+        return raw_traces.transpose()
 
     def get_num_frames(self):
         # channel_indexes=None means all channels
