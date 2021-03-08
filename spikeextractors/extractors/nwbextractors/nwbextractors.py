@@ -447,7 +447,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 nwbfile.create_electrode_group(**electrode_group_kwargs)
 
     @staticmethod
-    def add_electrodes(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None):
+    def add_electrodes(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None,
+                       write_scaled: bool = True):
         """
         Auxiliary static method for nwbextractor.
 
@@ -458,6 +459,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         recording: RecordingExtractor
         nwbfile: NWBFile
             nwb file to which the recording information is to be added
+        write_scaled: bool (optional, defaults to True)
+            If True, writes the scaled traces (return_scaled=True)
         metadata: dict
             metadata info for constructing the nwb file (optional).
             Should be of the format
@@ -609,8 +612,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         # property 'gain' should not be in the NWB electrodes_table
         # property 'brain_area' of RX channels corresponds to 'location' of NWB electrodes
+        # property 'offset' should not be in the NWB electrodes_table as not officially supported by schema v2.2.5
         channel_prop_names = set(recording.get_shared_channel_property_names()) - set(nwbfile.electrodes.colnames) \
-                             - set(['gain', 'location'])
+                             - {'gain', 'location', 'offset'}
         for channel_prop_name in channel_prop_names:
             for channel_id in recording.get_channel_ids():
                 val = recording.get_channel_property(channel_id, channel_prop_name)
@@ -735,6 +739,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 "Unable to coerce underlying unsigned data type to signed type, which is currently required for NWB "
                 "Schema v2.2.5! Please specify 'write_scaled=True'."
             )
+        else:
+            warnings.warn("NWB Schema v2.2.5 does not officially support channel offsets. The data will be converted"
+                          "to a signed type that using channel offsets.")
+            unsigned_coercion = unsigned_coercion.astype(int)
         if write_scaled:
             eseries_kwargs.update(conversion=1e-6)
         else:
@@ -753,17 +761,24 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 buffer_size=buffer_size
             )
         else:
-            warnings.warn("Unable to memmap data - chunk as array")  # experiement to see how much of GIN goes through this loop
-            def data_generator(recording, channels_ids, unsigned_coercion):
-                for id in channels_ids:
-                    data = recording.get_traces(channel_ids=[id], return_scaled=write_scaled) \
-                        + unsigned_coercion[id]
+            def data_generator(recording, channels_ids, unsigned_coercion, write_scaled):
+                for i, ch in enumerate(channels_ids):
+                    data = recording.get_traces(channel_ids=[ch], return_scaled=write_scaled)
+                    if not write_scaled:
+                        data_dtype_name = data.dtype.name
+                        if data_dtype_name.startswith("uint"):
+                            # if uint, cast to int
+                            data = data.astype(data_dtype_name[1:])
+                            data_dtype_name = data_dtype_name[1:]
+                        data = data + unsigned_coercion[i]
+                        data = data.astype(data_dtype_name)
                     yield data.flatten()
             ephys_data = DataChunkIterator(
                 data=data_generator(
                     recording=recording,
                     channels_ids=channel_ids,
-                    unsigned_coercion=unsigned_coercion
+                    unsigned_coercion=unsigned_coercion,
+                    write_scaled=write_scaled
                 ),
                 iter_axis=1,  # nwb standard is time as zero axis
                 maxshape=(recording.get_num_frames(), recording.get_num_channels())
@@ -885,7 +900,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         se.NwbRecordingExtractor.add_electrodes(
             recording=recording,
             nwbfile=nwbfile,
-            metadata=metadata
+            metadata=metadata,
+            write_scaled=write_scaled
         )
         se.NwbRecordingExtractor.add_electrical_series(
             recording=recording,

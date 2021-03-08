@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+import numpy as np
 import sys
 
 from datalad.api import install, Dataset
@@ -137,10 +138,13 @@ if sys.platform == "linux" or run_local:
 
                 if recording.has_unscaled:
                     nwb_save_path_unscaled = self.savedir / f"{se_class.__name__}_test_{dataset_stem}_unscaled.nwb"
-                    se.NwbRecordingExtractor.write_recording(recording, nwb_save_path_unscaled, write_scaled=False)
-                    nwb_recording = se.NwbRecordingExtractor(nwb_save_path)
-                    check_recordings_equal(recording, nwb_recording, return_scaled=False)
-                    check_recordings_equal(recording, nwb_recording, return_scaled=True)
+                    if np.all(recording.get_channel_offsets() == 0):
+                        se.NwbRecordingExtractor.write_recording(recording, nwb_save_path_unscaled, write_scaled=False)
+                        nwb_recording = se.NwbRecordingExtractor(nwb_save_path_unscaled)
+                        check_recordings_equal(recording, nwb_recording, return_scaled=False)
+                        # Skip check when NWB converts uint to int
+                        if recording.get_dtype(return_scaled=False) == nwb_recording.get_dtype(return_scaled=False):
+                            check_recordings_equal(recording, nwb_recording, return_scaled=True)
 
             # test caching
             if test_caching:
