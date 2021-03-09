@@ -8,7 +8,7 @@ from .synthesize_timeseries import synthesize_timeseries
 
 def toy_example(duration=10, num_channels=4, sampling_frequency=30000.0, K=10, dumpable=False, dump_folder=None,
                 seed=None):
-    '''
+    """
     Creates toy recording and sorting extractors.
 
     Parameters
@@ -36,7 +36,7 @@ def toy_example(duration=10, num_channels=4, sampling_frequency=30000.0, K=10, d
     sorting: SortingExtractor
         The output sorting extractor. If dumpable is False it's a NumpyRecordingExtractor, otherwise it's an
         NpzSortingExtractor
-    '''
+    """
     upsamplefac = 13
     waveforms, geom = synthesize_random_waveforms(K=K, M=num_channels, average_peak_amplitude=-100,
                                                   upsamplefac=upsamplefac, seed=seed)

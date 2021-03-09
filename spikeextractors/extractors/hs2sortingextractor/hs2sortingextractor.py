@@ -1,7 +1,7 @@
 from spikeextractors import SortingExtractor
 import numpy as np
 from pathlib import Path
-from spikeextractors.extraction_tools import check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_unit_spike_train
 
 try:
     import h5py
@@ -12,14 +12,14 @@ except ImportError:
 
 
 class HS2SortingExtractor(SortingExtractor):
-    extractor_name = 'HS2SortingExtractor'
+    extractor_name = 'HS2Sorting'
     installed = HAVE_HS2SX  # check at class level if installed or not
     is_writable = True
     mode = 'file'
     installation_mesg = "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, file_path, load_unit_info=True):
-        assert HAVE_HS2SX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         self._recording_file = file_path
         self._rf = h5py.File(self._recording_file, mode='r')
@@ -31,7 +31,7 @@ class HS2SortingExtractor(SortingExtractor):
 
         self._cluster_id = self._rf['cluster_id'][()]
         self._unit_ids = set(self._cluster_id)
-        self._times = self._rf['times'][()]
+        self._spike_times = self._rf['times'][()]
 
         if load_unit_info:
             self.load_unit_info()
@@ -39,18 +39,18 @@ class HS2SortingExtractor(SortingExtractor):
         self._kwargs = {'file_path': str(Path(file_path).absolute()), 'load_unit_info': load_unit_info}
 
     def load_unit_info(self):
-        if 'centres' in self._rf.keys() and len(self._times) > 0:
+        if 'centres' in self._rf.keys() and len(self._spike_times) > 0:
             self._unit_locs = self._rf['centres'][()]  # cache for faster access
             for u_i, unit_id in enumerate(self._unit_ids):
                 self.set_unit_property(unit_id, property_name='unit_location', value=self._unit_locs[u_i])
         inds = []  # get these only once
         for unit_id in self._unit_ids:
             inds.append(np.where(self._cluster_id == unit_id)[0])
-        if 'data' in self._rf.keys() and len(self._times) > 0:
+        if 'data' in self._rf.keys() and len(self._spike_times) > 0:
             d = self._rf['data'][()]
             for i, unit_id in enumerate(self._unit_ids):
                 self.set_unit_spike_features(unit_id, 'spike_location', d[:, inds[i]].T)
-        if 'ch' in self._rf.keys() and len(self._times) > 0:
+        if 'ch' in self._rf.keys() and len(self._spike_times) > 0:
             d = self._rf['ch'][()]
             for i, unit_id in enumerate(self._unit_ids):
                 self.set_unit_spike_features(unit_id, 'max_channel', d[inds[i]])
@@ -61,20 +61,15 @@ class HS2SortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._unit_ids)
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
-        times = self._times[self.get_unit_indices(unit_id)]
+        times = self._spike_times[self.get_unit_indices(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
 
     @staticmethod
     def write_sorting(sorting, save_path):
-        assert HAVE_HS2SX, "To use the HS2SortingExtractor install h5py: \n\n pip install h5py\n\n"
+        assert HAVE_HS2SX, HS2SortingExtractor.installation_mesg
         unit_ids = sorting.get_unit_ids()
         times_list = []
         labels_list = []

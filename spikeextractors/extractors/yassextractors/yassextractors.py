@@ -3,17 +3,18 @@ from pathlib import Path
 
 from spikeextractors import SortingExtractor
 from spikeextractors.extractors.numpyextractors import NumpyRecordingExtractor
-from spikeextractors.extraction_tools import check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_unit_spike_train
 
 try:
     import yaml
     HAVE_YASS = True
 except:
     HAVE_YASS = False
-    
+
+
 class YassSortingExtractor(SortingExtractor):
 
-    extractor_name = 'YassExtractor'
+    extractor_name = 'YassSorting'
     mode = 'folder'
     installed = HAVE_YASS  # check at class level if installed or not
 
@@ -23,10 +24,9 @@ class YassSortingExtractor(SortingExtractor):
     
     
     def __init__(self, folder_path):
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
 
-        assert HAVE_YASS, self.installation_mesg
-        
         self.root_dir = folder_path
         r = Path(self.root_dir)
 
@@ -66,8 +66,8 @@ class YassSortingExtractor(SortingExtractor):
 
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
 
-        '''Code to extract spike frames from the specified unit.
-        '''
+        """Code to extract spike frames from the specified unit.
+        """
 
         if self.spike_train is None:
             self.spike_train = np.load(self.fname_spike_train)

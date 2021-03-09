@@ -9,7 +9,8 @@ import shutil
 
 
 class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
-    def __init__(self, recording, chunk_size=None, chunk_mb=500, save_path=None, n_jobs=1, joblib_backend='loky',
+    def __init__(self, recording, return_scaled=True,
+                 chunk_size=None, chunk_mb=500, save_path=None, n_jobs=1, joblib_backend='loky',
                  verbose=False):
         RecordingExtractor.__init__(self)  # init tmp folder before constructing BinDatRecordingExtractor
         tmp_folder = self.get_tmp_folder()
@@ -24,20 +25,31 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
             save_path.parent.mkdir(parents=True, exist_ok=True)
             self._is_tmp = False
             self._tmp_file = save_path
-        self._dtype = recording.get_dtype()
+        self._return_scaled = return_scaled
+        self._dtype = recording.get_dtype(return_scaled)
         recording.write_to_binary_dat_format(save_path=self._tmp_file, dtype=self._dtype, chunk_size=chunk_size,
                                              chunk_mb=chunk_mb, n_jobs=n_jobs, joblib_backend=joblib_backend,
-                                             verbose=verbose)
+                                             return_scaled=self._return_scaled, verbose=verbose)
         # keep track of filter status when dumping
         self.is_filtered = self._recording.is_filtered
         BinDatRecordingExtractor.__init__(self, self._tmp_file, numchan=recording.get_num_channels(),
                                           recording_channels=recording.get_channel_ids(),
                                           sampling_frequency=recording.get_sampling_frequency(),
                                           dtype=self._dtype, is_filtered=self.is_filtered)
-        # keep BinDatRecording kwargs
-        self._bindat_kwargs = deepcopy(self._kwargs)
+
         self.set_tmp_folder(tmp_folder)
         self.copy_channel_properties(recording)
+
+        if 'gain' in recording.get_shared_channel_property_names() and not return_scaled:
+            self.set_channel_gains(recording.get_channel_gains())
+            self.set_channel_offsets(recording.get_channel_offsets())
+            self.has_unscaled = True
+        else:
+            self.clear_channel_gains()
+            self.clear_channel_offsets()
+
+        # keep BinDatRecording kwargs
+        self._bindat_kwargs = deepcopy(self._kwargs)
         self._kwargs = {'recording': recording, 'chunk_size': chunk_size, 'chunk_mb': chunk_mb}
 
     def __del__(self):
@@ -76,7 +88,7 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
 
     # override to make serialization avoid reloading and saving binary file
     def make_serialized_dict(self, include_properties=None, include_features=None):
-        '''
+        """
         Makes a nested serialized dictionary out of the extractor. The dictionary be used to re-initialize an
         extractor with spikeextractors.load_extractor_from_dict(dump_dict)
 
@@ -88,7 +100,7 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
             List of properties to include in the dictionary
         include_features: list or None
             List of features to include in the dictionary
-        '''
+        """
         class_name = str(BinDatRecordingExtractor).replace("<class '", "").replace("'>", '')
         module = class_name.split('.')[0]
         imported_module = importlib.import_module(module)
@@ -158,7 +170,7 @@ class CacheSortingExtractor(NpzSortingExtractor, SortingExtractor):
 
     # override to make serialization avoid reloading and saving npz file
     def make_serialized_dict(self, include_properties=None, include_features=None):
-        '''
+        """
         Makes a nested serialized dictionary out of the extractor. The dictionary be used to re-initialize an
         extractor with spikeextractors.load_extractor_from_dict(dump_dict)
 
@@ -170,7 +182,7 @@ class CacheSortingExtractor(NpzSortingExtractor, SortingExtractor):
             List of properties to include in the dictionary
         include_features: list or None
             List of features to include in the dictionary
-        '''
+        """
         class_name = str(NpzSortingExtractor).replace("<class '", "").replace("'>", '')
         module = class_name.split('.')[0]
         imported_module = importlib.import_module(module)

@@ -12,15 +12,16 @@ except ImportError:
 
 
 class MCSH5RecordingExtractor(RecordingExtractor):
-    extractor_name = 'MCSH5RecordingExtractor'
+    extractor_name = 'MCSH5Recording'
     has_default_locations = False
+    has_unscaled = False
     installed = HAVE_MCSH5  # check at class level if installed or not
     is_writable = False
     mode = 'file'
     installation_mesg = "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"  # error message when not installed
 
     def __init__(self, file_path, stream_id=0, verbose=False):
-        assert HAVE_MCSH5, self.installation_mesg
+        assert self.installed, self.installation_mesg
         self._recording_file = file_path
         self._verbose = verbose
         self._available_stream_ids = self.get_available_stream_ids()
@@ -66,13 +67,7 @@ class MCSH5RecordingExtractor(RecordingExtractor):
             return list(range(len(analog_stream_names)))
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         channel_idxs = []
         for m in channel_ids:
             assert m in self._channel_ids, 'channel_id {} not found'.format(m)
@@ -85,19 +80,15 @@ class MCSH5RecordingExtractor(RecordingExtractor):
             if np.any(np.diff(channel_idxs) < 0):
                 sorted_channel_ids = np.sort(channel_idxs)
                 sorted_idx = np.array([list(sorted_channel_ids).index(ch) for ch in channel_idxs])
-                recordings = stream.get('ChannelData')[sorted_channel_ids, start_frame:end_frame]
-                return recordings[sorted_idx] * conv
+                signals = stream.get('ChannelData')[sorted_channel_ids, start_frame:end_frame][sorted_idx]
             else:
-                return stream.get('ChannelData')[np.sort(channel_idxs), start_frame:end_frame] * conv
+                signals =  stream.get('ChannelData')[np.sort(channel_idxs), start_frame:end_frame]
         else:
-            return stream.get('ChannelData')[np.array(channel_idxs), start_frame:end_frame] * conv
-
-    @staticmethod
-    def write_recording(recording, save_path):
-        # Not implemented
-        # An informative example is in BiocamRecordingExtractor
-        assert HAVE_MCSH5, "To use the MCSH5RecordingExtractor install h5py: \n\n pip install h5py\n\n"
-        raise NotImplementedError
+            signals = stream.get('ChannelData')[np.array(channel_idxs), start_frame:end_frame]
+        if return_scaled:
+            return signals * conv
+        else:
+            return signals
 
 
 def openMCSH5File(filename, stream_id, verbose=False):
