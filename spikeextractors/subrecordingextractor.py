@@ -110,8 +110,12 @@ class SubRecordingExtractor(RecordingExtractor):
             original_channel_ids = self.get_original_channel_ids(channel_ids)
             groups = recording.get_channel_groups(channel_ids=original_channel_ids)
             locations = recording.get_channel_locations(channel_ids=original_channel_ids)
+            gains = recording.get_channel_gains(channel_ids=original_channel_ids)
+            offsets = recording.get_channel_offsets(channel_ids=original_channel_ids)
             self.set_channel_groups(groups=groups, channel_ids=channel_ids)
             self.set_channel_locations(locations=locations, channel_ids=channel_ids)
+            self.set_channel_gains(gains=gains, channel_ids=channel_ids)
+            self.set_channel_offsets(offsets=offsets, channel_ids=channel_ids)
 
             # copy normal properties
             for channel_id in channel_ids:

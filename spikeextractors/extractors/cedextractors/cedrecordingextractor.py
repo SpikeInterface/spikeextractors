@@ -90,7 +90,7 @@ class CEDRecordingExtractor(RecordingExtractor):
         return deepcopy(self._channel_names)
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         """This function extracts and returns a trace from the recorded data from the
         given channels ids and the given start and end frame. It will return
         traces from within three ranges:
@@ -116,6 +116,8 @@ class CEDRecordingExtractor(RecordingExtractor):
         channel_ids: array_like
             A list or 1D array of channel ids (ints) from which each trace will be
             extracted
+        return_scaled: bool
+            If True, traces are returned after scaling (using gain/offset). If False, the raw traces are returned
 
         Returns
         ----------

@@ -72,6 +72,15 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
             locations = np.vstack((locations, recording.get_channel_locations()))
         self.set_channel_locations(locations)
 
+        # set channel gains and offsets
+        gains = np.array([])
+        offsets = np.array([])
+        for i, recording in enumerate(recordings):
+            gains = np.concatenate((gains, recording.get_channel_gains()))
+            offsets = np.concatenate((offsets, recording.get_channel_offsets()))
+        self.set_channel_gains(gains)
+        self.set_channel_offsets(offsets)
+
         #set all normal properties
         for channel_id in self.get_channel_ids():
             recording = self._recordings[self._channel_map[channel_id]['recording']]
