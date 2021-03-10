@@ -226,10 +226,10 @@ class RecordingExtractor(ABC, BaseExtractor):
         num_channels = len(channel_ids)
         num_frames = self.get_num_frames()
         snippet_len_total = int(snippet_len_before + snippet_len_after)
-        snippets = np.zeros((num_snippets, num_channels, snippet_len_total), dtype=self.get_dtype())
+        snippets = np.zeros((num_snippets, num_channels, snippet_len_total), dtype=self.get_dtype(return_scaled))
 
         for i in range(num_snippets):
-            snippet_chunk = np.zeros((num_channels, snippet_len_total), dtype=self.get_dtype())
+            snippet_chunk = np.zeros((num_channels, snippet_len_total), dtype=self.get_dtype(return_scaled))
             if 0 <= reference_frames[i] < num_frames:
                 snippet_range = np.array([int(reference_frames[i]) - snippet_len_before,
                                           int(reference_frames[i]) + snippet_len_after])
