@@ -1334,6 +1334,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                     nspks_list = [sp for sp in nspikes.values()]
                     spikes_index = np.cumsum(nspks_list).astype('int64')
                     if ft in nwbfile.units:  # If property already exists, skip it
+                        warnings.warn(f'Feature {ft} already present in units table, skipping it')
                         continue
                     set_dynamic_table_property(
                         dynamic_table=nwbfile.units,
