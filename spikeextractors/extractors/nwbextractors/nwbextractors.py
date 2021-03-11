@@ -6,13 +6,13 @@ import numpy as np
 import distutils.version
 from typing import Union, List, Optional
 import warnings
+import pandas as pd
 
 import spikeextractors as se
 from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train
 
 try:
     import pynwb
-    import pandas as pd
     from pynwb import NWBHDF5IO
     from pynwb import NWBFile
     from pynwb.ecephys import ElectricalSeries, LFP
@@ -511,7 +511,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 nwbfile.add_electrode_column('rel_y', 'y position of electrode in electrode group')
 
         defaults = dict(
-            id=np.nan,
             x=np.nan,
             y=np.nan,
             z=np.nan,
