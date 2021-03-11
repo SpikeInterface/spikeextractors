@@ -95,10 +95,14 @@ def get_nspikes(units_table, unit_id):
         return units_table['spike_times_index'].data[index] - units_table['spike_times_index'].data[index - 1]
 
 
-def most_relevant_ch(traces):
+def most_relevant_ch(traces: ArrayType):
     """
-    Calculates the most relevant channel for an Unit.
+    Calculate the most relevant channel for a given Unit.
+
     Estimates the channel where the max-min difference of the average traces is greatest.
+
+    Parameters
+    ----------
     traces : ndarray
         ndarray of shape (nSpikes, nChannels, nSamples)
     """
@@ -113,7 +117,8 @@ def most_relevant_ch(traces):
     return relevant_ch
 
 
-def update_dict(d, u):
+def update_dict(d: dict, u: dict):
+    """Smart dictionary updates."""
     for k, v in u.items():
         if isinstance(v, abc.Mapping):
             d[k] = update_dict(d.get(k, {}), v)
@@ -122,9 +127,10 @@ def update_dict(d, u):
     return d
 
 
-def list_get(l, idx, default):
+def list_get(li: list, idx: int, default):
+    """Safe index retrieval from list."""
     try:
-        return l[idx]
+        return li[idx]
     except IndexError:
         return default
 
@@ -153,6 +159,8 @@ def check_module(nwbfile, name: str, description: str = None):
 
 
 class NwbRecordingExtractor(se.RecordingExtractor):
+    """Primary class for interfacing between NWBFiles and RecordingExtractors."""
+
     extractor_name = 'NwbRecording'
     has_default_locations = True
     has_unscaled = False
@@ -161,8 +169,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     mode = 'file'
     installation_mesg = "To use the Nwb extractors, install pynwb: \n\n pip install pynwb\n\n"
 
-    def __init__(self, file_path, electrical_series_name='ElectricalSeries'):
+    def __init__(self, file_path: PathType, electrical_series_name: str = None):
         """
+        Load an NWBFile as a RecordingExtractor.
+
         Parameters
         ----------
         file_path: path to NWB file
@@ -178,9 +188,9 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             else:
                 a_names = list(nwbfile.acquisition)
                 if len(a_names) > 1:
-                    raise ValueError('More than one acquisition found. You must specify electrical_series.')
+                    raise ValueError("More than one acquisition found! You must specify 'electrical_series_name'.")
                 if len(a_names) == 0:
-                    raise ValueError('No acquisitions found in the .nwb file.')
+                    raise ValueError("No acquisitions found in the .nwb file.")
                 self._electrical_series_name = a_names[0]
             es = nwbfile.acquisition[self._electrical_series_name]
             if hasattr(es, 'timestamps') and es.timestamps:
@@ -194,7 +204,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     self.recording_start_time = 0.
 
             self.num_frames = int(es.data.shape[0])
-            num_channels = len(es.electrodes.table.id[:])
+            num_channels = len(es.electrodes.data)
 
             # Channels gains - for RecordingExtractor, these are values to cast traces to uV
             if es.channel_conversion is not None:
@@ -206,7 +216,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 unique_grp_names = list(np.unique(nwbfile.electrodes['group_name'][:]))
 
             # Fill channel properties dictionary from electrodes table
-            self.channel_ids = es.electrodes.table.id[es.electrodes.data]
+            self.channel_ids = [es.electrodes.table.id[x] for x in es.electrodes.data]
 
             # If gains are not 1, set has_scaled to True
             if np.any(gains != 1):
@@ -294,7 +304,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         })
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
+    def get_traces(
+        self,
+        channel_ids: ArrayType = None,
+        start_frame: int = None,
+        end_frame: int = None,
+        return_scaled: bool = True
+    ):
         with NWBHDF5IO(self._path, 'r') as io:
             nwbfile = io.read()
             es = nwbfile.acquisition[self._electrical_series_name]
@@ -322,7 +338,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         return self.num_frames
 
     def get_channel_ids(self):
-        return self.channel_ids.tolist()
+        return self.channel_ids
 
     @staticmethod
     def add_devices(recording: se.RecordingExtractor, nwbfile=None, metadata: dict = None):
