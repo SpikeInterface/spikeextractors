@@ -69,10 +69,10 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
                                           return_scaled=return_scaled)
 
     @staticmethod
-    def write_recording(recording, save_path, initial_sorting_fn, dtype='float32'):
+    def write_recording(recording, save_path, initial_sorting_fn, dtype='float32', **write_binary_kwargs):
         """ Convert and save the recording extractor to SHYBRID format
 
-        parameters
+        Parameters
         ----------
         recording: RecordingExtractor
             The recording extractor to be converted and saved
@@ -83,6 +83,7 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
             using write_sorting static method from the SHYBRIDSortingExtractor)
         dtype: dtype
             Type of the saved data. Default float32.
+        **write_binary_kwargs: keyword arguments for write_to_binary_dat_format() function
         """
         assert HAVE_SBEX, SHYBRIDRecordingExtractor.installation_mesg
         RECORDING_NAME = 'recording.bin'
@@ -96,8 +97,9 @@ class SHYBRIDRecordingExtractor(RecordingExtractor):
 
         # write recording
         recording_fn = os.path.join(save_path, RECORDING_NAME)
-        BinDatRecordingExtractor.write_recording(recording, recording_fn,
-                                                 time_axis=0, dtype=dtype)
+        recording.write_to_binary_dat_format(save_path=recording_fn,
+                                             time_axis=0, dtype=dtype,
+                                             **write_binary_kwargs)
 
         # write probe file
         probe_fn = os.path.join(save_path, PROBE_NAME)

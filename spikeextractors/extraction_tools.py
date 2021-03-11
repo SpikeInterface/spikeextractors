@@ -284,8 +284,8 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
     dtype: dtype
         Type of the saved data. Default float32.
     chunk_size: None or int
-        Number of chunks to save the file in. This avoid to much memory consumption for big files.
-        If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
+        Size of each chunk in number of frames.
+        If None (default) and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
     chunk_mb: None or int
         Chunk size in Mb (default 500Mb)
     n_jobs: int
@@ -425,8 +425,8 @@ def write_to_h5_dataset_format(recording, dataset_path, save_path=None, file_han
     dtype: dtype
         Type of the saved data. Default float32.
     chunk_size: None or int
-        Number of chunks to save the file in. This avoid to much memory consumption for big files.
-        If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
+        Size of each chunk in number of frames.
+        If None (default) and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
     chunk_mb: None or int
         Chunk size in Mb (default 500Mb)
     verbose: bool

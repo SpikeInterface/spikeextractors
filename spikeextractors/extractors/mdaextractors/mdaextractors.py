@@ -70,9 +70,8 @@ class MdaRecordingExtractor(RecordingExtractor):
         dtype: dtype
             Type of the saved data. Default float32
         chunk_size: None or int
-            If not None then the file is saved in chunks.
-            This avoid to much memory consumption for big files.
-            If 'auto' the file is saved in chunks of ~ 500Mb
+            Size of each chunk in number of frames.
+            If None (default) and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
         n_jobs: int
@@ -123,8 +122,8 @@ class MdaRecordingExtractor(RecordingExtractor):
         dtype: dtype
             dtype to be used. If None dtype is same as recording traces.
         chunk_size: None or int
-            Number of chunks to save the file in. This avoid to much memory consumption for big files.
-            If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
+            Size of each chunk in number of frames.
+            If None (default) and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
         n_jobs: int
             Number of jobs to use (Default 1)
         chunk_mb: None or int

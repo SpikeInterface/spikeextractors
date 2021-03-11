@@ -139,7 +139,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
         save_path: PathType,
         time_axis: int = 0,
         dtype: OptionalDtypeType = None,
-        chunk_size: Optional[int] = None
+        **write_binary_kwargs
     ):
         """
         Save the traces of a recording extractor in binary .dat format.
@@ -155,8 +155,7 @@ class BinDatRecordingExtractor(RecordingExtractor):
             If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
         dtype : dtype
             Type of the saved data. Default float32.
-        chunk_size : None or int
-            If not None then the copy done by chunk size.
-            This avoid to much memory consumption for big files.
+        **write_binary_kwargs: keyword arguments for write_to_binary_dat_format() function
         """
-        write_to_binary_dat_format(recording, save_path, time_axis=time_axis, dtype=dtype, chunk_size=chunk_size)
+        write_to_binary_dat_format(recording, save_path, time_axis=time_axis, dtype=dtype,
+                                   **write_binary_kwargs)
