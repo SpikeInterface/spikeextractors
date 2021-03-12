@@ -485,7 +485,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
         if nwbfile.electrode_groups is None:
-            print("\n\n\nhere 1\n\n\n")
             se.NwbRecordingExtractor.add_electrode_groups(recording, nwbfile, metadata)
         # For older versions of pynwb, we need to manually add these columns
         if distutils.version.LooseVersion(pynwb.__version__) < '1.3.0':
@@ -988,7 +987,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         # Update any previous metadata with user passed dictionary
         if hasattr(recording, 'nwb_metadata'):
             metadata = update_dict(recording.nwb_metadata, metadata)
-        else:
+        elif metadata is None:
             # If not NWBRecording, make metadata from information available on Recording
             metadata = se.NwbRecordingExtractor.get_nwb_metadata(recording=recording)
 
