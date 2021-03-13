@@ -6,12 +6,12 @@ import numpy as np
 import distutils.version
 from typing import Union, List, Optional
 import warnings
-import pandas as pd
 
 import spikeextractors as se
 from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train
 
 try:
+    import pandas as pd
     import pynwb
     from pynwb import NWBHDF5IO
     from pynwb import NWBFile
