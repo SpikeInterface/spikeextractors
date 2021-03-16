@@ -74,6 +74,9 @@ class YassSortingExtractor(SortingExtractor):
             
         # find unit id spike times
         idx = np.where(self.spike_train[:,1]==unit_id)
+        if idx.shape[0]==0:
+            return np.zeros(0, 'int32')
+            
         spike_times = self.spike_train[idx,0].squeeze()
 
         # find spike times
