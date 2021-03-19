@@ -26,7 +26,7 @@ from .extractors.nixioextractors.nixioextractors import NIXIORecordingExtractor,
 from .extractors.neoextractors import (PlexonRecordingExtractor, PlexonSortingExtractor,
                                        NeuralynxRecordingExtractor, NeuralynxSortingExtractor,
                                        BlackrockRecordingExtractor, BlackrockSortingExtractor,
-                                       MCSRawRecordingExtractor)
+                                       MCSRawRecordingExtractor, SpikeGadgetsRecordingExtractor)
 from .extractors.neuroscopeextractors import NeuroscopeRecordingExtractor, NeuroscopeMultiRecordingTimeExtractor, \
     NeuroscopeSortingExtractor, NeuroscopeMultiSortingExtractor
 from .extractors.waveclussortingextractor import WaveClusSortingExtractor
@@ -67,6 +67,7 @@ recording_extractor_full_list = [
     NeuralynxRecordingExtractor,
     BlackrockRecordingExtractor,
     MCSRawRecordingExtractor,
+    SpikeGadgetsRecordingExtractor,
 ]
 
 recording_extractor_dict = {recording_class.extractor_name: recording_class
