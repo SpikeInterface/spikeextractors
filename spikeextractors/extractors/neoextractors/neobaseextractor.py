@@ -131,7 +131,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         chan_ids = self.neo_reader.header['signal_channels']['id']
 
         # force chan_ids to be int (new neo default=str)
-        chan_ids = [int(i) for i in chan_ids]
+        chan_ids = np.array([np.int(i) for i in chan_ids])
 
         # in neo there is not garranty that chann ids are unique
         # for instance Blacrock can have several times the same chan_id
