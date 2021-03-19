@@ -3,7 +3,7 @@ from spikeextractors import SortingExtractor
 import numpy as np
 from pathlib import Path
 from copy import copy
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train
 
 try:
     import exdir
@@ -18,13 +18,14 @@ except ImportError:
 class ExdirRecordingExtractor(RecordingExtractor):
     extractor_name = 'ExdirRecording'
     has_default_locations = False
+    has_unscaled = False
     installed = HAVE_EXDIR  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
     def __init__(self, folder_path):
-        assert HAVE_EXDIR, self.installation_mesg
+        assert self.installed, self.installation_mesg
         self._exdir_file = folder_path
         exdir_group = exdir.File(folder_path, plugins=[exdir.plugins.quantities])
 
@@ -47,18 +48,12 @@ class ExdirRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = self.get_num_frames()
-        if channel_ids is None:
-            channel_ids = self.get_channel_ids()
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         return self._recordings.data[np.array(channel_ids), start_frame:end_frame]
 
     @staticmethod
     def write_recording(recording, save_path, lfp=False, mua=False):
-        assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
+        assert HAVE_EXDIR, ExdirRecordingExtractor.installation_mesg
         channel_ids = recording.get_channel_ids()
         raw = recording.get_traces()
         exdir_group = exdir.File(save_path, plugins=[exdir.plugins.quantities])
@@ -191,14 +186,14 @@ class ExdirRecordingExtractor(RecordingExtractor):
 
 
 class ExdirSortingExtractor(SortingExtractor):
-    extractor_name = 'ExdirSortingExtractor'
+    extractor_name = 'ExdirSorting'
     installed = HAVE_EXDIR  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
     installation_mesg = "To use the ExdirExtractors run:\n\n pip install exdir\n\n"  # error message when not installed
 
     def __init__(self, folder_path, sampling_frequency=None, channel_group=None, load_waveforms=False):
-        assert HAVE_EXDIR, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         self._exdir_file = folder_path
         exdir_group = exdir.File(folder_path, plugins=exdir.plugins.quantities)
@@ -255,20 +250,16 @@ class ExdirSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return self._unit_ids
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
+
         times = self._spike_trains[self._unit_ids.index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return np.rint(times[inds]).astype(int)
 
     @staticmethod
     def write_sorting(sorting, save_path, recording=None, sampling_frequency=None, save_waveforms=False, verbose=False):
-        assert HAVE_EXDIR, "To use the ExdirExtractors run:\n\n pip install exdir\n\n"
+        assert HAVE_EXDIR, ExdirSortingExtractor.installation_mesg
         if sampling_frequency is None and recording is None:
             raise Exception("Provide 'sampling_frequency' argument (Hz)")
         else:

@@ -1,11 +1,13 @@
 import numpy as np
+import warnings
 
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-from spikeextractors.extraction_tools import check_get_traces_args, check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train
 
 try:
     import neo
+
     HAVE_NEO = True
 except ImportError:
     HAVE_NEO = False
@@ -13,8 +15,10 @@ except ImportError:
 
 class _NeoBaseExtractor:
     NeoRawIOClass = None
-    installed = True
+    installed = HAVE_NEO
     is_writable = False
+    has_default_locations = False
+    has_unscaled = True
     installation_mesg = "To use the Neo extractors, install Neo: \n\n pip install neo\n\n"
 
     def __init__(self, block_index=None, seg_index=None, **kargs):
@@ -23,8 +27,9 @@ class _NeoBaseExtractor:
         if seg_index is None then check if only one segment
 
         """
-        assert HAVE_NEO, self.installation_mesg
+        assert self.installed, self.installation_mesg
         neoIOclass = eval('neo.rawio.' + self.NeoRawIOClass)
+
         self.neo_reader = neoIOclass(**kargs)
         self.neo_reader.parse_header()
 
@@ -52,45 +57,29 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         RecordingExtractor.__init__(self)
         _NeoBaseExtractor.__init__(self, block_index=block_index, seg_index=seg_index, **kargs)
 
-        # TODO propose a meachanisim to select the appropriate channel groups
-        # in neo one channel group have the same dtype/sampling_rate/group_id
-        #~ try:
-            #~ # Neo >= 0.9.0
-            #~ channel_indexes_list = self.neo_reader.get_group_signal_channel_indexes()
-        #~ except AttributeError:
-            #~ # Neo < 0.9.0
-            #~ channel_indexes_list = self.neo_reader.get_group_channel_indexes()
-        #~ num_chan_group = len(channel_indexes_list)
-        #~ assert num_chan_group == 1, 'This file have several channel groups spikeextractors support only one groups'
-        
-        if  hasattr(self.neo_reader, 'get_group_signal_channel_indexes'):
+        if hasattr(self.neo_reader, 'get_group_signal_channel_indexes'):
             # Neo >= 0.9.0
             channel_indexes_list = self.neo_reader.get_group_signal_channel_indexes()
             num_streams = len(channel_indexes_list)
-            assert num_chan_group == 1, 'This file have several channel groups spikeextractors support only one groups'
+            assert num_streams == 1, 'This file have several channel groups spikeextractors support only one groups'
             self.after_v10 = False
-        elif  hasattr(self.neo_reader, 'get_group_channel_indexes'):
+        elif hasattr(self.neo_reader, 'get_group_channel_indexes'):
             # Neo < 0.9.0
             channel_indexes_list = self.neo_reader.get_group_channel_indexes()
             num_streams = len(channel_indexes_list)
             self.after_v10 = False
-        elif   hasattr(self.neo_reader, 'signal_streams_count'):
+        elif hasattr(self.neo_reader, 'signal_streams_count'):
             # Neo >= 0.10.0 (not release yet in march 2021)
             num_streams = self.neo_reader.signal_streams_count()
             self.after_v10 = True
         else:
-            raise valueError('Strange neo version')
-        
-        assert num_streams == 1, 'This file have several signal streams spikeextractors support only one streams'\
-                                                                'Maybe you can use option to select only one stream'
+            raise ValueError('Strange neo version')
+
+        assert num_streams == 1, 'This file have several signal streams spikeextractors support only one streams' \
+                                 'Maybe you can use option to select only one stream'
 
         # spikeextractor for units to be uV implicitly
         # check that units are V, mV or uV
-        # otherwise raise error
-        # @alessio @cole : this can be a problem in extractor evrything is base
-        #                     on the fact that the get_traces() give microVolt
-        #                     some file don't have units
-        #                     do we allow this ?
         units = self.neo_reader.header['signal_channels']['units']
         assert np.all(np.isin(units, ['V', 'mV', 'uV'])), 'Signal units no Volt compatible'
         self.additional_gain = np.ones(units.size, dtype='float')
@@ -99,38 +88,28 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         self.additional_gain[units == 'uV'] = 1.
         self.additional_gain = self.additional_gain.reshape(1, -1)
 
+        # Add channels properties
+        header_channels = self.neo_reader.header['signal_channels'][slice(None)]
+        channel_ids = self.get_channel_ids()
+
+        gains = header_channels['gain'] * self.additional_gain[0]
+        self.set_channel_gains(gains=gains, channel_ids=channel_ids)
+
+        names = header_channels['name']
+        for i, ind in enumerate(channel_ids):
+            self.set_channel_property(channel_id=ind, property_name='name', value=names[i])
+
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        if self.after_v10:
-            raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
-                                                                i_start=start_frame, i_stop=end_frame,
-                                                                channel_indexes=None, channel_names=None,
-                                                                stream_index=0, channel_ids=channel_ids)
-
-            # rescale traces to natural units (can be anything)
-            scaled_traces = self.neo_reader.rescale_signal_raw_to_float(raw_traces, dtype='float32',
-                                                                        channel_indexes=None, channel_names=None,
-                                                                        stream_index=0, channel_ids=channel_ids)
-        else:
-            raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
-                                                                i_start=start_frame, i_stop=end_frame,
-                                                                channel_indexes=None, channel_names=None,
-                                                                channel_ids=channel_ids)
-
-            # rescale traces to natural units (can be anything)
-            scaled_traces = self.neo_reader.rescale_signal_raw_to_float(raw_traces, dtype='float32',
-                                                                        channel_indexes=None, channel_names=None,
-                                                                        channel_ids=channel_ids)
-        
-        channel_idxs = np.array([list(channel_ids).index(ch) for ch in channel_ids])
-        # and then to uV
-        scaled_traces *= self.additional_gain[:, channel_idxs]
-
-        # fortunatly neo works with (samples, channels) strides
-        # so transpose to spieextractors wolrd
-        scaled_traces = scaled_traces.transpose()
-
-        return scaled_traces
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
+        # in neo rawio channel can acces by names/ids/indexes
+        # there is no garranty that ids/names are unique on some formats
+        raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
+                                                            i_start=start_frame, i_stop=end_frame,
+                                                            channel_indexes=None, channel_names=None,
+                                                            stream_index=0, channel_ids=channel_ids)
+        # neo works with (samples, channels) strides
+        # so transpose to spikeextractors wolrd
+        return raw_traces.transpose()
 
     def get_num_frames(self):
         # channel_indexes=None means all channels
@@ -161,6 +140,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
 class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
     def __init__(self, block_index=None, seg_index=None, **kargs):
+        SortingExtractor.__init__(self)
         _NeoBaseExtractor.__init__(self, block_index=block_index, seg_index=seg_index, **kargs)
 
         # the sampling frequency is quite tricky because in neo
@@ -181,11 +161,20 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
 
         # here the generic case
         #  all channels are in the same neo group so
-        self._neo_sig_sampling_rate = self.neo_reader.header['signal_channels']['sampling_rate'][0]
-        self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
-                                                                      channel_indexes=[0])
+        if len(self.neo_reader.header['signal_channels']['sampling_rate']) > 0:
+            self._neo_sig_sampling_rate = self.neo_reader.header['signal_channels']['sampling_rate'][0]
+            self.set_sampling_frequency(self._neo_sig_sampling_rate)
+        else:
+            warnings.warn("Sampling frequency not found: setting it to 30 kHz")
+            self._sampling_frequency = 30000
+            self._neo_sig_sampling_rate = self._sampling_frequency
 
-        self.set_sampling_frequency(self._neo_sig_sampling_rate)
+        if len(self.neo_reader.get_group_signal_channel_indexes()) > 0:
+            self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
+                                                                          channel_indexes=[0])
+        else:
+            warnings.warn("Start time not found: setting it to 0 s")
+            self._neo_sig_time_start = 0
 
         # For some IOs when there is no signals at inside the dataset this could not work
         # in that case the extractor class must overwrite this method
@@ -198,7 +187,7 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         unit_ids = np.arange(self.neo_reader.header['unit_channels'].size, dtype='int64')
         return unit_ids
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         # this is a string

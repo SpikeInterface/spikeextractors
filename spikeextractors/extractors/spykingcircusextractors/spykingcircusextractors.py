@@ -3,7 +3,7 @@ from spikeextractors.extractors.numpyextractors import NumpyRecordingExtractor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 import numpy as np
 from pathlib import Path
-from spikeextractors.extraction_tools import check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_unit_spike_train
 
 try:
     import h5py
@@ -21,8 +21,9 @@ class SpykingCircusRecordingExtractor(RecordingExtractor):
     folder_path: str or Path
         Path to the output Spyking Circus folder or result folder
     """
-    extractor_name = 'SpykingCircusRecordingExtractor'
+    extractor_name = 'SpykingCircusRecording'
     has_default_locations = False
+    has_unscaled = False
     installed = True  # check at class level if installed or not
     is_writable = False
     mode = 'folder'
@@ -74,11 +75,9 @@ class SpykingCircusRecordingExtractor(RecordingExtractor):
                             f"SpykingCircusRecordingExtractor")
 
         if params["mapping"].is_file():
-            rec = self.load_probe_file(params["mapping"])
-            self.set_channel_groups(rec.get_channel_groups())
-            self.set_channel_locations(rec.get_channel_locations())
-        self.params = params
+            self._recording = self.load_probe_file(params["mapping"])
 
+        self.params = params
         self._kwargs = {'folder_path': str(Path(folder_path).absolute())}
 
     def get_channel_ids(self):
@@ -90,8 +89,9 @@ class SpykingCircusRecordingExtractor(RecordingExtractor):
     def get_sampling_frequency(self):
         return self._recording.get_sampling_frequency()
 
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
-        return self._recording.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame)
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
+        return self._recording.get_traces(channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame,
+                                          return_scaled=return_scaled)
 
 
 class SpykingCircusSortingExtractor(SortingExtractor):
@@ -105,14 +105,14 @@ class SpykingCircusSortingExtractor(SortingExtractor):
     load_templates: bool
         If True, templates are loaded from Spyking Circus output
     """
-    extractor_name = 'SpykingCircusSortingExtractor'
+    extractor_name = 'SpykingCircusSorting'
     installed = HAVE_SCSX  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
     installation_mesg = "To use the SpykingCircusSortingExtractor install h5py: \n\n pip install h5py\n\n"
 
     def __init__(self, file_or_folder_path, load_templates=False):
-        assert HAVE_SCSX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         file_or_folder_path = Path(file_or_folder_path)
 
@@ -198,13 +198,9 @@ class SpykingCircusSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._unit_ids)
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
+
         times = self._spiketrains[self.get_unit_ids().index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]

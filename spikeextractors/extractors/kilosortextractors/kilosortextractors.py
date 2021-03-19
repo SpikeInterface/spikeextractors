@@ -3,8 +3,9 @@ from pathlib import Path
 
 
 class KiloSortRecordingExtractor(PhyRecordingExtractor):
-    extractor_name = 'KiloSortRecordingExtractor'
+    extractor_name = 'KiloSortRecording'
     has_default_locations = True
+    has_unscaled = False
     installed = True  # check at class level if installed or not
     is_writable = False
     mode = 'folder'
@@ -15,7 +16,7 @@ class KiloSortRecordingExtractor(PhyRecordingExtractor):
 
 
 class KiloSortSortingExtractor(PhySortingExtractor):
-    extractor_name = 'KiloSortSortingExtractor'
+    extractor_name = 'KiloSortSorting'
     installed = True  # check at class level if installed or not
     installation_mesg = ""  # error message when not installed
     is_writable = False

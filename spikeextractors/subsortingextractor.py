@@ -1,6 +1,6 @@
 from .sortingextractor import SortingExtractor
 import numpy as np
-from .extraction_tools import check_valid_unit_id
+from .extraction_tools import check_get_unit_spike_train
 
 
 # Encapsulates a subset of a spike sorted data file
@@ -33,13 +33,8 @@ class SubSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._renamed_unit_ids)
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
         original_unit_id = self._original_unit_id_lookup[unit_id]
         sf = self._start_frame + start_frame
         ef = self._start_frame + end_frame
@@ -54,6 +49,18 @@ class SubSortingExtractor(SortingExtractor):
 
     def get_sampling_frequency(self):
         return self._parent_sorting.get_sampling_frequency()
+
+    def frame_to_time(self, frame):
+        frame2 = frame + self._start_frame
+        time1 = self._parent_sorting.frame_to_time(frame2)
+        start_time = self._parent_sorting.frame_to_time(self._start_frame)
+        return np.round(time1 - start_time, 6)
+
+    def time_to_frame(self, time):
+        time2 = time + self._parent_sorting.frame_to_time(self._start_frame)
+        frame1 = self._parent_sorting.time_to_frame(time2)
+        frame2 = frame1 - self._start_frame
+        return frame2.astype('int64')
 
     def copy_unit_properties(self, sorting, unit_ids=None):
         if unit_ids is None:
