@@ -15,5 +15,3 @@ tridesclous
 hdbscan
 pyopenephys
 xmltodict
-https://github.com/NeuralEnsemble/python-neo/archive/master.zip
-
