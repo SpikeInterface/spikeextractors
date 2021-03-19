@@ -1,7 +1,7 @@
 from spikeextractors import SortingExtractor
 import numpy as np
 from pathlib import Path
-from spikeextractors.extraction_tools import check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_unit_spike_train
 from typing import Union
 
 try:
@@ -26,13 +26,13 @@ class CellExplorerSortingExtractor(SortingExtractor):
     """
 
     extractor_name = "CellExplorerSortingExtractor"
-    installed = True
+    installed = HAVE_SCIPY
     is_writable = True
     mode = "file"
     installation_mesg = "To use the CellExplorerSortingExtractor install scipy: \n\n pip install scipy\n\n"
 
     def __init__(self, spikes_matfile_path: PathType):
-        assert HAVE_SCIPY, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
 
         spikes_matfile_path = Path(spikes_matfile_path)
@@ -66,13 +66,8 @@ class CellExplorerSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._unit_ids)
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
         times = self._spiketrains[self.get_unit_ids().index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]

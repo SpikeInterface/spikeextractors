@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 
 from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor
-from spikeextractors.extraction_tools import check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_unit_spike_train
 
 PathType = Union[str, Path]
 
@@ -30,7 +30,7 @@ class WaveClusSortingExtractor(MATSortingExtractor):
             self._spike_trains[uid] = np.rint(spike_times[mask]*(sample_rate/1000))
         self._unsorted_train = np.rint(spike_times[classes == 0] * (sample_rate / 1000))
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
 

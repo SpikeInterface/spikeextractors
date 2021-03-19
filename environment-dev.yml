@@ -1,0 +1,21 @@
+name: test
+dependencies:
+  - python=3.8
+  - pip
+  - pip:
+    - numpy==1.20
+    - tqdm
+    - lxml
+    - h5py
+    - shybrid
+    - pynwb
+    - nixio
+    - pyintan
+    - pyopenephys
+    - neo
+    - MEArec
+    - hdf5storage
+    - exdir
+    - hdbscan
+    - tridesclous
+    - parametrized

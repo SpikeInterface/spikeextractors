@@ -1,7 +1,6 @@
 from .sortingextractor import SortingExtractor
-from .recordingextractor import RecordingExtractor
 import numpy as np
-from .extraction_tools import check_valid_unit_id
+from .extraction_tools import check_get_unit_spike_train
 
 
 # Encapsulates a grouping of non-continuous sorting extractors
@@ -28,9 +27,8 @@ class MultiSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._all_unit_ids)
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         sorting_id = self._unit_map[unit_id]['sorting_id']
         unit_id_sorting = self._unit_map[unit_id]['unit_id']
         return self._sortings[sorting_id].get_unit_spike_train(unit_id_sorting, start_frame, end_frame)
@@ -107,7 +105,7 @@ class MultiSortingExtractor(SortingExtractor):
 
 
 def concatenate_sortings(sortings):
-    '''
+    """
     Concatenates sortings together. The sortings should be non-continuous
 
     Parameters
@@ -119,7 +117,7 @@ def concatenate_sortings(sortings):
     recording: MultiSortingExtractor
         The concatenated sorting extractors enscapsulated in the
         MultiSortingExtractor object (which is also a sorting extractor)
-    '''
+    """
     return MultiSortingExtractor(
         sortings=sortings,
     )

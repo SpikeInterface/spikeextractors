@@ -1,7 +1,7 @@
 from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
-from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args, check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_traces_args, check_get_ttl_args, check_get_unit_spike_train
 
 try:
     import h5py
@@ -15,13 +15,14 @@ installation_mesg = "To use the MaxOneRecordingExtractor install h5py: \n\n pip 
 class MaxOneRecordingExtractor(RecordingExtractor):
     extractor_name = 'MaxOneRecording'
     has_default_locations = True
+    has_unscaled = True
     installed = HAVE_MAX  # check at class level if installed or not
     is_writable = False
     mode = 'file'
     installation_mesg = installation_mesg
 
     def __init__(self, file_path, load_spikes=True):
-        assert HAVE_MAX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         RecordingExtractor.__init__(self)
         self._file_path = file_path
         self._fs = None
@@ -29,7 +30,6 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._recordings = None
         self._filehandle = None
         self._load_spikes = load_spikes
-        self._timestamps = None
         self._mapping = None
         self._initialize()
         self._kwargs = {'file_path': str(Path(file_path).absolute()),
@@ -92,6 +92,9 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         for i_ch, ch, el in zip(routed_idxs, self._channel_ids, self._electrode_ids):
             self.set_channel_locations([self._mapping['x'][i_ch], self._mapping['y'][i_ch]], ch)
             self.set_channel_property(ch, 'electrode', el)
+
+        # set gains
+        self.set_channel_gains(self._lsb)
 
         if self._load_spikes:
             if 'proc0' in self._filehandle:
@@ -160,25 +163,14 @@ class MaxOneRecordingExtractor(RecordingExtractor):
             if verbose:
                 print(f"Found {len(delays_in_frames)} missing intervals")
 
-            self._timestamps = np.round(np.arange(self.get_num_frames()) / self.get_sampling_frequency(), 6)
+            times = np.round(np.arange(self.get_num_frames()) / self.get_sampling_frequency(), 6)
 
             for mf_idx, duration in zip(missing_frames_idxs, delays_in_frames):
-                self._timestamps[mf_idx:] += np.round(duration / self.get_sampling_frequency(), 6)
+                times[mf_idx:] += np.round(duration / self.get_sampling_frequency(), 6)
+            self.set_times(times)
         else:
             if verbose:
                 print("No missing frames found")
-
-    def frame_to_time(self, frames):
-        if self._timestamps is None:
-            return super().frame_to_time(frames)
-        else:
-            return self._timestamps[frames]
-
-    def time_to_frame(self, times):
-        if self._timestamps is None:
-            return super().time_to_frame(times)
-        else:
-            return np.searchsorted(self._timestamps, times).astype('int64')
 
     def _get_frame_numbers(self):
         bitvals = self._signals[-2:, :]
@@ -191,17 +183,17 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         return frameno
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         if np.array(channel_ids).size > 1:
             if np.any(np.diff(channel_ids) < 0):
                 sorted_channel_ids = np.sort(channel_ids)
                 sorted_idx = np.array([list(sorted_channel_ids).index(ch) for ch in channel_ids])
-                recordings = (self._signals[sorted_channel_ids, start_frame:end_frame] * self._lsb).astype('float32')
-                return recordings[sorted_idx]
+                traces = self._signals[sorted_channel_ids, start_frame:end_frame][sorted_idx]
             else:
-                return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
+                traces = self._signals[np.array(channel_ids), start_frame:end_frame]
         else:
-            return (self._signals[np.array(channel_ids), start_frame:end_frame] * self._lsb).astype('float32')
+            traces = self._signals[np.array(channel_ids), start_frame:end_frame]
+        return traces
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
@@ -225,7 +217,7 @@ class MaxOneSortingExtractor(SortingExtractor):
     installation_mesg = installation_mesg
 
     def __init__(self, file_path):
-        assert HAVE_MAX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         self._file_path = file_path
         self._filehandle = None
@@ -269,7 +261,7 @@ class MaxOneSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return self._unit_ids
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:
@@ -285,13 +277,14 @@ class MaxOneSortingExtractor(SortingExtractor):
 class MaxTwoRecordingExtractor(RecordingExtractor):
     extractor_name = 'MaxTwoRecording'
     has_default_locations = True
+    has_unscaled = True
     installed = HAVE_MAX  # check at class level if installed or not
     is_writable = False
     mode = 'file'
     installation_mesg = installation_mesg
 
     def __init__(self, file_path, well_name='well000', rec_name='rec0000', load_spikes=True):
-        assert HAVE_MAX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         RecordingExtractor.__init__(self)
         self._file_path = file_path
         self._well_name = well_name
@@ -334,6 +327,8 @@ class MaxTwoRecordingExtractor(RecordingExtractor):
         for i_ch, ch, el in zip(routed_idxs, self._channel_ids, self._electrode_ids):
             self.set_channel_locations([self._mapping['x'][i_ch], self._mapping['y'][i_ch]], ch)
             self.set_channel_property(ch, 'electrode', el)
+        # set gains
+        self.set_channel_gains(self._lsb)
 
         if self._load_spikes:
             if "spikes" in self._filehandle["wells"][self._well_name][self._rec_name].keys():
@@ -387,18 +382,18 @@ class MaxTwoRecordingExtractor(RecordingExtractor):
         return rec_names
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
         if np.array(channel_idxs).size > 1:
             if np.any(np.diff(channel_idxs) < 0):
                 sorted_channel_ids = np.sort(channel_idxs)
                 sorted_idx = np.array([list(sorted_channel_ids).index(ch) for ch in channel_idxs])
-                recordings = (self._signals[sorted_channel_ids, start_frame:end_frame] * self._lsb).astype('float32')
-                return recordings[sorted_idx]
+                traces = self._signals[sorted_channel_ids, start_frame:end_frame][sorted_idx]
             else:
-                return (self._signals[np.array(channel_idxs), start_frame:end_frame] * self._lsb).astype('float32')
+                traces = self._signals[np.array(channel_idxs), start_frame:end_frame]
         else:
-            return (self._signals[np.array(channel_idxs), start_frame:end_frame] * self._lsb).astype('float32')
+            traces = self._signals[np.array(channel_idxs), start_frame:end_frame]
+        return traces
 
 
 class MaxTwoSortingExtractor(SortingExtractor):
@@ -409,7 +404,7 @@ class MaxTwoSortingExtractor(SortingExtractor):
     installation_mesg = installation_mesg
 
     def __init__(self, file_path, well_name='well000', rec_name='rec0000'):
-        assert HAVE_MAX, self.installation_mesg
+        assert self.installed, self.installation_mesg
         SortingExtractor.__init__(self)
         self._file_path = file_path
         self._well_name = well_name
@@ -457,7 +452,7 @@ class MaxTwoSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return self._unit_ids
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if start_frame is None:

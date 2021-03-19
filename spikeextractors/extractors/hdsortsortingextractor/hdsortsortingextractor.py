@@ -5,7 +5,7 @@ import sys
 import os
 
 from spikeextractors.extractors.matsortingextractor.matsortingextractor import MATSortingExtractor
-from spikeextractors.extraction_tools import check_valid_unit_id
+from spikeextractors.extraction_tools import check_get_unit_spike_train
 
 PathType = Union[str, Path]
 
@@ -107,13 +107,9 @@ class HDSortSortingExtractor(MATSortingExtractor):
         self._multi_electrode = multi_electrode
         self._kwargs['keep_good_only'] = keep_good_only
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
         uidx = np.where(np.array(self.get_unit_ids()) == unit_id)[0][0]
-
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        start_frame = start_frame or 0
-        end_frame = end_frame or np.infty
         st = self._spike_trains[uidx]
         return st[(st >= start_frame) & (st < end_frame)]
 
@@ -210,17 +206,17 @@ class HDSortSortingExtractor(MATSortingExtractor):
                 f.write(convert_cellarray_to_structarray)
 
             if 'win' in sys.platform and sys.platform != 'darwin':
-                matlab_cmd = '''
+                matlab_cmd = """
                              #!/bin/bash
                              cd {tmpdir}
                              matlab -nosplash -wait -log -r convert_cellarray_to_structarray
-                             '''.format(tmpdir={str(convert_script.parent)})
+                             """.format(tmpdir={str(convert_script.parent)})
             else:
-                matlab_cmd = '''
+                matlab_cmd = """
                              #!/bin/bash
                              cd {tmpdir}
                              matlab -nosplash -nodisplay -log -r convert_cellarray_to_structarray
-                             '''.format(tmpdir={str(convert_script.parent)})
+                             """.format(tmpdir={str(convert_script.parent)})
 
             try:
                 os.system(matlab_cmd)

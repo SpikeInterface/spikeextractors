@@ -1,6 +1,7 @@
 from spikeextractors import RecordingExtractor
 from spikeextractors import SortingExtractor
-from spikeextractors.extraction_tools import write_to_binary_dat_format, check_get_traces_args, check_valid_unit_id
+from spikeextractors.extraction_tools import write_to_binary_dat_format, check_get_traces_args, \
+    check_get_unit_spike_train
 
 import json
 import numpy as np
@@ -10,8 +11,9 @@ import shutil
 
 
 class MdaRecordingExtractor(RecordingExtractor):
-    extractor_name = 'MdaRecordingExtractor'
+    extractor_name = 'MdaRecording'
     has_default_locations = True
+    has_unscaled = False
     installed = True  # check at class level if installed or not
     is_writable = True
     mode = 'folder'
@@ -26,7 +28,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         self._timeseries_path = str(timeseries0.absolute())
         geom0 = dataset_directory / geom_fname
         self._geom_fname = geom0
-        self._geom = np.loadtxt(self._geom_fname, delimiter=',',ndmin=2)
+        self._geom = np.loadtxt(self._geom_fname, delimiter=',', ndmin=2)
         X = DiskReadMda(self._timeseries_path)
         if self._geom.shape[0] != X.N1():
             raise Exception(
@@ -48,7 +50,7 @@ class MdaRecordingExtractor(RecordingExtractor):
         return self._sampling_frequency
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         X = DiskReadMda(self._timeseries_path)
         recordings = X.readChunk(i1=0, i2=start_frame, N1=X.N1(), N2=end_frame - start_frame)
         recordings = recordings[channel_ids, :]
@@ -56,7 +58,7 @@ class MdaRecordingExtractor(RecordingExtractor):
 
     def write_to_binary_dat_format(self, save_path, time_axis=0, dtype=None, chunk_size=None, chunk_mb=500,
                                    n_jobs=1, joblib_backend='loky', verbose=False):
-        '''Saves the traces of this recording extractor into binary .dat format.
+        """Saves the traces of this recording extractor into binary .dat format.
 
         Parameters
         ----------
@@ -68,9 +70,8 @@ class MdaRecordingExtractor(RecordingExtractor):
         dtype: dtype
             Type of the saved data. Default float32
         chunk_size: None or int
-            If not None then the file is saved in chunks.
-            This avoid to much memory consumption for big files.
-            If 'auto' the file is saved in chunks of ~ 500Mb
+            Size of each chunk in number of frames.
+            If None (default) and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
         n_jobs: int
@@ -79,7 +80,7 @@ class MdaRecordingExtractor(RecordingExtractor):
             Joblib backend for parallel processing ('loky', 'threading', 'multiprocessing')
         verbose: bool
             If True, output is verbose
-        '''
+        """
         X = DiskReadMda(self._timeseries_path)
         header_size = X._header.header_size
         if dtype is None or dtype == self.get_dtype():
@@ -96,12 +97,12 @@ class MdaRecordingExtractor(RecordingExtractor):
         else:
             write_to_binary_dat_format(self, save_path=save_path, time_axis=time_axis, dtype=dtype,
                                        chunk_size=chunk_size, chunk_mb=chunk_mb, n_jobs=n_jobs,
-                                       joblib_backend=joblib_backend,  verbose=verbose)
+                                       joblib_backend=joblib_backend, verbose=verbose)
 
     @staticmethod
     def write_recording(recording, save_path, params=dict(), raw_fname='raw.mda', params_fname='params.json',
                         geom_fname='geom.csv', dtype=None, chunk_size=None, n_jobs=None, chunk_mb=500, verbose=False):
-        '''
+        """
         Writes recording to file in MDA format.
 
         Parameters
@@ -121,15 +122,15 @@ class MdaRecordingExtractor(RecordingExtractor):
         dtype: dtype
             dtype to be used. If None dtype is same as recording traces.
         chunk_size: None or int
-            Number of chunks to save the file in. This avoid to much memory consumption for big files.
-            If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
+            Size of each chunk in number of frames.
+            If None (default) and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
         n_jobs: int
             Number of jobs to use (Default 1)
         chunk_mb: None or int
             Chunk size in Mb (default 500Mb)
         verbose: bool
             If True, output is verbose
-        '''
+        """
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
         save_file_path = save_path / raw_fname
@@ -162,7 +163,7 @@ class MdaRecordingExtractor(RecordingExtractor):
 
 
 class MdaSortingExtractor(SortingExtractor):
-    extractor_name = 'MdaSortingExtractor'
+    extractor_name = 'MdaSorting'
     installed = True  # check at class level if installed or not
     is_writable = True
     mode = 'file'
@@ -174,7 +175,7 @@ class MdaSortingExtractor(SortingExtractor):
         self._firings_path = file_path
         self._firings = readmda(self._firings_path)
         self._max_channels = self._firings[0, :]
-        self._times = self._firings[1, :]
+        self._spike_times = self._firings[1, :]
         self._labels = self._firings[2, :]
         self._unit_ids = np.unique(self._labels).astype(int)
         self._sampling_frequency = sampling_frequency
@@ -183,15 +184,12 @@ class MdaSortingExtractor(SortingExtractor):
     def get_unit_ids(self):
         return list(self._unit_ids)
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
-        inds = np.where((self._labels == unit_id) & (start_frame <= self._times) & (self._times < end_frame))
-        return np.rint(self._times[inds]).astype(int)
+
+        inds = np.where(
+            (self._labels == unit_id) & (start_frame <= self._spike_times) & (self._spike_times < end_frame))
+        return np.rint(self._spike_times[inds]).astype(int)
 
     @staticmethod
     def write_sorting(sorting, save_path, write_primary_channels=False):
@@ -205,7 +203,7 @@ class MdaSortingExtractor(SortingExtractor):
             labels_list.append(np.ones(times.shape) * unit_id)
             if write_primary_channels:
                 if 'max_channel' in sorting.get_unit_property_names(unit_id):
-                    primary_channels_list.append([sorting.get_unit_property(unit_id, 'max_channel')]*times.shape[0])
+                    primary_channels_list.append([sorting.get_unit_property(unit_id, 'max_channel')] * times.shape[0])
                 else:
                     raise ValueError(
                         "Unable to write primary channels because 'max_channel' spike feature not set in unit " + str(

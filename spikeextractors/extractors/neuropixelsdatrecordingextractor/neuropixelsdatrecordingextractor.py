@@ -34,14 +34,15 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
     
     """
     extractor_name = 'NeuropixelsDatRecording'
-    has_default_locations = False
+    has_default_locations = True
+    has_unscaled = True
     installed = HAVE_XMLTODICT
     is_writable = False
     mode = 'file'
     installation_mesg = "To use the NeuropixelsDat extractor, install xmltodict: \n\n pip install xmltodict\n\n"
 
     def __init__(self, file_path, settings_file=None, is_filtered=None, verbose=False):
-        assert HAVE_XMLTODICT, self.installation_mesg
+        assert self.installed, self.installation_mesg
         source_dir = Path(Path(__file__).parent)
         self._settings_file = settings_file
         datfile = Path(file_path)
@@ -49,7 +50,7 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
         dtype = 'int16'
         sampling_frequency = float(30000)
         offset = 0
-        
+
         channel_locations = np.loadtxt(source_dir / 'channel_positions_neuropixels.txt')
         if self._settings_file is not None:
             with open(self._settings_file) as f:
@@ -65,13 +66,13 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
             used_channel_gains = []
             for c in channel_info['CHANNEL']:
                 if 'AP' in c['@name'] and int(c['@number']) in recorded_channels:
-                    used_channels.append(int(c['@number']))        
+                    used_channels.append(int(c['@number']))
                     used_channel_gains.append(float(c['@gain']))
             if verbose:
                 print(f'{len(recorded_channels)} total channels found, with {len(used_channels)} recording AP')
                 print(f'Channels used:\n{used_channels}')
             numchan = len(used_channels)
-            geom = channel_locations[:,np.array(used_channels)].T
+            geom = channel_locations[:, np.array(used_channels)].T
             gain = used_channel_gains[0]
             channels = used_channels
         else:
@@ -79,12 +80,12 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
                           "using a default of 384 channels at the probe tip."
                           "If the recording differs, use settings_file=settings.xml")
             numchan = 384
-            geom = channel_locations[:,:384].T
+            geom = channel_locations[:, :384].T
             gain = None
             channels = range(384)
 
         BinDatRecordingExtractor.__init__(self, file_path=datfile, numchan=numchan, dtype=dtype,
-                                          sampling_frequency=sampling_frequency, gain=gain, offset=offset, geom=geom,
+                                          sampling_frequency=sampling_frequency, gain=gain, geom=geom,
                                           recording_channels=channels, time_axis=time_axis, is_filtered=is_filtered)
 
         self._kwargs = {'filename': str(Path(file_path).absolute()), 'settings_file': settings_file,

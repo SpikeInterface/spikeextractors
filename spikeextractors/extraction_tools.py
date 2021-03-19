@@ -3,7 +3,7 @@ import csv
 import os
 import sys
 from pathlib import Path
-import json
+import warnings
 import datetime
 from functools import wraps
 from spikeextractors.baseextractor import BaseExtractor
@@ -18,7 +18,7 @@ except ImportError:
 
 
 def read_python(path):
-    '''Parses python scripts in a dictionary
+    """Parses python scripts in a dictionary
 
     Parameters
     ----------
@@ -30,7 +30,7 @@ def read_python(path):
     metadata:
         dictionary containing parsed file
 
-    '''
+    """
     from six import exec_
     import re
     path = Path(path).absolute()
@@ -45,7 +45,7 @@ def read_python(path):
 
 
 def write_python(path, dict):
-    '''Saves python dictionary to file
+    """Saves python dictionary to file
 
     Parameters
     ----------
@@ -53,7 +53,7 @@ def write_python(path, dict):
         Path to save file
     dict: dict
         dictionary to save
-    '''
+    """
     with Path(path).open('w') as f:
         for k, v in dict.items():
             if isinstance(v ,str) and not v.startswith("'"):
@@ -66,7 +66,7 @@ def write_python(path, dict):
 
 
 def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None, verbose=False):
-    '''This function returns a SubRecordingExtractor that contains information from the given
+    """This function returns a SubRecordingExtractor that contains information from the given
     probe file (channel locations, groups, etc.) If a .prb file is given, then 'location' and 'group' 
     information for each channel is added to the SubRecordingExtractor. If a .csv file is given, then 
     it will only add 'location' to the SubRecordingExtractor.
@@ -82,9 +82,9 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
 
     Returns
     ---------
-    subrecording = SubRecordingExtractor
+    subrecording: SubRecordingExtractor
         The extractor containing all of the probe information.
-    '''
+    """
     from .subrecordingextractor import SubRecordingExtractor
     probe_file = Path(probe_file)
     if probe_file.suffix == '.prb':
@@ -183,7 +183,7 @@ def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None
 
 def save_to_probe_file(recording, probe_file, grouping_property=None, radius=None,
                        graph=True, geometry=True, verbose=False):
-    '''Saves probe file from the channel information of the given recording
+    """Saves probe file from the channel information of the given recording
     extractor.
 
     Parameters
@@ -202,7 +202,7 @@ def save_to_probe_file(recording, probe_file, grouping_property=None, radius=Non
         If True, the geometry is saved (default=True)
     verbose: bool
         If True, output is verbose
-    '''
+    """
     probe_file = Path(probe_file)
     if not probe_file.parent.is_dir():
         probe_file.parent.mkdir()
@@ -236,7 +236,7 @@ def save_to_probe_file(recording, probe_file, grouping_property=None, radius=Non
 
 
 def read_binary(file, numchan, dtype, time_axis=0, offset=0):
-    '''
+    """
     Reads binary .bin or .dat file.
 
     Parameters
@@ -253,7 +253,7 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
     offset: int
         number of offset bytes
 
-    '''
+    """
     numchan = int(numchan)
     with Path(file).open() as f:
         nsamples = (os.fstat(f.fileno()).st_size - offset) // (numchan * np.dtype(dtype).itemsize)
@@ -266,8 +266,8 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
 
 def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
                                time_axis=0, dtype=None, chunk_size=None, chunk_mb=500, n_jobs=1, joblib_backend='loky',
-                               verbose=False):
-    '''Saves the traces of a recording extractor in binary .dat format.
+                               return_scaled=True, verbose=False):
+    """Saves the traces of a recording extractor in binary .dat format.
 
     Parameters
     ----------
@@ -284,17 +284,19 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
     dtype: dtype
         Type of the saved data. Default float32.
     chunk_size: None or int
-        Number of chunks to save the file in. This avoid to much memory consumption for big files.
-        If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
+        Size of each chunk in number of frames.
+        If None (default) and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
     chunk_mb: None or int
         Chunk size in Mb (default 500Mb)
     n_jobs: int
         Number of jobs to use (Default 1)
     joblib_backend: str
         Joblib backend for parallel processing ('loky', 'threading', 'multiprocessing')
+    return_scaled: bool
+        If True, traces are written after scaling (using gain/offset). If False, the raw traces are written
     verbose: bool
         If True, output is verbose (when chunks are used)
-    '''
+    """
     assert save_path is not None or file_handle is not None, "Provide 'save_path' or 'file handle'"
 
     if save_path is not None:
@@ -338,7 +340,7 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
             rec_arg = recording
 
     if chunk_size is None:
-        traces = recording.get_traces()
+        traces = recording.get_traces(return_scaled=return_scaled)
         if dtype is not None:
             traces = traces.astype(dtype)
         if time_axis == 0:
@@ -373,7 +375,8 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
                     shape = (num_channels, num_frames)
                 rec_memmap = np.memmap(str(save_path), dtype=dtype, mode='w+', shape=shape)
                 for i in chunks_loop:
-                    _write_dat_one_chunk(i, rec_arg, chunks, rec_memmap, dtype, time_axis, verbose=False)
+                    _write_dat_one_chunk(i, rec_arg, chunks, rec_memmap, dtype, time_axis, return_scaled,
+                                         verbose=False)
             else:
                 if time_axis == 0:
                     shape = (num_frames, num_channels)
@@ -382,13 +385,15 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
                 rec_memmap = np.memmap(str(save_path), dtype=dtype, mode='w+', shape=shape)
 
                 Parallel(n_jobs=n_jobs, backend=joblib_backend)(
-                    delayed(_write_dat_one_chunk)(i, rec_arg, chunks, rec_memmap, dtype, time_axis, verbose,)
+                    delayed(_write_dat_one_chunk)(i, rec_arg, chunks, rec_memmap, dtype, time_axis, return_scaled,
+                                                  verbose,)
                     for i in chunks_loop)
         else:
             for i in chunks_loop:
                 start_frame = chunks[i]['istart']
                 end_frame = chunks[i]['iend']
-                traces = recording.get_traces(start_frame=start_frame, end_frame=end_frame)
+                traces = recording.get_traces(start_frame=start_frame, end_frame=end_frame, 
+                                              return_scaled=return_scaled)
 
                 if dtype is not None:
                     traces = traces.astype(dtype)
@@ -401,7 +406,7 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
 
 def write_to_h5_dataset_format(recording, dataset_path, save_path=None, file_handle=None,
                                time_axis=0, dtype=None, chunk_size=None, chunk_mb=500, verbose=False):
-    '''Saves the traces of a recording extractor in an h5 dataset.
+    """Saves the traces of a recording extractor in an h5 dataset.
 
     Parameters
     ----------
@@ -420,13 +425,13 @@ def write_to_h5_dataset_format(recording, dataset_path, save_path=None, file_han
     dtype: dtype
         Type of the saved data. Default float32.
     chunk_size: None or int
-        Number of chunks to save the file in. This avoid to much memory consumption for big files.
-        If None and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
+        Size of each chunk in number of frames.
+        If None (default) and 'chunk_mb' is given, the file is saved in chunks of 'chunk_mb' Mb (default 500Mb)
     chunk_mb: None or int
         Chunk size in Mb (default 500Mb)
     verbose: bool
         If True, output is verbose (when chunks are used)
-    '''
+    """
     assert HAVE_H5, "To write to h5 you need to install h5py: pip install h5py"
     assert save_path is not None or file_handle is not None, "Provide 'save_path' or 'file handle'"
 
@@ -497,7 +502,7 @@ def write_to_h5_dataset_format(recording, dataset_path, save_path=None, file_han
 
 
 def get_sub_extractors_by_property(extractor, property_name, return_property_list=False):
-    '''Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given
+    """Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given
     property_name (e.g. group)
 
     Parameters
@@ -514,7 +519,7 @@ def get_sub_extractors_by_property(extractor, property_name, return_property_lis
     OR
     sub_list, prop_list
         If return_property_list is True, the property list will be returned as well.
-    '''
+    """
     from spikeextractors import RecordingExtractor, SortingExtractor, SubRecordingExtractor, SubSortingExtractor
 
     if isinstance(extractor, RecordingExtractor):
@@ -557,7 +562,7 @@ def get_sub_extractors_by_property(extractor, property_name, return_property_lis
 
 def _export_prb_file(recording, file_name, grouping_property=None, graph=True, geometry=True,
                      radius=None, adjacency_distance=100, verbose=False):
-    '''Exports .prb file
+    """Exports .prb file
 
     Parameters
     ----------
@@ -576,7 +581,7 @@ def _export_prb_file(recording, file_name, grouping_property=None, graph=True, g
     adjacency_distance: float
         Distance to consider two channels to adjacent (if 'location' is a property). If radius is given,
         then adjacency_distance is set to the radius.
-    '''
+    """
     file_name = Path(file_name)
     assert file_name is not None
     abspath = file_name.absolute()
@@ -685,7 +690,7 @@ def _check_json(d):
 
 
 def load_extractor_from_json(json_file):
-    '''
+    """
     Instantiates extractor from json file
 
     Parameters
@@ -697,12 +702,12 @@ def load_extractor_from_json(json_file):
     -------
     extractor: RecordingExtractor or SortingExtractor
         The loaded extractor object
-    '''
+    """
     return BaseExtractor.load_extractor_from_json(json_file)
 
 
 def load_extractor_from_dict(d):
-    '''
+    """
     Instantiates extractor from dictionary
 
     Parameters
@@ -714,12 +719,12 @@ def load_extractor_from_dict(d):
     -------
     extractor: RecordingExtractor or SortingExtractor
         The loaded extractor object
-    '''
+    """
     return BaseExtractor.load_extractor_from_dict(d)
 
 
 def load_extractor_from_pickle(pkl_file):
-    '''
+    """
     Instantiates extractor from pickle file
 
     Parameters
@@ -731,64 +736,40 @@ def load_extractor_from_pickle(pkl_file):
     -------
     extractor: RecordingExtractor or SortingExtractor
         The loaded extractor object
-    '''
+    """
     return BaseExtractor.load_extractor_from_pickle(pkl_file)
 
 
-def check_valid_unit_id(func):
+def check_get_unit_spike_train(func):
     @wraps(func)
-    def check_validity(*args, **kwargs):
+    def check_validity(sorting, unit_id, start_frame=None, end_frame=None):
         # parse args and kwargs
-        if len(args) == 1:
-            sorting = args[0]
-            unit_id = kwargs.get('unit_id', None)
-        else:
-            sorting = args[0]
-            unit_id = args[1]
         if unit_id is None:
             raise TypeError("get_unit_spike_train() missing 1 required positional argument: 'unit_id')")
         elif not (isinstance(unit_id, (int, np.integer))):
             raise ValueError("unit_id must be an integer")
         elif unit_id not in sorting.get_unit_ids():
             raise ValueError(f"{unit_id} is an invalid unit id")
-        return func(*args, **kwargs)
+        start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
+        if start_frame is None:
+            start_frame = 0
+        if end_frame is None:
+            end_frame = np.Inf
+        return func(sorting, unit_id, start_frame=start_frame, end_frame=end_frame)
     return check_validity
 
 
 def check_get_traces_args(func):
     @wraps(func)
-    def corrected_args(*args, **kwargs):
-        # parse args and kwargs
-        if len(args) == 1:
-            recording = args[0]
-            channel_ids = kwargs.get('channel_ids', None)
-            start_frame = kwargs.get('start_frame', None)
-            end_frame = kwargs.get('end_frame', None)
-        elif len(args) == 2:
-            recording = args[0]
-            channel_ids = args[1]
-            start_frame = kwargs.get('start_frame', None)
-            end_frame = kwargs.get('end_frame', None)
-        elif len(args) == 3:
-            recording = args[0]
-            channel_ids = args[1]
-            start_frame = args[2]
-            end_frame = kwargs.get('end_frame', None)
-        elif len(args) == 4:
-            recording = args[0]
-            channel_ids = args[1]
-            start_frame = args[2]
-            end_frame = args[3]
-        else:
-            raise Exception("Too many arguments!")
-
+    def corrected_args(recording, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True, **kwargs):
         if channel_ids is not None:
             if isinstance(channel_ids, (int, np.integer)):
                 channel_ids = list([channel_ids])
             else:
                 channel_ids = channel_ids
             if np.any([ch not in recording.get_channel_ids() for ch in channel_ids]):
-                print("Removing invalid 'channel_ids'", [ch for ch in channel_ids if ch not in recording.get_channel_ids()])
+                print("Removing invalid 'channel_ids'",
+                      [ch for ch in channel_ids if ch not in recording.get_channel_ids()])
                 channel_ids = [ch for ch in channel_ids if ch in recording.get_channel_ids()]
         else:
             channel_ids = recording.get_channel_ids()
@@ -807,44 +788,28 @@ def check_get_traces_args(func):
             end_frame = recording.get_num_frames()
         assert end_frame - start_frame > 0, "'start_frame' must be less than 'end_frame'!"
         start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
-        kwargs['channel_ids'] = channel_ids
-        kwargs['start_frame'] = start_frame
-        kwargs['end_frame'] = end_frame
 
-        # pass recording as arg and rest as kwargs
-        get_traces_correct_arg = func(args[0], **kwargs)
+        if not recording.has_unscaled and not return_scaled:
+            warnings.warn("The recording extractor does not have unscaled traces. Returning scaled traces")
+            return_scaled = True
 
-        return get_traces_correct_arg
+        traces = func(recording, channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame,
+                      return_scaled=return_scaled, **kwargs)
+
+        # scaling
+        if recording.has_unscaled and return_scaled:
+            channel_idxs = np.array([recording.get_channel_ids().index(ch) for ch in channel_ids])
+            gains = recording.get_channel_gains()[channel_idxs, None]
+            offsets = recording.get_channel_offsets()[channel_idxs, None]
+            traces = (traces.astype("float32") * gains + offsets).astype("float32")
+
+        return traces
     return corrected_args
 
 
 def check_get_ttl_args(func):
     @wraps(func)
-    def corrected_args(*args, **kwargs):
-        # parse args and kwargs
-        if len(args) == 1:
-            recording = args[0]
-            start_frame = kwargs.get('start_frame', None)
-            end_frame = kwargs.get('end_frame', None)
-            channel_id = kwargs.get('channel_id', 0)
-        elif len(args) == 2:
-            recording = args[0]
-            start_frame = args[1]
-            end_frame = kwargs.get('end_frame', None)
-            channel_id = kwargs.get('channel_id', 0)
-        elif len(args) == 3:
-            recording = args[0]
-            start_frame = args[1]
-            end_frame = args[2]
-            channel_id = kwargs.get('channel_id', 0)
-        elif len(args) == 4:
-            recording = args[0]
-            start_frame = args[1]
-            end_frame = args[2]
-            channel_id = args[3]
-        else:
-            raise Exception("Too many arguments!")
-
+    def corrected_args(recording, start_frame=None, end_frame=None, channel_id=0, **kwargs):
         if start_frame is not None:
             if start_frame < 0:
                 start_frame = recording.get_num_frames() + start_frame
@@ -862,13 +827,9 @@ def check_get_ttl_args(func):
         assert isinstance(channel_id, (int, np.integer)), "'channel_id' must be a single int"
 
         start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
-        kwargs['start_frame'] = start_frame
-        kwargs['end_frame'] = end_frame
-        kwargs['channel_id'] = channel_id
-
         # pass recording as arg and rest as kwargs
-        get_ttl_correct_arg = func(args[0], **kwargs)
-
+        get_ttl_correct_arg = func(recording, start_frame=start_frame, end_frame=end_frame, channel_id=channel_id,
+                                   **kwargs)
         return get_ttl_correct_arg
     return corrected_args
 
@@ -880,15 +841,14 @@ def cast_start_end_frame(start_frame, end_frame):
         start_frame = start_frame
     else:
         raise ValueError("start_frame must be an int, float (not infinity), or None")
-    if isinstance(end_frame, (float, np.float)):
+    if isinstance(end_frame, (float, np.float)) and np.isfinite(end_frame):
         end_frame = int(end_frame)
     elif isinstance(end_frame, (int, np.integer, type(None))):
         end_frame = end_frame
-    else:
-        raise ValueError("end_frame must be an int, float (not infinity), or None")
+    # else end_frame is infinity (accepted for get_unit_spike_train)
     if start_frame is not None:
         start_frame = int(start_frame)
-    if end_frame is not None:
+    if end_frame is not None and np.isfinite(end_frame):
         end_frame = int(end_frame)
     return start_frame, end_frame
 
@@ -908,7 +868,7 @@ def divide_recording_into_time_chunks(num_frames, chunk_size, padding_size):
     return chunks
 
 
-def _write_dat_one_chunk(i, rec_arg, chunks, rec_memmap, dtype, time_axis, verbose):
+def _write_dat_one_chunk(i, rec_arg, chunks, rec_memmap, dtype, time_axis, return_scaled, verbose):
     chunk = chunks[i]
 
     if verbose:
@@ -920,7 +880,7 @@ def _write_dat_one_chunk(i, rec_arg, chunks, rec_memmap, dtype, time_axis, verbo
 
     start_frame = chunk['istart']
     end_frame = chunk['iend']
-    traces = recording.get_traces(start_frame=start_frame, end_frame=end_frame)
+    traces = recording.get_traces(start_frame=start_frame, end_frame=end_frame, return_scaled=return_scaled)
     if dtype is not None:
         traces = traces.astype(dtype)
     if time_axis == 0:

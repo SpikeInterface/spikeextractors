@@ -13,6 +13,8 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         self._num_channels = self._first_recording.get_num_channels()
         self._channel_ids = self._first_recording.get_channel_ids()
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
+        self.has_unscaled = self._first_recording.has_unscaled
+
         if epoch_names is None:
             epoch_names = [str(i) for i in range(len(recordings))]
             
@@ -81,23 +83,26 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         return self._recordings[ind], ind, time - self._start_times[ind]
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         recording1, i_sec1, i_start_frame = self._find_section_for_frame(start_frame)
         _, i_sec2, i_end_frame = self._find_section_for_frame(end_frame)
         if i_sec1 == i_sec2:
-            return recording1.get_traces(channel_ids=channel_ids, start_frame=i_start_frame, end_frame=i_end_frame)
+            return recording1.get_traces(channel_ids=channel_ids, start_frame=i_start_frame, end_frame=i_end_frame,
+                                         return_scaled=return_scaled)
         traces = []
         traces.append(
             self._recordings[i_sec1].get_traces(channel_ids=channel_ids, start_frame=i_start_frame,
-                                                end_frame=self._recordings[i_sec1].get_num_frames())
+                                                end_frame=self._recordings[i_sec1].get_num_frames(),
+                                                return_scaled=return_scaled)
         )
         for i_sec in range(i_sec1 + 1, i_sec2):
             traces.append(
-                self._recordings[i_sec].get_traces(channel_ids=channel_ids)
+                self._recordings[i_sec].get_traces(channel_ids=channel_ids, return_scaled=return_scaled)
             )
         if i_end_frame != 0:
             traces.append(
-                self._recordings[i_sec2].get_traces(channel_ids=channel_ids, start_frame=0, end_frame=i_end_frame)
+                self._recordings[i_sec2].get_traces(channel_ids=channel_ids, start_frame=0, end_frame=i_end_frame,
+                                                    return_scaled=return_scaled)
             )
         return np.concatenate(traces, axis=1)
 
@@ -159,7 +164,7 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
 
 
 def concatenate_recordings_by_time(recordings, epoch_names=None):
-    '''
+    """
     Concatenates recordings together by time. The order of the recordings
     determines the order of the time series in the concatenated recording.
 
@@ -174,7 +179,7 @@ def concatenate_recordings_by_time(recordings, epoch_names=None):
     recording: MultiRecordingTimeExtractor
         The concatenated recording extractors enscapsulated in the
         MultiRecordingTimeExtractor object (which is also a recording extractor)
-    '''
+    """
     return MultiRecordingTimeExtractor(
         recordings=recordings,
         epoch_names=epoch_names,

@@ -13,6 +13,7 @@ class SubRecordingExtractor(RecordingExtractor):
         self._renamed_channel_ids = renamed_channel_ids
         self._start_frame = start_frame
         self._end_frame = end_frame
+        self.has_unscaled = self._parent_recording.has_unscaled
         if self._channel_ids is None:
             self._channel_ids = self._parent_recording.get_channel_ids()
         if self._renamed_channel_ids is None:
@@ -36,11 +37,12 @@ class SubRecordingExtractor(RecordingExtractor):
                         'renamed_channel_ids': renamed_channel_ids, 'start_frame': start_frame, 'end_frame': end_frame}
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         sf = self._start_frame + start_frame
         ef = self._start_frame + end_frame
         original_ch_ids = self.get_original_channel_ids(channel_ids)
-        return self._parent_recording.get_traces(channel_ids=original_ch_ids, start_frame=sf, end_frame=ef)
+        return self._parent_recording.get_traces(channel_ids=original_ch_ids, start_frame=sf, end_frame=ef,
+                                                 return_scaled=return_scaled)
 
     @check_get_ttl_args
     def get_ttl_events(self, start_frame=None, end_frame=None, channel_id=0):
@@ -76,13 +78,13 @@ class SubRecordingExtractor(RecordingExtractor):
         frame2 = frame1 - self._start_frame
         return frame2.astype('int64')
 
-    def get_snippets(self, *, reference_frames, snippet_len, channel_ids=None):
+    def get_snippets(self, reference_frames, snippet_len, channel_ids=None, return_scaled=True):
         if channel_ids is None:
             channel_ids = self.get_channel_ids()
         reference_frames_shift = self._start_frame + np.array(reference_frames)
         original_ch_ids = self.get_original_channel_ids(channel_ids)
         return self._parent_recording.get_snippets(reference_frames=reference_frames_shift, snippet_len=snippet_len,
-                                                   channel_ids=original_ch_ids)
+                                                   channel_ids=original_ch_ids, return_scaled=return_scaled)
 
     def copy_channel_properties(self, recording, channel_ids=None):
         if channel_ids is None:
@@ -108,8 +110,12 @@ class SubRecordingExtractor(RecordingExtractor):
             original_channel_ids = self.get_original_channel_ids(channel_ids)
             groups = recording.get_channel_groups(channel_ids=original_channel_ids)
             locations = recording.get_channel_locations(channel_ids=original_channel_ids)
+            gains = recording.get_channel_gains(channel_ids=original_channel_ids)
+            offsets = recording.get_channel_offsets(channel_ids=original_channel_ids)
             self.set_channel_groups(groups=groups, channel_ids=channel_ids)
             self.set_channel_locations(locations=locations, channel_ids=channel_ids)
+            self.set_channel_gains(gains=gains, channel_ids=channel_ids)
+            self.set_channel_offsets(offsets=offsets, channel_ids=channel_ids)
 
             # copy normal properties
             for channel_id in channel_ids:

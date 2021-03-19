@@ -2,7 +2,7 @@ from spikeextractors import RecordingExtractor, MultiRecordingTimeExtractor, Sor
 from spikeextractors.extractors.bindatrecordingextractor import BinDatRecordingExtractor
 import numpy as np
 from pathlib import Path
-from spikeextractors.extraction_tools import check_valid_unit_id, get_sub_extractors_by_property
+from spikeextractors.extraction_tools import check_get_unit_spike_train, get_sub_extractors_by_property
 from typing import Union, Optional
 import re
 import warnings
@@ -36,7 +36,7 @@ def get_shank_files(folder_path: Path, suffix: str):
 
 class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
     """
-    Extracts raw neural recordings from large binary .dat files in the neuroscope format.
+    Extracts raw neural recordings from binary .dat files in the neuroscope format.
 
     The recording extractor always returns channel IDs starting from 0.
 
@@ -52,12 +52,14 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
     extractor_name = "NeuroscopeRecordingExtractor"
     installed = HAVE_LXML
+    has_default_locations = False
+    has_unscaled = False
     is_writable = True
     mode = "file"
     installation_mesg = "Please install lxml to use this extractor!"
 
     def __init__(self, file_path: PathType, gain: Optional[float] = None, xml_file_path: OptionalPathType = None):
-        assert HAVE_LXML, self.installation_mesg
+        assert self.installed, self.installation_mesg
         file_path = Path(file_path)
         assert file_path.is_file() and file_path.suffix in [".dat", ".eeg", ".lfp"], \
             "file_path must lead to a .dat or .eeg file!"
@@ -86,11 +88,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
             sampling_frequency = float(xml_root.find('fieldPotentials').find('lfpSamplingRate').text)
 
         BinDatRecordingExtractor.__init__(self, file_path, sampling_frequency=sampling_frequency,
-                                          dtype=dtype, numchan=numchan_from_file)
-
-        if gain is not None:
-            self.set_channel_gains(channel_ids=self.get_channel_ids(), gains=gain)
-
+                                          dtype=dtype, numchan=numchan_from_file, gain=gain)
         self._kwargs = dict(file_path=str(Path(file_path).absolute()), gain=gain)
 
     @staticmethod
@@ -189,7 +187,7 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
     installation_mesg = "Please install lxml to use this extractor!"
 
     def __init__(self, folder_path: PathType, gain: Optional[float] = None):
-        assert HAVE_LXML, self.installation_mesg
+        assert self.installed, self.installation_mesg
 
         folder_path = Path(folder_path)
         recording_files = [x for x in folder_path.iterdir() if x.is_file() and x.suffix == ".dat"]
@@ -343,7 +341,7 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         spkfile_path: OptionalPathType = None,
         gain: Optional[float] = None
     ):
-        assert HAVE_LXML, self.installation_mesg
+        assert self.installed, self.installation_mesg
         assert not (folder_path is None and resfile_path is None and clufile_path is None), \
             "Either pass a single folder_path location, or a pair of resfile_path and clufile_path! None received."
 
@@ -466,23 +464,19 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         self._unit_ids = [x + shift for x in self._unit_ids]
 
     def add_unit(self, unit_id, spike_times):
-        '''This function adds a new unit with the given spike times.
+        """This function adds a new unit with the given spike times.
 
         Parameters
         ----------
         unit_id: int
             The unit_id of the unit to be added.
-        '''
+        """
         self._unit_ids.append(unit_id)
         self._spiketrains.append(spike_times)
 
-    @check_valid_unit_id
+    @check_get_unit_spike_train
     def get_unit_spike_train(self, unit_id, start_frame=None, end_frame=None):
-        start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if start_frame is None:
-            start_frame = 0
-        if end_frame is None:
-            end_frame = np.Inf
+
         times = self._spiketrains[self.get_unit_ids().index(unit_id)]
         inds = np.where((start_frame <= times) & (times < end_frame))
         return times[inds]
@@ -571,7 +565,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         load_waveforms: bool = False,
         gain: Optional[float] = None
     ):
-        assert HAVE_LXML, self.installation_mesg
+        assert self.installed, self.installation_mesg
 
         folder_path = Path(folder_path)
 
