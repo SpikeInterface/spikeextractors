@@ -13,6 +13,7 @@ exdir==0.4.1
 pyintan
 tridesclous
 hdbscan
-neo
 pyopenephys
 xmltodict
+https://github.com/NeuralEnsemble/python-neo/archive/master.zip
+
