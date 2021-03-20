@@ -9,13 +9,13 @@ from .synthesize_timeseries import synthesize_timeseries
 
 
 def toy_example(
-        duration: float = 10.,
-        num_channels: int = 4,
-        sampling_frequency: float = 30000.,
-        K: int = 10,
-        dumpable: bool = False,
-        dump_folder: Optional[Union[str, Path]] = None,
-        seed: Optional[int] = None
+    duration: float = 10.,
+    num_channels: int = 4,
+    sampling_frequency: float = 30000.,
+    K: int = 10,
+    dumpable: bool = False,
+    dump_folder: Optional[Union[str, Path]] = None,
+    seed: Optional[int] = None
 ):
     """
     Create toy recording and sorting extractors.
