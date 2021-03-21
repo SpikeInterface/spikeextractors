@@ -92,6 +92,15 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         header_channels = self.neo_reader.header['signal_channels'][slice(None)]
         self._neo_chan_ids = self.neo_reader.header['signal_channels']['id']
         channel_ids = self.get_channel_ids()
+        self._neo_chan_ids = self.neo_reader.header['signal_channels']['id']
+
+        # In neo there is not guarantee that channel ids are unique.
+        # for instance Blacrock can have several times the same chan_id
+        # different sampling rate
+        # so check it
+        assert np.unique(self._neo_chan_ids).size == self._neo_chan_ids.size, 'In this format channel ids are not ' \
+                                                                              'unique! Incompatible with SpikeInterface'
+        self._channel_ids = list(np.arange(len(self._neo_chan_ids)))
 
         gains = header_channels['gain'] * self.additional_gain[0]
         self.set_channel_gains(gains=gains, channel_ids=channel_ids)
@@ -131,18 +140,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         return sf
 
     def get_channel_ids(self):
-        chan_ids = self.neo_reader.header['signal_channels']['id']
-
-        # force chan_ids to be int (new neo default=str)
-        chan_ids = np.array([np.int(i) for i in chan_ids])
-
-        # in neo there is not garranty that chann ids are unique
-        # for instance Blacrock can have several times the same chan_id
-        # different sampling rate
-        # so check it
-        assert np.unique(chan_ids).size == chan_ids.size, 'In this format channel ids are not unique'
-        # to avoid this limitation this could return chan_index which is 0...N-1
-        return list(chan_ids)
+        return self._channel_ids
 
 
 
