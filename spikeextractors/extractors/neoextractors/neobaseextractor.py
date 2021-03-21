@@ -90,6 +90,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
         # Add channels properties
         header_channels = self.neo_reader.header['signal_channels'][slice(None)]
+        self._neo_chan_ids = self.neo_reader.header['signal_channels']['id']
         channel_ids = self.get_channel_ids()
 
         gains = header_channels['gain'] * self.additional_gain[0]
@@ -103,10 +104,12 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         # in neo rawio channel can acces by names/ids/indexes
         # there is no garranty that ids/names are unique on some formats
+        channel_idxs = [self.get_channel_ids().index(ch) for ch in channel_ids]
+        neo_chan_ids = self._neo_chan_ids[channel_idxs]
         raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
                                                             i_start=start_frame, i_stop=end_frame,
                                                             channel_indexes=None, channel_names=None,
-                                                            stream_index=0, channel_ids=channel_ids)
+                                                            stream_index=0, channel_ids=neo_chan_ids)
         # neo works with (samples, channels) strides
         # so transpose to spikeextractors wolrd
         return raw_traces.transpose()
@@ -140,6 +143,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         assert np.unique(chan_ids).size == chan_ids.size, 'In this format channel ids are not unique'
         # to avoid this limitation this could return chan_index which is 0...N-1
         return list(chan_ids)
+
 
 
 class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
