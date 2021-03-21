@@ -36,6 +36,7 @@ from .extractors.alfsortingextractor import ALFSortingExtractor
 from .extractors.cedextractors import CEDRecordingExtractor
 from .extractors.cellexplorersortingextractor import CellExplorerSortingExtractor
 from .extractors.neuropixelsdatrecordingextractor import NeuropixelsDatRecordingExtractor
+from .extractors.axonaunitrecordingextractor import AxonaUnitRecordingExtractor
 
 recording_extractor_full_list = [
     MdaRecordingExtractor,
@@ -61,6 +62,7 @@ recording_extractor_full_list = [
     NeuroscopeMultiRecordingTimeExtractor,
     CEDRecordingExtractor,
     NeuropixelsDatRecordingExtractor,
+    AxonaUnitRecordingExtractor
 
     # neo based
     AxonaRecordingExtractor,
