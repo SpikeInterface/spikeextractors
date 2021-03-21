@@ -90,7 +90,6 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
         # Add channels properties
         header_channels = self.neo_reader.header['signal_channels'][slice(None)]
-        channel_ids = self.get_channel_ids()
         self._neo_chan_ids = self.neo_reader.header['signal_channels']['id']
 
         # In neo there is not guarantee that channel ids are unique.
@@ -102,10 +101,10 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         self._channel_ids = list(np.arange(len(self._neo_chan_ids)))
 
         gains = header_channels['gain'] * self.additional_gain[0]
-        self.set_channel_gains(gains=gains, channel_ids=channel_ids)
+        self.set_channel_gains(gains=gains, channel_ids=self._channel_ids)
 
         names = header_channels['name']
-        for i, ind in enumerate(channel_ids):
+        for i, ind in enumerate(self._channel_ids):
             self.set_channel_property(channel_id=ind, property_name='name', value=names[i])
 
     @check_get_traces_args
