@@ -62,7 +62,7 @@ recording_extractor_full_list = [
     NeuroscopeMultiRecordingTimeExtractor,
     CEDRecordingExtractor,
     NeuropixelsDatRecordingExtractor,
-    AxonaUnitRecordingExtractor
+    AxonaUnitRecordingExtractor,
 
     # neo based
     AxonaRecordingExtractor,

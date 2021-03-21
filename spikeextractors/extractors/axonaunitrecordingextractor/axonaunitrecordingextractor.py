@@ -94,7 +94,6 @@ class AxonaUnitRecordingExtractor(RecordingExtractor):
             waveforms_i = waveform[spike_times_idxs]
             wf_samples = waveforms_i.shape[2]
 
-            print(f"{len(spike_times_i)} spikes in snippet")
             for t, wf in zip(spike_times_i, waveforms_i):
                 t = t - start_frame
 
