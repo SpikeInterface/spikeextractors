@@ -632,13 +632,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def add_electrical_series(
-            recording: se.RecordingExtractor,
-            nwbfile=None,
-            metadata: dict = None,
-            buffer_mb: int = 500,
-            use_times: bool = False,
-            write_as_lfp: bool = False,
-            write_scaled: bool = False
+        recording: se.RecordingExtractor,
+        nwbfile=None,
+        metadata: dict = None,
+        buffer_mb: int = 500,
+        use_times: bool = False,
+        write_as_lfp: bool = False,
+        write_scaled: bool = False
     ):
         """
         Auxiliary static method for nwbextractor.
@@ -809,8 +809,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             ecephys_mod.data_interfaces['LFP'].add_electrical_series(ElectricalSeries(**eseries_kwargs))
 
     @staticmethod
-    def add_epochs(recording: se.RecordingExtractor, nwbfile=None,
-                   metadata: dict = None):
+    def add_epochs(
+        recording: se.RecordingExtractor, 
+        nwbfile=None,
+        metadata: dict = None
+    ):
         """
         Auxiliary static method for nwbextractor.
         Adds epochs from recording object to nwbfile object.
@@ -849,14 +852,14 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def add_all_to_nwbfile(
-            recording: se.RecordingExtractor,
-            nwbfile=None,
-            buffer_mb: int = 500,
-            use_times: bool = False,
-            metadata: dict = None,
-            write_as_lfp: bool = False,
-            write_scaled: bool = False
-        ):
+        recording: se.RecordingExtractor,
+        nwbfile=None,
+        buffer_mb: int = 500,
+        use_times: bool = False,
+        metadata: dict = None,
+        write_as_lfp: bool = False,
+        write_scaled: bool = False
+    ):
         """
         Auxiliary static method for nwbextractor.
 
@@ -919,16 +922,16 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def write_recording(
-            recording: se.RecordingExtractor,
-            save_path: PathType = None,
-            overwrite: bool = False,
-            nwbfile=None,
-            buffer_mb: int = 500,
-            use_times: bool = False,
-            metadata: dict = None,
-            write_as_lfp: bool = False,
-            write_scaled: bool = False
-        ):
+        recording: se.RecordingExtractor,
+        save_path: PathType = None,
+        overwrite: bool = False,
+        nwbfile=None,
+        buffer_mb: int = 500,
+        use_times: bool = False,
+        metadata: dict = None,
+        write_as_lfp: bool = False,
+        write_scaled: bool = False
+    ):
         """
         Primary method for writing a RecordingExtractor object to an NWBFile.
 
