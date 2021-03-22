@@ -856,7 +856,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             metadata: dict = None,
             write_as_lfp: bool = False,
             write_scaled: bool = False
-    ):
+        ):
         """
         Auxiliary static method for nwbextractor.
 
@@ -928,7 +928,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             metadata: dict = None,
             write_as_lfp: bool = False,
             write_scaled: bool = False
-    ):
+        ):
         """
         Primary method for writing a RecordingExtractor object to an NWBFile.
 
@@ -990,7 +990,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             metadata = update_dict(recording.nwb_metadata, metadata)
         else:
             # If not NWBRecording, make metadata from information available on Recording
-            metadata = se.NwbRecordingExtractor.get_nwb_metadata(recording=recording)
+            metadata_0 = se.NwbRecordingExtractor.get_nwb_metadata(recording=recording)
+            metadata = update_dict(metadata_0, metadata)
 
         if nwbfile is None:
             if Path(save_path).is_file() and not overwrite:
