@@ -98,7 +98,13 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         # so check it
         assert np.unique(self._neo_chan_ids).size == self._neo_chan_ids.size, 'In this format channel ids are not ' \
                                                                               'unique! Incompatible with SpikeInterface'
-        self._channel_ids = list(np.arange(len(self._neo_chan_ids)))
+
+        try:
+            channel_ids = [int(ch) for ch in self._neo_chan_ids]
+        except Exception as e:
+            warnings.warn("Could not parse channel ids to int: using linear channel map")
+            channel_ids = list(np.arange(len(self._neo_chan_ids)))
+        self._channel_ids = channel_ids
 
         gains = header_channels['gain'] * self.additional_gain[0]
         self.set_channel_gains(gains=gains, channel_ids=self._channel_ids)
