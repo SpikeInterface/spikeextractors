@@ -13,7 +13,7 @@ class SubRecordingExtractor(RecordingExtractor):
         self._renamed_channel_ids = renamed_channel_ids
         self._start_frame = start_frame
         self._end_frame = end_frame
-        self.has_unscaled = self._parent_recording.has_unscaled
+
         if self._channel_ids is None:
             self._channel_ids = self._parent_recording.get_channel_ids()
         if self._renamed_channel_ids is None:
@@ -30,7 +30,13 @@ class SubRecordingExtractor(RecordingExtractor):
             self._original_channel_id_lookup[self._renamed_channel_ids[i]] = self._channel_ids[i]
         RecordingExtractor.__init__(self)
         self.copy_channel_properties(parent_recording, channel_ids=self._renamed_channel_ids)
+
+        # avoid rescaling twice
+        self.set_channel_gains(1)
+        self.set_channel_offsets(0)
+
         self.is_filtered = self._parent_recording.is_filtered
+        self.has_unscaled = self._parent_recording.has_unscaled
 
         # update dump dict
         self._kwargs = {'parent_recording': parent_recording.make_serialized_dict(), 'channel_ids': channel_ids,

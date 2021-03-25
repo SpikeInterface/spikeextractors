@@ -13,7 +13,6 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         self._num_channels = self._first_recording.get_num_channels()
         self._channel_ids = self._first_recording.get_channel_ids()
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
-        self.has_unscaled = self._first_recording.has_unscaled
 
         if epoch_names is None:
             epoch_names = [str(i) for i in range(len(recordings))]
@@ -54,6 +53,14 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
 
         # Set the channel properties based on the first recording extractor
         self.copy_channel_properties(self._first_recording)
+
+        # avoid rescaling twice
+        self.set_channel_gains(1)
+        self.set_channel_offsets(0)
+
+        self.is_filtered = self._first_recording.is_filtered
+        self.has_unscaled = self._first_recording.has_unscaled
+
         self._kwargs = {'recordings': [rec.make_serialized_dict() for rec in recordings], 'epoch_names': epoch_names}
 
     @property
