@@ -32,8 +32,8 @@ class SubRecordingExtractor(RecordingExtractor):
         self.copy_channel_properties(parent_recording, channel_ids=self._renamed_channel_ids)
 
         # avoid rescaling twice
-        self.set_channel_gains(1)
-        self.set_channel_offsets(0)
+        self.clear_channel_gains()
+        self.clear_channel_offsets()
 
         self.is_filtered = self._parent_recording.is_filtered
         self.has_unscaled = self._parent_recording.has_unscaled

@@ -55,8 +55,8 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
         self.copy_channel_properties(self._first_recording)
 
         # avoid rescaling twice
-        self.set_channel_gains(1)
-        self.set_channel_offsets(0)
+        self.clear_channel_gains()
+        self.clear_channel_offsets()
 
         self.is_filtered = self._first_recording.is_filtered
         self.has_unscaled = self._first_recording.has_unscaled
