@@ -73,7 +73,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
             num_streams = self.neo_reader.signal_streams_count()
             self.after_v10 = True
         else:
-            raise ValueError('Strange neo version')
+            raise ValueError('Strange neo version. Please upgrade your neo package: pip install --upgrade neo')
 
         assert num_streams == 1, 'This file have several signal streams spikeextractors support only one streams' \
                                  'Maybe you can use option to select only one stream'
@@ -177,6 +177,34 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
             warnings.warn("Sampling frequency not found: setting it to 30 kHz")
             self._sampling_frequency = 30000
             self._neo_sig_sampling_rate = self._sampling_frequency
+
+        if hasattr(self.neo_reader, 'get_group_signal_channel_indexes'):
+            # Neo >= 0.9.0
+            if len(self.neo_reader.get_group_signal_channel_indexes()) > 0:
+                self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
+                                                                              channel_indexes=[0])
+            else:
+                warnings.warn("Start time not found: setting it to 0 s")
+                self._neo_sig_time_start = 0
+        elif hasattr(self.neo_reader, 'get_group_channel_indexes'):
+            # Neo < 0.9.0
+            if len(self.neo_reader.get_group_channel_indexes()) > 0:
+                self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
+                                                                              channel_indexes=[0])
+            else:
+                warnings.warn("Start time not found: setting it to 0 s")
+                self._neo_sig_time_start = 0
+        elif hasattr(self.neo_reader, 'signal_streams_count'):
+            # Neo >= 0.10.0 (not release yet in march 2021)
+            num_streams = self.neo_reader.signal_streams_count()
+            if num_streams > 0:
+                self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
+                                                                              stream_index=0)
+            else:
+                warnings.warn("Start time not found: setting it to 0 s")
+                self._neo_sig_time_start = 0
+        else:
+            raise ValueError('Strange neo version. Please upgrade your neo package: pip install --upgrade neo')
 
         if len(self.neo_reader.get_group_signal_channel_indexes()) > 0:
             self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,

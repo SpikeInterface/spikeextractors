@@ -1,6 +1,7 @@
 datalad
 parameterized
 numpy
+neo==0.9.0
 tqdm
 lxml
 h5py
@@ -13,6 +14,5 @@ exdir==0.4.1
 pyintan
 tridesclous
 hdbscan
-neo
 pyopenephys
 xmltodict
