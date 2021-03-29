@@ -17,6 +17,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
     package_data={},
+    include_package_data=True,
     install_requires=[
         'numpy',
         'tqdm',
