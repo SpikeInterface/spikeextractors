@@ -119,11 +119,12 @@ def most_relevant_ch(traces: ArrayType):
 
 def update_dict(d: dict, u: dict):
     """Smart dictionary updates."""
-    for k, v in u.items():
-        if isinstance(v, abc.Mapping):
-            d[k] = update_dict(d.get(k, {}), v)
-        else:
-            d[k] = v
+    if u is not None:
+        for k, v in u.items():
+            if isinstance(v, abc.Mapping):
+                d[k] = update_dict(d.get(k, {}), v)
+            else:
+                d[k] = v
     return d
 
 
