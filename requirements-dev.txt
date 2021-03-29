@@ -1,6 +1,7 @@
 datalad
 parameterized
 numpy
+neo==0.9.0
 tqdm
 lxml
 h5py

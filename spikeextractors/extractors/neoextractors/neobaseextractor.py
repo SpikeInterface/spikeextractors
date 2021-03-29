@@ -73,7 +73,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
             num_streams = self.neo_reader.signal_streams_count()
             self.after_v10 = True
         else:
-            raise ValueError('Strange neo version')
+            raise ValueError('Strange neo version. Please upgrade your neo package: pip install --upgrade neo')
 
         assert num_streams == 1, 'This file have several signal streams spikeextractors support only one streams' \
                                  'Maybe you can use option to select only one stream'
@@ -90,23 +90,45 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
 
         # Add channels properties
         header_channels = self.neo_reader.header['signal_channels'][slice(None)]
-        channel_ids = self.get_channel_ids()
+        self._neo_chan_ids = self.neo_reader.header['signal_channels']['id']
+
+        # In neo there is not guarantee that channel ids are unique.
+        # for instance Blacrock can have several times the same chan_id
+        # different sampling rate
+        # so check it
+        assert np.unique(self._neo_chan_ids).size == self._neo_chan_ids.size, 'In this format channel ids are not ' \
+                                                                              'unique! Incompatible with SpikeInterface'
+
+        try:
+            channel_ids = [int(ch) for ch in self._neo_chan_ids]
+        except Exception as e:
+            warnings.warn("Could not parse channel ids to int: using linear channel map")
+            channel_ids = list(np.arange(len(self._neo_chan_ids)))
+        self._channel_ids = channel_ids
 
         gains = header_channels['gain'] * self.additional_gain[0]
-        self.set_channel_gains(gains=gains, channel_ids=channel_ids)
+        self.set_channel_gains(gains=gains, channel_ids=self._channel_ids)
 
         names = header_channels['name']
-        for i, ind in enumerate(channel_ids):
+        for i, ind in enumerate(self._channel_ids):
             self.set_channel_property(channel_id=ind, property_name='name', value=names[i])
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         # in neo rawio channel can acces by names/ids/indexes
         # there is no garranty that ids/names are unique on some formats
-        raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
-                                                            i_start=start_frame, i_stop=end_frame,
-                                                            channel_indexes=None, channel_names=None,
-                                                            stream_index=0, channel_ids=channel_ids)
+        channel_idxs = [self.get_channel_ids().index(ch) for ch in channel_ids]
+        neo_chan_ids = self._neo_chan_ids[channel_idxs]
+        if self.after_v10:
+            raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
+                                                                i_start=start_frame, i_stop=end_frame,
+                                                                channel_indexes=None, channel_names=None,
+                                                                stream_index=0, channel_ids=neo_chan_ids)
+        else:
+            raw_traces = self.neo_reader.get_analogsignal_chunk(block_index=self.block_index, seg_index=self.seg_index,
+                                                                i_start=start_frame, i_stop=end_frame,
+                                                                channel_indexes=None, channel_names=None,
+                                                                channel_ids=neo_chan_ids)
         # neo works with (samples, channels) strides
         # so transpose to spikeextractors wolrd
         return raw_traces.transpose()
@@ -128,14 +150,7 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         return sf
 
     def get_channel_ids(self):
-        chan_ids = self.neo_reader.header['signal_channels']['id']
-        # in neo there is not garranty that chann ids are unique
-        # for instance Blacrock can have several times the same chan_id
-        # different sampling rate
-        # so check it
-        assert np.unique(chan_ids).size == chan_ids.size, 'In this format channel ids are not unique'
-        # to avoid this limitation this could return chan_index which is 0...N-1
-        return list(chan_ids)
+        return self._channel_ids
 
 
 class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
@@ -168,6 +183,34 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
             warnings.warn("Sampling frequency not found: setting it to 30 kHz")
             self._sampling_frequency = 30000
             self._neo_sig_sampling_rate = self._sampling_frequency
+
+        if hasattr(self.neo_reader, 'get_group_signal_channel_indexes'):
+            # Neo >= 0.9.0
+            if len(self.neo_reader.get_group_signal_channel_indexes()) > 0:
+                self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
+                                                                              channel_indexes=[0])
+            else:
+                warnings.warn("Start time not found: setting it to 0 s")
+                self._neo_sig_time_start = 0
+        elif hasattr(self.neo_reader, 'get_group_channel_indexes'):
+            # Neo < 0.9.0
+            if len(self.neo_reader.get_group_channel_indexes()) > 0:
+                self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
+                                                                              channel_indexes=[0])
+            else:
+                warnings.warn("Start time not found: setting it to 0 s")
+                self._neo_sig_time_start = 0
+        elif hasattr(self.neo_reader, 'signal_streams_count'):
+            # Neo >= 0.10.0 (not release yet in march 2021)
+            num_streams = self.neo_reader.signal_streams_count()
+            if num_streams > 0:
+                self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
+                                                                              stream_index=0)
+            else:
+                warnings.warn("Start time not found: setting it to 0 s")
+                self._neo_sig_time_start = 0
+        else:
+            raise ValueError('Strange neo version. Please upgrade your neo package: pip install --upgrade neo')
 
         if len(self.neo_reader.get_group_signal_channel_indexes()) > 0:
             self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
