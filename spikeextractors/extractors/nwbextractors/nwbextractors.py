@@ -1034,6 +1034,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 se.NwbRecordingExtractor.add_all_to_nwbfile(
                     recording=recording,
                     nwbfile=nwbfile,
+                    buffer_mb=buffer_mb,
                     metadata=metadata,
                     use_times=use_times,
                     write_as_lfp=write_as_lfp,
@@ -1046,6 +1047,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             se.NwbRecordingExtractor.add_all_to_nwbfile(
                 recording=recording,
                 nwbfile=nwbfile,
+                buffer_mb=buffer_mb,
                 use_times=use_times,
                 metadata=metadata,
                 write_as_lfp=write_as_lfp,
