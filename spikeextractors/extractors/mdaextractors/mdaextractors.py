@@ -156,7 +156,7 @@ class MdaRecordingExtractor(RecordingExtractor):
             write_to_binary_dat_format(recording, file_handle=f, dtype=dtype, n_jobs=n_jobs, chunk_size=chunk_size,
                                        chunk_mb=chunk_mb, verbose=verbose)
 
-        params["samplerate"] = recording.get_sampling_frequency()
+        params["samplerate"] = float(recording.get_sampling_frequency())
         with (parent_dir / params_fname).open('w') as f:
             json.dump(params, f)
         np.savetxt(str(parent_dir / geom_fname), geom, delimiter=',')
