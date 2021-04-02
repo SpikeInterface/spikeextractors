@@ -412,11 +412,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
         if len(nwbfile.devices) == 0:
             se.NwbRecordingExtractor.add_devices(recording, nwbfile)
+            device_name = "Device"
+        else:
+            device_name = list(nwbfile.devices.keys())[0]
+
         defaults = dict(
             name="Electrode Group",
             description="no description",
             location="unknown",
-            device_name="Device"
+            device_name=device_name
         )
         if metadata is None or 'ElectrodeGroup' not in metadata['Ecephys']:
             metadata = dict(
@@ -509,6 +513,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             if nwbfile.electrodes is None or 'rel_y' not in nwbfile.electrodes.colnames:
                 nwbfile.add_electrode_column('rel_y', 'y position of electrode in electrode group')
 
+        if len(nwbfile.devices) == 0:
+            se.NwbRecordingExtractor.add_devices(recording, nwbfile)
+            device_name = "Device"
+        else:
+            device_name = list(nwbfile.devices.keys())[0]
+
         defaults = dict(
             x=np.nan,
             y=np.nan,
@@ -561,7 +571,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                             rel_y=float(location[1])
                         )
                     )
-
                 for metadata_column in metadata['Ecephys']['Electrodes']:
                     if metadata_column['name'] == 'group_name':
                         group_name = list_get(metadata_column['data'], j, defaults['group_name'])
@@ -574,7 +583,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                         name=group_name,
                                         description="no description",
                                         location="unknown",
-                                        device_name="Device"
+                                        device_name=device_name
                                     )
                                 )
                             )
@@ -1005,6 +1014,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         elif metadata is None:
             # If not NWBRecording, make metadata from information available on Recording
             metadata = se.NwbRecordingExtractor.get_nwb_metadata(recording=recording)
+
+        print(metadata)
 
         if nwbfile is None:
             if Path(save_path).is_file() and not overwrite:
