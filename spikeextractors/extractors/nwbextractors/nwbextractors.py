@@ -516,8 +516,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if len(nwbfile.devices) == 0:
             se.NwbRecordingExtractor.add_devices(recording, nwbfile)
             device_name = "Device"
-        else:
+        elif len(nwbfile.devices) == 1:
             device_name = list(nwbfile.devices.keys())[0]
+            print(f"Using {device_name} to instantiate electrode group")
+        else:
+            raise ValueError("More than 1 devices found in nwb file. Please specify the full metadata dictionary.")
 
         defaults = dict(
             x=np.nan,
@@ -1012,10 +1015,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if hasattr(recording, 'nwb_metadata'):
             metadata = update_dict(recording.nwb_metadata, metadata)
         elif metadata is None:
-            # If not NWBRecording, make metadata from information available on Recording
+            # If not NWBRecording, create metadata from information available on Recording
             metadata = se.NwbRecordingExtractor.get_nwb_metadata(recording=recording)
-
-        print(metadata)
+        else:
+            # Merge metadata with defaults
+            metadata = update_dict(metadata, se.NwbRecordingExtractor.get_nwb_metadata(recording=recording))
 
         if nwbfile is None:
             if Path(save_path).is_file() and not overwrite:
