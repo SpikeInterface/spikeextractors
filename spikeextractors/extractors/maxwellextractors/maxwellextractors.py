@@ -21,7 +21,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
     mode = 'file'
     installation_mesg = installation_mesg
 
-    def __init__(self, file_path, load_spikes=True):
+    def __init__(self, file_path, load_spikes=True, rec_name='rec0000'):
         assert self.installed, self.installation_mesg
         RecordingExtractor.__init__(self)
         self._file_path = file_path
@@ -31,6 +31,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         self._filehandle = None
         self._load_spikes = load_spikes
         self._mapping = None
+        self._rec_name = rec_name
         self._initialize()
         self._kwargs = {'file_path': str(Path(file_path).absolute()),
                         'load_spikes': load_spikes}
@@ -63,7 +64,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
         elif int(self._version) > 20160704:
             # new format
             well_name = 'well000'
-            rec_name = 'rec0000'
+            rec_name = self._rec_name
             settings = self._filehandle['wells'][well_name][rec_name]['settings']
             self._mapping = settings['mapping']
             if 'lsb' in settings.keys():
