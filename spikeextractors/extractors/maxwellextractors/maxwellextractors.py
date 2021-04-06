@@ -67,7 +67,7 @@ class MaxOneRecordingExtractor(RecordingExtractor):
             settings = self._filehandle['wells'][well_name][rec_name]['settings']
             self._mapping = settings['mapping']
             if 'lsb' in settings.keys():
-                self._lsb = settings['lsb'][()] * 1e6
+                self._lsb = settings['lsb'][()][0] * 1e6
             else:
                 self._lsb = 1.
             channels = np.array(self._mapping['channel'])
@@ -304,7 +304,7 @@ class MaxTwoRecordingExtractor(RecordingExtractor):
         settings = self._filehandle['wells'][self._well_name][self._rec_name]['settings']
         self._mapping = settings['mapping']
         if 'lsb' in settings.keys():
-            self._lsb = settings['lsb'][()] * 1e6
+            self._lsb = settings['lsb'][()][0] * 1e6
         else:
             self._lsb = 1.
         channels = np.array(self._mapping['channel'])
