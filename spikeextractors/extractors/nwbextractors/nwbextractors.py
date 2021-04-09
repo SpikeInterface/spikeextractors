@@ -119,11 +119,12 @@ def most_relevant_ch(traces: ArrayType):
 
 def update_dict(d: dict, u: dict):
     """Smart dictionary updates."""
-    for k, v in u.items():
-        if isinstance(v, abc.Mapping):
-            d[k] = update_dict(d.get(k, {}), v)
-        else:
-            d[k] = v
+    if u is not None:
+        for k, v in u.items():
+            if isinstance(v, abc.Mapping):
+                d[k] = update_dict(d.get(k, {}), v)
+            else:
+                d[k] = v
     return d
 
 
@@ -646,13 +647,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def add_electrical_series(
-            recording: se.RecordingExtractor,
-            nwbfile=None,
-            metadata: dict = None,
-            buffer_mb: int = 500,
-            use_times: bool = False,
-            write_as_lfp: bool = False,
-            write_scaled: bool = False
+        recording: se.RecordingExtractor,
+        nwbfile=None,
+        metadata: dict = None,
+        buffer_mb: int = 500,
+        use_times: bool = False,
+        write_as_lfp: bool = False,
+        write_scaled: bool = False
     ):
         """
         Auxiliary static method for nwbextractor.
@@ -823,8 +824,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             ecephys_mod.data_interfaces['LFP'].add_electrical_series(ElectricalSeries(**eseries_kwargs))
 
     @staticmethod
-    def add_epochs(recording: se.RecordingExtractor, nwbfile=None,
-                   metadata: dict = None):
+    def add_epochs(
+        recording: se.RecordingExtractor, 
+        nwbfile=None,
+        metadata: dict = None
+    ):
         """
         Auxiliary static method for nwbextractor.
         Adds epochs from recording object to nwbfile object.
@@ -863,13 +867,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def add_all_to_nwbfile(
-            recording: se.RecordingExtractor,
-            nwbfile=None,
-            buffer_mb: int = 500,
-            use_times: bool = False,
-            metadata: dict = None,
-            write_as_lfp: bool = False,
-            write_scaled: bool = False
+        recording: se.RecordingExtractor,
+        nwbfile=None,
+        buffer_mb: int = 500,
+        use_times: bool = False,
+        metadata: dict = None,
+        write_as_lfp: bool = False,
+        write_scaled: bool = False
     ):
         """
         Auxiliary static method for nwbextractor.
@@ -933,15 +937,15 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
     @staticmethod
     def write_recording(
-            recording: se.RecordingExtractor,
-            save_path: PathType = None,
-            overwrite: bool = False,
-            nwbfile=None,
-            buffer_mb: int = 500,
-            use_times: bool = False,
-            metadata: dict = None,
-            write_as_lfp: bool = False,
-            write_scaled: bool = False
+        recording: se.RecordingExtractor,
+        save_path: PathType = None,
+        overwrite: bool = False,
+        nwbfile=None,
+        buffer_mb: int = 500,
+        use_times: bool = False,
+        metadata: dict = None,
+        write_as_lfp: bool = False,
+        write_scaled: bool = False
     ):
         """
         Primary method for writing a RecordingExtractor object to an NWBFile.
@@ -1004,7 +1008,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             metadata = update_dict(recording.nwb_metadata, metadata)
         elif metadata is None:
             # If not NWBRecording, make metadata from information available on Recording
-            metadata = se.NwbRecordingExtractor.get_nwb_metadata(recording=recording)
+            metadata_0 = se.NwbRecordingExtractor.get_nwb_metadata(recording=recording)
+            metadata = update_dict(metadata_0, metadata)
 
         if nwbfile is None:
             if Path(save_path).is_file() and not overwrite:
@@ -1029,6 +1034,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 se.NwbRecordingExtractor.add_all_to_nwbfile(
                     recording=recording,
                     nwbfile=nwbfile,
+                    buffer_mb=buffer_mb,
                     metadata=metadata,
                     use_times=use_times,
                     write_as_lfp=write_as_lfp,
@@ -1041,6 +1047,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             se.NwbRecordingExtractor.add_all_to_nwbfile(
                 recording=recording,
                 nwbfile=nwbfile,
+                buffer_mb=buffer_mb,
                 use_times=use_times,
                 metadata=metadata,
                 write_as_lfp=write_as_lfp,

@@ -60,6 +60,8 @@ class CEDRecordingExtractor(RecordingExtractor):
         self._channelid_to_smrxind = dict()
         self._channel_smrxinfo = dict()
         self._channel_names = []
+
+        gains = []
         for i, ind in enumerate(smrx_channel_ids):
             if self._recording_file.ChannelType(ind) == sp.DataType.Off:
                 raise ValueError(f'Channel {ind} is type Off and cannot be used')
@@ -70,13 +72,12 @@ class CEDRecordingExtractor(RecordingExtractor):
             )
             # Set channel gains: http://ced.co.uk/img/Spike10.pdf
             # from 16-bit encoded int / to ADC +-5V input / to measured Volts
-            gains = self._channel_smrxinfo[i]['scale'] / 6553.6
-            self.set_channel_gains(
-                channel_ids=[i],
-                gains=gains
-            )
+            gain = self._channel_smrxinfo[i]['scale'] / 6553.6
+            gains.append(gain)
             self._channel_names.append(self._channel_smrxinfo[i]['title'])
 
+        for i_ch, ch in enumerate(self.get_channel_ids()):
+            self.set_channel_property(ch, "ced_gain", gains[i_ch])
         rate0 = self._channel_smrxinfo[0]['rate']
         for chan, info in self._channel_smrxinfo.items():
             assert info['rate'] == rate0, "Inconsistency between 'sampling_frequency' of different channels. The " \
@@ -134,7 +135,7 @@ class CEDRecordingExtractor(RecordingExtractor):
             ) for i in channel_ids]
         )
 
-        return recordings
+        return recordings.astype("float32")
 
     def get_num_frames(self):
         """This function returns the number of frames in the recording
