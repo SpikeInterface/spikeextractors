@@ -43,13 +43,12 @@ class NeuropixelsDatRecordingExtractor(BinDatRecordingExtractor):
 
     def __init__(self, file_path, settings_file=None, is_filtered=None, verbose=False):
         assert self.installed, self.installation_mesg
-        source_dir = Path(Path(__file__).parent)
+        source_dir = Path(__file__).parent
         self._settings_file = settings_file
         datfile = Path(file_path)
         time_axis = 0
         dtype = 'int16'
         sampling_frequency = float(30000)
-        offset = 0
 
         channel_locations = np.loadtxt(source_dir / 'channel_positions_neuropixels.txt')
         if self._settings_file is not None:

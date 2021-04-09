@@ -15,7 +15,6 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
         self._first_recording = recordings[0]
         self._sampling_frequency = self._first_recording.get_sampling_frequency()
         self._num_frames = self._first_recording.get_num_frames()
-        self.has_unscaled = self._first_recording.has_unscaled
 
         use_times = True
         if np.all([rec._times is not None for rec in self._recordings]):
@@ -72,15 +71,6 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
             locations = np.vstack((locations, recording.get_channel_locations()))
         self.set_channel_locations(locations)
 
-        # set channel gains and offsets
-        gains = np.array([])
-        offsets = np.array([])
-        for i, recording in enumerate(recordings):
-            gains = np.concatenate((gains, recording.get_channel_gains()))
-            offsets = np.concatenate((offsets, recording.get_channel_offsets()))
-        self.set_channel_gains(gains)
-        self.set_channel_offsets(offsets)
-
         #set all normal properties
         for channel_id in self.get_channel_ids():
             recording = self._recordings[self._channel_map[channel_id]['recording']]
@@ -89,6 +79,13 @@ class MultiRecordingChannelExtractor(RecordingExtractor):
                 if property_name not in ("group", "location"):
                     value = recording.get_channel_property(channel_id_recording, property_name)
                     self.set_channel_property(channel_id=channel_id, property_name=property_name, value=value)
+
+        # avoid rescaling twice
+        self.clear_channel_gains()
+        self.clear_channel_offsets()
+
+        self.is_filtered = self._first_recording.is_filtered
+        self.has_unscaled = self._first_recording.has_unscaled
 
         self._kwargs = {'recordings': [rec.make_serialized_dict() for rec in recordings], 'groups': groups}
 
