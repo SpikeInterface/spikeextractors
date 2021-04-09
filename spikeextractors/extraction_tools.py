@@ -507,7 +507,7 @@ def write_to_h5_dataset_format(recording, dataset_path, save_path=None, file_han
 
 
 def get_sub_extractors_by_property(extractor, property_name, return_property_list=False):
-    """Returns a list of SubRecordingExtractors from the Extractor based on the given
+    """Returns a list of SubExtractors from the Extractor based on the given
     property_name (e.g. group)
 
     Parameters
