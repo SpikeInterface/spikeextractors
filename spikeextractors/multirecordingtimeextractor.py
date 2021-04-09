@@ -16,7 +16,7 @@ class MultiRecordingTimeExtractor(RecordingExtractor):
 
         if epoch_names is None:
             epoch_names = [str(i) for i in range(len(recordings))]
-            
+
         RecordingExtractor.__init__(self)
 
         # Add all epochs to the epochs data structure
@@ -181,6 +181,7 @@ def concatenate_recordings_by_time(recordings, epoch_names=None):
         The list of RecordingExtractors to be concatenated by time
     epoch_names: list
         The list of strings corresponding to the names of recording time period.
+
     Returns
     -------
     recording: MultiRecordingTimeExtractor

@@ -112,6 +112,7 @@ def concatenate_sortings(sortings):
     ----------
     sortings: list
         The list of SortingExtractors to be concatenated
+
     Returns
     -------
     recording: MultiSortingExtractor
