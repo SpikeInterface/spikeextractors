@@ -41,18 +41,18 @@ class RecordingExtractor(ABC, BaseExtractor):
 
         Parameters
         ----------
-        start_frame: int
-            The starting frame of the trace to be returned (inclusive)
-        end_frame: int
-            The ending frame of the trace to be returned (exclusive)
         channel_ids: array_like
-            A list or 1D array of channel ids (ints) from which each trace will be
-            extracted
+            A list or 1D array of channel ids (ints) from which each trace will be extracted.
+        start_frame: int
+            The starting frame of the trace to be returned (inclusive).
+        end_frame: int
+            The ending frame of the trace to be returned (exclusive).
         return_scaled: bool
-            If True, traces are returned after scaling (using gain/offset). If False, the raw traces are returned
+            If True, traces are returned after scaling (using gain/offset).
+            If False, the raw traces are returned.
 
         Returns
-        ----------
+        -------
         traces: numpy.ndarray
             A 2D array that contains all of the traces from each channel.
             Dimensions are: (num_channels x num_frames)
@@ -89,7 +89,6 @@ class RecordingExtractor(ABC, BaseExtractor):
         -------
         channel_ids: list
             Channel list
-
         """
         pass
 
@@ -114,9 +113,8 @@ class RecordingExtractor(ABC, BaseExtractor):
 
         Returns
         -------
-        dtype: np.dtypr
+        dtype: np.dtype
             The dtype of the traces
-
         """
         return self.get_traces(channel_ids=[self.get_channel_ids()[0]], start_frame=0, end_frame=1,
                                return_scaled=return_scaled).dtype
@@ -189,22 +187,22 @@ class RecordingExtractor(ABC, BaseExtractor):
 
         Parameters
         ----------
+        reference_frames: array_like
+            A list or array of frames that will be used as the reference frame of each snippet.
         snippet_len: int or tuple
             If int, the snippet will be centered at the reference frame and
             and return half before and half after of the length. If tuple,
             it will return the first value of before frames and the second value
-            of after frames around the reference frame (allows for asymmetry)
-        reference_frames: array_like
-            A list or array of frames that will be used as the reference frame of
-            each snippet
+            of after frames around the reference frame (allows for asymmetry).
         channel_ids: array_like
             A list or array of channel ids (ints) from which each trace will be
             extracted
         return_scaled: bool
-            If True, snippets are returned after scaling (using gain/offset). If False, the raw traces are returned
+            If True, snippets are returned after scaling (using gain/offset).
+            If False, the raw traces are returned.
 
         Returns
-        ----------
+        -------
         snippets: numpy.ndarray
             Returns a list of the snippets as numpy arrays.
             The length of the list is len(reference_frames)
@@ -286,8 +284,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             raise ValueError("channel_ids and locations must have same length")
 
     def get_channel_locations(self, channel_ids=None, locations_2d=True):
-        """This function returns the location of each channel specified by
-        channel_ids
+        """This function returns the location of each channel specified by channel_ids
 
         Parameters
         ----------
@@ -297,7 +294,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             If True (default), first two dimensions are returned
 
         Returns
-        ----------
+        -------
         locations: array_like
             Returns a list of corresponding locations (floats) for the given
             channel_ids
@@ -319,8 +316,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         return locations[channel_idxs]
 
     def clear_channel_locations(self, channel_ids=None):
-        """This function clears the location of each channel specified by
-        channel_ids.
+        """This function clears the location of each channel specified by channel_ids.
 
         Parameters
         ----------
@@ -375,10 +371,9 @@ class RecordingExtractor(ABC, BaseExtractor):
             The channel ids (ints) for which the groups will be returned
 
         Returns
-        ----------
+        -------
         groups: array_like
-            Returns a list of corresponding groups (ints) for the given
-            channel_ids
+            Returns a list of corresponding groups (ints) for the given channel_ids
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
@@ -394,8 +389,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         return groups[channel_idxs]
 
     def clear_channel_groups(self, channel_ids=None):
-        """This function clears the group of each channel specified by
-        channel_ids
+        """This function clears the group of each channel specified by channel_ids
 
         Parameters
         ----------
@@ -442,8 +436,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             raise ValueError("channel_ids and gains must have same length")
 
     def get_channel_gains(self, channel_ids=None):
-        """This function returns the gain of each channel specified by
-        channel_ids.
+        """This function returns the gain of each channel specified by channel_ids.
 
         Parameters
         ----------
@@ -451,10 +444,9 @@ class RecordingExtractor(ABC, BaseExtractor):
             The channel ids (ints) for which the gains will be returned
 
         Returns
-        ----------
+        -------
         gains: array_like
-            Returns a list of corresponding gains (floats) for the given
-            channel_ids
+            Returns a list of corresponding gains (floats) for the given channel_ids
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
@@ -470,8 +462,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         return gains[channel_idxs]
 
     def clear_channel_gains(self, channel_ids=None):
-        """This function clears the gains of each channel specified by
-        channel_ids
+        """This function clears the gains of each channel specified by channel_ids
 
         Parameters
         ----------
@@ -518,8 +509,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             raise ValueError("channel_ids and offsets must have same length")
 
     def get_channel_offsets(self, channel_ids=None):
-        """This function returns the offset of each channel specified by
-        channel_ids.
+        """This function returns the offset of each channel specified by channel_ids.
 
         Parameters
         ----------
@@ -527,10 +517,9 @@ class RecordingExtractor(ABC, BaseExtractor):
             The channel ids (ints) for which the gains will be returned
 
         Returns
-        ----------
+        -------
         offsets: array_like
-            Returns a list of corresponding offsets for the given
-            channel_ids
+            Returns a list of corresponding offsets for the given channel_ids
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
@@ -546,8 +535,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         return offsets[channel_idxs]
 
     def clear_channel_offsets(self, channel_ids=None):
-        """This function clears the gains of each channel specified by
-        channel_ids
+        """This function clears the gains of each channel specified by channel_ids.
 
         Parameters
         ----------
@@ -563,8 +551,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         self.set_channel_offsets(default_offsets, channel_ids)
 
     def set_channel_property(self, channel_id, property_name, value):
-        """This function adds a property dataset to the given channel under the
-        property name.
+        """This function adds a property dataset to the given channel under the property name.
 
         Parameters
         ----------
@@ -606,7 +593,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             A property stored by the RecordingExtractor (location, etc.)
 
         Returns
-        ----------
+        -------
         property_data
             The data associated with the given property name. Could be many
             formats as specified by the user
@@ -633,13 +620,15 @@ class RecordingExtractor(ABC, BaseExtractor):
 
     def get_channel_property_names(self, channel_id):
         """Get a list of property names for a given channel.
-         Parameters
+
+        Parameters
         ----------
         channel_id: int
             The channel id for which the property names will be returned
             If None (default), will return property names for all channels
+
         Returns
-        ----------
+        -------
         property_names
             The list of property names
         """
@@ -662,14 +651,15 @@ class RecordingExtractor(ABC, BaseExtractor):
     def get_shared_channel_property_names(self, channel_ids=None):
         """Get the intersection of channel property names for a given set of channels or for all channels
         if channel_ids is None.
-        
+
         Parameters
         ----------
         channel_ids: array_like
             The channel ids for which the shared property names will be returned.
             If None (default), will return shared property names for all channels
+
         Returns
-        ----------
+        -------
         property_names
             The list of shared property names
         """
@@ -760,7 +750,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             The name of the epoch to be returned
 
         Returns
-        ----------
+        -------
         epoch_extractor: SubRecordingExtractor
             A SubRecordingExtractor which is a view to the given epoch
         """
@@ -780,15 +770,19 @@ class RecordingExtractor(ABC, BaseExtractor):
 
         Parameters
         ----------
-        recording: RecordingExtractor
-            The recording extractor to channel information
         probe_file: str
             Path to probe file. Either .prb or .csv
+        channel_map : array-like
+            A list of channel IDs to set in the loaded file.
+            Only used if the loaded file is a .csv.
+        channel_groups : array-like
+            A list of groups (ints) for the channel_ids to set in the loaded file.
+            Only used if the loaded file is a .csv.
         verbose: bool
             If True, output is verbose
 
         Returns
-        ---------
+        -------
         subrecording = SubRecordingExtractor
             The extractor containing all of the probe information.
         """
@@ -855,8 +849,6 @@ class RecordingExtractor(ABC, BaseExtractor):
 
         Parameters
         ----------
-        recording: RecordingExtractor
-            The recording extractor object to be saved in .dat format
         dataset_path: str
             Path to dataset in h5 file (e.g. '/dataset')
         save_path: str

@@ -336,7 +336,7 @@ class BaseExtractor:
             The extractor from which the annotations will be copied
         """
         self._annotations = deepcopy(extractor._annotations)
-    
+
     def add_epoch(self, epoch_name, start_frame, end_frame):
         """This function adds an epoch to your extractor that tracks
         a certain time period. It is stored in an internal
@@ -458,12 +458,12 @@ class BaseExtractor:
     @staticmethod
     def load_extractor_from_pickle(pkl_file):
         """
-        Instantiates extractor from json file
+        Instantiates extractor from pickle file.
 
         Parameters
         ----------
-        json_file: str or Path
-            Path to json file
+        pkl_file: str or Path
+            Path to pickle file
 
         Returns
         -------

@@ -94,8 +94,6 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
 
         Returns
         -------
-        dump_dict: dict
-            Serialized dictionary
         include_properties: list or None
             List of properties to include in the dictionary
         include_features: list or None
@@ -176,8 +174,6 @@ class CacheSortingExtractor(NpzSortingExtractor, SortingExtractor):
 
         Returns
         -------
-        dump_dict: dict
-            Serialized dictionary
         include_properties: list or None
             List of properties to include in the dictionary
         include_features: list or None
