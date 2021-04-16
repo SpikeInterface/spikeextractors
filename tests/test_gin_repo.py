@@ -29,7 +29,7 @@ if sys.platform == "linux" or run_local:
             (
                 se.AxonaRecordingExtractor,
                 "axona",
-                dict(filename=str(Path.cwd() / "ephy_testing_data" / "axona" / "axona_raw"))
+                dict(filename=str(Path.cwd() / "ephy_testing_data" / "axona" / "axona_raw.set"))
             ),
             (
                 se.BlackrockRecordingExtractor,
