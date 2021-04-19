@@ -733,7 +733,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 description="Intermediate data from extracellular electrophysiology recordings, e.g., LFP."
             )
             if 'Processed' not in ecephys_mod.data_interfaces:
-                ecephys_mod.add_data_interface(FilteredEphys(name='Processed'))
+                ecephys_mod.add(FilteredEphys(name='Processed'))
         elif write_as == 'lfp':
             ecephys_mod = check_module(
                 nwbfile=nwbfile,
