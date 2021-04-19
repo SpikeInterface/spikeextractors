@@ -677,7 +677,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             If True, the times are saved to the nwb file using recording.frame_to_time(). If False (defualut),
             the sampling rate is used.
         write_as: str (optional, defaults to 'raw')
-            Options: 'raw', 'lfp' or 'processed'
+            How to save the traces data in the nwb file. Options: 
+            - 'raw' will save it in acquisition
+            - 'processed' will save it as FilteredEphys, in a processing module
+            - 'lfp' will save it as LFP, in a processing module
         es_key: str (optional)
             Key in metadata dictionary containing metadata info for the specific electrical series
         write_scaled: bool (optional, defaults to True)
@@ -902,7 +905,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             Check the auxiliary function docstrings for more information
             about metadata format.
         write_as: str (optional, defaults to 'raw')
-            Options: 'raw', 'lfp' or 'processed'
+            How to save the traces data in the nwb file. Options: 
+            - 'raw' will save it in acquisition
+            - 'processed' will save it as FilteredEphys, in a processing module
+            - 'lfp' will save it as LFP, in a processing module
         es_key: str (optional)
             Key in metadata dictionary containing metadata info for the specific electrical series
         write_scaled: bool (optional, defaults to True)
@@ -998,7 +1004,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 metadata['Ecephys']['ElectricalSeries'] = {'name': my_name,
                                                            'description': my_description}
         write_as: str (optional, defaults to 'raw')
-            Options: 'raw', 'lfp' or 'processed'
+            How to save the traces data in the nwb file. Options: 
+            - 'raw' will save it in acquisition
+            - 'processed' will save it as FilteredEphys, in a processing module
+            - 'lfp' will save it as LFP, in a processing module
         es_key: str (optional)
             Key in metadata dictionary containing metadata info for the specific electrical series
         write_scaled: bool (optional, defaults to True)
