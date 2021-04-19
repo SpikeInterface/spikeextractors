@@ -720,7 +720,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         # If user passed metadata info, overwrite defaults
         if es_key is not None and metadata is not None:
-            assert es_key in metadata.get('Ecephys', dict()).keys(), f"Metadata dictionary does not contain key '{es_key}'"
+            assert es_key in metadata.get('Ecephys', dict()), f"Metadata dictionary does not contain key '{es_key}'"
             eseries_kwargs.update(metadata['Ecephys'][es_key])
 
         # Check for existing names and processing modules in nwbfile
