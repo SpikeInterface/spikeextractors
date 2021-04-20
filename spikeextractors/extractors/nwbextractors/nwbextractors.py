@@ -699,6 +699,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         assert write_as in ['raw', 'processed', 'lfp'], \
             f"'write_as' should be 'raw', 'processed' or 'lfp', but intead received value {write_as}"
+
         if write_as == 'raw':
             eseries_kwargs = dict(
                 name="ElectricalSeries_raw",
@@ -718,7 +719,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 description="Intermediate data from extracellular electrophysiology recordings, e.g., LFP."
             )
             if 'Processed' not in ecephys_mod.data_interfaces:
-                ecephys_mod.add_data_interface(FilteredEphys(name='Processed'))
+                ecephys_mod.add(FilteredEphys(name='Processed'))
         elif write_as == 'lfp':
             eseries_kwargs = dict(
                 name="ElectricalSeries_lfp",
@@ -732,7 +733,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 description="Intermediate data from extracellular electrophysiology recordings, e.g., LFP."
             )
             if 'LFP' not in ecephys_mod.data_interfaces:
-                ecephys_mod.add_data_interface(LFP(name='LFP'))
+                ecephys_mod.add(LFP(name='LFP'))
 
         # If user passed metadata info, overwrite defaults
         if es_key is not None and metadata is not None:
