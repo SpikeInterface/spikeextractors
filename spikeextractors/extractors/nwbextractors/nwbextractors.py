@@ -736,8 +736,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 ecephys_mod.add(LFP(name='LFP'))
 
         # If user passed metadata info, overwrite defaults
-        if es_key is not None and metadata is not None:
-            assert es_key in metadata.get('Ecephys', dict()).keys(), f"Metadata dictionary does not contain key '{es_key}'"
+        if metadata is not None and 'Ecephys' in metadata and es_key is not None:
+            assert es_key in metadata['Ecephys'], f"metadata['Ecephys'] dictionary does not contain key '{es_key}'"
             eseries_kwargs.update(metadata['Ecephys'][es_key])
 
         # Check for existing names in nwbfile
