@@ -711,22 +711,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 description="Processed data",
                 comments="Generated from SpikeInterface::NwbRecordingExtractor"
             )
-        elif write_as == 'lfp':
-            eseries_kwargs = dict(
-                name="ElectricalSeries_lfp",
-                description="Processed data - LFP",
-                comments="Generated from SpikeInterface::NwbRecordingExtractor"
-            )
-
-        # If user passed metadata info, overwrite defaults
-        if es_key is not None and metadata is not None:
-            assert es_key in metadata.get('Ecephys', dict()).keys(), f"Metadata dictionary does not contain key '{es_key}'"
-            eseries_kwargs.update(metadata['Ecephys'][es_key])
-
-        # Check for existing names and processing modules in nwbfile
-        if write_as == 'raw':
-            assert eseries_kwargs['name'] not in nwbfile.acquisition, f"Raw ElectricalSeries '{es_name}' is already written in the NWBFile!"
-        elif write_as == 'processed':
+            # Check for existing processing module and data interface
             ecephys_mod = check_module(
                 nwbfile=nwbfile,
                 name='ecephys',
@@ -735,6 +720,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             if 'Processed' not in ecephys_mod.data_interfaces:
                 ecephys_mod.add_data_interface(FilteredEphys(name='Processed'))
         elif write_as == 'lfp':
+            eseries_kwargs = dict(
+                name="ElectricalSeries_lfp",
+                description="Processed data - LFP",
+                comments="Generated from SpikeInterface::NwbRecordingExtractor"
+            )
+            # Check for existing processing module and data interface
             ecephys_mod = check_module(
                 nwbfile=nwbfile,
                 name='ecephys',
@@ -742,6 +733,22 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             )
             if 'LFP' not in ecephys_mod.data_interfaces:
                 ecephys_mod.add_data_interface(LFP(name='LFP'))
+
+        # If user passed metadata info, overwrite defaults
+        if es_key is not None and metadata is not None:
+            assert es_key in metadata.get('Ecephys', dict()).keys(), f"Metadata dictionary does not contain key '{es_key}'"
+            eseries_kwargs.update(metadata['Ecephys'][es_key])
+
+        # Check for existing names in nwbfile
+        if write_as == 'raw':
+            assert eseries_kwargs['name'] not in nwbfile.acquisition, \
+                f"Raw ElectricalSeries '{eseries_kwargs['name']}' is already written in the NWBFile!"
+        elif write_as == 'processed':
+            assert eseries_kwargs['name'] not in nwbfile.processing['ecephys'].data_interfaces['Processed'].electrical_series, \
+                f"Processed ElectricalSeries '{eseries_kwargs['name']}' is already written in the NWBFile!"
+        elif write_as == 'lfp':
+            assert eseries_kwargs['name'] not in nwbfile.processing['ecephys'].data_interfaces['LFP'].electrical_series, \
+                f"LFP ElectricalSeries '{eseries_kwargs['name']}' is already written in the NWBFile!"
 
         # Electrodes table region
         channel_ids = recording.get_channel_ids()
