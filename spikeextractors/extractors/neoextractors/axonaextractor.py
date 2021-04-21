@@ -23,7 +23,6 @@ class AxonaRecordingExtractor(NeoBaseRecordingExtractor):
 
         # Enforce 0-based indexing in spikeextractors
         self._key_properties['group'] = [el-1 for el in self._key_properties['group']]
-        self._channel_ids = [el-1 for el in self._channel_ids]
 
         header_channels = self.neo_reader.header['signal_channels'][slice(None)]
 
