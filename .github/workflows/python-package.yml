@@ -22,6 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           conda install -c conda-forge datalad
+          conda install -c conda-forge git-annex=8.20210310=alldep_h27987b5_100
           conda install -c conda-forge ruamel.yaml
           conda install flake8
           conda install pytest
