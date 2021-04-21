@@ -1,7 +1,8 @@
 import os
 import shutil
 from pathlib import Path
-
+import uuid
+from datetime import datetime
 import numpy as np
 
 from .extraction_tools import load_extractor_from_pickle, load_extractor_from_dict, \
@@ -178,3 +179,36 @@ def check_dumping(extractor):
         os.remove('spikeinterface_recording.pkl')
     if Path('spikeinterface_sorting.pkl').is_file():
         os.remove('spikeinterface_sorting.pkl')
+
+
+def get_default_nwbfile_metadata():
+    """
+    Returns structure with defaulted metadata values required for a NWBFile.
+    """
+    metadata = dict(
+        NWBFile=dict(
+            session_description="no description",
+            session_start_time=datetime(1970, 1, 1),
+            identifier=str(uuid.uuid4())
+        ),
+        Ecephys=dict(
+            Device=[dict(
+                name='Device_ecephys',
+                description='no description'
+            )],
+            ElectrodeGroup=[],
+            ElectricalSeries_raw=dict(
+                name='raw_traces',
+                description='those are the raw traces'
+            ),
+            ElectricalSeries_processed=dict(
+                name='processed_traces',
+                description='those are the processed traces'
+            ),
+            ElectricalSeries_lfp=dict(
+                name='lfp_traces',
+                description='those are the lfp traces'
+            )
+        )
+    )
+    return metadata
