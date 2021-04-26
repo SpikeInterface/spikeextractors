@@ -8,9 +8,8 @@ import numpy as np
 
 import spikeextractors as se
 from spikeextractors.exceptions import NotDumpableExtractorError
-from spikeextractors.testing import check_sortings_equal, check_recordings_equal, check_dumping, \
-    check_recording_return_types, \
-    check_sorting_return_types
+from spikeextractors.testing import (check_sortings_equal, check_recordings_equal, check_dumping,
+    check_recording_return_types, check_sorting_return_types, get_default_nwbfile_metadata)
 
 
 class TestExtractors(unittest.TestCase):
@@ -547,6 +546,40 @@ class TestExtractors(unittest.TestCase):
         assert 'widths' not in SX_nwb.get_shared_unit_spike_feature_names()
         check_sortings_equal(self.SX2, SX_nwb)
         check_dumping(SX_nwb)
+
+        # Test writting multiple recordings using metadata
+        metadata = get_default_nwbfile_metadata()
+        path_nwb = self.test_dir + '/test_multiple.nwb'
+        se.NwbRecordingExtractor.write_recording(
+            recording=self.RX, 
+            save_path=path_nwb,
+            metadata=metadata,
+            write_as='raw',
+            es_key='ElectricalSeries_raw',
+        )
+        se.NwbRecordingExtractor.write_recording(
+            recording=self.RX2, 
+            save_path=path_nwb,
+            metadata=metadata,
+            write_as='processed',
+            es_key='ElectricalSeries_processed',
+        )
+        se.NwbRecordingExtractor.write_recording(
+            recording=self.RX3, 
+            save_path=path_nwb,
+            metadata=metadata,
+            write_as='lfp',
+            es_key='ElectricalSeries_lfp',
+        )
+
+        RX_nwb = se.NwbRecordingExtractor(
+            file_path=path_nwb,
+            electrical_series_name='raw_traces'
+        )
+        check_recording_return_types(RX_nwb)
+        check_recordings_equal(self.RX, RX_nwb)
+        check_dumping(RX_nwb)
+        del RX_nwb
 
     def test_nixio_extractor(self):
         path1 = os.path.join(self.test_dir, 'raw.nix')
