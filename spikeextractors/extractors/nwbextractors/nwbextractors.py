@@ -1144,7 +1144,8 @@ class NwbSortingExtractor(se.SortingExtractor):
                     if len(nwbfile.acquisition) > 1:
                         raise Exception('More than one acquisition found. You must specify electrical_series.')
                     if len(nwbfile.acquisition) == 0:
-                        raise Exception('No acquisitions found in the .nwb file.')
+                        raise Exception("No acquisitions found in the .nwb file from which to read sampling frequency. \
+                                         Please, specify 'sampling_frequency' parameter.")
                     es = list(nwbfile.acquisition.values())[0]
                 else:
                     es = electrical_series

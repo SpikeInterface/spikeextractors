@@ -29,6 +29,9 @@ jobs:
           pip install -r requirements.txt
           pip install https://github.com/NeuralEnsemble/python-neo/archive/master.zip
           pip install -e .
+          # needed for correct operation of git/git-annex/DataLad
+          git config --global user.email "CI@example.com"
+          git config --global user.name "CI Almighty"
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
