@@ -468,7 +468,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                               "different device, indicate it the metadata argument.")
 
             electrode_group_kwargs = dict(defaults[0])
-            electrode_group_kwargs.pop('device')
             electrode_group_kwargs.update(device=device)
             for grp_name in np.unique(recording.get_channel_groups()).tolist():
                 electrode_group_kwargs.update(name=str(grp_name))
