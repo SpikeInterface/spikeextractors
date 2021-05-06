@@ -575,7 +575,10 @@ class TestExtractors(unittest.TestCase):
                 for attr in ["x", "y", "z"]
             )
             assert all(
-                all([getattr(nwbfile.electrodes[j], attr).values[0] == electrode_defaults[attr] for j in range(len(nwbfile.electrodes))])
+                all([
+                    getattr(nwbfile.electrodes[j], attr).values[0] == electrode_defaults[attr]
+                    for j in range(len(nwbfile.electrodes))
+                ])
                 for attr in electrode_defaults
             )
 
