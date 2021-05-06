@@ -367,7 +367,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
         defaults = dict(
             name="Device",
-            description="Ecephys probe."
+            description="no description"
         )
         if metadata is None or 'Device' not in metadata['Ecephys']:
             metadata = dict(
@@ -519,7 +519,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             imp=-1.0,
             location="unknown",
             filtering="none",
-            group_name="Electrode Group"
+            group_name="0"
         )
         if metadata is None or 'Electrodes' not in metadata['Ecephys']:
             metadata = dict(
@@ -1057,6 +1057,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     @staticmethod
     def get_nwb_metadata(recording: se.RecordingExtractor, metadata: dict = None):
         """
+        Return default metadata for all recording fields.
+
         Parameters
         ----------
         recording: RecordingExtractor
@@ -1070,10 +1072,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 session_start_time=datetime(1970, 1, 1)
             ),
             Ecephys=dict(
-                Device=[dict(
-                    name="Device",
-                    description="no description"
-                )],
+                Device=[
+                    dict(
+                        name="Device",
+                        description="no description"
+                    )
+                ],
                 ElectrodeGroup=[
                     dict(
                         name=str(gn),

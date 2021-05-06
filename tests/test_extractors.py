@@ -11,6 +11,7 @@ from spikeextractors.exceptions import NotDumpableExtractorError
 from spikeextractors.testing import check_sortings_equal, check_recordings_equal, check_dumping, \
     check_recording_return_types, \
     check_sorting_return_types
+from pynwb import NWBHDF5IO
 
 
 class TestExtractors(unittest.TestCase):
@@ -547,6 +548,36 @@ class TestExtractors(unittest.TestCase):
         assert 'widths' not in SX_nwb.get_shared_unit_spike_feature_names()
         check_sortings_equal(self.SX2, SX_nwb)
         check_dumping(SX_nwb)
+
+    def test_nwb_metadata(self):
+        path1 = self.test_dir + '/test_metadata.nwb'
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1)
+
+        # Test defaults first
+        with NWBHDF5IO(path=path1, mode="r") as io:
+            nwbfile = io.read()
+            assert "Device" in nwbfile.devices and nwbfile.devices["Device"].description == "no description" \
+                and len(nwbfile.devices) == 1
+            assert "0" in nwbfile.electrode_groups and nwbfile.electrode_groups["0"].description == "no description" \
+                and nwbfile.electrode_groups["0"].device == nwbfile.devices["Device"] \
+                and nwbfile.electrode_groups["0"].location == "unknown" and len(nwbfile.electrode_groups) == 1
+
+            n_electrodes = len(nwbfile.electrodes)
+            electrode_defaults = dict(
+                imp=-1.0,
+                location="unknown",
+                filtering="none",
+                group_name="0"
+            )
+            assert n_electrodes == len(self.RX.get_channel_ids())
+            assert all(
+                all([np.isnan(getattr(nwbfile.electrodes[j], attr).values[0]) for j in range(len(nwbfile.electrodes))])
+                for attr in ["x", "y", "z"]
+            )
+            assert all(
+                all([getattr(nwbfile.electrodes[j], attr).values[0] == electrode_defaults[attr] for j in range(len(nwbfile.electrodes))])
+                for attr in electrode_defaults
+            )
 
     def test_nixio_extractor(self):
         path1 = os.path.join(self.test_dir, 'raw.nix')
