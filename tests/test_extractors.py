@@ -550,39 +550,6 @@ class TestExtractors(unittest.TestCase):
         check_sortings_equal(self.SX2, SX_nwb)
         check_dumping(SX_nwb)
 
-    def test_nwb_metadata(self):
-        path1 = self.test_dir + '/test_metadata.nwb'
-        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1)
-
-        # Test defaults first
-        with NWBHDF5IO(path=path1, mode="r") as io:
-            nwbfile = io.read()
-            assert "Device" in nwbfile.devices and nwbfile.devices["Device"].description == "no description" \
-                and len(nwbfile.devices) == 1
-            assert "0" in nwbfile.electrode_groups and nwbfile.electrode_groups["0"].description == "no description" \
-                and nwbfile.electrode_groups["0"].device == nwbfile.devices["Device"] \
-                and nwbfile.electrode_groups["0"].location == "unknown" and len(nwbfile.electrode_groups) == 1
-
-            n_electrodes = len(nwbfile.electrodes)
-            electrode_defaults = dict(
-                imp=-1.0,
-                location="unknown",
-                filtering="none",
-                group_name="0"
-            )
-            assert n_electrodes == len(self.RX.get_channel_ids())
-            assert all(
-                all([np.isnan(getattr(nwbfile.electrodes[j], attr).values[0]) for j in range(len(nwbfile.electrodes))])
-                for attr in ["x", "y", "z"]
-            )
-            assert all(
-                all([
-                    getattr(nwbfile.electrodes[j], attr).values[0] == electrode_defaults[attr]
-                    for j in range(len(nwbfile.electrodes))
-                ])
-                for attr in electrode_defaults
-            )
-
         # Test writting multiple recordings using metadata
         metadata = get_default_nwbfile_metadata()
         path_nwb = self.test_dir + '/test_multiple.nwb'
@@ -616,6 +583,42 @@ class TestExtractors(unittest.TestCase):
         check_recordings_equal(self.RX, RX_nwb)
         check_dumping(RX_nwb)
         del RX_nwb
+
+    def test_nwb_metadata(self):
+        path1 = self.test_dir + '/test_metadata.nwb'
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1)
+
+        # Test defaults first
+        with NWBHDF5IO(path=path1, mode="r") as io:
+            nwbfile = io.read()
+            assert "Device" in nwbfile.devices and nwbfile.devices["Device"].description == "no description" \
+                and len(nwbfile.devices) == 1
+            assert "0" in nwbfile.electrode_groups and nwbfile.electrode_groups["0"].description == "no description" \
+                and nwbfile.electrode_groups["0"].device == nwbfile.devices["Device"] \
+                and nwbfile.electrode_groups["0"].location == "unknown" and len(nwbfile.electrode_groups) == 1
+
+            n_electrodes = len(nwbfile.electrodes)
+            electrode_defaults = dict(
+                imp=-1.0,
+                location="unknown",
+                filtering="none",
+                group_name="0"
+            )
+            assert n_electrodes == len(self.RX.get_channel_ids())
+            assert all(
+                [getattr(nwbfile.electrodes[j], "group").values[0] == nwbfile.electrodes["0"] for j in range(n_electrodes)]
+            )
+            assert all(
+                all([np.isnan(getattr(nwbfile.electrodes[j], attr).values[0]) for j in range(n_electrodes)])
+                for attr in ["x", "y", "z"]
+            )
+            assert all(
+                all([
+                    getattr(nwbfile.electrodes[j], attr).values[0] == electrode_defaults[attr]
+                    for j in range(len(nwbfile.electrodes))
+                ])
+                for attr in electrode_defaults
+            )
 
     def test_nixio_extractor(self):
         path1 = os.path.join(self.test_dir, 'raw.nix')
