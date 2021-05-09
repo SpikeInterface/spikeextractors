@@ -651,12 +651,24 @@ class TestExtractors(unittest.TestCase):
                         )
 
     def test_nwb_metadata(self):
-        path1 = self.test_dir + '/test_metadata.nwb'
-        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path1)
+        path = self.test_dir + '/test_metadata.nwb'
 
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path)
         self.check_metadata_write(
             metadata=se.NwbRecordingExtractor.get_nwb_metadata(recording=self.RX),
-            nwbfile_path=path1,
+            nwbfile_path=path,
+            recording=self.RX
+        )
+
+        # Example case: two devices in metadata
+        metadata2 = se.NwbRecordingExtractor.get_nwb_metadata(recording=self.RX)
+        metadata2["Ecephys"]["Device"].append(
+            dict(name="Device2", description="A second device.", manufacturer="unknown")
+        )
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, metadata=metadata2, save_path=path, overwrite=True)
+        self.check_metadata_write(
+            metadata=metadata2,
+            nwbfile_path=path,
             recording=self.RX
         )
 
