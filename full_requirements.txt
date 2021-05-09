@@ -1,4 +1,4 @@
-h5py>=3.2.1
+h5py #>=3.2.1
 scipy>=1.6.3
 pyintan>=0.3.0
 pyopenephys>=1.1.4
