@@ -214,14 +214,14 @@ class TestExtractors(unittest.TestCase):
         cache_rec.move_to('cache_rec')
 
         assert cache_rec.filename == 'cache_rec.dat'
-        check_dumping(cache_rec)
+        check_dumping(cache_rec, test_relative=True)
 
         cache_rec = se.CacheRecordingExtractor(self.RX, save_path='cache_rec2')
         check_recording_return_types(cache_rec)
         check_recordings_equal(self.RX, cache_rec)
 
         assert cache_rec.filename == 'cache_rec2.dat'
-        check_dumping(cache_rec)
+        check_dumping(cache_rec, test_relative=True)
 
         # test saving to file
         del cache_rec
@@ -239,7 +239,7 @@ class TestExtractors(unittest.TestCase):
         cache_sort.move_to('cache_sort')
 
         assert cache_sort.filename == 'cache_sort.npz'
-        check_dumping(cache_sort)
+        check_dumping(cache_sort, test_relative=True)
 
         # test saving to file
         del cache_sort
@@ -250,7 +250,7 @@ class TestExtractors(unittest.TestCase):
         check_sortings_equal(self.SX, cache_sort)
 
         assert cache_sort.filename == 'cache_sort2.npz'
-        check_dumping(cache_sort)
+        check_dumping(cache_sort, test_relative=True)
 
         # test saving to file
         del cache_sort
