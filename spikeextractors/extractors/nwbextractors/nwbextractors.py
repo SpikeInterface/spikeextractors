@@ -551,7 +551,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
 
         for metadata_column in metadata['Ecephys']['Electrodes']:
             if (nwbfile.electrodes is None or metadata_column['name'] not in nwbfile.electrodes.colnames) \
-                    and metadata_column['name'] != 'group_name':
+                    and metadata_column['name'] not in defaults:
                 nwbfile.add_electrode_column(
                     name=str(metadata_column['name']),
                     description=str(metadata_column['description'])
