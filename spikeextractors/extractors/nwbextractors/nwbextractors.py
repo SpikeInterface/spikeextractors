@@ -367,7 +367,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         
         defaults = dict(
             name="Device",
-            description="Ecephys probe."
+            description="no description"
         )
 
         if metadata is None:
@@ -530,7 +530,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             imp=-1.0,
             location="unknown",
             filtering="none",
-            group_name="ElectrodeGroup"
+            group_name="0"
         )
         if metadata is None:
             metadata = dict(Ecephys=dict())
@@ -1099,6 +1099,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
     @staticmethod
     def get_nwb_metadata(recording: se.RecordingExtractor, metadata: dict = None):
         """
+        Return default metadata for all recording fields.
+
         Parameters
         ----------
         recording: RecordingExtractor
@@ -1112,10 +1114,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 session_start_time=datetime(1970, 1, 1)
             ),
             Ecephys=dict(
-                Device=[dict(
-                    name="Device",
-                    description="no description"
-                )],
+                Device=[
+                    dict(
+                        name="Device",
+                        description="no description"
+                    )
+                ],
                 ElectrodeGroup=[
                     dict(
                         name=str(gn),
