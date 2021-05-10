@@ -28,7 +28,8 @@ jobs:
           pip install -r requirements-dev.txt
           pip install -r requirements.txt
           pip install https://github.com/NeuralEnsemble/python-neo/archive/master.zip
-          pip install -e .
+          pip install h5py==2.10
+          pip install -e .[full]
           # needed for correct operation of git/git-annex/DataLad
           git config --global user.email "CI@example.com"
           git config --global user.name "CI Almighty"
