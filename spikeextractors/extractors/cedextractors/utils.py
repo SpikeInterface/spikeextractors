@@ -32,6 +32,8 @@ def get_channel_info(f, smrx_ch_ind):
         Index of smrx channel. Does not match necessarily with extractor id.
     """
 
+    nMax = int(f.ChannelMaxTime(smrx_ch_ind) / f.ChannelDivide(smrx_ch_ind))
+    time_offset = f.FirstTime(chan=smrx_ch_ind, tFrom=0, tUpto=nMax) / f.ChannelDivide(smrx_ch_ind)
     ch_info = {
         'type': f.ChannelType(smrx_ch_ind),           # Get the channel kind
         'ch_number': f.PhysicalChannel(smrx_ch_ind),  # Get the physical channel number associated with this channel
@@ -40,6 +42,7 @@ def get_channel_info(f, smrx_ch_ind):
         'max_time': f.ChannelMaxTime(smrx_ch_ind),    # Get the time of the last item in the channel
         'divide': f.ChannelDivide(smrx_ch_ind),       # Get the waveform sample interval in file clock ticks
         'time_base': f.GetTimeBase(),                 # Get how many seconds there are per clock tick
+        'time_offset': time_offset,                   # Get time offset (in frames)
         'scale': f.GetChannelScale(smrx_ch_ind),      # Get the channel scale
         'offset': f.GetChannelOffset(smrx_ch_ind),    # Get the channel offset
         'unit': f.GetChannelUnits(smrx_ch_ind),       # Get the channel units
@@ -70,10 +73,15 @@ def get_channel_data(f, smrx_ch_ind, start_frame=0, end_frame=None):
     if end_frame is None:
         end_frame = int(f.ChannelMaxTime(smrx_ch_ind) / f.ChannelDivide(smrx_ch_ind))
 
+    nMax = int(f.ChannelMaxTime(smrx_ch_ind) / f.ChannelDivide(smrx_ch_ind))
+    frame_offset = int(f.FirstTime(chan=smrx_ch_ind, tFrom=0, tUpto=nMax) / f.ChannelDivide(smrx_ch_ind))
+    start_frame += frame_offset
+    end_frame += frame_offset
+
     data = DataReadFunctions[f.ChannelType(smrx_ch_ind)](
         self=f,
         chan=smrx_ch_ind,
-        nMax=int(f.ChannelMaxTime(smrx_ch_ind) / f.ChannelDivide(smrx_ch_ind)),
+        nMax=nMax,
         tFrom=int(start_frame * f.ChannelDivide(smrx_ch_ind)),
         tUpto=int(end_frame * f.ChannelDivide(smrx_ch_ind))
     )
