@@ -594,7 +594,7 @@ class TestExtractors(unittest.TestCase):
             name="Electrode Group",
             description="no description",
             location="unknown",
-            device_name="Device"
+            device="Device"
         )
 
         with NWBHDF5IO(path=nwbfile_path, mode="r") as io:
@@ -626,7 +626,7 @@ class TestExtractors(unittest.TestCase):
                     group.get("location", electrode_group_defaults["location"]),
                     nwbfile.electrode_groups[group_name].location
                 )
-                device_name = group.get("device_name", electrode_group_defaults["device_name"])
+                device_name = group.get("device", electrode_group_defaults["device"])
                 self.assertIn(device_name, nwbfile.devices)
                 self.assertEqual(nwbfile.electrode_groups[group_name].device, nwbfile.devices[device_name])
 
@@ -653,21 +653,32 @@ class TestExtractors(unittest.TestCase):
     def test_nwb_metadata(self):
         path = self.test_dir + '/test_metadata.nwb'
 
-        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path)
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, save_path=path, overwrite=True)
         self.check_metadata_write(
             metadata=se.NwbRecordingExtractor.get_nwb_metadata(recording=self.RX),
             nwbfile_path=path,
             recording=self.RX
         )
 
-        # Example case: two devices in metadata
+        # Manually adjusted device name - must properly adjust electrode_group reference
         metadata2 = se.NwbRecordingExtractor.get_nwb_metadata(recording=self.RX)
-        metadata2["Ecephys"]["Device"].append(
-            dict(name="Device2", description="A second device.", manufacturer="unknown")
-        )
+        metadata2["Ecephys"]["Device"] = [dict(name="TestDevice", description="A test device.", manufacturer="unknown")]
+        metadata2["Ecephys"]["ElectrodeGroup"][0]["device"] = "TestDevice"
         se.NwbRecordingExtractor.write_recording(recording=self.RX, metadata=metadata2, save_path=path, overwrite=True)
         self.check_metadata_write(
             metadata=metadata2,
+            nwbfile_path=path,
+            recording=self.RX
+        )
+
+        # Example case: two devices in metadata
+        metadata3 = se.NwbRecordingExtractor.get_nwb_metadata(recording=self.RX)
+        metadata3["Ecephys"]["Device"].append(
+            dict(name="Device2", description="A second device.", manufacturer="unknown")
+        )
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, metadata=metadata3, save_path=path, overwrite=True)
+        self.check_metadata_write(
+            metadata=metadata3,
             nwbfile_path=path,
             recording=self.RX
         )
