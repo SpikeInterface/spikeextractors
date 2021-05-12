@@ -671,7 +671,7 @@ class TestExtractors(unittest.TestCase):
             recording=self.RX
         )
 
-        # Example case: two devices in metadata
+        # Two devices in metadata
         metadata3 = se.NwbRecordingExtractor.get_nwb_metadata(recording=self.RX)
         metadata3["Ecephys"]["Device"].append(
             dict(name="Device2", description="A second device.", manufacturer="unknown")
@@ -679,6 +679,17 @@ class TestExtractors(unittest.TestCase):
         se.NwbRecordingExtractor.write_recording(recording=self.RX, metadata=metadata3, save_path=path, overwrite=True)
         self.check_metadata_write(
             metadata=metadata3,
+            nwbfile_path=path,
+            recording=self.RX
+        )
+
+        # Forcing default auto-population from add_electrode_groups, and not get_nwb_metdata
+        metadata4 = se.NwbRecordingExtractor.get_nwb_metadata(recording=self.RX)
+        metadata4["Ecephys"]["Device"] = [dict(name="TestDevice", description="A test device.", manufacturer="unknown")]
+        metadata4["Ecephys"].pop("ElectrodeGroup")
+        se.NwbRecordingExtractor.write_recording(recording=self.RX, metadata=metadata4, save_path=path, overwrite=True)
+        self.check_metadata_write(
+            metadata=metadata4,
             nwbfile_path=path,
             recording=self.RX
         )
