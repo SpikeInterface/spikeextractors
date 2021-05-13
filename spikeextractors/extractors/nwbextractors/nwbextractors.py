@@ -455,7 +455,6 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     warnings.warn(f"Device \'{device_name}\' not detected in "
                                   "attempted link to electrode group! Automatically generating.")
                 electrode_group_kwargs = dict(defaults[0], **grp)
-                # electrode_group_kwargs.pop('device')
                 electrode_group_kwargs.update(device=nwbfile.devices[device_name])
                 nwbfile.create_electrode_group(**electrode_group_kwargs)
 
