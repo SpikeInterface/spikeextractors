@@ -1,106 +1,145 @@
 from spikeextractors.extraction_tools import check_get_traces_args
-from spikeextractors import RecordingExtractor
+from spikeextractors.extractors.neoextractors.neobaseextractor import (
+    NeoBaseRecordingExtractor)
 from pathlib import Path
 import numpy as np
 from typing import Union
 
 PathType = Union[Path, str]
 
-
 try:
-    import pyxona
-    HAVE_PYXONA = True
+    import neo
+    HAVE_NEO = True
 except ImportError:
-    HAVE_PYXONA = False
+    HAVE_NEO = False
 
 
-class AxonaUnitRecordingExtractor(RecordingExtractor):
+class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
     """
     Instantiates a RecordinExtractor from an Axon Unit mode file.
 
-    Since the unit mode format only saves waveforms cutouts, the get_traces function fills in the rest of the
-    recording with Gaussian uncorrelated noise
+    Since the unit mode format only saves waveform cutouts, the get_traces
+    function fills in the rest of the recording with Gaussian uncorrelated
+    noise
 
     Parameters
     ----------
 
-    file_path: Path type
-        The file path to the .set file
     noise_std: float
         Standard deviation of the Gaussian background noise
     """
     extractor_name = 'AxonaUnitRecording'
-    has_default_locations = False
-    has_unscaled = False
-    installed = HAVE_PYXONA  # check at class level if installed or not
-    is_writable = False
     mode = 'file'
-    installation_mesg = "To use the AxonaUnitRecordingExtractor install pyxona: \n\n pip install pyxona\n\n"
+    NeoRawIOClass = 'AxonaRawIO'
 
-    def __init__(self, file_path: PathType, noise_std: float = 3):
-        RecordingExtractor.__init__(self)
-        self._fileobj = pyxona.File(str(file_path))
-
-        channel_ids = []
-        channel_groups = []
-        spike_trains = []
-        channel_indexes = []
-        waveforms = []
-        for i, chan_grp in enumerate(self._fileobj.channel_groups):
-            sample_rate = chan_grp.spike_train.sample_rate.magnitude
-            if i == 0:
-                self._fs = sample_rate
-            spike_trains.append(np.array(chan_grp.spike_train.times.magnitude * sample_rate).astype(int))
-            waveforms.append(chan_grp.spike_train.waveforms)
-            channel_indexes.append([ch.index for ch in chan_grp.channels])
-            for ch in chan_grp.channels:
-                channel_ids.append(ch.index)
-                channel_groups.append(chan_grp.channel_group_id)
-
-        self._waveforms = waveforms
-        self._spike_trains = spike_trains
-        self._channel_indexes = channel_indexes
-        self._channel_ids = channel_ids
-
-        self._num_frames = int((self._fileobj._duration.magnitude * sample_rate))
-
+    def __init__(self, noise_std: float = 3, block_index=None,
+                 seg_index=None, **kargs):
+        NeoBaseRecordingExtractor.__init__(self, block_index=block_index,
+                                           seg_index=seg_index, **kargs)
         self._noise_std = noise_std
 
-        # set groups
-        self.set_channel_groups(channel_groups)
+    @check_get_traces_args
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None,
+                   return_scaled=True):
 
-        self._kwargs = {'file_path': Path(file_path).absolute(), 'noise_std': noise_std}
+        timebase_sr = int(self.neo_reader.file_parameters[
+            'unit']['timebase'].split(' ')[0])
+        samples_pre = int(self.neo_reader.file_parameters[
+            'set']['file_header']['pretrigSamps'])
+        samples_post = int(self.neo_reader.file_parameters[
+            'set']['file_header']['spikeLockout'])
+
+        tcmap = self._get_tetrode_channel_table(channel_ids)
+
+        traces = self._noise_std * np.random.randn(len(channel_ids),
+                                                   end_frame - start_frame)
+
+        # Loop through tetrodes and include requested channels in traces
+        itrc = 0
+        for tetrode_id in np.unique(tcmap[:, 0]):
+
+            channels_oi = tcmap[tcmap[:, 0] == tetrode_id, 2]
+
+            waveforms = self.neo_reader._get_spike_raw_waveforms(
+                block_index=0, seg_index=0,
+                unit_index=tetrode_id - 1,  # Tetrodes IDs are 1-indexed
+                t_start=start_frame / timebase_sr,
+                t_stop=end_frame / timebase_sr
+            )
+            waveforms = waveforms[:, channels_oi, :]
+            nch = len(channels_oi)
+
+            spike_train = self.neo_reader._get_spike_timestamps(
+                block_index=0, seg_index=0,
+                unit_index=tetrode_id - 1,
+                t_start=start_frame / timebase_sr,
+                t_stop=end_frame / timebase_sr
+            )
+
+            # Fill waveforms into traces timestamp by timestamp
+            for t, wf in zip(spike_train, waveforms):
+
+                t = t - start_frame
+                if t - samples_pre < 0:
+                    traces[itrc:itrc+nch, :t + samples_post] = \
+                        wf[:, samples_pre - t:]
+                elif t + samples_post > traces.shape[1]:
+                    traces[itrc:itrc+nch, t - samples_pre:] = \
+                        wf[:, :traces.shape[1] - (t - samples_pre)]
+                else:
+                    traces[itrc:itrc+nch, t - samples_pre:t + samples_post] = \
+                        wf
+
+            itrc += nch
+
+        return traces
+
+    def get_num_frames(self):
+        n = self.neo_reader.get_signal_size(self.block_index,
+                                            self.seg_index, stream_index=0)
+        if self.get_sampling_frequency() == 24000:
+            n = n // 2
+        return n
+
+    def get_sampling_frequency(self):
+        return int(self.neo_reader.file_parameters[
+            'unit']['sample_rate'].split(' ')[0])
 
     def get_channel_ids(self):
         return self._channel_ids
 
-    def get_sampling_frequency(self):
-        return self._fs
+    def _get_tetrode_channel_table(self, channel_ids):
+        '''Create auxiliary np.array with the following columns:
+        Tetrode ID, Channel ID, Channel ID within tetrode
+        This is useful in `get_traces()`
 
-    def get_num_frames(self):
-        return self._num_frames
+        Parameters
+        ----------
+        channel_ids : list
+            List of channel ids to include in table
 
-    @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
-        num_frames_traces = end_frame - start_frame
-        traces = self._noise_std * np.random.randn(len(channel_ids), num_frames_traces)
+        Returns
+        -------
+        np.array
+            Rows = channels,
+            columns = TetrodeID, ChannelID, ChannelID within Tetrode
+        '''
+        active_tetrodes = self.neo_reader.get_active_tetrode()
 
-        channel_idxs = [self.get_channel_ids().index(ch) for ch in channel_ids]
+        tcmap = np.zeros((len(active_tetrodes)*4, 3), dtype=int)
+        row_id = 0
+        for tetrode_id in [int(s[0].split(' ')[1])
+                           for s in self.neo_reader.header['spike_channels']]:
 
-        for (chan_idxs, spike_train, waveform) in zip(self._channel_indexes, self._spike_trains, self._waveforms):
-            spike_times_idxs = np.where((spike_train > start_frame) & (spike_train <= end_frame))
-            spike_times_i = spike_train[spike_times_idxs]
+            all_channel_ids = self.neo_reader._get_channel_from_tetrode(
+                tetrode_id)
 
-            waveforms_i = waveform[spike_times_idxs]
-            wf_samples = waveforms_i.shape[2]
+            for i in range(4):
+                tcmap[row_id, 0] = int(tetrode_id)
+                tcmap[row_id, 1] = int(all_channel_ids[i])
+                tcmap[row_id, 2] = int(i)
+                row_id += 1
 
-            for t, wf in zip(spike_times_i, waveforms_i):
-                t = t - start_frame
+        del_idx = [False if i in channel_ids else True for i in tcmap[:, 1]]
 
-                if t - wf_samples // 2 < 0:
-                    traces[chan_idxs, :t + wf_samples // 2] = wf[:, wf_samples // 2 - t:]
-                elif t + wf_samples // 2 > num_frames_traces:
-                    traces[chan_idxs, t - wf_samples // 2:] = wf[:, :num_frames_traces - (t + wf_samples // 2)]
-                else:
-                    traces[chan_idxs, t - wf_samples // 2:t + wf_samples // 2] = wf
-        return traces[channel_idxs]
+        return np.delete(tcmap, del_idx, axis=0)
