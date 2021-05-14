@@ -83,6 +83,10 @@ class CEDRecordingExtractor(RecordingExtractor):
             assert info['rate'] == rate0, "Inconsistency between 'sampling_frequency' of different channels. The " \
                                           "extractor only supports channels with the same 'rate'"
 
+        # Set self._times
+        times = (self._channel_smrxinfo[0]['frame_offset'] + np.arange(self.get_num_frames())) / self.get_sampling_frequency()
+        self.set_times(times=times)
+
         self._kwargs = {'file_path': str(Path(file_path).absolute()),
                         'smrx_channel_ids': smrx_channel_ids}
 
@@ -145,7 +149,7 @@ class CEDRecordingExtractor(RecordingExtractor):
         num_frames: int
             Number of frames in the recording (duration of recording)
         """
-        return int(self._channel_smrxinfo[0]['max_time'] / self._channel_smrxinfo[0]['divide'] - self._channel_smrxinfo[0]['time_offset'])
+        return int(self._channel_smrxinfo[0]['max_time'] / self._channel_smrxinfo[0]['divide'] - self._channel_smrxinfo[0]['frame_offset'])
 
     def get_sampling_frequency(self):
         """This function returns the sampling frequency in units of Hz.
@@ -167,7 +171,7 @@ class CEDRecordingExtractor(RecordingExtractor):
 
         """
         return list(self._channelid_to_smrxind.keys())
-
+    
     @staticmethod
     def get_all_channels_info(file_path):
         """
