@@ -145,7 +145,7 @@ class CEDRecordingExtractor(RecordingExtractor):
         num_frames: int
             Number of frames in the recording (duration of recording)
         """
-        return int(self._channel_smrxinfo[0]['max_time'] / self._channel_smrxinfo[0]['divide'])
+        return int(self._channel_smrxinfo[0]['max_time'] / self._channel_smrxinfo[0]['divide'] - self._channel_smrxinfo[0]['time_offset'])
 
     def get_sampling_frequency(self):
         """This function returns the sampling frequency in units of Hz.

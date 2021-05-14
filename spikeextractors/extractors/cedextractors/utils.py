@@ -39,7 +39,7 @@ def get_channel_info(f, smrx_ch_ind):
         'ch_number': f.PhysicalChannel(smrx_ch_ind),  # Get the physical channel number associated with this channel
         'title': f.GetChannelTitle(smrx_ch_ind),      # Get the channel title
         'rate': f.GetIdealRate(smrx_ch_ind),          # Get the requested channel rate
-        'max_time': f.ChannelMaxTime(smrx_ch_ind),    # Get the time of the last item in the channel
+        'max_time': f.ChannelMaxTime(smrx_ch_ind),    # Get the time of the last item in the channel (in clock ticks)
         'divide': f.ChannelDivide(smrx_ch_ind),       # Get the waveform sample interval in file clock ticks
         'time_base': f.GetTimeBase(),                 # Get how many seconds there are per clock tick
         'time_offset': time_offset,                   # Get time offset (in frames)
