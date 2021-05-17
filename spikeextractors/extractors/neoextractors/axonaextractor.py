@@ -28,8 +28,6 @@ class AxonaRecordingExtractor(NeoBaseRecordingExtractor):
         header_channels = self.neo_reader\
                               .header['signal_channels'][slice(None)]
 
-        gains = header_channels['gain'] * self.additional_gain[0]
-        self.set_channel_gains(gains=gains, channel_ids=self._channel_ids)
 
         names = header_channels['name']
         for i, ind in enumerate(self._channel_ids):
