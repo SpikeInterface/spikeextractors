@@ -25,6 +25,6 @@ class AxonaRecordingExtractor(NeoBaseRecordingExtractor):
 
 
         names = header_channels['name']
-        for i, ind in enumerate(self._channel_ids):
+        for i, ind in enumerate(self.get_channel_ids()):
             self.set_channel_property(channel_id=ind, property_name='name',
                                       value=names[i])
