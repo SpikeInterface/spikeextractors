@@ -19,9 +19,6 @@ class AxonaRecordingExtractor(NeoBaseRecordingExtractor):
         # Read channel groups by tetrode IDs
         self.set_channel_groups(groups=[x - 1 for x in self.neo_reader.raw_annotations['blocks'][0]['segments'][0]['signals'][0]['__array_annotations__']['tetrode_id']])
 
-        # Enforce 0-based indexing in spikeextractors
-        self._key_properties['group'] = \
-            [el-1 for el in self._key_properties['group']]
 
         header_channels = self.neo_reader\
                               .header['signal_channels'][slice(None)]
