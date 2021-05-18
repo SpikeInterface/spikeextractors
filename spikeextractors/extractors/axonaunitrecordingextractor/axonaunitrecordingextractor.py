@@ -1,6 +1,5 @@
 from spikeextractors.extraction_tools import check_get_traces_args
-from spikeextractors.extractors.neoextractors.neobaseextractor import (
-    NeoBaseRecordingExtractor)
+from spikeextractors.extractors.neoextractors.neobaseextractor import NeoBaseRecordingExtractor
 from pathlib import Path
 import numpy as np
 from typing import Union
@@ -32,27 +31,20 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
     mode = 'file'
     NeoRawIOClass = 'AxonaRawIO'
 
-    def __init__(self, noise_std: float = 3, block_index=None,
-                 seg_index=None, **kargs):
-        NeoBaseRecordingExtractor.__init__(self, block_index=block_index,
-                                           seg_index=seg_index, **kargs)
+    def __init__(self, noise_std: float = 3, block_index=None, seg_index=None, **kargs):
+        super().__init__(block_index=block_index, seg_index=seg_index, **kargs)
         self._noise_std = noise_std
 
     @check_get_traces_args
-    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None,
-                   return_scaled=True):
+    def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
 
-        timebase_sr = int(self.neo_reader.file_parameters[
-            'unit']['timebase'].split(' ')[0])
-        samples_pre = int(self.neo_reader.file_parameters[
-            'set']['file_header']['pretrigSamps'])
-        samples_post = int(self.neo_reader.file_parameters[
-            'set']['file_header']['spikeLockout'])
+        timebase_sr = int(self.neo_reader.file_parameters['unit']['timebase'].split(' ')[0])
+        samples_pre = int(self.neo_reader.file_parameters['set']['file_header']['pretrigSamps'])
+        samples_post = int(self.neo_reader.file_parameters['set']['file_header']['spikeLockout'])
 
         tcmap = self._get_tetrode_channel_table(channel_ids)
 
-        traces = self._noise_std * np.random.randn(len(channel_ids),
-                                                   end_frame - start_frame)
+        traces = self._noise_std * np.random.randn(len(channel_ids), end_frame - start_frame)
 
         # Loop through tetrodes and include requested channels in traces
         itrc = 0
@@ -81,22 +73,18 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
 
                 t = t - start_frame
                 if t - samples_pre < 0:
-                    traces[itrc:itrc+nch, :t + samples_post] = \
-                        wf[:, samples_pre - t:]
+                    traces[itrc:itrc + nch, :t + samples_post] = wf[:, samples_pre - t:]
                 elif t + samples_post > traces.shape[1]:
-                    traces[itrc:itrc+nch, t - samples_pre:] = \
-                        wf[:, :traces.shape[1] - (t - samples_pre)]
+                    traces[itrc:itrc + nch, t - samples_pre:] = wf[:, :traces.shape[1] - (t - samples_pre)]
                 else:
-                    traces[itrc:itrc+nch, t - samples_pre:t + samples_post] = \
-                        wf
+                    traces[itrc:itrc + nch, t - samples_pre:t + samples_post] = wf
 
             itrc += nch
 
         return traces
 
     def get_num_frames(self):
-        n = self.neo_reader.get_signal_size(self.block_index,
-                                            self.seg_index, stream_index=0)
+        n = self.neo_reader.get_signal_size(self.block_index, self.seg_index, stream_index=0)
         if self.get_sampling_frequency() == 24000:
             n = n // 2
         return n
@@ -126,13 +114,11 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
         '''
         active_tetrodes = self.neo_reader.get_active_tetrode()
 
-        tcmap = np.zeros((len(active_tetrodes)*4, 3), dtype=int)
+        tcmap = np.zeros((len(active_tetrodes) * 4, 3), dtype=int)
         row_id = 0
-        for tetrode_id in [int(s[0].split(' ')[1])
-                           for s in self.neo_reader.header['spike_channels']]:
+        for tetrode_id in [int(s[0].split(' ')[1]) for s in self.neo_reader.header['spike_channels']]:
 
-            all_channel_ids = self.neo_reader._get_channel_from_tetrode(
-                tetrode_id)
+            all_channel_ids = self.neo_reader._get_channel_from_tetrode(tetrode_id)
 
             for i in range(4):
                 tcmap[row_id, 0] = int(tetrode_id)
