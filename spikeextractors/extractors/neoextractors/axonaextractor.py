@@ -14,7 +14,7 @@ class AxonaRecordingExtractor(NeoBaseRecordingExtractor):
     NeoRawIOClass = 'AxonaRawIO'
 
     def __init__(self, **kargs):
-        NeoBaseRecordingExtractor.__init__(self, **kargs)
+        super().__init__(**kargs)
 
         # Read channel groups by tetrode IDs
         self.set_channel_groups(groups=[x - 1 for x in self.neo_reader.raw_annotations[
