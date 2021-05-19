@@ -35,6 +35,16 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
         super().__init__(block_index=block_index, seg_index=seg_index, **kargs)
         self._noise_std = noise_std
 
+        # Read channel groups by tetrode IDs
+        self.set_channel_groups(groups=[x - 1 for x in self.neo_reader.raw_annotations[
+            'blocks'][0]['segments'][0]['signals'][0]['__array_annotations__']['tetrode_id']])
+
+        header_channels = self.neo_reader.header['signal_channels'][slice(None)]
+
+        names = header_channels['name']
+        for i, ind in enumerate(self.get_channel_ids()):
+            self.set_channel_property(channel_id=ind, property_name='name', value=names[i])
+
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
 
@@ -42,7 +52,7 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
         samples_pre = int(self.neo_reader.file_parameters['set']['file_header']['pretrigSamps'])
         samples_post = int(self.neo_reader.file_parameters['set']['file_header']['spikeLockout'])
         sampling_rate = self.get_sampling_frequency()
-        
+
         tcmap = self._get_tetrode_channel_table(channel_ids)
 
         traces = self._noise_std * np.random.randn(len(channel_ids), end_frame - start_frame)
@@ -92,8 +102,7 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
         return n
 
     def get_sampling_frequency(self):
-        return int(self.neo_reader.file_parameters[
-            'unit']['sample_rate'].split(' ')[0])
+        return int(self.neo_reader.file_parameters['unit']['sample_rate'].split(' ')[0])
 
     def get_channel_ids(self):
         return self._channel_ids
