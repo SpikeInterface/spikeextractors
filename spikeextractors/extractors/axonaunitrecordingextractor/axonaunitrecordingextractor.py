@@ -102,7 +102,7 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
         return n
 
     def get_sampling_frequency(self):
-        return int(self.neo_reader.file_parameters['unit']['sample_rate'].split(' ')[0])
+        return int(self.neo_reader.header['spike_channels'][0][-1])
 
     def get_channel_ids(self):
         return self._channel_ids
