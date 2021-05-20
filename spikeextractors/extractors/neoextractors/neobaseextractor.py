@@ -220,9 +220,9 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         #  unit_ids = self.neo_reader.header['unit_channels']['id']
 
         # in neo unit_ids are string so here we take unit_index
-        if hasattr(self.neo_reader.header, 'unit_channels'):
+        if 'unit_channels' in self.neo_reader.header:
             unit_ids = np.arange(self.neo_reader.header['unit_channels'].size, dtype='int64')
-        elif hasattr(self.neo_reader.header, 'spike_channels'):
+        elif 'spike_channels' in self.neo_reader.header:
             unit_ids = np.arange(self.neo_reader.header['spike_channels'].size, dtype='int64')
         else:
             raise ValueError('Strange neo version. Please upgrade your neo package: pip install --upgrade neo')
@@ -238,8 +238,17 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         unit_index = unit_id
 
         # in neo can be a sample, or hiher sample rate or even float
-        spike_timestamps = self.neo_reader.get_spike_timestamps(block_index=self.block_index, seg_index=self.seg_index,
-                                                                unit_index=unit_index, t_start=None, t_stop=None)
+        try:
+            # version >= 0.9.0
+            spike_timestamps = self.neo_reader.get_spike_timestamps(block_index=self.block_index,
+                                                                    seg_index=self.seg_index,
+                                                                    spike_channel_index=unit_index,
+                                                                    t_start=None, t_stop=None)
+        except TypeError as e:
+            # version < 0.9.0
+            spike_timestamps = self.neo_reader.get_spike_timestamps(block_index=self.block_index,
+                                                                    seg_index=self.seg_index,
+                                                                    unit_index=unit_index, t_start=None, t_stop=None)
 
         if start_frame is not None:
             spike_timestamps = spike_timestamps[spike_timestamps >= start_frame]
