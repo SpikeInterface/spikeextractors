@@ -220,7 +220,12 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         #  unit_ids = self.neo_reader.header['unit_channels']['id']
 
         # in neo unit_ids are string so here we take unit_index
-        unit_ids = np.arange(self.neo_reader.header['unit_channels'].size, dtype='int64')
+        if hasattr(self.neo_reader.header, 'unit_channels'):
+            unit_ids = np.arange(self.neo_reader.header['unit_channels'].size, dtype='int64')
+        elif hasattr(self.neo_reader.header, 'spike_channels'):
+            unit_ids = np.arange(self.neo_reader.header['spike_channels'].size, dtype='int64')
+        else:
+            raise ValueError('Strange neo version. Please upgrade your neo package: pip install --upgrade neo')
         return unit_ids
 
     @check_get_unit_spike_train
