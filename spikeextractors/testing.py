@@ -122,7 +122,7 @@ def check_dumping(extractor, test_relative=False):
     extractor_loaded = load_extractor_from_dict(d)
 
     if 'Recording' in str(type(extractor)):
-        check_recordings_equal(extractor, extractor_loaded)
+        check_recordings_equal(extractor, extractor_loaded, check_times=False)
     elif 'Sorting' in str(type(extractor)):
         check_sortings_equal(extractor, extractor_loaded)
 
@@ -132,7 +132,7 @@ def check_dumping(extractor, test_relative=False):
 
     if 'Recording' in str(type(extractor)):
         extractor_loaded = load_extractor_from_json('spikeinterface_recording.json')
-        check_recordings_equal(extractor, extractor_loaded)
+        check_recordings_equal(extractor, extractor_loaded, check_times=False)
     elif 'Sorting' in str(type(extractor)):
         extractor_loaded = load_extractor_from_json('spikeinterface_sorting.json')
         check_sortings_equal(extractor, extractor_loaded)
@@ -142,7 +142,7 @@ def check_dumping(extractor, test_relative=False):
     extractor_loaded = load_extractor_from_json('test_dumping/test.json')
 
     if 'Recording' in str(type(extractor)):
-        check_recordings_equal(extractor, extractor_loaded)
+        check_recordings_equal(extractor, extractor_loaded, check_times=False)
     elif 'Sorting' in str(type(extractor)):
         check_sortings_equal(extractor, extractor_loaded)
 
@@ -152,7 +152,7 @@ def check_dumping(extractor, test_relative=False):
 
     if 'Recording' in str(type(extractor)):
         extractor_loaded = load_extractor_from_pickle('spikeinterface_recording.pkl')
-        check_recordings_equal(extractor, extractor_loaded)
+        check_recordings_equal(extractor, extractor_loaded, check_times=True)
         check_recording_properties(extractor, extractor_loaded)
     elif 'Sorting' in str(type(extractor)):
         extractor_loaded = load_extractor_from_pickle('spikeinterface_sorting.pkl')
@@ -164,7 +164,7 @@ def check_dumping(extractor, test_relative=False):
     extractor_loaded = load_extractor_from_pickle('test_dumping/test.pkl')
 
     if 'Recording' in str(type(extractor)):
-        check_recordings_equal(extractor, extractor_loaded)
+        check_recordings_equal(extractor, extractor_loaded, check_times=True)
         check_recording_properties(extractor, extractor_loaded)
     elif 'Sorting' in str(type(extractor)):
         check_sortings_equal(extractor, extractor_loaded)
@@ -176,7 +176,7 @@ def check_dumping(extractor, test_relative=False):
         extractor_loaded = load_extractor_from_dict(d)
 
         if 'Recording' in str(type(extractor)):
-            check_recordings_equal(extractor, extractor_loaded)
+            check_recordings_equal(extractor, extractor_loaded, check_times=False)
         elif 'Sorting' in str(type(extractor)):
             check_sortings_equal(extractor, extractor_loaded)
 
@@ -185,7 +185,7 @@ def check_dumping(extractor, test_relative=False):
         extractor_loaded = load_extractor_from_json('test_dumping/test_rel.json')
 
         if 'Recording' in str(type(extractor)):
-            check_recordings_equal(extractor, extractor_loaded)
+            check_recordings_equal(extractor, extractor_loaded, check_times=False)
         elif 'Sorting' in str(type(extractor)):
             check_sortings_equal(extractor, extractor_loaded)
 
@@ -194,7 +194,7 @@ def check_dumping(extractor, test_relative=False):
         extractor_loaded = load_extractor_from_pickle('test_dumping/test_rel.pkl')
 
         if 'Recording' in str(type(extractor)):
-            check_recordings_equal(extractor, extractor_loaded)
+            check_recordings_equal(extractor, extractor_loaded, check_times=True)
         elif 'Sorting' in str(type(extractor)):
             check_sortings_equal(extractor, extractor_loaded)
 
