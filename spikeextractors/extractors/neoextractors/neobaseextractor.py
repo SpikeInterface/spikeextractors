@@ -212,13 +212,6 @@ class NeoBaseSortingExtractor(SortingExtractor, _NeoBaseExtractor):
         else:
             raise ValueError('Strange neo version. Please upgrade your neo package: pip install --upgrade neo')
 
-        if len(self.neo_reader.get_group_signal_channel_indexes()) > 0:
-            self._neo_sig_time_start = self.neo_reader.get_signal_t_start(self.block_index, self.seg_index,
-                                                                          channel_indexes=[0])
-        else:
-            warnings.warn("Start time not found: setting it to 0 s")
-            self._neo_sig_time_start = 0
-
         # For some IOs when there is no signals at inside the dataset this could not work
         # in that case the extractor class must overwrite this method
 
