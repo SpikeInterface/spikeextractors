@@ -688,9 +688,9 @@ def _check_json(d):
     for k, v in d.items():
         if isinstance(v, Path):
             d[k] = str(v)
-        elif isinstance(v, (np.int, np.int32, np.int64)):
+        elif isinstance(v, int):
             d[k] = int(v)
-        elif isinstance(v,  (np.float, np.float32, np.float64)):
+        elif isinstance(v, float):
             d[k] = float(v)
         elif isinstance(v, datetime.datetime):
             d[k] = v.isoformat()
