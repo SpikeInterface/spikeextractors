@@ -1282,7 +1282,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                 for unit_id in unit_ids:
                     if pr in sorting.get_unit_property_names(unit_id):
                         prop_value = sorting.get_unit_property(unit_id, pr)
-                        if isinstance(prop_value, (int, np.integer, float, np.float, str, bool)):
+                        if isinstance(prop_value, (int, np.integer, float, str, bool)):
                             shapes.append(1)
                         elif isinstance(prop_value, (list, np.ndarray)):
                             if np.array(prop_value).ndim == 1:
@@ -1355,7 +1355,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                 for unit_id in unit_ids:
                     if ft in sorting.get_unit_spike_feature_names(unit_id):
                         feat_value = sorting.get_unit_spike_features(unit_id, ft)
-                        if isinstance(feat_value[0], (int, np.integer, float, np.float, str, bool)):
+                        if isinstance(feat_value[0], (int, np.integer, float, str, bool)):
                             break
                         elif isinstance(feat_value[0], (list, np.ndarray)):  # multidimensional features
                             if np.array(feat_value).ndim > 1:
