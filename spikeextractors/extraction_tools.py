@@ -67,16 +67,22 @@ def write_python(path, dict):
 
 def load_probe_file(recording, probe_file, channel_map=None, channel_groups=None, verbose=False):
     """This function returns a SubRecordingExtractor that contains information from the given
-    probe file (channel locations, groups, etc.) If a .prb file is given, then 'location' and 'group' 
-    information for each channel is added to the SubRecordingExtractor. If a .csv file is given, then 
+    probe file (channel locations, groups, etc.) If a .prb file is given, then 'location' and 'group'
+    information for each channel is added to the SubRecordingExtractor. If a .csv file is given, then
     it will only add 'location' to the SubRecordingExtractor.
 
     Parameters
     ----------
     recording: RecordingExtractor
-        The recording extractor to channel information
+        The recording extractor to load channel information from.
     probe_file: str
         Path to probe file. Either .prb or .csv
+    channel_map : array-like
+        A list of channel IDs to set in the loaded file.
+        Only used if the loaded file is a .csv.
+    channel_groups : array-like
+        A list of groups (ints) for the channel_ids to set in the loaded file.
+        Only used if the loaded file is a .csv.
     verbose: bool
         If True, output is verbose
 
@@ -252,7 +258,6 @@ def read_binary(file, numchan, dtype, time_axis=0, offset=0):
         If 1, the traces shape (nb_channel, nb_sample) is kept in the file.
     offset: int
         number of offset bytes
-
     """
     numchan = int(numchan)
     with Path(file).open() as f:
@@ -392,7 +397,7 @@ def write_to_binary_dat_format(recording, save_path=None, file_handle=None,
             for i in chunks_loop:
                 start_frame = chunks[i]['istart']
                 end_frame = chunks[i]['iend']
-                traces = recording.get_traces(start_frame=start_frame, end_frame=end_frame, 
+                traces = recording.get_traces(start_frame=start_frame, end_frame=end_frame,
                                               return_scaled=return_scaled)
 
                 if dtype is not None:
@@ -502,11 +507,13 @@ def write_to_h5_dataset_format(recording, dataset_path, save_path=None, file_han
 
 
 def get_sub_extractors_by_property(extractor, property_name, return_property_list=False):
-    """Returns a list of SubRecordingExtractors from this RecordingExtractor based on the given
+    """Returns a list of SubExtractors from the Extractor based on the given
     property_name (e.g. group)
 
     Parameters
     ----------
+    extractor: RecordingExtractor or SortingExtractor
+        The extractor object to access SubRecordingExtractors from.
     property_name: str
         The property used to subdivide the extractor
     return_property_list: bool
@@ -572,15 +579,17 @@ def _export_prb_file(recording, file_name, grouping_property=None, graph=True, g
         probe filename to be exported to
     grouping_property: str (default None)
         If grouping_property is a shared_channel_property, different groups are saved based on the property.
-    radius: float (default None)
-        Adjacency radius (used by some sorters). If None it is not saved to the probe file.
     graph: bool
         If True, the adjacency graph is saved (default=True)
     geometry: bool
         If True, the geometry is saved (default=True)
+    radius: float (default None)
+        Adjacency radius (used by some sorters). If None it is not saved to the probe file.
     adjacency_distance: float
         Distance to consider two channels to adjacent (if 'location' is a property). If radius is given,
         then adjacency_distance is set to the radius.
+    verbose : bool
+        If True, output is verbose
     """
     file_name = Path(file_name)
     assert file_name is not None
@@ -679,9 +688,9 @@ def _check_json(d):
     for k, v in d.items():
         if isinstance(v, Path):
             d[k] = str(v)
-        elif isinstance(v, (np.int, np.int32, np.int64)):
+        elif isinstance(v, int):
             d[k] = int(v)
-        elif isinstance(v,  (np.float, np.float32, np.float64)):
+        elif isinstance(v, float):
             d[k] = float(v)
         elif isinstance(v, datetime.datetime):
             d[k] = v.isoformat()

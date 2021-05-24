@@ -1,7 +1,8 @@
 import os
 import shutil
 from pathlib import Path
-
+import uuid
+from datetime import datetime
 import numpy as np
 
 from .extraction_tools import load_extractor_from_pickle, load_extractor_from_dict, \
@@ -115,13 +116,13 @@ def check_sorting_properties_features(SX1, SX2):
                                np.array(SX2.get_unit_spike_features(u, feat)))
 
 
-def check_dumping(extractor):
+def check_dumping(extractor, test_relative=False):
     # dump to dict
     d = extractor.dump_to_dict()
     extractor_loaded = load_extractor_from_dict(d)
 
     if 'Recording' in str(type(extractor)):
-        check_recordings_equal(extractor, extractor_loaded)
+        check_recordings_equal(extractor, extractor_loaded, check_times=False)
     elif 'Sorting' in str(type(extractor)):
         check_sortings_equal(extractor, extractor_loaded)
 
@@ -131,7 +132,7 @@ def check_dumping(extractor):
 
     if 'Recording' in str(type(extractor)):
         extractor_loaded = load_extractor_from_json('spikeinterface_recording.json')
-        check_recordings_equal(extractor, extractor_loaded)
+        check_recordings_equal(extractor, extractor_loaded, check_times=False)
     elif 'Sorting' in str(type(extractor)):
         extractor_loaded = load_extractor_from_json('spikeinterface_sorting.json')
         check_sortings_equal(extractor, extractor_loaded)
@@ -141,7 +142,7 @@ def check_dumping(extractor):
     extractor_loaded = load_extractor_from_json('test_dumping/test.json')
 
     if 'Recording' in str(type(extractor)):
-        check_recordings_equal(extractor, extractor_loaded)
+        check_recordings_equal(extractor, extractor_loaded, check_times=False)
     elif 'Sorting' in str(type(extractor)):
         check_sortings_equal(extractor, extractor_loaded)
 
@@ -151,7 +152,7 @@ def check_dumping(extractor):
 
     if 'Recording' in str(type(extractor)):
         extractor_loaded = load_extractor_from_pickle('spikeinterface_recording.pkl')
-        check_recordings_equal(extractor, extractor_loaded)
+        check_recordings_equal(extractor, extractor_loaded, check_times=True)
         check_recording_properties(extractor, extractor_loaded)
     elif 'Sorting' in str(type(extractor)):
         extractor_loaded = load_extractor_from_pickle('spikeinterface_sorting.pkl')
@@ -163,11 +164,39 @@ def check_dumping(extractor):
     extractor_loaded = load_extractor_from_pickle('test_dumping/test.pkl')
 
     if 'Recording' in str(type(extractor)):
-        check_recordings_equal(extractor, extractor_loaded)
+        check_recordings_equal(extractor, extractor_loaded, check_times=True)
         check_recording_properties(extractor, extractor_loaded)
     elif 'Sorting' in str(type(extractor)):
         check_sortings_equal(extractor, extractor_loaded)
         check_sorting_properties_features(extractor, extractor_loaded)
+
+    if test_relative:
+        # dump to dict with relative path
+        d = extractor.dump_to_dict(relative_to=".")
+        extractor_loaded = load_extractor_from_dict(d)
+
+        if 'Recording' in str(type(extractor)):
+            check_recordings_equal(extractor, extractor_loaded, check_times=False)
+        elif 'Sorting' in str(type(extractor)):
+            check_sortings_equal(extractor, extractor_loaded)
+
+        # dump to json with relative path
+        extractor.dump_to_json(file_path='test_dumping/test_rel.json', relative_to=".")
+        extractor_loaded = load_extractor_from_json('test_dumping/test_rel.json')
+
+        if 'Recording' in str(type(extractor)):
+            check_recordings_equal(extractor, extractor_loaded, check_times=False)
+        elif 'Sorting' in str(type(extractor)):
+            check_sortings_equal(extractor, extractor_loaded)
+
+        # dump to pickle with relative path
+        extractor.dump_to_pickle(file_path='test_dumping/test_rel.pkl', relative_to=".")
+        extractor_loaded = load_extractor_from_pickle('test_dumping/test_rel.pkl')
+
+        if 'Recording' in str(type(extractor)):
+            check_recordings_equal(extractor, extractor_loaded, check_times=True)
+        elif 'Sorting' in str(type(extractor)):
+            check_sortings_equal(extractor, extractor_loaded)
 
     shutil.rmtree('test_dumping')
     if Path('spikeinterface_recording.json').is_file():
@@ -178,3 +207,36 @@ def check_dumping(extractor):
         os.remove('spikeinterface_recording.pkl')
     if Path('spikeinterface_sorting.pkl').is_file():
         os.remove('spikeinterface_sorting.pkl')
+
+
+def get_default_nwbfile_metadata():
+    """
+    Returns structure with defaulted metadata values required for a NWBFile.
+    """
+    metadata = dict(
+        NWBFile=dict(
+            session_description="no description",
+            session_start_time=datetime(1970, 1, 1),
+            identifier=str(uuid.uuid4())
+        ),
+        Ecephys=dict(
+            Device=[dict(
+                name='Device_ecephys',
+                description='no description'
+            )],
+            ElectrodeGroup=[],
+            ElectricalSeries_raw=dict(
+                name='raw_traces',
+                description='those are the raw traces'
+            ),
+            ElectricalSeries_processed=dict(
+                name='processed_traces',
+                description='those are the processed traces'
+            ),
+            ElectricalSeries_lfp=dict(
+                name='lfp_traces',
+                description='those are the lfp traces'
+            )
+        )
+    )
+    return metadata

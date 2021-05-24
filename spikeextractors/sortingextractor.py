@@ -24,7 +24,7 @@ class SortingExtractor(ABC, BaseExtractor):
         """This function returns a list of ids (ints) for each unit in the sorsted result.
 
         Returns
-        ----------
+        -------
         unit_ids: array_like
             A list of the unit ids in the sorted result (ints).
         """
@@ -54,8 +54,9 @@ class SortingExtractor(ABC, BaseExtractor):
             The frame above which a spike frame is returned  (inclusive)
         end_frame: int
             The frame below which a spike frame is returned  (exclusive)
+
         Returns
-        ----------
+        -------
         spike_train: numpy.ndarray
             An 1D array containing all the frames for each spike in the
             specified unit given the range of start and end frames
@@ -64,6 +65,7 @@ class SortingExtractor(ABC, BaseExtractor):
 
     def get_units_spike_train(self, unit_ids=None, start_frame=None, end_frame=None):
         """This function extracts spike frames from the specified units.
+
         Parameters
         ----------
         unit_ids: array_like
@@ -73,8 +75,9 @@ class SortingExtractor(ABC, BaseExtractor):
             The frame above which a spike frame is returned  (inclusive)
         end_frame: int
             The frame below which a spike frame is returned  (exclusive)
+
         Returns
-        ----------
+        -------
         spike_train: numpy.ndarray
             An 2D array containing all the frames for each spike in the
             specified units given the range of start and end frames
@@ -99,6 +102,8 @@ class SortingExtractor(ABC, BaseExtractor):
         """
         It sets the sorting extractor sampling frequency.
 
+        Parameters
+        ----------
         sampling_frequency: float
             The sampling frequency
         """
@@ -174,8 +179,9 @@ class SortingExtractor(ABC, BaseExtractor):
             The frame above which a spike frame is returned  (inclusive)
         end_frame: int
             The frame below which a spike frame is returned  (exclusive)
+
         Returns
-        ----------
+        -------
         spike_features: numpy.ndarray
             An array containing all the features for each spike in the
             specified unit given the range of start and end frames
@@ -279,7 +285,7 @@ class SortingExtractor(ABC, BaseExtractor):
         """This function converts a user-inputted times (in seconds) to a frame indexes.
 
         Parameters
-        -------
+        ----------
         times: float or array-like
             The times (in seconds) to be converted to frame indexes
 
@@ -325,12 +331,14 @@ class SortingExtractor(ABC, BaseExtractor):
 
     def get_unit_spike_feature_names(self, unit_id):
         """This function returns the list of feature names for the given unit
+
         Parameters
         ----------
         unit_id: int
             The unit id for which the feature names will be returned
+
         Returns
-        ----------
+        -------
         property_names
             The list of feature names.
         """
@@ -347,13 +355,15 @@ class SortingExtractor(ABC, BaseExtractor):
 
     def get_shared_unit_spike_feature_names(self, unit_ids=None):
         """Get the intersection of unit feature names for a given set of units or for all units if unit_ids is None.
-         Parameters
+
+        Parameters
         ----------
         unit_ids: array_like
             The unit ids for which the shared feature names will be returned.
             If None (default), will return shared feature names for all units
+
         Returns
-        ----------
+        -------
         property_names
             The list of shared feature names
         """
@@ -424,8 +434,9 @@ class SortingExtractor(ABC, BaseExtractor):
             The unit id for which the property will be returned
         property_name: str
             The name of the property
+
         Returns
-        ----------
+        -------
         value
             The data associated with the given property name. Could be many
             formats as specified by the user
@@ -457,8 +468,9 @@ class SortingExtractor(ABC, BaseExtractor):
             Defaults to get_unit_ids()
         property_name: str
             The name of the property
+
         Returns
-        ----------
+        -------
         values
             The list of values
         """
@@ -469,12 +481,14 @@ class SortingExtractor(ABC, BaseExtractor):
 
     def get_unit_property_names(self, unit_id):
         """Get a list of property names for a given unit.
-         Parameters
+
+        Parameters
         ----------
         unit_id: int
             The unit id for which the property names will be returned
+
         Returns
-        ----------
+        -------
         property_names
             The list of property names
         """
@@ -491,13 +505,15 @@ class SortingExtractor(ABC, BaseExtractor):
 
     def get_shared_unit_property_names(self, unit_ids=None):
         """Get the intersection of unit property names for a given set of units or for all units if unit_ids is None.
-         Parameters
+
+        Parameters
         ----------
         unit_ids: array_like
             The unit ids for which the shared property names will be returned.
             If None (default), will return shared property names for all units
+
         Returns
-        ----------
+        -------
         property_names
             The list of shared property names
         """
@@ -602,8 +618,7 @@ class SortingExtractor(ABC, BaseExtractor):
                         self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name, value=value)
 
     def get_epoch(self, epoch_name):
-        """This function returns a SubSortingExtractor which is a view to the
-        given epoch
+        """This function returns a SubSortingExtractor which is a view to the given epoch.
 
         Parameters
         ----------
@@ -611,7 +626,7 @@ class SortingExtractor(ABC, BaseExtractor):
             The name of the epoch to be returned
 
         Returns
-        ----------
+        -------
         epoch_extractor: SubRecordingExtractor
             A SubRecordingExtractor which is a view to the given epoch
         """
@@ -637,7 +652,6 @@ class SortingExtractor(ABC, BaseExtractor):
         -------
         sub_list: list
             The list of subextractors to be returned
-
         """
         if return_property_list:
             sub_list, prop_list = get_sub_extractors_by_property(self, property_name=property_name,
@@ -660,7 +674,6 @@ class SortingExtractor(ABC, BaseExtractor):
         sorting: SortingExtractor
             A SortingExtractor that can extract information from the sorted data
             file to be converted to the new format
-
         save_path: string
             A path to where the converted sorted data will be saved, which may
             either be a file or a folder, depending on the format

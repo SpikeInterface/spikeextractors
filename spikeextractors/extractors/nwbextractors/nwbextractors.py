@@ -15,7 +15,7 @@ try:
     import pynwb
     from pynwb import NWBHDF5IO
     from pynwb import NWBFile
-    from pynwb.ecephys import ElectricalSeries, LFP
+    from pynwb.ecephys import ElectricalSeries, FilteredEphys, LFP
     from pynwb.ecephys import ElectrodeGroup
     from hdmf.data_utils import DataChunkIterator
     from hdmf.backends.hdf5.h5_utils import H5DataIO
@@ -298,11 +298,10 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 'device': v.device.name
             })
         # Update metadata with ElectricalSeries info
-        self.nwb_metadata['Ecephys']['ElectricalSeries'] = []
-        self.nwb_metadata['Ecephys']['ElectricalSeries'].append({
-            'name': es.name,
-            'description': es.description
-        })
+        self.nwb_metadata['Ecephys']['ElectricalSeries'] = dict(
+            name=es.name,
+            description=es.description
+        )
 
     @check_get_traces_args
     def get_traces(
@@ -365,16 +364,21 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         """
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
+        
         defaults = dict(
             name="Device",
             description="Ecephys probe."
         )
-        if metadata is None or 'Device' not in metadata['Ecephys']:
-            metadata = dict(
-                Ecephys=dict(
-                    Device=[defaults]
-                )
-            )
+
+        if metadata is None:
+            metadata = dict() 
+
+        if 'Ecephys' not in metadata:
+            metadata['Ecephys'] = dict()
+
+        if 'Device' not in metadata['Ecephys']:
+            metadata['Ecephys']['Device'] = [defaults]
+
         assert all([isinstance(x, dict) for x in metadata['Ecephys']['Device']]), \
             "Expected metadata['Ecephys']['Device'] to be a list of dictionaries!"
 
@@ -402,7 +406,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 metadata['Ecephys']['ElectrodeGroup'] = [{'name': my_name,
                                                           'description': my_description,
                                                           'location': electrode_location,
-                                                          'device_name': my_device_name}, ...]
+                                                          'device': my_device_name}, ...]
 
         Missing keys in an element of metadata['Ecephys']['ElectrodeGroup'] will be auto-populated with defaults.
 
@@ -412,38 +416,46 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
         if len(nwbfile.devices) == 0:
-            se.NwbRecordingExtractor.add_devices(recording, nwbfile)
-        defaults = dict(
-            name="Electrode Group",
-            description="no description",
-            location="unknown",
-            device_name="Device"
-        )
-        if metadata is None or 'ElectrodeGroup' not in metadata['Ecephys']:
-            metadata = dict(
-                Ecephys=dict(
-                    ElectrodeGroup=[defaults]
-                )
+            se.NwbRecordingExtractor.add_devices(recording=recording, nwbfile=nwbfile, metadata=metadata)
+
+        if metadata is None:
+            metadata = dict()
+
+        if 'Ecephys' not in metadata:
+            metadata['Ecephys'] = dict()
+
+        defaults = [
+            dict(
+                name=str(group_id),
+                description="no description",
+                location="unknown",
+                device=[i.name for i in nwbfile.devices.values()][0]
             )
+            for group_id in np.unique(recording.get_channel_groups())
+        ]
+
+        if 'ElectrodeGroup' not in metadata['Ecephys']:
+            metadata['Ecephys']['ElectrodeGroup'] = defaults
+
         assert all([isinstance(x, dict) for x in metadata['Ecephys']['ElectrodeGroup']]), \
             "Expected metadata['Ecephys']['ElectrodeGroup'] to be a list of dictionaries!"
 
         for grp in metadata['Ecephys']['ElectrodeGroup']:
-            device_name = grp.get('device_name', defaults['device_name'])
-            if grp.get('name', defaults['name']) not in nwbfile.electrode_groups:
+            if grp.get('name', defaults[0]['name']) not in nwbfile.electrode_groups:
+                device_name = grp.get('device', defaults[0]['device'])
                 if device_name not in nwbfile.devices:
                     new_device = dict(
                         Ecephys=dict(
-                            Device=dict(
+                            Device=[dict(
                                 name=device_name
-                            )
+                            )]
                         )
                     )
                     se.NwbRecordingExtractor.add_devices(recording, nwbfile, metadata=new_device)
                     warnings.warn(f"Device \'{device_name}\' not detected in "
                                   "attempted link to electrode group! Automatically generating.")
-                electrode_group_kwargs = dict(defaults, **grp)
-                electrode_group_kwargs.pop('device_name')
+                electrode_group_kwargs = dict(defaults[0], **grp)
+                # electrode_group_kwargs.pop('device')
                 electrode_group_kwargs.update(device=nwbfile.devices[device_name])
                 nwbfile.create_electrode_group(**electrode_group_kwargs)
 
@@ -455,8 +467,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                               f"via channel properties: using device \'{device_name}\'. To use a "
                               "different device, indicate it the metadata argument.")
 
-            electrode_group_kwargs = dict(defaults)
-            electrode_group_kwargs.pop('device_name')
+            electrode_group_kwargs = dict(defaults[0])
             electrode_group_kwargs.update(device=device)
             for grp_name in np.unique(recording.get_channel_groups()).tolist():
                 electrode_group_kwargs.update(name=str(grp_name))
@@ -519,12 +530,11 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             imp=-1.0,
             location="unknown",
             filtering="none",
-            group_name="Electrode Group"
+            group_name="ElectrodeGroup"
         )
-        if metadata is None or 'Electrodes' not in metadata['Ecephys']:
-            metadata = dict(
-                Ecephys=dict()
-            )
+        if metadata is None:
+            metadata = dict(Ecephys=dict())
+
         if 'Electrodes' not in metadata['Ecephys']:
             metadata['Ecephys']['Electrodes'] = []
 
@@ -571,12 +581,12 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                                           "found in the nwbfile! Automatically adding.")
                             missing_group_metadata = dict(
                                 Ecephys=dict(
-                                    ElectrodeGroup=dict(
+                                    ElectrodeGroup=[dict(
                                         name=group_name,
                                         description="no description",
                                         location="unknown",
-                                        device_name="Device"
-                                    )
+                                        device="Device"
+                                    )]
                                 )
                             )
                             se.NwbRecordingExtractor.add_electrode_groups(recording, nwbfile, missing_group_metadata)
@@ -652,7 +662,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         metadata: dict = None,
         buffer_mb: int = 500,
         use_times: bool = False,
-        write_as_lfp: bool = False,
+        write_as: str = 'raw',
+        es_key: str = None,
         write_scaled: bool = False
     ):
         """
@@ -676,8 +687,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         use_times: bool (optional, defaults to False)
             If True, the times are saved to the nwb file using recording.frame_to_time(). If False (defualut),
             the sampling rate is used.
-        write_as_lfp: bool (optional, defaults to False)
-            If True, writes the traces under a processing LFP module in the NWBFile instead of acquisition.
+        write_as: str (optional, defaults to 'raw')
+            How to save the traces data in the nwb file. Options: 
+            - 'raw' will save it in acquisition
+            - 'processed' will save it as FilteredEphys, in a processing module
+            - 'lfp' will save it as LFP, in a processing module
+        es_key: str (optional)
+            Key in metadata dictionary containing metadata info for the specific electrical series
         write_scaled: bool (optional, defaults to True)
             If True, writes the scaled traces (return_scaled=True)
 
@@ -686,61 +702,74 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         """
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile!"
+
         assert buffer_mb > 10, "'buffer_mb' should be at least 10MB to ensure data can be chunked!"
+
         if not nwbfile.electrodes:
             se.NwbRecordingExtractor.add_electrodes(recording, nwbfile, metadata)
 
-        raw_defaults = dict(
-            name="ElectricalSeries",
-            description="Raw acquired data."
-        )
-        lfp_defaults = dict(
-            name="LFP",
-            description="Local field potential signal."
-        )
-        if metadata is None or not any([x in metadata['Ecephys'] for x in ['ElectricalSeries', 'LFPElectricalSeries']]):
-            metadata = dict(Ecephys=dict())
-            if not write_as_lfp:
-                metadata['Ecephys'].update(
-                    ElectricalSeries=dict(raw_defaults)
-                )
-            else:
-                metadata['Ecephys'].update(
-                    LFPElectricalSeries=dict(lfp_defaults)
-                )
-        assert ('ElectricalSeries' in metadata['Ecephys']
-                and isinstance(metadata['Ecephys']['ElectricalSeries'], dict)) \
-               or ('LFPElectricalSeries' in metadata['Ecephys']
-                   and isinstance(metadata['Ecephys']['LFPElectricalSeries'], dict)), \
-               ("Expected either metadata['Ecephys']['ElectricalSeries'] or "
-                "metadata['Ecephys']['LFPElectricalSeries'] to be a dictionary!")
+        assert write_as in ['raw', 'processed', 'lfp'], \
+            f"'write_as' should be 'raw', 'processed' or 'lfp', but intead received value {write_as}"
 
-        if not write_as_lfp:
-            es_name = metadata['Ecephys']['ElectricalSeries'].get('name', raw_defaults['name'])
-            assert es_name not in nwbfile.acquisition, \
-                f"Raw ElectricalSeries '{es_name}' is already written in the NWBFile!"
-        else:
-            es_name = metadata['Ecephys']['LFPElectricalSeries'].get('name', lfp_defaults['name'])
+        if write_as == 'raw':
+            eseries_kwargs = dict(
+                name="ElectricalSeries_raw",
+                description="Raw acquired data",
+                comments="Generated from SpikeInterface::NwbRecordingExtractor"
+            )
+        elif write_as == 'processed':
+            eseries_kwargs = dict(
+                name="ElectricalSeries_processed",
+                description="Processed data",
+                comments="Generated from SpikeInterface::NwbRecordingExtractor"
+            )
+            # Check for existing processing module and data interface
             ecephys_mod = check_module(
-                nwbfile,
-                'ecephys',
-                "Intermediate data from extracellular electrophysiology recordings, e.g., LFP."
+                nwbfile=nwbfile,
+                name='ecephys',
+                description="Intermediate data from extracellular electrophysiology recordings, e.g., LFP."
+            )
+            if 'Processed' not in ecephys_mod.data_interfaces:
+                ecephys_mod.add(FilteredEphys(name='Processed'))
+        elif write_as == 'lfp':
+            eseries_kwargs = dict(
+                name="ElectricalSeries_lfp",
+                description="Processed data - LFP",
+                comments="Generated from SpikeInterface::NwbRecordingExtractor"
+            )
+            # Check for existing processing module and data interface
+            ecephys_mod = check_module(
+                nwbfile=nwbfile,
+                name='ecephys',
+                description="Intermediate data from extracellular electrophysiology recordings, e.g., LFP."
             )
             if 'LFP' not in ecephys_mod.data_interfaces:
-                ecephys_mod.add_data_interface(LFP(name='LFP'))
-        channel_ids = recording.get_channel_ids()
+                ecephys_mod.add(LFP(name='LFP'))
 
+        # If user passed metadata info, overwrite defaults
+        if metadata is not None and 'Ecephys' in metadata and es_key is not None:
+            assert es_key in metadata['Ecephys'], f"metadata['Ecephys'] dictionary does not contain key '{es_key}'"
+            eseries_kwargs.update(metadata['Ecephys'][es_key])
+
+        # Check for existing names in nwbfile
+        if write_as == 'raw':
+            assert eseries_kwargs['name'] not in nwbfile.acquisition, \
+                f"Raw ElectricalSeries '{eseries_kwargs['name']}' is already written in the NWBFile!"
+        elif write_as == 'processed':
+            assert eseries_kwargs['name'] not in nwbfile.processing['ecephys'].data_interfaces['Processed'].electrical_series, \
+                f"Processed ElectricalSeries '{eseries_kwargs['name']}' is already written in the NWBFile!"
+        elif write_as == 'lfp':
+            assert eseries_kwargs['name'] not in nwbfile.processing['ecephys'].data_interfaces['LFP'].electrical_series, \
+                f"LFP ElectricalSeries '{eseries_kwargs['name']}' is already written in the NWBFile!"
+
+        # Electrodes table region
+        channel_ids = recording.get_channel_ids()
         table_ids = [list(nwbfile.electrodes.id[:]).index(id) for id in channel_ids]
         electrode_table_region = nwbfile.create_electrode_table_region(
             region=table_ids,
             description="electrode_table_region"
         )
-
-        eseries_kwargs = dict(
-            name=es_name,
-            electrodes=electrode_table_region,
-            comments="Generated from SpikeInterface::NwbRecordingExtractor"
-        )
+        eseries_kwargs.update(electrodes=electrode_table_region)
 
         # channels gains - for RecordingExtractor, these are values to cast traces to uV.
         # For nwb, the conversions (gains) cast the data to Volts.
@@ -812,16 +841,14 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 )
             )
 
-        if not write_as_lfp:
-            eseries_kwargs.update(
-                description=metadata['Ecephys']['ElectricalSeries'].get('description', raw_defaults['description'])
-            )
+        # Add ElectricalSeries to nwbfile object
+        if write_as == 'raw':
             nwbfile.add_acquisition(ElectricalSeries(**eseries_kwargs))
-        else:
-            eseries_kwargs.update(
-                description=metadata['Ecephys']['LFPElectricalSeries'].get('description', lfp_defaults['description'])
-            )
+        elif write_as == 'processed':
+            ecephys_mod.data_interfaces['Processed'].add_electrical_series(ElectricalSeries(**eseries_kwargs))
+        elif write_as == 'lfp':
             ecephys_mod.data_interfaces['LFP'].add_electrical_series(ElectricalSeries(**eseries_kwargs))
+            
 
     @staticmethod
     def add_epochs(
@@ -872,7 +899,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         buffer_mb: int = 500,
         use_times: bool = False,
         metadata: dict = None,
-        write_as_lfp: bool = False,
+        write_as: str = 'raw',
+        es_key: str = None,
         write_scaled: bool = False
     ):
         """
@@ -895,8 +923,13 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             metadata info for constructing the nwb file (optional).
             Check the auxiliary function docstrings for more information
             about metadata format.
-        write_as_lfp: bool (optional, defaults to False)
-            If True, writes the traces under a processing LFP module in the NWBFile instead of acquisition.
+        write_as: str (optional, defaults to 'raw')
+            How to save the traces data in the nwb file. Options: 
+            - 'raw' will save it in acquisition
+            - 'processed' will save it as FilteredEphys, in a processing module
+            - 'lfp' will save it as LFP, in a processing module
+        es_key: str (optional)
+            Key in metadata dictionary containing metadata info for the specific electrical series
         write_scaled: bool (optional, defaults to True)
             If True, writes the scaled traces (return_scaled=True)
         """
@@ -926,7 +959,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             buffer_mb=buffer_mb,
             use_times=use_times,
             metadata=metadata,
-            write_as_lfp=write_as_lfp,
+            write_as=write_as,
+            es_key=es_key,
             write_scaled=write_scaled
         )
         se.NwbRecordingExtractor.add_epochs(
@@ -944,7 +978,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         buffer_mb: int = 500,
         use_times: bool = False,
         metadata: dict = None,
-        write_as_lfp: bool = False,
+        write_as: str = 'raw',
+        es_key: str = None,
         write_scaled: bool = False
     ):
         """
@@ -981,14 +1016,19 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 metadata['Ecephys']['ElectrodeGroup'] = [{'name': my_name,
                                                           'description': my_description,
                                                           'location': electrode_location,
-                                                          'device_name': my_device_name}, ...]
+                                                          'device': my_device_name}, ...]
                 metadata['Ecephys']['Electrodes'] = [{'name': my_name,
                                                       'description': my_description,
                                                       'data': [my_electrode_data]}, ...]
                 metadata['Ecephys']['ElectricalSeries'] = {'name': my_name,
                                                            'description': my_description}
-        write_as_lfp: bool (optional, defaults to False)
-            If True, writes the traces under a processing LFP module in the NWBFile instead of acquisition.
+        write_as: str (optional, defaults to 'raw')
+            How to save the traces data in the nwb file. Options: 
+            - 'raw' will save it in acquisition
+            - 'processed' will save it as FilteredEphys, in a processing module
+            - 'lfp' will save it as LFP, in a processing module
+        es_key: str (optional)
+            Key in metadata dictionary containing metadata info for the specific electrical series
         write_scaled: bool (optional, defaults to True)
             If True, writes the scaled traces (return_scaled=True)
         """
@@ -1037,7 +1077,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                     buffer_mb=buffer_mb,
                     metadata=metadata,
                     use_times=use_times,
-                    write_as_lfp=write_as_lfp,
+                    write_as=write_as,
+                    es_key=es_key,
                     write_scaled=write_scaled
                 )
 
@@ -1050,7 +1091,8 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                 buffer_mb=buffer_mb,
                 use_times=use_times,
                 metadata=metadata,
-                write_as_lfp=write_as_lfp,
+                write_as=write_as,
+                es_key=es_key,
                 write_scaled=write_scaled
             )
 
@@ -1079,7 +1121,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
                         name=str(gn),
                         description="no description",
                         location="unknown",
-                        device_name="Device"
+                        device="Device"
                     ) for gn in np.unique(recording.get_channel_groups())
                 ]
             )
@@ -1113,7 +1155,8 @@ class NwbSortingExtractor(se.SortingExtractor):
                     if len(nwbfile.acquisition) > 1:
                         raise Exception('More than one acquisition found. You must specify electrical_series.')
                     if len(nwbfile.acquisition) == 0:
-                        raise Exception('No acquisitions found in the .nwb file.')
+                        raise Exception("No acquisitions found in the .nwb file from which to read sampling frequency. \
+                                         Please, specify 'sampling_frequency' parameter.")
                     es = list(nwbfile.acquisition.values())[0]
                 else:
                     es = electrical_series
@@ -1218,7 +1261,9 @@ class NwbSortingExtractor(se.SortingExtractor):
             halfwidth="The full-width half maximum of the negative peak computed on the maximum channel.",
             peak_to_valley="The duration between the negative and the positive peaks computed on the maximum channel.",
             snr="The signal-to-noise ratio of the unit.",
-            quality="Quality of the unit as defined by phy (good, mua, noise)."
+            quality="Quality of the unit as defined by phy (good, mua, noise).",
+            spike_amplitude="Average amplitude of peaks detected on the channel.",
+            spike_rate="Average rate of peaks detected on the channel."
         )
         if property_descriptions is None:
             property_descriptions = dict(default_descriptions)
@@ -1237,7 +1282,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                 for unit_id in unit_ids:
                     if pr in sorting.get_unit_property_names(unit_id):
                         prop_value = sorting.get_unit_property(unit_id, pr)
-                        if isinstance(prop_value, (int, np.integer, float, np.float, str, bool)):
+                        if isinstance(prop_value, (int, np.integer, float, str, bool)):
                             shapes.append(1)
                         elif isinstance(prop_value, (list, np.ndarray)):
                             if np.array(prop_value).ndim == 1:
@@ -1310,7 +1355,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                 for unit_id in unit_ids:
                     if ft in sorting.get_unit_spike_feature_names(unit_id):
                         feat_value = sorting.get_unit_spike_features(unit_id, ft)
-                        if isinstance(feat_value[0], (int, np.integer, float, np.float, str, bool)):
+                        if isinstance(feat_value[0], (int, np.integer, float, str, bool)):
                             break
                         elif isinstance(feat_value[0], (list, np.ndarray)):  # multidimensional features
                             if np.array(feat_value).ndim > 1:
