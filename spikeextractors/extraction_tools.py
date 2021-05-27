@@ -6,7 +6,7 @@ from pathlib import Path
 import warnings
 import datetime
 from functools import wraps
-from spikeextractors.baseextractor import BaseExtractor
+from .baseextractor import BaseExtractor
 from tqdm import tqdm
 from joblib import Parallel, delayed
 

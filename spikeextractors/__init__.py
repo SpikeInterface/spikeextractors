@@ -14,4 +14,6 @@ from .extraction_tools import load_probe_file, save_to_probe_file, read_binary, 
     write_to_h5_dataset_format, get_sub_extractors_by_property, load_extractor_from_json, load_extractor_from_dict, \
     load_extractor_from_pickle
 
+from .save_tools import save_si_object
+
 from .version import version as __version__
