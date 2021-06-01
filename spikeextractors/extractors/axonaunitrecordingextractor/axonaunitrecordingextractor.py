@@ -42,12 +42,13 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
         header_channels = self.neo_reader.header['signal_channels'][slice(None)]
 
         names = header_channels['name']
-        for i, ind in enumerate(self.get_channel_ids()):
+        channel_ids = self.get_channel_ids()
+        for i, ind in enumerate(channel_ids):
             self.set_channel_property(channel_id=ind, property_name='name', value=names[i])
 
         # Set channel gains for int8 .X Unit data
-        gains = self.neo_reader._get_channel_gain(bytes_per_sample=1)[0:len(self.get_channel_ids())]
-        self.set_channel_gains(self, gains, channel_ids=None)
+        gains = self.neo_reader._get_channel_gain(bytes_per_sample=1)[0:len(channel_ids)]
+        self.set_channel_gains(gains, channel_ids=channel_ids)
 
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
