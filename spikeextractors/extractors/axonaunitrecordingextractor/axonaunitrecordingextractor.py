@@ -93,7 +93,9 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
 
                 t = int(t // (timebase_sr / sampling_rate))  # timestamps are sampled at higher frequency
                 t = t - start_frame
-                if t - samples_pre < 0:
+                if (t - samples_pre < 0) and (t + samples_post > traces.shape[1]):
+                    traces[itrc:itrc + nch, :] = wf[:, samples_pre - t:traces.shape[1] - (t - samples_pre)]
+                elif t - samples_pre < 0:
                     traces[itrc:itrc + nch, :t + samples_post] = wf[:, samples_pre - t:]
                 elif t + samples_post > traces.shape[1]:
                     traces[itrc:itrc + nch, t - samples_pre:] = wf[:, :traces.shape[1] - (t - samples_pre)]
