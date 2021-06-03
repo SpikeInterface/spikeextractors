@@ -61,6 +61,10 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
         tcmap = self._get_tetrode_channel_table(channel_ids)
 
         traces = self._noise_std * np.random.randn(len(channel_ids), end_frame - start_frame)
+        if return_scaled:
+            traces = traces.astype(np.float32)
+        else:
+            traces = traces.astype(np.int8)
 
         # Loop through tetrodes and include requested channels in traces
         itrc = 0
