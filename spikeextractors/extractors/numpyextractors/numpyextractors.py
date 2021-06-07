@@ -41,6 +41,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
 
         self._ttl_frames = None
         self._ttl_states = None
+        self._channel_ids = list(range(self._timeseries.shape[0]))
 
     def set_ttls(self, ttl_frames, ttl_states=None):
         self._ttl_frames = ttl_frames.astype('int64')
@@ -50,7 +51,7 @@ class NumpyRecordingExtractor(RecordingExtractor):
             self._ttl_states = np.ones_like(ttl_frames, dtype='int64')
 
     def get_channel_ids(self):
-        return list(range(self._timeseries.shape[0]))
+        return self._channel_ids
 
     def get_num_frames(self):
         return self._timeseries.shape[1]
