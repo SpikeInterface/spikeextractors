@@ -36,10 +36,10 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor, RecordingExtractor,
     NeoRawIOClass = 'AxonaRawIO'
 
     def __init__(self, noise_std: float = 3, block_index=None, seg_index=None, **kargs):
-
-        # Enforce 1 signal stream (there are 0 raw streams), we will create 1 from waveforms
         RecordingExtractor.__init__(self)
         _NeoBaseExtractor.__init__(self, block_index=block_index, seg_index=seg_index, **kargs)
+
+        # Enforce 1 signal stream (there are 0 raw streams), we will create 1 from waveforms
         signal_streams = self.neo_reader._get_signal_streams_header()
         signal_channels = self.neo_reader._get_signal_chan_header()
         self.neo_reader.header['signal_streams'] = np.array(signal_streams,
