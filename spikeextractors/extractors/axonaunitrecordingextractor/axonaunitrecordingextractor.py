@@ -1,8 +1,12 @@
 from spikeextractors.extraction_tools import check_get_traces_args
-from spikeextractors.extractors.neoextractors.neobaseextractor import NeoBaseRecordingExtractor
+from spikeextractors.extractors.neoextractors.neobaseextractor import (
+    _NeoBaseExtractor, NeoBaseRecordingExtractor)
+from neo.rawio.baserawio import _signal_channel_dtype, _signal_stream_dtype
+from spikeextractors import RecordingExtractor
 from pathlib import Path
 import numpy as np
 from typing import Union
+import warnings
 
 PathType = Union[Path, str]
 
@@ -13,7 +17,7 @@ except ImportError:
     HAVE_NEO = False
 
 
-class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
+class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor, RecordingExtractor, _NeoBaseExtractor):
     """
     Instantiates a RecordinExtractor from an Axon Unit mode file.
 
@@ -32,12 +36,78 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor):
     NeoRawIOClass = 'AxonaRawIO'
 
     def __init__(self, noise_std: float = 3, block_index=None, seg_index=None, **kargs):
-        super().__init__(block_index=block_index, seg_index=seg_index, **kargs)
+
+        # Enforce 1 signal stream (there are 0 raw streams), we will create 1 from waveforms
+        RecordingExtractor.__init__(self)
+        _NeoBaseExtractor.__init__(self, block_index=block_index, seg_index=seg_index, **kargs)
+        signal_streams = self.neo_reader._get_signal_streams_header()
+        signal_channels = self.neo_reader._get_signal_chan_header()
+        self.neo_reader.header['signal_streams'] = np.array(signal_streams,
+                                                            dtype=_signal_stream_dtype)
+        self.neo_reader.header['signal_channels'] = np.array(signal_channels,
+                                                             dtype=_signal_channel_dtype)
+
+        if hasattr(self.neo_reader, 'get_group_signal_channel_indexes'):
+            # Neo >= 0.9.0
+            channel_indexes_list = self.neo_reader.get_group_signal_channel_indexes()
+            num_streams = len(channel_indexes_list)
+            assert num_streams <= 1, 'This file have several channel groups spikeextractors support only one groups'
+            self.after_v10 = False
+        elif hasattr(self.neo_reader, 'get_group_channel_indexes'):
+            # Neo < 0.9.0
+            channel_indexes_list = self.neo_reader.get_group_channel_indexes()
+            num_streams = len(channel_indexes_list)
+            self.after_v10 = False
+        elif hasattr(self.neo_reader, 'signal_streams_count'):
+            # Neo >= 0.10.0 (not release yet in march 2021)
+            num_streams = self.neo_reader.signal_streams_count()
+            self.after_v10 = True
+        else:
+            raise ValueError('Strange neo version. Please upgrade your neo package: pip install --upgrade neo')
+
+        assert num_streams <= 1, 'This file have several signal streams spikeextractors support only one streams' \
+                                 'Maybe you can use option to select only one stream'
+
+        # spikeextractor for units to be uV implicitly
+        # check that units are V, mV or uV
+        units = self.neo_reader.header['signal_channels']['units']
+        assert np.all(np.isin(units, ['V', 'mV', 'uV'])), 'Signal units no Volt compatible'
+        self.additional_gain = np.ones(units.size, dtype='float')
+        self.additional_gain[units == 'V'] = 1e6
+        self.additional_gain[units == 'mV'] = 1e3
+        self.additional_gain[units == 'uV'] = 1.
+        self.additional_gain = self.additional_gain.reshape(1, -1)
+
+        # Add channels properties
+        header_channels = self.neo_reader.header['signal_channels'][slice(None)]
+        self._neo_chan_ids = self.neo_reader.header['signal_channels']['id']
+
+        # In neo there is not guarantee that channel ids are unique.
+        # for instance Blacrock can have several times the same chan_id
+        # different sampling rate
+        # so check it
+        assert np.unique(self._neo_chan_ids).size == self._neo_chan_ids.size, 'In this format channel ids are not ' \
+                                                                              'unique! Incompatible with SpikeInterface'
+
+        try:
+            channel_ids = [int(ch) for ch in self._neo_chan_ids]
+        except Exception as e:
+            warnings.warn("Could not parse channel ids to int: using linear channel map")
+            channel_ids = list(np.arange(len(self._neo_chan_ids)))
+        self._channel_ids = channel_ids
+
+        gains = header_channels['gain'] * self.additional_gain[0]
+        self.set_channel_gains(gains=gains, channel_ids=self._channel_ids)
+
+        names = header_channels['name']
+        for i, ind in enumerate(self._channel_ids):
+            self.set_channel_property(channel_id=ind, property_name='name', value=names[i])
+
         self._noise_std = noise_std
 
         # Read channel groups by tetrode IDs
-        self.set_channel_groups(groups=[x - 1 for x in self.neo_reader.raw_annotations[
-            'blocks'][0]['segments'][0]['signals'][0]['__array_annotations__']['tetrode_id']])
+        self.set_channel_groups(groups=[
+            tetrode_id - 1 for tetrode_id in self.neo_reader.get_active_tetrode() for _ in range(4)])
 
         header_channels = self.neo_reader.header['signal_channels'][slice(None)]
 
