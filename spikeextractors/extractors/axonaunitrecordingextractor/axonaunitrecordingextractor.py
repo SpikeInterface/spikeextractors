@@ -177,7 +177,7 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor, RecordingExtractor,
         return traces
 
     def get_num_frames(self):
-        n = self.neo_reader.get_signal_size(self.block_index, self.seg_index, stream_index=0)
+        n = int(self.neo_reader.segment_t_stop(block_index=0, seg_index=0) * self.get_sampling_frequency())
         if self.get_sampling_frequency() == 24000:
             n = n // 2
         return n
