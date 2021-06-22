@@ -32,7 +32,7 @@ def get_channel_info(f, smrx_ch_ind):
         Index of smrx channel. Does not match necessarily with extractor id.
     """
 
-    nMax = int(f.ChannelMaxTime(smrx_ch_ind) / f.ChannelDivide(smrx_ch_ind))
+    nMax = 1 + int(f.ChannelMaxTime(smrx_ch_ind) / f.ChannelDivide(smrx_ch_ind))
     frame_offset = f.FirstTime(chan=smrx_ch_ind, tFrom=0, tUpto=nMax) / f.ChannelDivide(smrx_ch_ind)
     ch_info = {
         'type': f.ChannelType(smrx_ch_ind),           # Get the channel kind
@@ -72,9 +72,9 @@ def get_channel_data(f, smrx_ch_ind, start_frame=0, end_frame=None):
     """
 
     if end_frame is None:
-        end_frame = int(f.ChannelMaxTime(smrx_ch_ind) / f.ChannelDivide(smrx_ch_ind))
+        end_frame = 1 + int(f.ChannelMaxTime(smrx_ch_ind) / f.ChannelDivide(smrx_ch_ind))
 
-    nMax = int(f.ChannelMaxTime(smrx_ch_ind) / f.ChannelDivide(smrx_ch_ind))
+    nMax = 1 + int(f.ChannelMaxTime(smrx_ch_ind) / f.ChannelDivide(smrx_ch_ind))
     frame_offset = int(f.FirstTime(chan=smrx_ch_ind, tFrom=0, tUpto=nMax) / f.ChannelDivide(smrx_ch_ind))
     start_frame += frame_offset
     end_frame += frame_offset

@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 import numpy as np
+from sonpy import lib as sp
 
 import spikeextractors as se
 from spikeextractors.exceptions import NotDumpableExtractorError
@@ -322,6 +323,18 @@ class TestExtractors(unittest.TestCase):
         check_recording_return_types(RX_biocam)
         check_recordings_equal(self.RX, RX_biocam)
         check_dumping(RX_biocam)
+
+    def test_ced_extractor(self):
+        n_elements = 881
+        trace_out = np.arange(0, n_elements, dtype=np.short)
+        assert len(trace_out) == n_elements
+        smrx_file = sp.SonFile('test.smrx')
+        smrx_file.SetWaveChannel(0, 7, sp.DataType.Adc)
+        smrx_file.WriteInts(0, trace_out, 0)
+        del smrx_file
+        recording = se.CEDRecordingExtractor('test.smrx', smrx_channel_ids=[0])
+        trace_in = recording.get_traces([0])[0]
+        assert len(trace_in) == n_elements
 
     def test_mearec_extractors(self):
         path1 = self.test_dir + '/raw.h5'
