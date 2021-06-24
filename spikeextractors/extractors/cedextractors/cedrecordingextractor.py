@@ -73,6 +73,7 @@ class CEDRecordingExtractor(RecordingExtractor):
             # Set channel gains: http://ced.co.uk/img/Spike10.pdf
             # from 16-bit encoded int / to ADC +-5V input / to measured Volts
             gain = self._channel_smrxinfo[i]['scale'] / 6553.6
+            gain *= 1000  # mV --> uV
             gains.append(gain)
             self._channel_names.append(self._channel_smrxinfo[i]['title'])
 
