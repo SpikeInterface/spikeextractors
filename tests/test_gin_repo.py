@@ -141,13 +141,12 @@ if sys.platform == "linux" or run_local:
             self.dataset.get(dataset_path)
             recording = se_class(**se_kwargs)
 
-
             # # test writing to NWB
             if test_nwb:
                 nwb_save_path = self.savedir / f"{se_class.__name__}_test_{dataset_stem}.nwb"
                 se.NwbRecordingExtractor.write_recording(recording, nwb_save_path, write_scaled=True)
                 nwb_recording = se.NwbRecordingExtractor(nwb_save_path)
-                check_recordings_equal(recording, nwb_recording)
+                check_recordings_equal(recording, nwb_recording, check_times=False)
 
                 if recording.has_unscaled:
                     nwb_save_path_unscaled = self.savedir / f"{se_class.__name__}_test_{dataset_stem}_unscaled.nwb"
