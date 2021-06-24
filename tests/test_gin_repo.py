@@ -125,7 +125,7 @@ if sys.platform == "linux" or run_local:
                         file_path=Path.cwd() / "ephy_testing_data" / "spike2" / "m365_1sec.smrx",
                         smrx_channel_ids=range(10)
                     )
-            )
+            ),
             (
                 se.SpikeGLXRecordingExtractor,
                 "spikeglx/Noise4Sam_g0",
