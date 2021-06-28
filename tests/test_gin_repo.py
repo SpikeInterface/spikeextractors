@@ -119,6 +119,14 @@ if sys.platform == "linux" or run_local:
             #     dict(filename=Path.cwd() / "ephy_testing_data" / "plexon" / "File_plexon_2.plx")
             # ),
             (
+                    se.CEDRecordingExtractor,
+                    "spike2/m365_1sec.smrx",
+                    dict(
+                        file_path=Path.cwd() / "ephy_testing_data" / "spike2" / "m365_1sec.smrx",
+                        smrx_channel_ids=range(10)
+                    )
+            ),
+            (
                 se.SpikeGLXRecordingExtractor,
                 "spikeglx/Noise4Sam_g0",
                 dict(
@@ -133,23 +141,22 @@ if sys.platform == "linux" or run_local:
             self.dataset.get(dataset_path)
             recording = se_class(**se_kwargs)
 
-
             # # test writing to NWB
             if test_nwb:
                 nwb_save_path = self.savedir / f"{se_class.__name__}_test_{dataset_stem}.nwb"
                 se.NwbRecordingExtractor.write_recording(recording, nwb_save_path, write_scaled=True)
                 nwb_recording = se.NwbRecordingExtractor(nwb_save_path)
-                check_recordings_equal(recording, nwb_recording)
+                check_recordings_equal(recording, nwb_recording, check_times=False)
 
                 if recording.has_unscaled:
                     nwb_save_path_unscaled = self.savedir / f"{se_class.__name__}_test_{dataset_stem}_unscaled.nwb"
                     if np.all(recording.get_channel_offsets() == 0):
                         se.NwbRecordingExtractor.write_recording(recording, nwb_save_path_unscaled, write_scaled=False)
                         nwb_recording = se.NwbRecordingExtractor(nwb_save_path_unscaled)
-                        check_recordings_equal(recording, nwb_recording, return_scaled=False)
+                        check_recordings_equal(recording, nwb_recording, return_scaled=False, check_times=False)
                         # Skip check when NWB converts uint to int
                         if recording.get_dtype(return_scaled=False) == nwb_recording.get_dtype(return_scaled=False):
-                            check_recordings_equal(recording, nwb_recording, return_scaled=True)
+                            check_recordings_equal(recording, nwb_recording, return_scaled=True, check_times=False)
 
             # test caching
             if test_caching:

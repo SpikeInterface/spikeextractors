@@ -73,11 +73,14 @@ class CEDRecordingExtractor(RecordingExtractor):
             # Set channel gains: http://ced.co.uk/img/Spike10.pdf
             # from 16-bit encoded int / to ADC +-5V input / to measured Volts
             gain = self._channel_smrxinfo[i]['scale'] / 6553.6
+            gain *= 1000  # mV --> uV
             gains.append(gain)
             self._channel_names.append(self._channel_smrxinfo[i]['title'])
 
-        for i_ch, ch in enumerate(self.get_channel_ids()):
-            self.set_channel_property(ch, "ced_gain", gains[i_ch])
+        # Set gains
+        self.set_channel_gains(gains=gains)
+        self.has_unscaled = True
+
         rate0 = self._channel_smrxinfo[0]['rate']
         for chan, info in self._channel_smrxinfo.items():
             assert info['rate'] == rate0, "Inconsistency between 'sampling_frequency' of different channels. The " \
@@ -122,7 +125,7 @@ class CEDRecordingExtractor(RecordingExtractor):
             A list or 1D array of channel ids (ints) from which each trace will be
             extracted
         return_scaled: bool
-            If True, traces are returned after scaling (using gain/offset). If False, the raw traces are returned
+            If True, traces are returned after scaling (using gain/offset). If False, the traces are returned as integers
 
         Returns
         ----------
@@ -130,6 +133,7 @@ class CEDRecordingExtractor(RecordingExtractor):
             A 2D array that contains all of the traces from each channel.
             Dimensions are: (num_channels x num_frames)
         """
+
         recordings = np.vstack(
             [get_channel_data(
                 f=self._recording_file,
@@ -139,7 +143,7 @@ class CEDRecordingExtractor(RecordingExtractor):
             ) for i in channel_ids]
         )
 
-        return recordings.astype("float32")
+        return recordings
 
     def get_num_frames(self):
         """This function returns the number of frames in the recording
