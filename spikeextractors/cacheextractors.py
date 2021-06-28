@@ -39,6 +39,7 @@ class CacheRecordingExtractor(BinDatRecordingExtractor, RecordingExtractor):
 
         self.set_tmp_folder(tmp_folder)
         self.copy_channel_properties(recording)
+        self.copy_times(recording)
 
         if 'gain' in recording.get_shared_channel_property_names() and not return_scaled:
             self.set_channel_gains(recording.get_channel_gains())
