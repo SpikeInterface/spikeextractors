@@ -136,7 +136,7 @@ class SubRecordingExtractor(RecordingExtractor):
                         self.set_channel_property(channel_id=channel_id, property_name=curr_property_name, value=value)
 
     def get_original_channel_ids(self, channel_ids):
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             if channel_ids in self.get_channel_ids():
                 original_ch_ids = self._original_channel_id_lookup[channel_ids]
             else:
@@ -144,7 +144,7 @@ class SubRecordingExtractor(RecordingExtractor):
         else:
             original_ch_ids = []
             for channel_id in channel_ids:
-                if isinstance(channel_id, (int, np.integer)):
+                if isinstance(channel_id, int):
                     if channel_id in self.get_channel_ids():
                         original_ch_id = self._original_channel_id_lookup[channel_id]
                         original_ch_ids.append(original_ch_id)

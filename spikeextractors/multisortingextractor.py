@@ -76,7 +76,7 @@ class MultiSortingExtractor(SortingExtractor):
         return self._sortings[sorting_id].get_unit_spike_features(unit_id_sorting, feature_name, start_frame=start_frame, end_frame=end_frame)
 
     def get_unit_spike_feature_names(self, unit_id):
-        if isinstance(unit_id, (int, np.integer)):
+        if isinstance(unit_id, int):
             if unit_id in self.get_unit_ids():
                 if unit_id not in self._unit_map.keys():
                     raise ValueError("Non-valid unit_id")

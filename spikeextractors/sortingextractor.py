@@ -127,7 +127,7 @@ class SortingExtractor(ABC, BaseExtractor):
             is less than the length of the unit's spike train). If None, it is
             assumed that value has the same length as the spike train.
         """
-        if isinstance(unit_id, (int, np.integer)):
+        if isinstance(unit_id, int):
             if unit_id in self.get_unit_ids():
                 if unit_id not in self._features.keys():
                     self._features[unit_id] = {}
@@ -187,7 +187,7 @@ class SortingExtractor(ABC, BaseExtractor):
             specified unit given the range of start and end frames
         """
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
-        if isinstance(unit_id, (int, np.integer)):
+        if isinstance(unit_id, int):
             if unit_id in self.get_unit_ids():
                 if unit_id not in self._features.keys():
                     self._features[unit_id] = {}
@@ -342,7 +342,7 @@ class SortingExtractor(ABC, BaseExtractor):
         property_names
             The list of feature names.
         """
-        if isinstance(unit_id, (int, np.integer)):
+        if isinstance(unit_id, int):
             if unit_id in self.get_unit_ids():
                 if unit_id not in self._features.keys():
                     self._features[unit_id] = {}
@@ -393,7 +393,7 @@ class SortingExtractor(ABC, BaseExtractor):
             The data associated with the given property name. Could be many
             formats as specified by the user
         """
-        if isinstance(unit_id, (int, np.integer)):
+        if isinstance(unit_id, int):
             if unit_id in self.get_unit_ids():
                 if unit_id not in self._properties.keys():
                     self._properties[unit_id] = {}
@@ -441,7 +441,7 @@ class SortingExtractor(ABC, BaseExtractor):
             The data associated with the given property name. Could be many
             formats as specified by the user
         """
-        if isinstance(unit_id, (int, np.integer)):
+        if isinstance(unit_id, int):
             if unit_id in self.get_unit_ids():
                 if unit_id not in self._properties.keys():
                     self._properties[unit_id] = {}
@@ -492,7 +492,7 @@ class SortingExtractor(ABC, BaseExtractor):
         property_names
             The list of property names
         """
-        if isinstance(unit_id, (int, np.integer)):
+        if isinstance(unit_id, int):
             if unit_id in self.get_unit_ids():
                 if unit_id not in self._properties.keys():
                     self._properties[unit_id] = {}

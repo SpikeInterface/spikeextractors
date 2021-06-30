@@ -755,7 +755,7 @@ def check_get_unit_spike_train(func):
         # parse args and kwargs
         if unit_id is None:
             raise TypeError("get_unit_spike_train() missing 1 required positional argument: 'unit_id')")
-        elif not (isinstance(unit_id, (int, np.integer))):
+        elif not (isinstance(unit_id, int)):
             raise ValueError("unit_id must be an integer")
         elif unit_id not in sorting.get_unit_ids():
             raise ValueError(f"{unit_id} is an invalid unit id")
@@ -772,7 +772,7 @@ def check_get_traces_args(func):
     @wraps(func)
     def corrected_args(recording, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True, **kwargs):
         if channel_ids is not None:
-            if isinstance(channel_ids, (int, np.integer)):
+            if isinstance(channel_ids, int):
                 channel_ids = list([channel_ids])
             else:
                 channel_ids = channel_ids
@@ -833,7 +833,7 @@ def check_get_ttl_args(func):
         else:
             end_frame = recording.get_num_frames()
         assert end_frame - start_frame > 0, "'start_frame' must be less than 'end_frame'!"
-        assert isinstance(channel_id, (int, np.integer)), "'channel_id' must be a single int"
+        assert isinstance(channel_id, int), "'channel_id' must be a single int"
 
         start_frame, end_frame = cast_start_end_frame(start_frame, end_frame)
         # pass recording as arg and rest as kwargs
@@ -844,13 +844,13 @@ def check_get_ttl_args(func):
 
 
 def cast_start_end_frame(start_frame, end_frame):
-    if isinstance(start_frame, (float, np.float)):
+    if isinstance(start_frame, float):
         start_frame = int(start_frame)
     elif isinstance(start_frame, (int, np.integer, type(None))):
         start_frame = start_frame
     else:
         raise ValueError("start_frame must be an int, float (not infinity), or None")
-    if isinstance(end_frame, (float, np.float)) and np.isfinite(end_frame):
+    if isinstance(end_frame, float) and np.isfinite(end_frame):
         end_frame = int(end_frame)
     elif isinstance(end_frame, (int, np.integer, type(None))):
         end_frame = end_frame

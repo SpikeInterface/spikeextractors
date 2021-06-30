@@ -66,13 +66,13 @@ def check_recording_properties(RX1, RX2):
 
 def check_recording_return_types(RX):
     channel_ids = RX.get_channel_ids()
-    assert isinstance(RX.get_num_channels(), (int, np.integer))
-    assert isinstance(RX.get_num_frames(), (int, np.integer))
-    assert isinstance(RX.get_sampling_frequency(), (float, np.float))
+    assert isinstance(RX.get_num_channels(), int)
+    assert isinstance(RX.get_num_frames(), int)
+    assert isinstance(RX.get_sampling_frequency(), float)
     assert isinstance(RX.get_traces(start_frame=0, end_frame=10), (np.ndarray, np.memmap))
 
     for channel_id in channel_ids:
-        assert isinstance(channel_id, (int, np.integer))
+        assert isinstance(channel_id, int)
 
 
 def check_sorting_return_types(SX):
@@ -108,7 +108,8 @@ def check_sorting_properties_features(SX1, SX2):
             else:
                 assert SX1.get_unit_property(u, prop) == SX2.get_unit_property(u, prop)
     # check features
-    print('Features', sorted(SX1.get_shared_unit_spike_feature_names()), sorted(SX2.get_shared_unit_spike_feature_names()))
+    print('Features', sorted(SX1.get_shared_unit_spike_feature_names()),
+          sorted(SX2.get_shared_unit_spike_feature_names()))
     assert sorted(SX1.get_shared_unit_spike_feature_names()) == sorted(SX2.get_shared_unit_spike_feature_names())
     for feat in SX1.get_shared_unit_spike_feature_names():
         for u in SX1.get_unit_ids():
