@@ -540,9 +540,12 @@ class SortingExtractor(ABC, BaseExtractor):
         unit_ids: (array_like, int)
             The list (or single value) of unit_ids for which the properties will be copied
         """
-        if unit_ids is None:
+        # Second condition: Ensure dictionary is not empty
+        if unit_ids is None and len(self._properties.keys()) > 0:
             self._properties = deepcopy(sorting._properties)
         else:
+            if unit_ids is None:
+                unit_ids = sorting.get_unit_ids()
             if isinstance(unit_ids, int):
                 curr_property_names = sorting.get_unit_property_names(unit_id=unit_ids)
                 for curr_property_name in curr_property_names:
