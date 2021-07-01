@@ -570,7 +570,7 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         folder_path = Path(folder_path)
 
         if exclude_shanks is not None:  # dumping checks do not like having an empty list as default
-            assert all([isinstance(x, int) and x >= 0 for x in
+            assert all([isinstance(x, (int, np.integer)) and x >= 0 for x in
                         exclude_shanks]), "Optional argument 'exclude_shanks' must contain positive integers only!"
             exclude_shanks_passed = True
         else:

@@ -35,7 +35,7 @@ def check_nwb_install():
 def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, index=False,
                                default_value=np.nan, table=False, description='no description'):
     check_nwb_install()
-    if not isinstance(row_ids, list) or not all(isinstance(x, int) for x in row_ids):
+    if not isinstance(row_ids, list) or not all(isinstance(x, (int, np.integer)) for x in row_ids):
         raise TypeError("'ids' must be a list of integers")
     ids = list(dynamic_table.id[:])
     if any([i not in ids for i in row_ids]):
