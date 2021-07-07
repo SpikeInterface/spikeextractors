@@ -1,7 +1,6 @@
 from spikeextractors.extraction_tools import check_get_traces_args
 from spikeextractors.extractors.neoextractors.neobaseextractor import (
     _NeoBaseExtractor, NeoBaseRecordingExtractor)
-from neo.rawio.baserawio import _signal_channel_dtype, _signal_stream_dtype
 from spikeextractors import RecordingExtractor
 from pathlib import Path
 import numpy as np
@@ -12,6 +11,7 @@ PathType = Union[Path, str]
 
 try:
     import neo
+    from neo.rawio.baserawio import _signal_channel_dtype, _signal_stream_dtype
     HAVE_NEO = True
 except ImportError:
     HAVE_NEO = False
@@ -19,7 +19,7 @@ except ImportError:
 
 class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor, RecordingExtractor, _NeoBaseExtractor):
     """
-    Instantiates a RecordinExtractor from an Axon Unit mode file.
+    Instantiates a RecordingExtractor from an Axona Unit mode file.
 
     Since the unit mode format only saves waveform cutouts, the get_traces
     function fills in the rest of the recording with Gaussian uncorrelated
@@ -29,7 +29,7 @@ class AxonaUnitRecordingExtractor(NeoBaseRecordingExtractor, RecordingExtractor,
     ----------
 
     noise_std: float
-        Standard deviation of the Gaussian background noise
+        Standard deviation of the Gaussian background noise (default 3)
     """
     extractor_name = 'AxonaUnitRecording'
     mode = 'file'
