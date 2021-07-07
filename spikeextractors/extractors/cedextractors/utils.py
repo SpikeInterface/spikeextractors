@@ -1,3 +1,5 @@
+import numpy as np
+
 try:
     from sonpy import lib as sp
 
@@ -87,4 +89,4 @@ def get_channel_data(f, smrx_ch_ind, start_frame=0, end_frame=None):
         tUpto=int(end_frame * f.ChannelDivide(smrx_ch_ind))
     )
 
-    return data
+    return np.array(data)
