@@ -81,11 +81,13 @@ class NeoBaseRecordingExtractor(RecordingExtractor, _NeoBaseExtractor):
         # spikeextractor for units to be uV implicitly
         # check that units are V, mV or uV
         units = self.neo_reader.header['signal_channels']['units']
-        assert np.all(np.isin(units, ['V', 'mV', 'uV'])), 'Signal units no Volt compatible'
+        if not np.all(np.isin(units, ['V', 'mV', 'uV'])):
+            warnings.warn('Signal units no Volt compatible, assuming scaling as uV')
         self.additional_gain = np.ones(units.size, dtype='float')
         self.additional_gain[units == 'V'] = 1e6
         self.additional_gain[units == 'mV'] = 1e3
         self.additional_gain[units == 'uV'] = 1.
+        self.additional_gain[units == ''] = 1.
         self.additional_gain = self.additional_gain.reshape(1, -1)
 
         # Add channels properties
