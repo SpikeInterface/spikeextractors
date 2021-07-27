@@ -1,4 +1,4 @@
 datalad
 parameterized
 tridesclous
-git+https://github.com/NeuralEnsemble/python-neo.git@master
+neo==0.10
