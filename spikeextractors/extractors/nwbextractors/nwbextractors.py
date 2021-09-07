@@ -316,19 +316,14 @@ class NwbRecordingExtractor(se.RecordingExtractor):
             es = nwbfile.acquisition[self._electrical_series_name]
             es_channel_ids = np.array(es.electrodes.table.id[:])[es.electrodes.data[:]].tolist()
             channel_inds = [es_channel_ids.index(id) for id in channel_ids]
-            if np.array(channel_ids).size > 1 and np.any(np.diff(channel_ids) < 0):
-                # get around h5py constraint that it does not allow datasets
-                # to be indexed out of order
-                sorted_channel_ids = np.sort(channel_ids)
-                sorted_idx = np.array([list(sorted_channel_ids).index(ch) for ch in channel_ids])
-                recordings = es.data[start_frame:end_frame, sorted_channel_ids].T
-                traces = recordings[sorted_idx, :]
+            if np.array(channel_inds).size > 1 and np.any(np.diff(channel_inds) < 0):
+                # h5py constraint does not allow datasets to be indexed out of order
+                ind_sort_order = np.argsort(channel_inds)
+                sorted_channel_inds = np.array(channel_inds)[ind_sort_order]
+                recordings = es.data[start_frame:end_frame, sorted_channel_inds]
+                traces = recordings[:, ind_sort_order].T
             else:
                 traces = es.data[start_frame:end_frame, channel_inds].T
-            # This DatasetView and lazy operations will only work within context
-            # We're keeping the non-lazy version for now
-            # es_view = DatasetView(es.data)  # es is an instantiated h5py dataset
-            # traces = es_view.lazy_slice[start_frame:end_frame, channel_ids].lazy_transpose()
         return traces
 
     def get_sampling_frequency(self):
