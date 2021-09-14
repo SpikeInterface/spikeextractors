@@ -27,7 +27,6 @@ jobs:
         run: |
           conda install -c conda-forge datalad
           conda install -c conda-forge ruamel.yaml
-          conda install pip
           conda install flake8
           conda install pytest
           pip install setuptools wheel twine
@@ -40,7 +39,6 @@ jobs:
           git config --global user.name "CI Almighty"
       - name: Lint with flake8
         run: |
-          conda install flake8
           # stop the build if there are Python syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
