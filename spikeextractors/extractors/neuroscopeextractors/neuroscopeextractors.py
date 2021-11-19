@@ -6,7 +6,6 @@ from spikeextractors.extraction_tools import check_get_unit_spike_train, get_sub
 from typing import Union, Optional
 import re
 import warnings
-from typing import Optional
 
 try:
     from lxml import etree as et
@@ -32,6 +31,21 @@ def get_shank_files(folder_path: Path, suffix: str):
         f for f in folder_path.iterdir() if f.is_file() and suffix in f.suffixes
         and re.search(r"\d+$", f.name) is not None and len(f.suffixes) == 2
     ]
+
+def find_xml_file_path(folder_path: PathType):
+    xml_files = [f for f in folder_path.iterdir() if f.is_file() if f.suffix == ".xml"]
+    assert any(xml_files), "No .xml files found in the folder_path."
+    assert len(xml_files) == 1, "More than one .xml file found in the folder_path! Specify xml_file_path."
+    xml_file_path = xml_files[0]
+    return xml_file_path
+
+def handle_xml_file_path(folder_path: PathType, initial_xml_file_path: PathType):
+    if initial_xml_file_path is None:
+        xml_file_path = find_xml_file_path(folder_path=folder_path)
+    else:
+        assert Path(initial_xml_file_path).is_file(), f".xml file ({initial_xml_file_path}) not found!"
+        xml_file_path = initial_xml_file_path
+    return xml_file_path
 
 
 class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
@@ -66,17 +80,7 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
 
         RecordingExtractor.__init__(self)
         self._recording_file = file_path
-        file_path = Path(file_path)
-        folder_path = file_path.parent
-
-        if xml_file_path is None:
-            xml_files = [f for f in folder_path.iterdir() if f.is_file() if f.suffix == ".xml"]
-            assert any(xml_files), "No .xml files found in the folder_path."
-            assert len(xml_files) == 1, "More than one .xml file found in the folder_path! Specify xml_file_path."
-            xml_file_path = xml_files[0]
-        else:
-            assert Path(xml_file_path).is_file(), f".xml file ({xml_file_path}) not found!"
-
+        xml_file_path = handle_xml_file_path(folder_path=Path(file_path).parent, initial_xml_file_path=xml_file_path)
         xml_root = et.parse(str(xml_file_path)).getroot()
         n_bits = int(xml_root.find('acquisitionSystem').find('nBits').text)
         dtype = f"int{n_bits}"
@@ -186,14 +190,14 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
     mode = "folder"
     installation_mesg = "Please install lxml to use this extractor!"
 
-    def __init__(self, folder_path: PathType, gain: Optional[float] = None):
+    def __init__(self, folder_path: PathType, gain: Optional[float] = None, xml_file_path: OptionalPathType = None):
         assert self.installed, self.installation_mesg
 
         folder_path = Path(folder_path)
         recording_files = [x for x in folder_path.iterdir() if x.is_file() and x.suffix == ".dat"]
         assert any(recording_files), "The folder_path must lead to at least one .dat file!"
 
-        recordings = [NeuroscopeRecordingExtractor(file_path=x, gain=gain) for x in recording_files]
+        recordings = [NeuroscopeRecordingExtractor(file_path=x, gain=gain, xml_file_path=xml_file_path) for x in recording_files]
         MultiRecordingTimeExtractor.__init__(self, recordings=recordings)
 
         self._kwargs = dict(folder_path=str(folder_path.absolute()), gain=gain)
@@ -339,7 +343,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         folder_path: OptionalPathType = None,
         keep_mua_units: bool = True,
         spkfile_path: OptionalPathType = None,
-        gain: Optional[float] = None
+        gain: Optional[float] = None,
+        xml_file_path: OptionalPathType = None,
     ):
         assert self.installed, self.installation_mesg
         assert not (folder_path is None and resfile_path is None and clufile_path is None), \
@@ -382,12 +387,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         assert res_sorting_name == clu_sorting_name, "The .res and .clu files do not share the same name! " \
                                                      f"{res_sorting_name}  -- {clu_sorting_name}"
 
-        xml_files = [f for f in folder_path.iterdir() if f.is_file() if f.suffix == ".xml"]
-        assert len(xml_files) > 0, "No .xml file found in the folder!"
-        assert len(xml_files) == 1, "More than one .xml file found in the folder!"
-        xml_filepath = xml_files[0]
-
-        xml_root = et.parse(str(xml_filepath)).getroot()
+        xml_file_path = handle_xml_file_path(folder_path=folder_path, initial_xml_file_path=xml_file_path)
+        xml_root = et.parse(str(xml_file_path)).getroot()
         self._sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text)
 
         with open(resfile_path) as f:
@@ -563,7 +564,8 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         keep_mua_units: bool = True,
         exclude_shanks: Optional[list] = None,
         load_waveforms: bool = False,
-        gain: Optional[float] = None
+        gain: Optional[float] = None,
+        xml_file_path: OptionalPathType = None,
     ):
         assert self.installed, self.installation_mesg
 
@@ -576,12 +578,8 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         else:
             exclude_shanks = []
             exclude_shanks_passed = False
-        xml_files = [f for f in folder_path.iterdir() if f.is_file if f.suffix == ".xml"]
-        assert len(xml_files) > 0, "No .xml file found in the folder!"
-        assert len(xml_files) == 1, "More than one .xml file found in the folder!"
-        xml_filepath = xml_files[0]
-
-        xml_root = et.parse(str(xml_filepath)).getroot()
+        xml_file_path = handle_xml_file_path(folder_path=folder_path, initial_xml_file_path=xml_file_path)
+        xml_root = et.parse(str(xml_file_path)).getroot()
         self._sampling_frequency = float(xml_root.find('acquisitionSystem').find('samplingRate').text)
 
         res_files = get_shank_files(folder_path=folder_path, suffix=".res")
@@ -607,7 +605,8 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
             nse_args = dict(
                 resfile_path=folder_path / f"{sorting_name}.res.{shank_id}",
                 clufile_path=folder_path / f"{sorting_name}.clu.{shank_id}",
-                keep_mua_units=keep_mua_units
+                keep_mua_units=keep_mua_units,
+                xml_file_path=xml_file_path,
             )
 
             if load_waveforms:
