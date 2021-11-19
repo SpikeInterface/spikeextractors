@@ -62,6 +62,8 @@ class NeuroscopeRecordingExtractor(BinDatRecordingExtractor):
         Path to the .dat file to be extracted.
     gain : float, optional
         Numerical value that converts the native int dtype to microvolts. Defaults to 1.
+    xml_file_path : PathType, optional
+        Path to the .xml file referenced by this recording.
     """
 
     extractor_name = "NeuroscopeRecordingExtractor"
@@ -182,6 +184,8 @@ class NeuroscopeMultiRecordingTimeExtractor(MultiRecordingTimeExtractor):
         Path to the .dat files to be extracted.
     gain : float, optional
         Numerical value that converts the native int dtype to microvolts. Defaults to 1.
+    xml_file_path : PathType, optional
+        Path to the .xml file referenced by this recording.
     """
 
     extractor_name = "NeuroscopeMultiRecordingTimeExtractor"
@@ -328,6 +332,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
         Optional. Path to a particular .spk binary file containing waveform snippets added to the extractor as features.
     gain : float
         Optional. If passing a spkfile_path, this value converts the data type of the waveforms to units of microvolts.
+    xml_file_path : PathType, optional
+        Path to the .xml file referenced by this sorting.
     """
 
     extractor_name = "NeuroscopeSortingExtractor"
@@ -550,6 +556,8 @@ class NeuroscopeMultiSortingExtractor(MultiSortingExtractor):
         the .res.%i and .clue.%i files and sets these as unit spike features. Defaults to False.
     gain : float
         Optional. If passing a spkfile_path, this value converts the data type of the waveforms to units of microvolts.
+    xml_file_path : PathType, optional
+        Path to the .xml file referenced by this sorting.
     """
 
     extractor_name = "NeuroscopeMultiSortingExtractor"
