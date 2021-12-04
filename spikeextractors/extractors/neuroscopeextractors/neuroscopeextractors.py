@@ -406,6 +406,8 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             )
             unit_map = dict(zip(unique_ids, list(range(n_clu))))
 
+            if 0 in unique_ids:
+               unit_map.pop(0)
             if not keep_mua_units and 1 in unique_ids:
                 unit_map.pop(1)
             self._unit_ids = unit_map.values()
