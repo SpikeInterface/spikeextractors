@@ -408,22 +408,19 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             n_clu = clu[0]
             clu = np.delete(clu, 0)
             unique_ids = np.unique(clu)
-            if 0 not in unique_ids:  # missing unsorted IDs
-                n_clu += 1
-            if 1 not in unique_ids:  # missing mua IDs
-                n_clu += 1
+            assert len(unique_ids) == n_clu, (
+                "First value of .clu file ({clufile_path}) does not match number of unique IDs!"
+            )
+            unit_map = dict(zip(unique_ids, list(range(n_clu))))
 
+            if 0 in unique_ids:
+               unit_map.pop(0)
+            if not keep_mua_units and 1 in unique_ids:
+                unit_map.pop(1)
+            self._unit_ids = unit_map.values()
             self._spiketrains = []
-            if keep_mua_units:
-                n_clu -= 1
-                self._unit_ids = [x + 1 for x in range(n_clu)]  # from 1,...,clu[0]-1
-                for s_id in self._unit_ids:
-                    self._spiketrains.append(res[(clu == s_id).nonzero()])
-            else:
-                n_clu -= 2
-                self._unit_ids = [x + 1 for x in range(n_clu)]  # from 1,...,clu[0]-2
-                for s_id in self._unit_ids:
-                    self._spiketrains.append(res[(clu == s_id + 1).nonzero()])  # from 2,...,clu[0]-1
+            for s_id in unit_map:
+                self._spiketrains.append(res[(clu == s_id).nonzero()])
 
         if spkfile_path is not None and Path(spkfile_path).is_file():
             n_bits = int(xml_root.find('acquisitionSystem').find('nBits').text)
