@@ -411,11 +411,11 @@ class NeuroscopeSortingExtractor(SortingExtractor):
             assert len(unique_ids) == n_clu, (
                 "First value of .clu file ({clufile_path}) does not match number of unique IDs!"
             )
-            unit_map = dict(zip(unique_ids, list(range(n_clu))))
+            unit_map = dict(zip(unique_ids, list(range(1, n_clu + 1))))
             print(unit_map)
 
             if 0 in unique_ids:
-               unit_map.pop(0)
+                unit_map.pop(0)
             if not keep_mua_units and 1 in unique_ids:
                 unit_map.pop(1)
             self._unit_ids = unit_map.values()
