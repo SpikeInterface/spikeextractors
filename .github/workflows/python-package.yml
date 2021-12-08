@@ -3,7 +3,7 @@ name: Python Package using Conda
 on: 
   push: 
     branches:
-      - main
+      - master
   pull_request:
     branches: [master]
     types: [synchronize, opened, reopened, ready_for_review]
