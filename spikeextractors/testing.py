@@ -27,7 +27,10 @@ def check_recordings_equal(RX1, RX2, return_scaled=True, force_dtype=None, check
                            RX2.get_traces(return_scaled=return_scaled).astype(force_dtype))
     sf = 0
     ef = N
-    ch = [RX1.get_channel_ids()[0], RX1.get_channel_ids()[-1]]
+    if RX1.get_num_channels() > 1:
+        ch = [RX1.get_channel_ids()[0], RX1.get_channel_ids()[-1]]
+    else:
+        ch = RX1.get_channel_ids()
     if force_dtype is None:
         assert np.allclose(RX1.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef, return_scaled=return_scaled),
                            RX2.get_traces(channel_ids=ch, start_frame=sf, end_frame=ef, return_scaled=return_scaled))
