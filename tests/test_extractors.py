@@ -680,7 +680,7 @@ class TestExtractors(unittest.TestCase):
 
         num_original_units = len(SX_neuroscope.get_unit_ids())
         self.assertEqual(list(SX_neuroscope.get_unit_ids()), list(range(1, num_original_units + 1)))
-        self.assertEqual(list(SX_neuroscope_no_mua.get_unit_ids()), list(range(1, num_original_units)))
+        self.assertEqual(list(SX_neuroscope_no_mua.get_unit_ids()), list(range(2, num_original_units + 1)))
 
         # Tests for the auto-detection of format for NeuroscopeSortingExtractor
         SX_neuroscope_from_fp = se.NeuroscopeSortingExtractor(folder_path=nscope_dir)
