@@ -54,42 +54,53 @@ class CellExplorerSortingExtractor(SortingExtractor):
 
             try:
                 session_info_mat = scipy.io.loadmat(file_name=str(session_info_matfile_path))
-                read_session_info_with = 'scipy'
+                self.read_session_info_with_scipy = True
             except:  # <- Find out exactly what error does this produce - don't use bare excepts
                 session_info_mat = hdf5storage.loadmat(file_name=str(session_info_matfile_path))
-                read_session_info_with = 'hdf5storage'
+                self.read_session_info_with_scipy = False
            
            # Check the assert and extraction logic depending on read_session_info_with
             assert session_info_mat["sessionInfo"]["rates"][0][0]["wideband"], (
                 "The sesssionInfo.mat file must contain "
                 "a 'sessionInfo' struct with field 'rates' containing field 'wideband'!"
             )
-            self._sampling_frequency = float(
-                session_info_mat["sessionInfo"]["rates"][0][0]["wideband"][0][0][0][0]
-            )  # careful not to confuse it with the lfpsamplingrate; reported in units Hz
-        
+            if self.read_session_info_with_scipy:
+                self._sampling_frequency = float(
+                    session_info_mat["sessionInfo"]["rates"][0][0]["wideband"][0][0][0][0]
+                )  # careful not to confuse it with the lfpsamplingrate; reported in units Hz
+            else:
+                self._sampling_frequency = float(
+                    session_info_mat["sessionInfo"]["rates"][0][0]["wideband"][0][0][0][0]
+                )  # careful not to confuse it with the lfpsamplingrate; reported in units Hz
         else:
             self._sampling_frequency = sampling_frequency
 
         try:
             spikes_mat = scipy.io.loadmat(file_name=str(session_info_matfile_path))
-            read_spikes_info_with = 'scipy'
+            self.read_spikes_info_with_scipy = True
         except:  # <- Find out exactly what error does this produce - don't use bare excepts
             spikes_mat = hdf5storage.loadmat(file_name=str(session_info_matfile_path))
-            read_spkies_info_with = 'hdf5storage'
+            self.read_spikes_info_with_scipy = False
 
         assert np.all(
             np.isin(["UID", "times"], spikes_mat["spikes"].dtype.names)
         ), "The spikes.cellinfo.mat file must contain a 'spikes' struct with fields 'UID' and 'times'!"
 
-        self._unit_ids = np.asarray(spikes_mat["spikes"]["UID"][0][0][0], dtype=int)
         # CellExplorer reports spike times in units seconds; SpikeExtractors uses time units of sampling frames
         # Rounding is necessary to prevent data loss from int-casting floating point errors
-        self._spiketrains = [
-            (np.array([y[0] for y in x]) * self._sampling_frequency).round().astype(int)
-            for x in spikes_mat["spikes"]["times"][0][0][0]
-        ]
-
+        if self.read_spikes_info_with_scipy:
+            self._unit_ids = np.asarray(spikes_mat["spikes"]["UID"][0][0][0], dtype=int)
+            self._spiketrains = [
+                (np.array([y[0] for y in x]) * self._sampling_frequency).round().astype(int)
+                for x in spikes_mat["spikes"]["times"][0][0][0]
+            ]
+        else:
+            self._unit_ids = np.asarray(spikes_mat["spikes"]["UID"][0][0], dtype=int)
+            self._spiketrains = [
+                (np.array([y[0] for y in x]) * self._sampling_frequency).round().astype(int)
+                for x in spikes_mat["spikes"]["times"][0][0]            
+            ]
+            
         self._kwargs = dict(spikes_matfile_path=str(spikes_matfile_path.absolute()))
 
     def get_unit_ids(self):
@@ -119,7 +130,9 @@ class CellExplorerSortingExtractor(SortingExtractor):
         session_info_mat_dict = dict(
             sessionInfo=dict(rates=dict(wideband=sampling_frequency))
         )
-        savemat(file_name=session_info_save_path, mdict=session_info_mat_dict)
+        
+        
+        scipy.io.savemat(file_name=session_info_save_path, mdict=session_info_mat_dict)
 
         spikes_mat_dict = dict(
             spikes=dict(
@@ -132,4 +145,4 @@ class CellExplorerSortingExtractor(SortingExtractor):
         )
         # If, in the future, it is ever desired to allow this to write unit properties, they must conform
         # to the format here: https://cellexplorer.org/datastructure/data-structure-and-format/
-        savemat(file_name=spikes_save_path, mdict=spikes_mat_dict)
+        scipy.io.savemat(file_name=spikes_save_path, mdict=spikes_mat_dict)
