@@ -76,10 +76,10 @@ class CellExplorerSortingExtractor(SortingExtractor):
             self._sampling_frequency = sampling_frequency
 
         try:
-            spikes_mat = scipy.io.loadmat(file_name=str(session_info_matfile_path))
+            spikes_mat = scipy.io.loadmat(file_name=str(spikes_matfile_path))
             self.read_spikes_info_with_scipy = True
         except:  # <- Find out exactly what error does this produce - don't use bare excepts
-            spikes_mat = hdf5storage.loadmat(file_name=str(session_info_matfile_path))
+            spikes_mat = hdf5storage.loadmat(file_name=str(spikes_matfile_path))
             self.read_spikes_info_with_scipy = False
 
         assert np.all(
