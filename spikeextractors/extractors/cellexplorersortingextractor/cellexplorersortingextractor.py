@@ -70,7 +70,7 @@ class CellExplorerSortingExtractor(SortingExtractor):
                 )  # careful not to confuse it with the lfpsamplingrate; reported in units Hz
             else:
                 self._sampling_frequency = float(
-                    session_info_mat["sessionInfo"]["rates"][0][0]["wideband"][0][0][0][0]
+                    session_info_mat["sessionInfo"]["rates"][0][0]["wideband"][0][0]
                 )  # careful not to confuse it with the lfpsamplingrate; reported in units Hz
         else:
             self._sampling_frequency = sampling_frequency
