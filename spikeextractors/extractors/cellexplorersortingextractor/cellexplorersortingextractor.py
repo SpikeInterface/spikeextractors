@@ -42,9 +42,10 @@ class CellExplorerSortingExtractor(SortingExtractor):
         assert (
             spikes_matfile_path.is_file()
         ), f"The spikes_matfile_path ({spikes_matfile_path}) must exist!"
-        folder_path = spikes_matfile_path.parent
-        sorting_id = spikes_matfile_path.name.split(".")[0]
+        
         if sampling_frequency is None:
+            folder_path = spikes_matfile_path.parent
+            sorting_id = spikes_matfile_path.name.split(".")[0]
             if session_info_matfile_path is None:
                 session_info_matfile_path = folder_path / f"{sorting_id}.sessionInfo.mat"
 
@@ -55,14 +56,13 @@ class CellExplorerSortingExtractor(SortingExtractor):
             try:
                 session_info_mat = scipy.io.loadmat(file_name=str(session_info_matfile_path))
                 self.read_session_info_with_scipy = True
-            except:  # <- Find out exactly what error does this produce - don't use bare excepts
+            except NotImplementedError:
                 session_info_mat = hdf5storage.loadmat(file_name=str(session_info_matfile_path))
                 self.read_session_info_with_scipy = False
-           
-           # Check the assert and extraction logic depending on read_session_info_with
+            
             assert session_info_mat["sessionInfo"]["rates"][0][0]["wideband"], (
                 "The sesssionInfo.mat file must contain "
-                "a 'sessionInfo' struct with field 'rates' containing field 'wideband'!"
+                "a 'sessionInfo' struct with field 'rates' containing field 'wideband' to extract the sampling frequency!"
             )
             if self.read_session_info_with_scipy:
                 self._sampling_frequency = float(
@@ -79,7 +79,7 @@ class CellExplorerSortingExtractor(SortingExtractor):
         try:
             spikes_mat = scipy.io.loadmat(file_name=str(spikes_matfile_path))
             self.read_spikes_info_with_scipy = True
-        except:  # <- Find out exactly what error does this produce - don't use bare excepts
+        except NotImplementedError: 
             spikes_mat = hdf5storage.loadmat(file_name=str(spikes_matfile_path))
             self.read_spikes_info_with_scipy = False
 
