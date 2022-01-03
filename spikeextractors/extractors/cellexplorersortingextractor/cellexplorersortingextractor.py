@@ -50,7 +50,7 @@ class CellExplorerSortingExtractor(SortingExtractor):
 
             assert (
                 session_info_matfile_path.is_file()
-            ), "No sessionInfo.mat file found in the folder!" 
+            ), f"No {sorting_id}.sessionInfo.mat file found in the folder!" 
 
             try:
                 session_info_mat = scipy.io.loadmat(file_name=str(session_info_matfile_path))
@@ -73,6 +73,7 @@ class CellExplorerSortingExtractor(SortingExtractor):
                     session_info_mat["sessionInfo"]["rates"][0][0]["wideband"][0][0]
                 )  # careful not to confuse it with the lfpsamplingrate; reported in units Hz
         else:
+            assert sampling_frequency is not None, "Could not load sampling frequency from files. Use the 'sampling_frequency' argument"
             self._sampling_frequency = sampling_frequency
 
         try:
