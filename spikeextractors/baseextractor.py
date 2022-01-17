@@ -98,7 +98,7 @@ class BaseExtractor:
                          'version': version, 'dumpable': True}
         else:
             dump_dict = {'class': class_name, 'module': module, 'kwargs': {}, 'key_properties': self._key_properties,
-                         'annotations': self._annotations, 'version': imported_module.__version__,
+                         'annotations': self._annotations, 'version': version,
                          'dumpable': False}
 
         if relative_to is not None:
