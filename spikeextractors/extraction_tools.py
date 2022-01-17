@@ -804,7 +804,6 @@ def check_get_traces_args(func):
 
         traces = func(recording, channel_ids=channel_ids, start_frame=start_frame, end_frame=end_frame,
                       return_scaled=return_scaled, **kwargs)
-
         # scaling
         if recording.has_unscaled and return_scaled:
             channel_idxs = np.array([recording.get_channel_ids().index(ch) for ch in channel_ids])
