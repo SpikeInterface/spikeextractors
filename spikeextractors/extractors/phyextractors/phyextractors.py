@@ -142,7 +142,7 @@ class PhySortingExtractor(SortingExtractor):
                                     elif property_name == 'chan_grp' or property_name == 'ch_group':
                                         self.set_unit_property(int(row[0]), 'group', int(row[1]))
                                     else:
-                                        if isinstance(row[1], (int, np.int, float, str)) and len(row) == 2:
+                                        if isinstance(row[1], (int, float, str)) and len(row) == 2:
                                             self.set_unit_property(int(row[0]), property_name, row[1])
                         line_count += 1
 
