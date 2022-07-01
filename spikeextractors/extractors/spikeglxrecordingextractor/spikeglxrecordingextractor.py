@@ -114,7 +114,7 @@ class SpikeGLXRecordingExtractor(RecordingExtractor):
     @check_get_traces_args
     def get_traces(self, channel_ids=None, start_frame=None, end_frame=None, return_scaled=True):
         channel_idxs = np.array([self.get_channel_ids().index(ch) for ch in channel_ids])
-        if np.all(channel_ids == self.get_channel_ids()):
+        if np.array_equal(channel_ids, self.get_channel_ids()):
             traces = self._timeseries[:, start_frame:end_frame]
         else:
             if np.all(np.diff(channel_idxs) == 1):
