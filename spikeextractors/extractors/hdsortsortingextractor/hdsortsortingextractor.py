@@ -78,18 +78,18 @@ class HDSortSortingExtractor(MATSortingExtractor):
 
         # Parse through 'units':
         self._spike_trains = {}
-        self._unit_ids = np.empty(0, int)
+        self._unit_ids = np.empty(0, np.int)
         for uc, unit in enumerate(units):
             uid = int(_squeeze_ds(unit["ID"]))
 
             self._unit_ids = np.append(self._unit_ids, uid)
-            self._spike_trains[uc] = _squeeze(unit["spikeTrain"]).astype(int) - self.start_frame
+            self._spike_trains[uc] = _squeeze(unit["spikeTrain"]).astype(np.int) - self.start_frame
 
             # For memory efficiency in case it's necessary:
             # X = self.allocate_array( "amplitudes_" + uid, array= unit["spikeAmplitudes"].flatten().T)
             # self.set_unit_spike_features(uid, "amplitudes", X)
             self.set_unit_spike_features(uid, "amplitudes", _squeeze(unit["spikeAmplitudes"]))
-            self.set_unit_spike_features(uid, "detection_channel", _squeeze(unit["detectionChannel"]).astype(int))
+            self.set_unit_spike_features(uid, "detection_channel", _squeeze(unit["detectionChannel"]).astype(np.int))
 
             idx = unit["detectionChannel"].astype(int) - 1
             spikePositions = np.vstack((_squeeze(multi_electrode["electrodePositions"][0][idx]),
@@ -254,7 +254,7 @@ def _parse_units(file, _units):
 
 
 def _squeeze_ds(ds):
-    while not isinstance(ds, (int, float, np.float)):
+    while not isinstance(ds, (int, float, np.integer, np.float)):
         ds = ds[0]
     return ds
 

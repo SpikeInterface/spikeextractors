@@ -641,7 +641,7 @@ def _check_json(d):
             d[k] = str(v.absolute())
         elif isinstance(v, bool):
             d[k] = bool(v)
-        elif isinstance(v, int):
+        elif isinstance(v, (int, np.integer)):
             d[k] = int(v)
         elif isinstance(v, float):
             d[k] = float(v)
