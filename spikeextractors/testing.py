@@ -69,22 +69,22 @@ def check_recording_properties(RX1, RX2):
 
 def check_recording_return_types(RX):
     channel_ids = RX.get_channel_ids()
-    assert isinstance(RX.get_num_channels(), (int, np.integer))
-    assert isinstance(RX.get_num_frames(), (int, np.integer))
+    assert isinstance(RX.get_num_channels(), int)
+    assert isinstance(RX.get_num_frames(), int)
     assert isinstance(RX.get_sampling_frequency(), float)
     assert isinstance(RX.get_traces(start_frame=0, end_frame=10), (np.ndarray, np.memmap))
 
     for channel_id in channel_ids:
-        assert isinstance(channel_id, (int, np.integer))
+        assert isinstance(channel_id, int)
 
 
 def check_sorting_return_types(SX):
     unit_ids = SX.get_unit_ids()
-    assert (all(isinstance(id, (int, np.integer)) or isinstance(id, np.integer) for id in unit_ids))
+    assert (all(isinstance(id, int) for id in unit_ids))
     for id in unit_ids:
         train = SX.get_unit_spike_train(id)
         # print(train)
-        assert (all(isinstance(x, (int, np.integer)) or isinstance(x, np.integer) for x in train))
+        assert (all(isinstance(x, int)  for x in train))
 
 
 def check_sortings_equal(SX1, SX2):

@@ -259,7 +259,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             channel_ids = [channel_ids]
             locations = [locations]
         # Only None upon initialization
@@ -301,7 +301,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             channel_ids = [channel_ids]
         locations = self._key_properties['location']
         # Only None upon initialization
@@ -325,7 +325,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             channel_ids = [channel_ids]
         # Reset to default locations (NaN)
         default_locations =  np.array([[np.nan, np.nan, np.nan] for i in range(len(channel_ids))])
@@ -344,16 +344,16 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             channel_ids = [channel_ids]
-        if isinstance(groups, (int, np.integer)):
+        if isinstance(groups, int):
             groups = [groups]
         # Only None upon initialization
         if self._key_properties['group'] is None:
             self._key_properties['group'] = np.zeros(self.get_num_channels(), dtype='int')
         if len(channel_ids) == len(groups):
             for i in range(len(channel_ids)):
-                if isinstance(groups[i], (int, np.integer)):
+                if isinstance(groups[i], int):
                     channel_idx = list(self.get_channel_ids()).index(channel_ids[i])
                     self._key_properties['group'][channel_idx] = int(groups[i])
                 else:
@@ -377,7 +377,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             channel_ids = [channel_ids]
         groups = self._key_properties['group']
         # Only None upon initialization
@@ -398,7 +398,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             channel_ids = [channel_ids]
         # Reset to default groups (0)
         default_groups = [0] * len(channel_ids)
@@ -418,16 +418,16 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             channel_ids = [channel_ids]
-        if isinstance(gains, (int, np.integer, float)):
+        if isinstance(gains, (int, float)):
             gains = [gains] * len(channel_ids)
         # Only None upon initialization
         if self._key_properties['gain'] is None:
             self._key_properties['gain'] = np.ones(self.get_num_channels(), dtype='float')
         if len(channel_ids) == len(gains):
             for i in range(len(channel_ids)):
-                if isinstance(gains[i], (int, np.integer, float)):
+                if isinstance(gains[i], (int, float)):
                     channel_idx = list(self.get_channel_ids()).index(channel_ids[i])
                     self._key_properties['gain'][channel_idx] = float(gains[i])
                 else:
@@ -450,7 +450,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             channel_ids = [channel_ids]
         gains = self._key_properties['gain']
         # Only None upon initialization
@@ -471,7 +471,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             channel_ids = [channel_ids]
         # Reset to default gains (1)
         default_gains = [1.] * len(channel_ids)
@@ -491,16 +491,16 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             channel_ids = [channel_ids]
-        if isinstance(offsets, (int, np.integer, float)):
+        if isinstance(offsets, (int, float)):
             offsets = [offsets] * len(channel_ids)
         # Only None upon initialization
         if self._key_properties['offset'] is None:
             self._key_properties['offset'] = np.zeros(self.get_num_channels(), dtype='float')
         if len(channel_ids) == len(offsets):
             for i in range(len(channel_ids)):
-                if isinstance(offsets[i], (int, np.integer, float)):
+                if isinstance(offsets[i], (int, float)):
                     channel_idx = list(self.get_channel_ids()).index(channel_ids[i])
                     self._key_properties['offset'][channel_idx] = float(offsets[i])
                 else:
@@ -523,7 +523,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             channel_ids = [channel_ids]
         offsets = self._key_properties['offset']
         # Only None upon initialization
@@ -544,7 +544,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         """
         if channel_ids is None:
             channel_ids = list(self.get_channel_ids())
-        if isinstance(channel_ids, (int, np.integer)):
+        if isinstance(channel_ids, int):
             channel_ids = [channel_ids]
         # Reset to default offets (0)
         default_offsets = [0.] * len(channel_ids)
@@ -563,7 +563,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             The data associated with the given property name. Could be many
             formats as specified by the user
         """
-        if isinstance(channel_id, (int, np.integer)):
+        if isinstance(channel_id, int):
             if channel_id in self.get_channel_ids():
                 if isinstance(property_name, str):
                     if property_name == 'location':
@@ -598,7 +598,7 @@ class RecordingExtractor(ABC, BaseExtractor):
             The data associated with the given property name. Could be many
             formats as specified by the user
         """
-        if not isinstance(channel_id, (int, np.integer)):
+        if not isinstance(channel_id, int):
             raise TypeError(str(channel_id) + " must be an int")
         if channel_id not in self.get_channel_ids():
             raise ValueError(str(channel_id) + " is not a valid channel_id")
@@ -632,7 +632,7 @@ class RecordingExtractor(ABC, BaseExtractor):
         property_names
             The list of property names
         """
-        if isinstance(channel_id, (int, np.integer)):
+        if isinstance(channel_id, int):
             if channel_id in self.get_channel_ids():
                 if channel_id not in self._properties.keys():
                     self._properties[channel_id] = {}
@@ -680,14 +680,14 @@ class RecordingExtractor(ABC, BaseExtractor):
         ----------
         recording: RecordingExtractor
             The recording extractor from which the properties will be copied
-        channel_ids: (array_like, (int, np.integer))
+        channel_ids: (array_like, int)
             The list (or single value) of channel_ids for which the properties will be copied
         """
         if channel_ids is None:
             self._key_properties = deepcopy(recording._key_properties)
             self._properties = deepcopy(recording._properties)
         else:
-            if isinstance(channel_ids, (int, np.integer)):
+            if isinstance(channel_ids, int):
                 channel_ids = [channel_ids]
             # copy key properties
             groups = recording.get_channel_groups(channel_ids=channel_ids)

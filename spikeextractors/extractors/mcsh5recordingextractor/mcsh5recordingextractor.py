@@ -100,7 +100,7 @@ def openMCSH5File(filename, stream_id, verbose=False):
     assert stream_name in analog_stream_names, "Specified stream does not exist."
 
     stream = rf.require_group('/Data/Recording_0/AnalogStream/' + stream_name)
-    data = np.array(stream.get('ChannelData'), dtype=np.int)
+    data = np.array(stream.get('ChannelData'), dtype=int)
     timestamps = np.array(stream.get('ChannelDataTimeStamps'))
     info = np.array(stream.get('InfoChannel'))
 

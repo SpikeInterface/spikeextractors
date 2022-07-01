@@ -35,7 +35,7 @@ def check_nwb_install():
 def set_dynamic_table_property(dynamic_table, row_ids, property_name, values, index=False,
                                default_value=np.nan, table=False, description='no description'):
     check_nwb_install()
-    if not isinstance(row_ids, list) or not all(isinstance(x, (int, np.integer)) for x in row_ids):
+    if not isinstance(row_ids, list) or not all(isinstance(x, int) for x in row_ids):
         raise TypeError("'ids' must be a list of integers")
     ids = list(dynamic_table.id[:])
     if any([i not in ids for i in row_ids]):
@@ -1277,7 +1277,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                 for unit_id in unit_ids:
                     if pr in sorting.get_unit_property_names(unit_id):
                         prop_value = sorting.get_unit_property(unit_id, pr)
-                        if isinstance(prop_value, (int, np.integer, float, str, bool)):
+                        if isinstance(prop_value, (int, float, str, bool)):
                             shapes.append(1)
                         elif isinstance(prop_value, (list, np.ndarray)):
                             if np.array(prop_value).ndim == 1:
@@ -1350,7 +1350,7 @@ class NwbSortingExtractor(se.SortingExtractor):
                 for unit_id in unit_ids:
                     if ft in sorting.get_unit_spike_feature_names(unit_id):
                         feat_value = sorting.get_unit_spike_features(unit_id, ft)
-                        if isinstance(feat_value[0], (int, np.integer, float, str, bool)):
+                        if isinstance(feat_value[0], (int, float, str, bool)):
                             break
                         elif isinstance(feat_value[0], (list, np.ndarray)):  # multidimensional features
                             if np.array(feat_value).ndim > 1:

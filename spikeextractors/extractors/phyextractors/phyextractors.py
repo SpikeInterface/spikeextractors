@@ -124,7 +124,7 @@ class PhySortingExtractor(SortingExtractor):
                                 elif property_name == 'chan_grp' or property_name == 'ch_group':
                                     self.set_unit_property(int(tokens[0]), 'group', int(tokens[1]))
                                 else:
-                                    if isinstance(tokens[1], (int, np.int, float, str)):
+                                    if isinstance(tokens[1], (int, float, str)):
                                         self.set_unit_property(int(tokens[0]), property_name, tokens[1])
                             line_count += 1
             elif f.suffix == '.tsv':

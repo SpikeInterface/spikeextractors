@@ -65,7 +65,7 @@ class SubSortingExtractor(SortingExtractor):
     def copy_unit_properties(self, sorting, unit_ids=None):
         if unit_ids is None:
             unit_ids = self.get_unit_ids()
-        if isinstance(unit_ids, (int, np.integer)):
+        if isinstance(unit_ids, int):
             sorting_unit_id = unit_ids
             if sorting is self._parent_sorting:
                 sorting_unit_id = self.get_original_unit_ids(unit_ids)
@@ -87,7 +87,7 @@ class SubSortingExtractor(SortingExtractor):
         start_frame, end_frame = self._cast_start_end_frame(start_frame, end_frame)
         if unit_ids is None:
             unit_ids = self.get_unit_ids()
-        if isinstance(unit_ids, (int, np.integer)):
+        if isinstance(unit_ids, int):
             unit_ids = [unit_ids]
         for unit_id in unit_ids:
             sorting_unit_id = unit_id
@@ -121,7 +121,7 @@ class SubSortingExtractor(SortingExtractor):
                     self.set_unit_spike_features(unit_id=unit_id, feature_name=curr_feature_name, value=value)
 
     def get_original_unit_ids(self, unit_ids):
-        if isinstance(unit_ids, (int, np.integer)):
+        if isinstance(unit_ids, int):
             if unit_ids in self.get_unit_ids():
                 original_unit_ids = self._original_unit_id_lookup[unit_ids]
             else:
@@ -129,7 +129,7 @@ class SubSortingExtractor(SortingExtractor):
         else:
             original_unit_ids = []
             for unit_id in unit_ids:
-                if isinstance(unit_id, (int, np.integer)):
+                if isinstance(unit_id, int):
                     if unit_id in self.get_unit_ids():
                         original_unit_id = self._original_unit_id_lookup[unit_id]
                         original_unit_ids.append(original_unit_id)
