@@ -23,6 +23,9 @@ if sys.platform == "linux" or run_local:
                 self.dataset = Dataset(pt)
             else:
                 self.dataset = install('https://gin.g-node.org/NeuralEnsemble/ephy_testing_data')
+            # Must pin to previous dataset version
+            # See https://github.com/SpikeInterface/spikeextractors/pull/675
+            self.dataset.repo.call_git(['checkout', '17e8f37674d70af84cdba6acd83df964a8e09f0c'])
             self.savedir = Path(tempfile.mkdtemp())
 
         @parameterized.expand([
