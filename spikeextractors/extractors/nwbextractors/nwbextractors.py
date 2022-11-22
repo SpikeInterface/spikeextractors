@@ -1032,7 +1032,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
 
-        assert parse(pynwb.__version__) >= '1.3.3', \
+        assert parse(pynwb.__version__) >= parse('1.3.3'), \
             "'write_recording' not supported for version < 1.3.3. Run pip install --upgrade pynwb"
 
         assert save_path is None or nwbfile is None, \

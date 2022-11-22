@@ -3,7 +3,7 @@ scipy>=1.6.3
 pyintan>=0.3.0
 pyopenephys>=1.1.4
 neo>=0.9.0
-MEArec>=1.7.2
+MEArec<1.8
 pynwb>=1.4
 lxml>=4.6.3
 nixio==1.5.0
