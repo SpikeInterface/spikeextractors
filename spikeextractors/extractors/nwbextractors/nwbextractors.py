@@ -3,7 +3,7 @@ from datetime import datetime
 from collections import abc
 from pathlib import Path
 import numpy as np
-import distutils.version
+from packaging.version import parse
 from typing import Union, List, Optional
 import warnings
 
@@ -510,7 +510,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if nwbfile.electrode_groups is None:
             se.NwbRecordingExtractor.add_electrode_groups(recording, nwbfile, metadata)
         # For older versions of pynwb, we need to manually add these columns
-        if distutils.version.LooseVersion(pynwb.__version__) < '1.3.0':
+        if parse(pynwb.__version__) < parse('1.3.0'):
             if nwbfile.electrodes is None or 'rel_x' not in nwbfile.electrodes.colnames:
                 nwbfile.add_electrode_column('rel_x', 'x position of electrode in electrode group')
             if nwbfile.electrodes is None or 'rel_y' not in nwbfile.electrodes.colnames:
@@ -1032,7 +1032,7 @@ class NwbRecordingExtractor(se.RecordingExtractor):
         if nwbfile is not None:
             assert isinstance(nwbfile, NWBFile), "'nwbfile' should be of type pynwb.NWBFile"
 
-        assert distutils.version.LooseVersion(pynwb.__version__) >= '1.3.3', \
+        assert parse(pynwb.__version__) >= '1.3.3', \
             "'write_recording' not supported for version < 1.3.3. Run pip install --upgrade pynwb"
 
         assert save_path is None or nwbfile is None, \

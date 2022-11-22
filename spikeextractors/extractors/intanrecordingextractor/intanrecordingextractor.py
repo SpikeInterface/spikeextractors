@@ -1,6 +1,6 @@
 import numpy as np
 from pathlib import Path
-from distutils.version import StrictVersion
+from packaging.version import parse
 from typing import Union, Optional
 
 from spikeextractors import RecordingExtractor
@@ -11,7 +11,7 @@ OptionalArrayType = Optional[Union[np.ndarray, list]]
 
 try:
     import pyintan
-    if StrictVersion(pyintan.__version__) >= '0.3.0':
+    if parse(pyintan.__version__) >= parse('0.3.0'):
         HAVE_INTAN = True
     else:
         print("pyintan version requires an update (>=0.3.0). Please upgrade with 'pip install --upgrade pyintan'")

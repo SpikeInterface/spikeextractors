@@ -4,13 +4,13 @@ from spikeextractors.extraction_tools import check_get_traces_args, check_get_un
 
 import numpy as np
 from pathlib import Path
-from distutils.version import StrictVersion
+from packaging.version import parse
 
 try:
     import MEArec as mr
     import neo
     import quantities as pq
-    if StrictVersion(mr.__version__) >= '1.5.0':
+    if parse(mr.__version__) >= parse('1.5.0'):
         HAVE_MREX = True
     else:
         print("MEArec version requires an update (>=1.5). Please upgrade with 'pip install --upgrade MEArec'")
