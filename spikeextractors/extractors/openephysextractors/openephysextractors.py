@@ -2,7 +2,7 @@ from spikeextractors import RecordingExtractor, SortingExtractor
 from pathlib import Path
 import numpy as np
 from spikeextractors.extraction_tools import check_get_traces_args, check_get_unit_spike_train, check_get_ttl_args
-from distutils.version import StrictVersion
+from packaging.version import parse
 import warnings
 
 
@@ -10,7 +10,7 @@ try:
     import pyopenephys
     HAVE_OE = True
 
-    if pyopenephys.__version__ >= StrictVersion("1.1.2"):
+    if parse(pyopenephys.__version__) >= parse("1.1.2"):
         HAVE_OE_11 = True
     else:
         warnings.warn("pyopenephys>=1.1.2 should be installed. Support for older versions will be removed in "
